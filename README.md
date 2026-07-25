@@ -44,10 +44,10 @@ src/
     types.ts         Datenmodell (Patient, Vitalwerte, Problem, Maßnahme, Szenario)
     triage.ts        mSTaRT-Algorithmus inkl. nachvollziehbarer Entscheidungskette
     simulation.ts    Zeitverlauf: Verschlechterung, Maßnahmenwirkung, Todeskriterien
-    massnahmen.ts    Maßnahmenkatalog nach ABCDE-Schema
+    massnahmen.ts    Maßnahmenkatalog nach xABCDE-Schema
     szenarien.ts     Übungsszenarien mit Patientenvorlagen
   state/         useReducer-Store, Simulationsuhr, React-Context
-  components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmen, mSTaRT-Hilfe)
+  components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmenkatalog)
   pages/         Setup → Einsatz → Patientenseite → Debriefing
   lib/           Formatierung und Auswertung
 ```
@@ -63,17 +63,26 @@ nächsten Betroffenen, ohne Umweg über die Liste.
 
 Der didaktische Kern der Anwendung liegt im Aufbau dieser Seite.
 
-**Stufe 1 – Ersteinschätzung** zeigt nur, was die Vorsichtung braucht: den ersten
-Eindruck ohne Messwerte (gehfähig, kritische Blutung, Atmung, Radialispuls,
-Reaktion), die beiden lebensrettenden Handgriffe und die Sichtungskategorie.
-Vitalparameter sind hier bewusst nicht sichtbar – mSTaRT kommt ohne sie aus. Der
-lehrbuchgerechte Weg ist damit kurz: sichten, gegebenenfalls Blutung stillen oder
-Atemweg freimachen, weiter zum nächsten.
+**Stufe 1 – Ersteinschätzung** zeigt den ersten Eindruck ohne Messwerte (gehfähig,
+kritische Blutung, Atmung, Radialispuls, Reaktion), den Maßnahmenkatalog und die
+Sichtungskategorie. Vitalparameter sind hier bewusst nicht sichtbar – mSTaRT kommt
+ohne sie aus.
 
-**Stufe 2 – Erweiterte Versorgung** ist die Individualmedizin. Sie liegt einen
-einzigen Tipper entfernt und wird *nicht* versperrt, denn genau das ist der Punkt:
-Die Versuchung, sich an einem Patienten festzuarbeiten, gehört zur Übung. Hier
-gibt es Vitalwerte, den vollständigen ABCDE-Katalog und den Transport.
+Der Maßnahmenkatalog folgt dem **xABCDE-Schema** und ist gruppenweise einklappbar.
+In der Ersteinschätzung sind **x** (kritische Blutung) und **A** (Atemweg)
+aufgeklappt – die beiden Handgriffe, die in die Vorsichtung gehören. B bis E sind
+eingeklappt, aber sichtbar. Genau darin liegt die Versuchung: Der Weg in die
+Individualmedizin ist ein Klick auf eine Gruppe, und nichts hält davon ab.
+
+**Stufe 2 – Erweiterte Versorgung** bringt Vitalwerte, den vollständig
+aufgeklappten Katalog und das Verlaufsprotokoll.
+
+Die Anwendung gibt bewusst **keine Hinweise**, was richtig wäre – keine
+Algorithmus-Hilfe, keine Warnung vor zu viel Behandlung. Die Rückmeldung kommt
+über den Zustand der Patienten und das Debriefing.
+
+**Übergabe an: Eingangssichtung** schließt einen Patienten ab: Er geht an den
+Behandlungsplatz und verändert sich danach nicht mehr.
 
 ### Zeit ist die eigentliche Ressource
 
@@ -83,7 +92,7 @@ alle Betroffenen gleichzeitig**:
 | Handlung | Zeit |
 | --- | --- |
 | Vorsichtung eines Patienten | 20 s |
-| Blutung stillen / Atemweg freimachen | 20–60 s |
+| Blutung stillen (x) / Atemweg freimachen (A) | 20–60 s |
 | Körperliche Untersuchung | 30 s |
 | Endotracheale Intubation | 180 s |
 

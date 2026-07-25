@@ -71,8 +71,11 @@ export type VitalKey = keyof Vitalwerte;
 /** Veränderung von Vitalparametern pro Minute. */
 export type VitalVerlauf = Partial<Record<VitalKey, number>>;
 
-/** ABCDE-Schema als grobe Einordnung der Maßnahmen. */
-export type MassnahmenKategorie = 'A' | 'B' | 'C' | 'D' | 'E';
+/**
+ * xABCDE-Schema. Das vorangestellte x steht für die kritische Blutung, die
+ * vor allem anderen gestillt wird.
+ */
+export type MassnahmenKategorie = 'x' | 'A' | 'B' | 'C' | 'D' | 'E';
 
 export type MassnahmeId =
   | 'atemwege_freimachen'

@@ -61,7 +61,7 @@ export function DebriefingSeite() {
         </div>
         <div className="kennzahl">
           <span className="kennzahl-wert">{kennzahlen.transportiert}</span>
-          <span className="kennzahl-label">abtransportiert</span>
+          <span className="kennzahl-label">an Eingangssichtung übergeben</span>
         </div>
         <div className="kennzahl kennzahl-warnung">
           <span className="kennzahl-wert">{kennzahlen.verstorben}</span>

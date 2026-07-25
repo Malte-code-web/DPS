@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Ersteindruck } from '../components/Ersteindruck';
 import { Massnahmenliste } from '../components/Massnahmenliste';
-import { MstartAssistent } from '../components/MstartAssistent';
 import { SichtungsBadge } from '../components/SichtungsBadge';
-import { Sofortmassnahmen } from '../components/Sofortmassnahmen';
 import { Vitalmonitor } from '../components/Vitalmonitor';
 import {
   UNTERSUCHUNGSDAUER_SEK,
@@ -14,23 +12,24 @@ import {
 import { SICHTUNGSKATEGORIEN } from '../domain/types';
 import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
-import type { Patient, Sichtungskategorie } from '../domain/types';
+import type { MassnahmenKategorie, Patient, Sichtungskategorie } from '../domain/types';
 
 const SICHTUNGSAUSWAHL: Sichtungskategorie[] = ['SK1', 'SK2', 'SK3', 'SK4'];
+
+/** In der Ersteinschätzung sind nur die lebensrettenden Gruppen aufgeklappt. */
+const OFFEN_ERSTEINSCHAETZUNG: MassnahmenKategorie[] = ['x', 'A'];
+const OFFEN_VERSORGUNG: MassnahmenKategorie[] = ['x', 'A', 'B', 'C', 'D', 'E'];
 
 type Stufe = 'ersteinschaetzung' | 'versorgung';
 
 /**
  * Patientenseite in zwei Stufen.
  *
- * Stufe 1 zeigt nur, was die Vorsichtung braucht: den ersten Eindruck, die
- * beiden lebensrettenden Handgriffe und die Sichtungskategorie. Der schnelle,
- * lehrbuchgerechte Weg ist damit drei Tipper lang.
- *
- * Stufe 2 - die Individualmedizin - ist absichtlich nur einen Tipper entfernt
- * und wird nicht versperrt. Genau wie im echten Einsatz soll die Versuchung
- * bestehen, sich an einem Patienten festzuarbeiten. Die Rechnung kommt über
- * die Einsatzzeit: jede Maßnahme lässt die Uhr für alle weiterlaufen.
+ * Stufe 1 zeigt den ersten Eindruck, die Sichtungskategorie und den
+ * Maßnahmenkatalog nach xABCDE - mit x und A aufgeklappt, alles Weitere
+ * eingeklappt, aber sichtbar. Genau darin liegt die Versuchung: Der Weg in
+ * die Individualmedizin ist ein Klick auf eine Gruppe, nichts hält davon ab.
+ * Bezahlt wird über die Einsatzzeit, die für alle weiterläuft.
  */
 export function PatientSeite({ patient }: { patient: Patient }) {
   const { state, dispatch } = useSimulation();
@@ -73,7 +72,6 @@ export function PatientSeite({ patient }: { patient: Patient }) {
           <button
             type="button"
             disabled={!vorheriger}
-            title={vorheriger ? `${vorheriger.id} ${vorheriger.name}` : undefined}
             onClick={() =>
               vorheriger && dispatch({ typ: 'patientWaehlen', patientId: vorheriger.id })
             }
@@ -86,7 +84,6 @@ export function PatientSeite({ patient }: { patient: Patient }) {
           <button
             type="button"
             disabled={!naechster}
-            title={naechster ? `${naechster.id} ${naechster.name}` : undefined}
             onClick={() =>
               naechster && dispatch({ typ: 'patientWaehlen', patientId: naechster.id })
             }
@@ -140,6 +137,23 @@ export function PatientSeite({ patient }: { patient: Patient }) {
   );
 }
 
+/** Übergabe an die Eingangssichtung des Behandlungsplatzes. */
+function UebergabeButton({ patient, verstorben }: { patient: Patient; verstorben: boolean }) {
+  const { dispatch } = useSimulation();
+  const uebergeben = patient.status === 'transportiert';
+
+  return (
+    <button
+      type="button"
+      className={`uebergabe-button${uebergeben ? ' uebergabe-erfolgt' : ''}`}
+      disabled={verstorben || uebergeben}
+      onClick={() => dispatch({ typ: 'patientTransportieren', patientId: patient.id })}
+    >
+      {uebergeben ? 'An Eingangssichtung übergeben' : 'Übergabe an: Eingangssichtung'}
+    </button>
+  );
+}
+
 /* --- Stufe 1: Ersteinschätzung ------------------------------------ */
 
 interface ErsteinschaetzungProps {
@@ -167,13 +181,11 @@ function Ersteinschaetzung({
         <Ersteindruck patient={patient} />
       </section>
 
-      <section className="karte karte-sofort">
-        <h3>Lebensrettende Sofortmaßnahmen</h3>
-        <p className="hinweis">
-          In der Vorsichtung sind nur diese beiden Handgriffe vorgesehen.
-        </p>
-        <Sofortmassnahmen
+      <section className="karte karte-massnahmen">
+        <h3>Maßnahmen</h3>
+        <Massnahmenliste
           patient={patient}
+          standardOffen={OFFEN_ERSTEINSCHAETZUNG}
           onMassnahme={(massnahmeId) =>
             dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
           }
@@ -191,7 +203,6 @@ function Ersteinschaetzung({
                 patient.gesichtetAls === kategorie ? ' sichtung-gewaehlt' : ''
               }`}
               disabled={verstorben}
-              title={SICHTUNGSKATEGORIEN[kategorie].behandlung}
               onClick={() => dispatch({ typ: 'patientSichten', patientId: patient.id, kategorie })}
             >
               SK {SICHTUNGSKATEGORIEN[kategorie].kuerzel}
@@ -199,7 +210,7 @@ function Ersteinschaetzung({
             </button>
           ))}
         </div>
-        <MstartAssistent patient={patient} />
+        <UebergabeButton patient={patient} verstorben={verstorben} />
       </section>
 
       <div className="stufe-abschluss">
@@ -215,7 +226,6 @@ function Ersteinschaetzung({
 
         <button type="button" className="verlockung" onClick={aufVersorgung}>
           Erweiterte Versorgung
-          <small>Vitalwerte messen, alle Maßnahmen - bindet Zeit und Personal</small>
         </button>
       </div>
     </div>
@@ -256,21 +266,15 @@ function Versorgung({ patient, verstorben, zurueck }: VersorgungProps) {
         <section className="karte karte-befund">
           <h3>Untersuchung</h3>
           {!patient.untersucht ? (
-            <>
-              <p className="hinweis">
-                Vitalparameter gibt es erst nach körperlicher Untersuchung. Für die Vorsichtung
-                nach mSTaRT werden sie nicht gebraucht.
-              </p>
-              <button
-                type="button"
-                className="primaer"
-                disabled={verstorben}
-                onClick={() => dispatch({ typ: 'patientUntersuchen', patientId: patient.id })}
-              >
-                Patient untersuchen
-                <small>{UNTERSUCHUNGSDAUER_SEK} s</small>
-              </button>
-            </>
+            <button
+              type="button"
+              className="primaer"
+              disabled={verstorben}
+              onClick={() => dispatch({ typ: 'patientUntersuchen', patientId: patient.id })}
+            >
+              Patient untersuchen
+              <small>{UNTERSUCHUNGSDAUER_SEK} s</small>
+            </button>
           ) : (
             <>
               <p className="detail-befund">{patient.untersuchungsbefund}</p>
@@ -300,21 +304,15 @@ function Versorgung({ patient, verstorben, zurueck }: VersorgungProps) {
         </section>
 
         <section className="karte karte-massnahmen">
-          <h3>Alle Maßnahmen</h3>
+          <h3>Maßnahmen</h3>
           <Massnahmenliste
             patient={patient}
+            standardOffen={OFFEN_VERSORGUNG}
             onMassnahme={(massnahmeId) =>
               dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
             }
           />
-          <button
-            type="button"
-            className="primaer"
-            disabled={verstorben || patient.status === 'transportiert'}
-            onClick={() => dispatch({ typ: 'patientTransportieren', patientId: patient.id })}
-          >
-            An Transport übergeben
-          </button>
+          <UebergabeButton patient={patient} verstorben={verstorben} />
         </section>
 
         <section className="karte karte-protokoll">

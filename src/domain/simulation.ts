@@ -187,7 +187,8 @@ export function wendeMassnahmeAn(
 
   // Blutstillung und Atemwegsmanagement verändern auch die Sichtungsbefunde.
   if (geloest.length > 0) {
-    if (massnahme.kategorie === 'C') {
+    // x ist im xABCDE-Schema die kritische Blutung.
+    if (massnahme.kategorie === 'x') {
       naechster = { ...naechster, kritischeBlutung: false };
     }
     if (massnahme.kategorie === 'A' || massnahme.kategorie === 'B') {
@@ -227,7 +228,7 @@ export function transportierePatient(patient: Patient, zeitSek: number): Patient
   return protokolliere(
     { ...patient, status: 'transportiert' },
     zeitSek,
-    'Patient an Transport übergeben.',
+    'Übergabe an die Eingangssichtung.',
   );
 }
 

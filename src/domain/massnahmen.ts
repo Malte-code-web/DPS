@@ -55,7 +55,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   blutstillung: {
     id: 'blutstillung',
     label: 'Manuelle Blutstillung / Druckverband',
-    kategorie: 'C',
+    kategorie: 'x',
     dauerSek: 45,
     hinweis: 'Erste Maßnahme bei jeder sichtbaren starken Blutung.',
     sofortEffekt: { systolischerRR: 5 },
@@ -64,7 +64,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   tourniquet: {
     id: 'tourniquet',
     label: 'Tourniquet anlegen',
-    kategorie: 'C',
+    kategorie: 'x',
     dauerSek: 60,
     hinweis: 'Bei nicht komprimierbarer Extremitätenblutung, Zeit dokumentieren.',
     sofortEffekt: { systolischerRR: 8 },
@@ -130,31 +130,18 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
 
 export const MASSNAHMEN_LISTE: Massnahme[] = Object.values(MASSNAHMEN);
 
-/**
- * Lebensrettende Sofortmaßnahmen der Vorsichtung, nach Problem gruppiert.
- * Mehr als das ist während der Sichtung nicht vorgesehen.
- */
-export const SOFORTMASSNAHMEN: { titel: string; frage: string; massnahmen: Massnahme[] }[] = [
-  {
-    titel: 'Kritische Blutung',
-    frage: 'Blutet es bedrohlich?',
-    massnahmen: [MASSNAHMEN.blutstillung, MASSNAHMEN.tourniquet],
-  },
-  {
-    titel: 'Atemweg',
-    frage: 'Ist der Atemweg frei?',
-    massnahmen: [MASSNAHMEN.atemwege_freimachen, MASSNAHMEN.guedeltubus],
-  },
-];
-
-export function istSofortmassnahme(id: MassnahmeId): boolean {
-  return MASSNAHMEN[id].sofortmassnahme === true;
-}
+/** Reihenfolge der Gruppen nach xABCDE. */
+export const KATEGORIEN: MassnahmenKategorie[] = ['x', 'A', 'B', 'C', 'D', 'E'];
 
 export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
-  A: 'A - Atemweg',
-  B: 'B - Beatmung',
-  C: 'C - Kreislauf',
-  D: 'D - Neurologie',
-  E: 'E - Umgebung',
+  x: 'Kritische Blutung',
+  A: 'Atemweg',
+  B: 'Beatmung',
+  C: 'Kreislauf',
+  D: 'Neurologie',
+  E: 'Umgebung',
 };
+
+export function massnahmenDerKategorie(kategorie: MassnahmenKategorie): Massnahme[] {
+  return MASSNAHMEN_LISTE.filter((massnahme) => massnahme.kategorie === kategorie);
+}

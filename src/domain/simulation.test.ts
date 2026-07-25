@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MASSNAHMEN } from './massnahmen';
+import { KATEGORIEN, MASSNAHMEN, massnahmenDerKategorie } from './massnahmen';
 import {
   aktiveProbleme,
   patientAusVorlage,
@@ -36,6 +36,23 @@ describe('Szenariodaten', () => {
         vorlage.erwarteteSK,
       );
     }
+  });
+
+  it('ordnet jede Maßnahme genau einer xABCDE-Gruppe zu', () => {
+    for (const kategorie of KATEGORIEN) {
+      expect(massnahmenDerKategorie(kategorie).length, `Gruppe ${kategorie}`).toBeGreaterThan(0);
+    }
+    const summe = KATEGORIEN.reduce(
+      (anzahl, kategorie) => anzahl + massnahmenDerKategorie(kategorie).length,
+      0,
+    );
+    expect(summe).toBe(Object.keys(MASSNAHMEN).length);
+  });
+
+  it('führt die blutstillenden Maßnahmen unter x', () => {
+    // Daran hängt, dass die Sichtungsfrage "kritische Blutung" beantwortet wird.
+    expect(MASSNAHMEN.blutstillung.kategorie).toBe('x');
+    expect(MASSNAHMEN.tourniquet.kategorie).toBe('x');
   });
 
   it('verweist nur auf Maßnahmen aus dem Katalog', () => {

@@ -6,7 +6,7 @@ const STATUS_LABEL: Record<PatientStatus, string> = {
   unbehandelt: 'nicht gesichtet',
   gesichtet: 'gesichtet',
   in_behandlung: 'in Behandlung',
-  transportiert: 'abtransportiert',
+  transportiert: 'übergeben',
   verstorben: 'verstorben',
 };
 

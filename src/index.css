@@ -480,17 +480,14 @@ select {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      'eindruck sofort'
-      'sichtung sofort'
+      'eindruck massnahmen'
+      'sichtung massnahmen'
       'abschluss abschluss';
     align-items: start;
   }
 
   .karte-eindruck {
     grid-area: eindruck;
-  }
-  .karte-sofort {
-    grid-area: sofort;
   }
   .stufe-abschluss {
     grid-area: abschluss;
@@ -553,51 +550,6 @@ select {
 
 .befund-auffaellig .befund-antwort {
   color: var(--sk1);
-}
-
-/* --- Sofortmassnahmen -------------------------------------------- */
-
-.sofort-gruppen {
-  display: grid;
-  gap: 1rem;
-}
-
-.sofort-frage {
-  margin: 0 0 0.5rem;
-  font-size: 0.82rem;
-  color: var(--text-leise);
-}
-
-.sofort-buttons {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.sofort-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  padding: 0.8rem 1rem;
-  text-align: left;
-  font-weight: 600;
-}
-
-.sofort-dauer {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-leise);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.sofort-button-erledigt {
-  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
-  color: var(--ok);
-}
-
-.sofort-button-erledigt .sofort-dauer {
-  color: var(--ok);
 }
 
 /* --- Abschluss der Ersteinschaetzung ------------------------------ */
@@ -838,89 +790,118 @@ select {
   outline-offset: 1px;
 }
 
-/* --- mSTaRT-Assistent ------------------------------------------- */
-
-.assistent-schalter {
-  background: transparent;
-  border-style: dashed;
-  font-size: 0.8rem;
-  color: var(--text-leise);
-  width: 100%;
-}
-
-.assistent-inhalt {
-  margin-top: 0.6rem;
-  padding: 0.6rem 0.7rem;
-  border-radius: 8px;
-  background: var(--bg-panel-hoch);
-  border: 1px solid var(--rand);
-}
-
-.assistent-schritte {
-  margin: 0 0 0.6rem;
-  padding-left: 1.1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.8rem;
-}
-
-.assistent-schritte li {
-  color: var(--text-leise);
-}
-
-.schritt-entscheidend {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.schritt-frage {
-  display: block;
-}
-
-.schritt-antwort {
-  display: block;
-  color: var(--text-leise);
-  font-weight: 400;
-}
-
-.assistent-ergebnis {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--text-leise);
-}
-
-/* --- Massnahmen -------------------------------------------------- */
+/* --- Massnahmen nach xABCDE -------------------------------------- */
 
 .massnahmen {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.4rem;
 }
 
-.massnahmen-buttons {
+.gruppe {
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gruppe-offen {
+  border-color: #3a4557;
+}
+
+.gruppe-kopf {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  border-radius: 0;
+  background: var(--bg-panel-hoch);
+  text-align: left;
+}
+
+.gruppe-kuerzel {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.gruppe-titel {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.gruppe-erledigt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.gruppe-pfeil {
+  color: var(--text-leise);
+  font-size: 0.8rem;
+}
+
+.gruppe-inhalt {
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
+  padding: 0.5rem;
+  background: var(--bg-panel);
 }
 
 .massnahme {
   display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  padding: 0.3rem 0.55rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font-size: 0.88rem;
 }
 
-.massnahme small {
+.massnahme-dauer {
+  font-size: 0.72rem;
   color: var(--text-leise);
-  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .massnahme-erledigt {
   border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  color: var(--ok);
+}
+
+.massnahme-erledigt .massnahme-dauer {
+  color: var(--ok);
+}
+
+/* --- Uebergabe an die Eingangssichtung --------------------------- */
+
+.uebergabe-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--sk4) 55%, transparent);
+  background: color-mix(in srgb, var(--sk4) 14%, var(--bg-panel-hoch));
+  color: var(--sk4);
+}
+
+.uebergabe-erfolgt {
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  background: color-mix(in srgb, var(--ok) 12%, var(--bg-panel-hoch));
   color: var(--ok);
 }
 
@@ -1056,6 +1037,10 @@ tbody tr:last-child td {
     color: var(--akzent);
   }
 
+  .gruppe-kopf:hover:not(:disabled) {
+    background: #273042;
+  }
+
   .sichtung-button:hover:not(:disabled) {
     background: color-mix(in srgb, var(--sk-farbe) 26%, var(--bg-panel-hoch));
     border-color: color-mix(in srgb, var(--sk-farbe) 65%, transparent);
@@ -1160,6 +1145,12 @@ tbody tr:last-child td {
 
   .patientseite-blaettern button {
     flex: 1;
+  }
+
+  /* Befundzeilen gestapelt - nebeneinander bliebe für die Antwort zu wenig Platz. */
+  .befund {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
   }
 
   /* Kategorie unter den Namen statt daneben - sonst bricht die Zeile dreifach um. */

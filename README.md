@@ -22,11 +22,19 @@ npm run dev      # Entwicklungsserver auf http://localhost:5173
 Weitere Skripte:
 
 ```bash
-npm run test       # Vitest (Domänenlogik)
-npm run lint       # oxlint
-npm run typecheck  # TypeScript ohne Emit
-npm run build      # Produktionsbuild nach dist/
+npm run test          # Vitest (Domänenlogik)
+npm run lint          # oxlint
+npm run typecheck     # TypeScript ohne Emit
+npm run build         # Produktionsbuild nach dist/
+npm run build:single  # dist/dps.html – alles in einer Datei
 ```
+
+### Ohne Toolchain weitergeben
+
+`npm run build:single` erzeugt `dist/dps.html`: eine einzelne Datei mit
+eingebettetem JavaScript und CSS. Sie läuft per Doppelklick im Browser – ohne
+Server, ohne Node, ohne Internet. Praktisch, um eine Übung auf einem beliebigen
+Rechner oder per USB-Stick bereitzustellen.
 
 ## Aufbau
 

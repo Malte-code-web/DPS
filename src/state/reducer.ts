@@ -1,7 +1,11 @@
+import { MASSNAHMEN } from '../domain/massnahmen';
 import {
+  SICHTUNGSDAUER_SEK,
+  UNTERSUCHUNGSDAUER_SEK,
   patientAusVorlage,
   sichtePatient,
   simuliereSchritt,
+  simuliereZeitraum,
   transportierePatient,
   untersuchePatient,
   wendeMassnahmeAn,
@@ -28,7 +32,9 @@ export const ANFANGSZUSTAND: SimulationState = {
   szenarioId: null,
   zeitSek: 0,
   laufend: false,
-  geschwindigkeit: 4,
+  // Jede Handlung kostet zusaetzlich ihre eigene Dauer - der Zeitraffer darf
+  // deshalb moderat bleiben, sonst laeuft die Lage davon.
+  geschwindigkeit: 2,
   patienten: [],
   ausgewaehlterPatientId: null,
 };
@@ -45,6 +51,24 @@ export type SimulationAction =
   | { typ: 'patientTransportieren'; patientId: string }
   | { typ: 'einsatzBeenden' }
   | { typ: 'zurueckZumSetup' };
+
+/**
+ * Laesst Einsatzzeit verstreichen - fuer alle Patienten gleichzeitig.
+ *
+ * Das ist der Kern der Uebung: Wer sich an einem Patienten festarbeitet,
+ * verliert die Zeit bei allen anderen. Eine Intubation kostet drei Minuten,
+ * in denen nebenan jemand verbluten kann.
+ */
+function zeitVergehen(state: SimulationState, dauerSek: number): SimulationState {
+  if (dauerSek <= 0) return state;
+  return {
+    ...state,
+    zeitSek: state.zeitSek + dauerSek,
+    patienten: state.patienten.map((patient) =>
+      simuliereZeitraum(patient, state.zeitSek, dauerSek),
+    ),
+  };
+}
 
 /** Wendet eine Aenderung auf genau einen Patienten an. */
 function mitPatient(
@@ -99,19 +123,35 @@ export function simulationReducer(
     case 'patientWaehlen':
       return { ...state, ausgewaehlterPatientId: action.patientId };
 
-    case 'patientUntersuchen':
-      return mitPatient(state, action.patientId, (patient) =>
-        untersuchePatient(patient, state.zeitSek),
+    case 'patientUntersuchen': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      if (!patient || patient.untersucht) return state;
+      return zeitVergehen(
+        mitPatient(state, action.patientId, (eintrag) =>
+          untersuchePatient(eintrag, state.zeitSek),
+        ),
+        UNTERSUCHUNGSDAUER_SEK,
       );
+    }
 
-    case 'patientSichten':
-      return mitPatient(state, action.patientId, (patient) =>
-        sichtePatient(patient, action.kategorie, state.zeitSek),
+    case 'patientSichten': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      // Nur die erste Sichtung kostet Zeit, ein Korrigieren der Kategorie nicht.
+      const dauerSek = patient?.gesichtetUmSek === null ? SICHTUNGSDAUER_SEK : 0;
+      return zeitVergehen(
+        mitPatient(state, action.patientId, (eintrag) =>
+          sichtePatient(eintrag, action.kategorie, state.zeitSek),
+        ),
+        dauerSek,
       );
+    }
 
     case 'massnahmeDurchfuehren':
-      return mitPatient(state, action.patientId, (patient) =>
-        wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek),
+      return zeitVergehen(
+        mitPatient(state, action.patientId, (patient) =>
+          wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek),
+        ),
+        MASSNAHMEN[action.massnahmeId].dauerSek,
       );
 
     case 'patientTransportieren':

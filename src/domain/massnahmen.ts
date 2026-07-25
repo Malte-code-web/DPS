@@ -9,6 +9,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     dauerSek: 20,
     hinweis: 'Kopf überstrecken, Mundraum inspizieren, Fremdkörper entfernen.',
     sofortEffekt: { spo2: 4 },
+    sofortmassnahme: true,
   },
   guedeltubus: {
     id: 'guedeltubus',
@@ -17,6 +18,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     dauerSek: 30,
     hinweis: 'Nur bei fehlendem Würgereflex.',
     sofortEffekt: { spo2: 5 },
+    sofortmassnahme: true,
   },
   intubation: {
     id: 'intubation',
@@ -57,6 +59,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     dauerSek: 45,
     hinweis: 'Erste Maßnahme bei jeder sichtbaren starken Blutung.',
     sofortEffekt: { systolischerRR: 5 },
+    sofortmassnahme: true,
   },
   tourniquet: {
     id: 'tourniquet',
@@ -65,6 +68,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     dauerSek: 60,
     hinweis: 'Bei nicht komprimierbarer Extremitätenblutung, Zeit dokumentieren.',
     sofortEffekt: { systolischerRR: 8 },
+    sofortmassnahme: true,
   },
   beckenschlinge: {
     id: 'beckenschlinge',
@@ -125,6 +129,27 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
 };
 
 export const MASSNAHMEN_LISTE: Massnahme[] = Object.values(MASSNAHMEN);
+
+/**
+ * Lebensrettende Sofortmaßnahmen der Vorsichtung, nach Problem gruppiert.
+ * Mehr als das ist während der Sichtung nicht vorgesehen.
+ */
+export const SOFORTMASSNAHMEN: { titel: string; frage: string; massnahmen: Massnahme[] }[] = [
+  {
+    titel: 'Kritische Blutung',
+    frage: 'Blutet es bedrohlich?',
+    massnahmen: [MASSNAHMEN.blutstillung, MASSNAHMEN.tourniquet],
+  },
+  {
+    titel: 'Atemweg',
+    frage: 'Ist der Atemweg frei?',
+    massnahmen: [MASSNAHMEN.atemwege_freimachen, MASSNAHMEN.guedeltubus],
+  },
+];
+
+export function istSofortmassnahme(id: MassnahmeId): boolean {
+  return MASSNAHMEN[id].sofortmassnahme === true;
+}
 
 export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
   A: 'A - Atemweg',

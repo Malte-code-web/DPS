@@ -100,6 +100,12 @@ export interface Massnahme {
   hinweis: string;
   /** Einmalige Verbesserung der Vitalwerte direkt nach Durchführung. */
   sofortEffekt?: VitalVerlauf;
+  /**
+   * Lebensrettende Sofortmaßnahme im Sinne der Vorsichtung: nur kritische
+   * Blutung und Atemweg. Alles andere ist Individualmedizin und gehört im
+   * MANV erst auf den Behandlungsplatz.
+   */
+  sofortmassnahme?: boolean;
 }
 
 /**

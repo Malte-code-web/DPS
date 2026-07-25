@@ -16,7 +16,7 @@ const SPALTE = {
   aktuell: 'Zustand am Ende',
   bewertung: 'Bewertung',
   zeitpunkt: 'Sichtung um',
-  massnahmenzeit: 'Maßnahmenzeit',
+  massnahmenzeit: 'Zeit gebunden',
 } as const;
 
 const BEWERTUNG_LABEL: Record<Sichtungsbewertung, string> = {
@@ -79,6 +79,12 @@ export function DebriefingSeite() {
           <span className="kennzahl-wert">{zeitFormat(kennzahlen.massnahmenzeitSek)}</span>
           <span className="kennzahl-label">gebundene Maßnahmenzeit</span>
         </div>
+        <div
+          className={`kennzahl${kennzahlen.individualmedizinSek > 0 ? ' kennzahl-warnung' : ''}`}
+        >
+          <span className="kennzahl-wert">{zeitFormat(kennzahlen.individualmedizinSek)}</span>
+          <span className="kennzahl-label">davon Individualmedizin</span>
+        </div>
       </section>
 
       <section className="debriefing-tabelle">
@@ -118,7 +124,14 @@ export function DebriefingSeite() {
                 <td data-spalte={SPALTE.zeitpunkt}>
                   {zeile.sichtungsdauerSek === null ? '-' : zeitFormat(zeile.sichtungsdauerSek)}
                 </td>
-                <td data-spalte={SPALTE.massnahmenzeit}>{zeitFormat(zeile.massnahmenzeitSek)}</td>
+                <td className="zelle-zeit" data-spalte={SPALTE.massnahmenzeit}>
+                  {zeitFormat(zeile.massnahmenzeitSek)}
+                  {zeile.individualmedizinSek > 0 && (
+                    <em className="zeit-individual">
+                      davon {zeitFormat(zeile.individualmedizinSek)} Individualmedizin
+                    </em>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -138,6 +151,11 @@ export function DebriefingSeite() {
           </li>
           <li>
             Als Faustregel gilt eine Vorsichtungsdauer von etwa 30 Sekunden pro Patient.
+          </li>
+          <li>
+            Jede Maßnahme hat die Einsatzzeit für <em>alle</em> Betroffenen weiterlaufen lassen.
+            Zeit jenseits von Blutstillung und Atemweg fehlte an anderer Stelle - genau das
+            meint Individualmedizin im MANV.
           </li>
         </ul>
       </section>

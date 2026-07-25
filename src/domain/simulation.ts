@@ -130,6 +130,34 @@ export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: numbe
   return naechster;
 }
 
+/** Zeitbedarf einer Vorsichtung nach mSTaRT (Anschauen, Prüfen, Kategorie vergeben). */
+export const SICHTUNGSDAUER_SEK = 20;
+
+/** Zeitbedarf einer körperlichen Untersuchung mit Messung der Vitalwerte. */
+export const UNTERSUCHUNGSDAUER_SEK = 30;
+
+/**
+ * Rechnet einen Patienten über einen längeren Zeitraum weiter - etwa während
+ * eine Maßnahme durchgeführt wird. Der Zeitraum wird in kleine Schritte
+ * zerlegt, damit verzögert einsetzende Probleme (`startetNachMin`) nicht
+ * übersprungen werden.
+ */
+export function simuliereZeitraum(
+  patient: Patient,
+  startSek: number,
+  dauerSek: number,
+  maxSchrittSek = 5,
+): Patient {
+  let aktuell = patient;
+  let vergangen = 0;
+  while (vergangen < dauerSek) {
+    const schritt = Math.min(maxSchrittSek, dauerSek - vergangen);
+    vergangen += schritt;
+    aktuell = simuliereSchritt(aktuell, schritt, startSek + vergangen);
+  }
+  return aktuell;
+}
+
 /** Führt eine Maßnahme durch: löst passende Probleme und wirkt sofort auf die Vitalwerte. */
 export function wendeMassnahmeAn(
   patient: Patient,
@@ -209,4 +237,14 @@ export function gebundeneZeitSek(patient: Patient): number {
     (summe, id) => summe + MASSNAHMEN[id].dauerSek,
     0,
   );
+}
+
+/**
+ * Zeit, die über die lebensrettenden Sofortmaßnahmen hinaus in diesen einen
+ * Patienten geflossen ist - das Maß für Individualmedizin im MANV.
+ */
+export function individualmedizinZeitSek(patient: Patient): number {
+  return patient.durchgefuehrteMassnahmen
+    .filter((id) => !MASSNAHMEN[id].sofortmassnahme)
+    .reduce((summe, id) => summe + MASSNAHMEN[id].dauerSek, 0);
 }

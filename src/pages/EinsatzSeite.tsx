@@ -24,7 +24,8 @@ export function EinsatzSeite() {
       <Einsatzleiste szenario={szenario} />
 
       {ausgewaehlt ? (
-        <PatientSeite patient={ausgewaehlt} />
+        // key: beim Wechsel des Patienten wieder mit der Ersteinschätzung beginnen
+        <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />
       ) : (
         <section className="patientenliste">
           <h2>Schadensstelle</h2>

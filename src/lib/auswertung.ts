@@ -1,4 +1,4 @@
-import { gebundeneZeitSek } from '../domain/simulation';
+import { gebundeneZeitSek, individualmedizinZeitSek } from '../domain/simulation';
 import { bewerteSichtung, sichtungNachMstart } from '../domain/triage';
 import type { Sichtungsbewertung } from '../domain/triage';
 import type { Patient, Sichtungskategorie } from '../domain/types';
@@ -38,6 +38,8 @@ export interface Debriefingzeile {
   bewertung: Sichtungsbewertung;
   sichtungsdauerSek: number | null;
   massnahmenzeitSek: number;
+  /** Anteil der Maßnahmenzeit, der über die Sofortmaßnahmen hinausging. */
+  individualmedizinSek: number;
 }
 
 export function erstelleDebriefing(patienten: Patient[]): Debriefingzeile[] {
@@ -49,6 +51,7 @@ export function erstelleDebriefing(patienten: Patient[]): Debriefingzeile[] {
     bewertung: bewerteSichtung(patient.gesichtetAls, patient.erwarteteSK),
     sichtungsdauerSek: patient.gesichtetUmSek,
     massnahmenzeitSek: gebundeneZeitSek(patient),
+    individualmedizinSek: individualmedizinZeitSek(patient),
   }));
 }
 
@@ -61,6 +64,8 @@ export interface Kennzahlen {
   /** Zeitpunkt, zu dem der letzte Patient vorgesichtet war. */
   vorsichtungAbgeschlossenSek: number | null;
   massnahmenzeitSek: number;
+  /** Zeit, die jenseits der lebensrettenden Sofortmaßnahmen gebunden wurde. */
+  individualmedizinSek: number;
 }
 
 export function berechneKennzahlen(zeilen: Debriefingzeile[]): Kennzahlen {
@@ -80,5 +85,6 @@ export function berechneKennzahlen(zeilen: Debriefingzeile[]): Kennzahlen {
         ? Math.max(...sichtungszeiten)
         : null,
     massnahmenzeitSek: zeilen.reduce((summe, zeile) => summe + zeile.massnahmenzeitSek, 0),
+    individualmedizinSek: zeilen.reduce((summe, zeile) => summe + zeile.individualmedizinSek, 0),
   };
 }

@@ -55,10 +55,42 @@ src/
 ### Navigation
 
 Die Einsatzansicht zeigt die Schadensstelle als Kartenraster. Ein Klick auf eine
-Karte öffnet die **Patientenseite**: eine eigene, vollflächige Ansicht mit Befund,
-Vitalwerten, Sichtung und Maßnahmenkatalog. Von dort führen „Zurück zur
-Schadensstelle" (oder die Escape-Taste) in die Übersicht und „Vorheriger /
-Nächster" direkt zum nächsten Betroffenen, ohne Umweg über die Liste.
+Karte öffnet die **Patientenseite**. Von dort führen „Zurück zur Schadensstelle"
+(oder die Escape-Taste) in die Übersicht und „Vorheriger / Nächster" direkt zum
+nächsten Betroffenen, ohne Umweg über die Liste.
+
+### Die Patientenseite in zwei Stufen
+
+Der didaktische Kern der Anwendung liegt im Aufbau dieser Seite.
+
+**Stufe 1 – Ersteinschätzung** zeigt nur, was die Vorsichtung braucht: den ersten
+Eindruck ohne Messwerte (gehfähig, kritische Blutung, Atmung, Radialispuls,
+Reaktion), die beiden lebensrettenden Handgriffe und die Sichtungskategorie.
+Vitalparameter sind hier bewusst nicht sichtbar – mSTaRT kommt ohne sie aus. Der
+lehrbuchgerechte Weg ist damit kurz: sichten, gegebenenfalls Blutung stillen oder
+Atemweg freimachen, weiter zum nächsten.
+
+**Stufe 2 – Erweiterte Versorgung** ist die Individualmedizin. Sie liegt einen
+einzigen Tipper entfernt und wird *nicht* versperrt, denn genau das ist der Punkt:
+Die Versuchung, sich an einem Patienten festzuarbeiten, gehört zur Übung. Hier
+gibt es Vitalwerte, den vollständigen ABCDE-Katalog und den Transport.
+
+### Zeit ist die eigentliche Ressource
+
+Damit diese Versuchung Folgen hat, kostet **jede Handlung echte Einsatzzeit – für
+alle Betroffenen gleichzeitig**:
+
+| Handlung | Zeit |
+| --- | --- |
+| Vorsichtung eines Patienten | 20 s |
+| Blutung stillen / Atemweg freimachen | 20–60 s |
+| Körperliche Untersuchung | 30 s |
+| Endotracheale Intubation | 180 s |
+
+Wer intubiert, lässt die Uhr um drei Minuten springen, in denen sich alle anderen
+weiter verschlechtern. Zehn Patienten vorzusichten kostet weniger Zeit als drei
+Intubationen – diese Rechnung ist der Kern der Übung. Das Debriefing weist die
+Zeit jenseits der Sofortmaßnahmen als **Individualmedizin** gesondert aus.
 
 Die Einsatzleiste mit Uhr und Sichtungszählern bleibt dabei immer sichtbar – die
 Zeit läuft auch weiter, während ein einzelner Patient versorgt wird.

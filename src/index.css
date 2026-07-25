@@ -1,0 +1,809 @@
+/* ---------------------------------------------------------------
+   DPS - Dynamische Patienten-Simulation
+   Farbschema orientiert sich an den Sichtungskategorien.
+   --------------------------------------------------------------- */
+
+:root {
+  --bg: #0f1218;
+  --bg-panel: #161b24;
+  --bg-panel-hoch: #1d2330;
+  --rand: #29313f;
+  --text: #e6eaf2;
+  --text-leise: #97a1b3;
+  --akzent: #3b82f6;
+
+  --sk1: #e5484d;
+  --sk2: #eab308;
+  --sk3: #22c55e;
+  --sk4: #3b82f6;
+  --ex: #7c8496;
+
+  --warn: #f97316;
+  --ok: #22c55e;
+
+  --radius: 10px;
+  --schatten: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 25%);
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 0.4rem;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 1.45rem;
+}
+h2 {
+  font-size: 1.1rem;
+}
+h3 {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+h4 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+p {
+  margin: 0 0 0.6rem;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: #273042;
+  border-color: #3a4557;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.primaer {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.primaer:hover:not(:disabled) {
+  background: #2f6fd0;
+  border-color: #2f6fd0;
+}
+
+select {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  margin-left: 0.4rem;
+}
+
+.hinweis {
+  color: var(--text-leise);
+  font-size: 0.88rem;
+}
+
+.lagemeldung {
+  color: var(--text-leise);
+  font-size: 0.88rem;
+  max-width: 68ch;
+}
+
+/* --- Sichtungs-Badges ------------------------------------------ */
+
+.sk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.sk-SK1 {
+  background: color-mix(in srgb, var(--sk1) 22%, transparent);
+  color: var(--sk1);
+  border-color: color-mix(in srgb, var(--sk1) 45%, transparent);
+}
+.sk-SK2 {
+  background: color-mix(in srgb, var(--sk2) 20%, transparent);
+  color: var(--sk2);
+  border-color: color-mix(in srgb, var(--sk2) 45%, transparent);
+}
+.sk-SK3 {
+  background: color-mix(in srgb, var(--sk3) 20%, transparent);
+  color: var(--sk3);
+  border-color: color-mix(in srgb, var(--sk3) 45%, transparent);
+}
+.sk-SK4 {
+  background: color-mix(in srgb, var(--sk4) 20%, transparent);
+  color: var(--sk4);
+  border-color: color-mix(in srgb, var(--sk4) 45%, transparent);
+}
+.sk-EX {
+  background: color-mix(in srgb, var(--ex) 22%, transparent);
+  color: #cfd5e0;
+  border-color: color-mix(in srgb, var(--ex) 50%, transparent);
+}
+.sk-offen {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: transparent;
+  color: var(--text-leise);
+  border: 1px dashed var(--rand);
+}
+
+/* --- Setup ------------------------------------------------------ */
+
+.setup {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.setup-kopf p {
+  max-width: 70ch;
+  color: var(--text-leise);
+}
+
+.szenarioliste {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.szenario-karte {
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--schatten);
+}
+
+.szenario-fuss {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.8rem;
+  color: var(--text-leise);
+  font-size: 0.85rem;
+}
+
+.setup-hinweise ol,
+.setup-hinweise ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-leise);
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* --- Einsatzleiste ---------------------------------------------- */
+
+.einsatzleiste {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--rand);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.einsatzleiste-mitte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.uhr {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.steuerung {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-leise);
+}
+
+.einsatzleiste-rechts {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.zaehler {
+  min-width: 3.2rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  text-align: center;
+}
+
+.zaehler-wert {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.zaehler-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.zaehler-SK1 {
+  border-color: color-mix(in srgb, var(--sk1) 55%, transparent);
+}
+.zaehler-SK2 {
+  border-color: color-mix(in srgb, var(--sk2) 55%, transparent);
+}
+.zaehler-SK3 {
+  border-color: color-mix(in srgb, var(--sk3) 55%, transparent);
+}
+.zaehler-SK4 {
+  border-color: color-mix(in srgb, var(--sk4) 55%, transparent);
+}
+.zaehler-EX {
+  border-color: color-mix(in srgb, var(--ex) 60%, transparent);
+}
+
+/* --- Einsatzansicht --------------------------------------------- */
+
+.einsatz-inhalt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: start;
+}
+
+.patienten-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.8rem;
+}
+
+.patient-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+  padding: 0.8rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-left-width: 5px;
+  border-radius: var(--radius);
+}
+
+.patient-karte-aktiv {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+
+.patient-karte-verstorben {
+  opacity: 0.6;
+}
+
+.rand-SK1 {
+  border-left-color: var(--sk1);
+}
+.rand-SK2 {
+  border-left-color: var(--sk2);
+}
+.rand-SK3 {
+  border-left-color: var(--sk3);
+}
+.rand-SK4 {
+  border-left-color: var(--sk4);
+}
+.rand-offen {
+  border-left-color: var(--rand);
+}
+
+.patient-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.patient-id {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.patient-name {
+  font-weight: 600;
+}
+
+.patient-kurzbefund {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-leise);
+}
+
+.patient-befunde {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.patient-befunde span {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 5px;
+  background: var(--bg-panel-hoch);
+  color: var(--text-leise);
+}
+
+.patient-status {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+/* --- Detailbereich ---------------------------------------------- */
+
+.detail {
+  position: sticky;
+  top: 6.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  box-shadow: var(--schatten);
+}
+
+.detail-leer {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 200px;
+}
+
+.detail-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.detail-kopf h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.detail-befund {
+  font-size: 0.88rem;
+  color: var(--text-leise);
+  margin: 0;
+}
+
+.detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rand);
+}
+
+/* --- Vitalmonitor ----------------------------------------------- */
+
+.vitalmonitor {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.vital {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+}
+
+.vital-kurz {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.vital-wert {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-wert small {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-leise);
+  margin-left: 0.15rem;
+}
+
+.vital-auffaellig {
+  border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+}
+.vital-auffaellig .vital-wert {
+  color: var(--warn);
+}
+
+.vital-kritisch {
+  border-color: color-mix(in srgb, var(--sk1) 65%, transparent);
+  background: color-mix(in srgb, var(--sk1) 12%, var(--bg-panel-hoch));
+}
+.vital-kritisch .vital-wert {
+  color: var(--sk1);
+}
+
+/* --- Probleme und Protokoll ------------------------------------- */
+
+.problemliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.problemliste li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sk1) 10%, var(--bg-panel-hoch));
+  border-left: 3px solid var(--sk1);
+  font-size: 0.82rem;
+}
+
+.problemliste li span {
+  color: var(--text-leise);
+}
+
+.problemliste-geloest li {
+  background: color-mix(in srgb, var(--ok) 10%, var(--bg-panel-hoch));
+  border-left-color: var(--ok);
+}
+
+.protokoll {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.protokoll li {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  gap: 0.5rem;
+  color: var(--text-leise);
+}
+
+.protokoll time {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* --- Sichtungsauswahl ------------------------------------------- */
+
+.sichtung-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.sichtung-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  font-weight: 700;
+  border-left-width: 4px;
+}
+
+.sichtung-button small {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-leise);
+  text-align: left;
+}
+
+.sichtung-button.sk-SK1 {
+  border-left-color: var(--sk1);
+}
+.sichtung-button.sk-SK2 {
+  border-left-color: var(--sk2);
+}
+.sichtung-button.sk-SK3 {
+  border-left-color: var(--sk3);
+}
+.sichtung-button.sk-SK4 {
+  border-left-color: var(--sk4);
+}
+
+.sichtung-gewaehlt {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+
+/* --- mSTaRT-Assistent ------------------------------------------- */
+
+.assistent-schalter {
+  background: transparent;
+  border-style: dashed;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+  width: 100%;
+}
+
+.assistent-inhalt {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+}
+
+.assistent-schritte {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.assistent-schritte li {
+  color: var(--text-leise);
+}
+
+.schritt-entscheidend {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.schritt-frage {
+  display: block;
+}
+
+.schritt-antwort {
+  display: block;
+  color: var(--text-leise);
+  font-weight: 400;
+}
+
+.assistent-ergebnis {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+
+/* --- Massnahmen -------------------------------------------------- */
+
+.massnahmen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.massnahmen-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.massnahme {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.massnahme small {
+  color: var(--text-leise);
+  font-size: 0.68rem;
+}
+
+.massnahme-erledigt {
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  color: var(--ok);
+}
+
+/* --- Debriefing -------------------------------------------------- */
+
+.debriefing {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.debriefing-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kennzahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+
+.kennzahl {
+  padding: 0.8rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.kennzahl-wert {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kennzahl-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-leise);
+}
+
+.kennzahl-warnung {
+  border-color: color-mix(in srgb, var(--sk1) 55%, transparent);
+}
+
+.debriefing-tabelle {
+  overflow-x: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rand);
+  white-space: nowrap;
+}
+
+th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bewertung-korrekt {
+  color: var(--ok);
+}
+.bewertung-ueberschaetzt {
+  color: var(--warn);
+}
+.bewertung-unterschaetzt {
+  color: var(--sk1);
+}
+.bewertung-offen {
+  color: var(--text-leise);
+}
+
+/* --- Responsiv ---------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .einsatzleiste {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .einsatzleiste-rechts {
+    justify-content: flex-start;
+  }
+
+  .einsatz-inhalt {
+    grid-template-columns: 1fr;
+  }
+
+  .detail {
+    position: static;
+    max-height: none;
+  }
+}

@@ -127,6 +127,33 @@ export interface Problem {
   startetNachMin?: number;
 }
 
+/**
+ * Einsatzabschnitte, die ein Patient nacheinander durchläuft:
+ * Schadensstelle -> Eingangssichtung -> Behandlungsplatz (Zelt nach
+ * Sichtungskategorie) -> Ausgangssichtung -> Abtransport.
+ */
+export type Einsatzabschnitt =
+  | 'schadensstelle'
+  | 'eingangssichtung'
+  | 'zelt_rot'
+  | 'zelt_gelb'
+  | 'zelt_gruen'
+  | 'ausgangssichtung'
+  | 'transport';
+
+/** An welcher Stelle im Ablauf eine Sichtungsentscheidung gefallen ist. */
+export type Sichtungsstelle =
+  | 'vorsichtung'
+  | 'eingangssichtung'
+  | 'nachsichtung'
+  | 'ausgangssichtung';
+
+export interface Sichtungseintrag {
+  stelle: Sichtungsstelle;
+  kategorie: Sichtungskategorie;
+  zeitSek: number;
+}
+
 export type PatientStatus =
   | 'unbehandelt'
   | 'gesichtet'
@@ -164,9 +191,13 @@ export interface PatientVorlage {
 export interface Patient extends PatientVorlage {
   vitalwerte: Vitalwerte;
   status: PatientStatus;
-  /** Vom Übenden vergebene Sichtungskategorie. */
+  /** Aktueller Aufenthaltsort im Einsatz. */
+  abschnitt: Einsatzabschnitt;
+  /** Zuletzt gültige Sichtungskategorie, unabhängig davon, wo sie fiel. */
   gesichtetAls: Sichtungskategorie | null;
   gesichtetUmSek: number | null;
+  /** Jede Sichtungsentscheidung mit Ort und Zeitpunkt. */
+  sichtungsverlauf: Sichtungseintrag[];
   /** IDs bereits gelöster Probleme. */
   behandelteProbleme: string[];
   durchgefuehrteMassnahmen: MassnahmeId[];

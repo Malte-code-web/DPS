@@ -142,6 +142,14 @@ export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
   E: 'Umgebung',
 };
 
+/**
+ * Maßnahmen, die sich auch kurz vor dem Abtransport noch durchführen lassen.
+ * Alles darüber gehört in die Behandlung im Zelt.
+ */
+export const SCHNELLE_MASSNAHMEN: Massnahme[] = MASSNAHMEN_LISTE.filter(
+  (massnahme) => massnahme.dauerSek <= 60,
+);
+
 export function massnahmenDerKategorie(kategorie: MassnahmenKategorie): Massnahme[] {
   return MASSNAHMEN_LISTE.filter((massnahme) => massnahme.kategorie === kategorie);
 }

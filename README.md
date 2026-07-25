@@ -46,18 +46,51 @@ src/
     simulation.ts    Zeitverlauf: Verschlechterung, Maßnahmenwirkung, Todeskriterien
     massnahmen.ts    Maßnahmenkatalog nach xABCDE-Schema
     szenarien.ts     Übungsszenarien mit Patientenvorlagen
+    abschnitte.ts    Einsatzabschnitte und die erlaubten Wege dazwischen
   state/         useReducer-Store, Simulationsuhr, React-Context
   components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmenkatalog)
   pages/         Setup → Einsatz → Patientenseite → Debriefing
   lib/           Formatierung und Auswertung
 ```
 
+### Einsatzabschnitte
+
+Die Patienten durchlaufen den Einsatz Abschnitt für Abschnitt:
+
+```
+Schadensstelle → Eingangssichtung → rotes / gelbes / grünes Zelt
+                                  → Ausgangssichtung → Abtransport
+```
+
+Eine Reiterleiste zeigt alle Abschnitte mit ihrer aktuellen Belegung und dient
+zugleich als Lageübersicht des Behandlungsplatzes. Jeder Abschnitt hat seine
+eigene Arbeitsansicht:
+
+| Abschnitt | Ansicht |
+| --- | --- |
+| Schadensstelle | Ersteinschätzung, dahinter die erweiterte Versorgung |
+| Eingangssichtung | Erster Eindruck, bisheriger Verlauf, Sichtung und Zuweisung zum Zelt |
+| Zelt (rot/gelb/grün) | Diagnostik und Behandlung mit Vitalwerten und vollem Katalog |
+| Ausgangssichtung | Übergabe aller Befunde und Maßnahmen, schnelle Maßnahmen, Abschlusssichtung |
+| Abtransport | abgeschlossen, nur noch Einsicht |
+
+Verlegt wird über Schaltflächen in der jeweiligen Ansicht; das zur vergebenen
+Kategorie passende Zelt ist hervorgehoben, abweichend verlegen bleibt möglich.
+Sprünge im Ablauf lässt die Simulation nicht zu, eine Verlegung zwischen den
+Zelten nach einer Nachsichtung dagegen schon. Jede Verlegung kostet 30 Sekunden
+Einsatzzeit.
+
+Gesichtet wird an drei Stellen – Vorsichtung, Eingangssichtung und
+Abschlusssichtung. Jede Entscheidung wird mit Ort und Zeitpunkt festgehalten und
+im Debriefing getrennt ausgewiesen; bewertet gegen die Referenz wird die
+Vorsichtung, weil spätere Sichtungen einen bereits veränderten Zustand beurteilen.
+
 ### Navigation
 
-Die Einsatzansicht zeigt die Schadensstelle als Kartenraster. Ein Klick auf eine
-Karte öffnet die **Patientenseite**. Von dort führen „Zurück zur Schadensstelle"
-(oder die Escape-Taste) in die Übersicht und „Vorheriger / Nächster" direkt zum
-nächsten Betroffenen, ohne Umweg über die Liste.
+Ein Klick auf eine Patientenkarte öffnet die **Patientenseite**. Von dort führen
+die Schaltfläche oben links (oder die Escape-Taste) zurück in die Liste des
+Abschnitts und „Vorheriger / Nächster" zu den übrigen Patienten desselben
+Abschnitts.
 
 ### Die Patientenseite in zwei Stufen
 
@@ -81,8 +114,8 @@ Die Anwendung gibt bewusst **keine Hinweise**, was richtig wäre – keine
 Algorithmus-Hilfe, keine Warnung vor zu viel Behandlung. Die Rückmeldung kommt
 über den Zustand der Patienten und das Debriefing.
 
-**Übergabe an: Eingangssichtung** schließt einen Patienten ab: Er geht an den
-Behandlungsplatz und verändert sich danach nicht mehr.
+Diese zwei Stufen gelten für die Schadensstelle. In den übrigen Abschnitten
+zeigt die Patientenseite direkt die dort passende Ansicht.
 
 ### Zeit ist die eigentliche Ressource
 
@@ -92,6 +125,7 @@ alle Betroffenen gleichzeitig**:
 | Handlung | Zeit |
 | --- | --- |
 | Vorsichtung eines Patienten | 20 s |
+| Verlegung in den nächsten Abschnitt | 30 s |
 | Blutung stillen (x) / Atemweg freimachen (A) | 20–60 s |
 | Körperliche Untersuchung | 30 s |
 | Endotracheale Intubation | 180 s |

@@ -1,10 +1,13 @@
+import { abschnittInfo, sichtungsstelleIn } from './abschnitte';
 import { MASSNAHMEN } from './massnahmen';
 import type {
+  Einsatzabschnitt,
   MassnahmeId,
   Patient,
   PatientVorlage,
   Problem,
   Sichtungskategorie,
+  Sichtungsstelle,
   VitalKey,
   VitalVerlauf,
   Vitalwerte,
@@ -46,8 +49,10 @@ export function patientAusVorlage(vorlage: PatientVorlage): Patient {
     ...vorlage,
     vitalwerte: { ...vorlage.startVitalwerte },
     status: 'unbehandelt',
+    abschnitt: 'schadensstelle',
     gesichtetAls: null,
     gesichtetUmSek: null,
+    sichtungsverlauf: [],
     behandelteProbleme: [],
     durchgefuehrteMassnahmen: [],
     untersucht: false,
@@ -214,22 +219,43 @@ export function sichtePatient(
   kategorie: Sichtungskategorie,
   zeitSek: number,
 ): Patient {
+  const stelle = sichtungsstelleIn(patient.abschnitt);
   const naechster: Patient = {
     ...patient,
     gesichtetAls: kategorie,
     gesichtetUmSek: patient.gesichtetUmSek ?? zeitSek,
+    sichtungsverlauf: [...patient.sichtungsverlauf, { stelle, kategorie, zeitSek }],
     status: patient.status === 'unbehandelt' ? 'gesichtet' : patient.status,
   };
-  return protokolliere(naechster, zeitSek, `Sichtung: ${kategorie}.`);
+  return protokolliere(naechster, zeitSek, `Sichtung (${stelle}): ${kategorie}.`);
 }
 
-export function transportierePatient(patient: Patient, zeitSek: number): Patient {
-  if (patient.status === 'verstorben') return patient;
-  return protokolliere(
-    { ...patient, status: 'transportiert' },
-    zeitSek,
-    'Übergabe an die Eingangssichtung.',
-  );
+/** Die Kategorie, die an einer bestimmten Stelle vergeben wurde. */
+export function sichtungAn(
+  patient: Patient,
+  stelle: Sichtungsstelle,
+): Sichtungskategorie | null {
+  const eintraege = patient.sichtungsverlauf.filter((eintrag) => eintrag.stelle === stelle);
+  return eintraege.length > 0 ? eintraege[eintraege.length - 1]!.kategorie : null;
+}
+
+/**
+ * Verlegt einen Patienten in einen anderen Einsatzabschnitt. Der Abtransport
+ * ist die letzte Station - danach verändert sich der Zustand nicht mehr.
+ */
+export function verlegePatient(
+  patient: Patient,
+  ziel: Einsatzabschnitt,
+  zeitSek: number,
+): Patient {
+  if (patient.status === 'verstorben' || patient.abschnitt === ziel) return patient;
+
+  const naechster: Patient = {
+    ...patient,
+    abschnitt: ziel,
+    status: ziel === 'transport' ? 'transportiert' : patient.status,
+  };
+  return protokolliere(naechster, zeitSek, `Verlegung: ${abschnittInfo(ziel).name}.`);
 }
 
 /** Summierter Zeitbedarf aller durchgeführten Maßnahmen in Sekunden. */

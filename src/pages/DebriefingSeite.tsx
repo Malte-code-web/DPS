@@ -11,10 +11,12 @@ import type { Sichtungsbewertung } from '../domain/triage';
  */
 const SPALTE = {
   patient: 'Patient',
-  vergeben: 'Ihre Sichtung',
+  vergeben: 'Vorsichtung',
   referenz: 'Referenz (Eintreffen)',
   aktuell: 'Zustand am Ende',
   bewertung: 'Bewertung',
+  abschluss: 'Abschlusssichtung',
+  abschnitt: 'Zuletzt in',
   zeitpunkt: 'Sichtung um',
   massnahmenzeit: 'Zeit gebunden',
 } as const;
@@ -61,7 +63,7 @@ export function DebriefingSeite() {
         </div>
         <div className="kennzahl">
           <span className="kennzahl-wert">{kennzahlen.transportiert}</span>
-          <span className="kennzahl-label">an Eingangssichtung übergeben</span>
+          <span className="kennzahl-label">abtransportiert</span>
         </div>
         <div className="kennzahl kennzahl-warnung">
           <span className="kennzahl-wert">{kennzahlen.verstorben}</span>
@@ -121,6 +123,14 @@ export function DebriefingSeite() {
                 >
                   {BEWERTUNG_LABEL[zeile.bewertung]}
                 </td>
+                <td data-spalte={SPALTE.abschluss}>
+                  {zeile.abschluss ? (
+                    <SichtungsBadge kategorie={zeile.abschluss} kompakt />
+                  ) : (
+                    <span className="sk-badge sk-offen">offen</span>
+                  )}
+                </td>
+                <td data-spalte={SPALTE.abschnitt}>{zeile.abschnitt}</td>
                 <td data-spalte={SPALTE.zeitpunkt}>
                   {zeile.sichtungsdauerSek === null ? '-' : zeitFormat(zeile.sichtungsdauerSek)}
                 </td>
@@ -151,6 +161,10 @@ export function DebriefingSeite() {
           </li>
           <li>
             Als Faustregel gilt eine Vorsichtungsdauer von etwa 30 Sekunden pro Patient.
+          </li>
+          <li>
+            Bewertet wird die Vorsichtung an der Schadensstelle. Spätere Sichtungen beurteilen
+            einen bereits veränderten Zustand und sind deshalb gesondert ausgewiesen.
           </li>
           <li>
             Jede Maßnahme hat die Einsatzzeit für <em>alle</em> Betroffenen weiterlaufen lassen.

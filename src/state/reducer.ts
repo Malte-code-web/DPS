@@ -1,3 +1,4 @@
+import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import {
   SICHTUNGSDAUER_SEK,
@@ -6,12 +7,17 @@ import {
   sichtePatient,
   simuliereSchritt,
   simuliereZeitraum,
-  transportierePatient,
+  verlegePatient,
   untersuchePatient,
   wendeMassnahmeAn,
 } from '../domain/simulation';
 import { findeSzenario } from '../domain/szenarien';
-import type { MassnahmeId, Patient, Sichtungskategorie } from '../domain/types';
+import type {
+  Einsatzabschnitt,
+  MassnahmeId,
+  Patient,
+  Sichtungskategorie,
+} from '../domain/types';
 
 export type Phase = 'setup' | 'einsatz' | 'debriefing';
 
@@ -25,6 +31,8 @@ export interface SimulationState {
   geschwindigkeit: number;
   patienten: Patient[];
   ausgewaehlterPatientId: string | null;
+  /** Welcher Einsatzabschnitt in der Übersicht angezeigt wird. */
+  ausgewaehlterAbschnitt: Einsatzabschnitt;
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
@@ -37,6 +45,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   geschwindigkeit: 2,
   patienten: [],
   ausgewaehlterPatientId: null,
+  ausgewaehlterAbschnitt: 'schadensstelle',
 };
 
 export type SimulationAction =
@@ -48,7 +57,8 @@ export type SimulationAction =
   | { typ: 'patientUntersuchen'; patientId: string }
   | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie }
   | { typ: 'massnahmeDurchfuehren'; patientId: string; massnahmeId: MassnahmeId }
-  | { typ: 'patientTransportieren'; patientId: string }
+  | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
+  | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
   | { typ: 'zurueckZumSetup' };
 
@@ -98,6 +108,7 @@ export function simulationReducer(
         phase: 'einsatz',
         szenarioId: szenario.id,
         laufend: true,
+        ausgewaehlterAbschnitt: 'schadensstelle',
         patienten: szenario.patienten.map(patientAusVorlage),
       };
     }
@@ -154,10 +165,22 @@ export function simulationReducer(
         MASSNAHMEN[action.massnahmeId].dauerSek,
       );
 
-    case 'patientTransportieren':
-      return mitPatient(state, action.patientId, (patient) =>
-        transportierePatient(patient, state.zeitSek),
+    case 'patientVerlegen': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return state;
+      const verlegt = zeitVergehen(
+        mitPatient(state, action.patientId, (eintrag) =>
+          verlegePatient(eintrag, action.ziel, state.zeitSek),
+        ),
+        VERLEGUNGSDAUER_SEK,
       );
+      // Nach der Verlegung zurück in die Liste des bearbeiteten Abschnitts:
+      // Dort warten die übrigen Patienten.
+      return { ...verlegt, ausgewaehlterPatientId: null };
+    }
+
+    case 'abschnittWaehlen':
+      return { ...state, ausgewaehlterAbschnitt: action.abschnitt, ausgewaehlterPatientId: null };
 
     case 'einsatzBeenden':
       return { ...state, phase: 'debriefing', laufend: false, ausgewaehlterPatientId: null };

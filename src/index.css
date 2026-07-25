@@ -318,6 +318,148 @@ select {
   border-color: color-mix(in srgb, var(--ex) 60%, transparent);
 }
 
+/* --- Einsatzabschnitte -------------------------------------------- */
+
+.abschnittsleiste {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.8rem 1.5rem 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.abschnitt-reiter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+  padding: 0.5rem 0.8rem;
+  background: var(--bg-panel);
+  border-bottom-width: 3px;
+  border-bottom-color: var(--sk-farbe, var(--rand));
+  white-space: nowrap;
+}
+
+.abschnitt-aktiv {
+  background: var(--bg-panel-hoch);
+  border-color: #3a4557;
+  border-bottom-color: var(--sk-farbe, var(--akzent));
+}
+
+.abschnitt-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.abschnitt-anzahl {
+  min-width: 1.4rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--rand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.abschnitt-aktiv .abschnitt-anzahl {
+  border-color: color-mix(in srgb, var(--sk-farbe, var(--akzent)) 55%, transparent);
+}
+
+.leerer-abschnitt {
+  padding: 2rem 0;
+  color: var(--text-leise);
+  text-align: center;
+}
+
+/* --- Verlegung ---------------------------------------------------- */
+
+.verlegung {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.verlegung-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  font-weight: 600;
+  border-left-width: 4px;
+  border-left-color: var(--sk-farbe, var(--rand));
+}
+
+.verlegung-empfohlen {
+  background: color-mix(in srgb, var(--akzent) 16%, var(--bg-panel-hoch));
+  border-color: color-mix(in srgb, var(--akzent) 55%, transparent);
+  border-left-color: var(--sk-farbe, var(--akzent));
+}
+
+.verlegung-dauer {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Uebersicht fuer die Uebergabe -------------------------------- */
+
+.uebersicht {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.uebersicht-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.uebersicht-liste li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: var(--bg-panel-hoch);
+}
+
+.uebersicht-liste li span:not([class]) {
+  flex: 1;
+}
+
+.uebersicht-liste time {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.uebersicht-kuerzel {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  border-radius: 5px;
+  background: var(--bg);
+  border: 1px solid var(--rand);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Schnelle Massnahmen stehen ohne Gruppenrahmen. */
+.gruppe-inhalt-frei {
+  padding: 0;
+  background: transparent;
+}
+
 /* --- Einsatzansicht --------------------------------------------- */
 
 .patientenliste {
@@ -486,11 +628,21 @@ select {
     align-items: start;
   }
 
-  .karte-eindruck {
+  .stufe-erst .karte-eindruck {
     grid-area: eindruck;
   }
-  .stufe-abschluss {
+  .stufe-erst .karte-massnahmen {
+    grid-area: massnahmen;
+  }
+  .stufe-erst .karte-sichtung {
+    grid-area: sichtung;
+  }
+  .stufe-erst .stufe-abschluss {
     grid-area: abschluss;
+  }
+  /* Zusatzkarten einzelner Ansichten laufen unter dem Raster durch. */
+  .stufe-erst .karte-voll {
+    grid-column: 1 / -1;
   }
 
   .patientseite-raster {
@@ -500,16 +652,13 @@ select {
       'protokoll protokoll';
   }
 
-  .karte-befund {
+  .patientseite-raster .karte-befund {
     grid-area: befund;
   }
-  .karte-sichtung {
-    grid-area: sichtung;
-  }
-  .karte-massnahmen {
+  .patientseite-raster .karte-massnahmen {
     grid-area: massnahmen;
   }
-  .karte-protokoll {
+  .patientseite-raster .karte-protokoll {
     grid-area: protokoll;
   }
 }
@@ -1098,6 +1247,19 @@ tbody tr:last-child td {
   .patientseite,
   .patientenliste {
     padding: 1rem;
+  }
+
+  .abschnittsleiste {
+    padding: 0.6rem 1rem 0;
+  }
+
+  /* Etwas kompakter, damit der angeschnittene nächste Reiter das Wischen andeutet. */
+  .abschnitt-reiter {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .abschnitt-name {
+    font-size: 0.8rem;
   }
 
   .patientseite-nav {

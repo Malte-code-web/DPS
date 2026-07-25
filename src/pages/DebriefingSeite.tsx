@@ -28,6 +28,7 @@ const BEWERTUNG_LABEL: Record<Sichtungsbewertung, string> = {
   offen: 'nicht gesichtet',
 };
 
+/** @anker ui.debriefing Auswertung nach dem Einsatz */
 export function DebriefingSeite() {
   const { state, dispatch } = useSimulation();
   const szenario = state.szenarioId ? findeSzenario(state.szenarioId) : undefined;

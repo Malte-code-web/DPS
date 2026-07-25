@@ -23,6 +23,7 @@ function simuliere(patient: Patient, minuten: number, taktSek = 1): Patient {
   return aktuell;
 }
 
+/** @anker test.szenariodaten Prueft, dass jede Szenario-Vorlage in sich stimmig ist */
 describe('Szenariodaten', () => {
   it('vergibt eindeutige Patienten-IDs', () => {
     const ids = ALLE_VORLAGEN.map((vorlage) => vorlage.id);
@@ -67,6 +68,7 @@ describe('Szenariodaten', () => {
   });
 });
 
+/** @anker test.zeitverlauf Verschlechterung, Todesfaelle und Latenzzeiten */
 describe('Zeitverlauf', () => {
   it('rechnet unabhängig von der Taktrate (kein Rundungsverlust pro Tick)', () => {
     const patient = patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-01')!);

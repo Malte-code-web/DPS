@@ -20,7 +20,10 @@ export interface Sichtungsergebnis {
   schritte: Sichtungsschritt[];
 }
 
-/** Grenzwerte des mSTaRT-Algorithmus. */
+/**
+ * Grenzwerte des mSTaRT-Algorithmus.
+ * @anker sichtung.grenzwerte Zahlen, an denen die Sichtung kippt (AF, RR, GCS, Rekapzeit)
+ */
 export const GRENZWERTE = {
   atemfrequenzHoch: 29,
   atemfrequenzNiedrig: 10,
@@ -39,6 +42,7 @@ export function radialispulsTastbar(vitalwerte: Vitalwerte): boolean {
   return vitalwerte.systolischerRR >= GRENZWERTE.radialispulsRRsys;
 }
 
+/** @anker sichtung.mstart Der mSTaRT-Algorithmus als Entscheidungskette */
 export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
   const schritte: Sichtungsschritt[] = [];
   const v = patient.vitalwerte;
@@ -117,7 +121,10 @@ export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
   return ergebnis('SK2', 'Befolgt einfache Aufforderungen?', `Ja - GCS ${anzeige(v.gcs)}`);
 }
 
-/** Bewertet die vom Übenden vergebene Kategorie gegen die Referenz. */
+/**
+ * Bewertet die vom Übenden vergebene Kategorie gegen die Referenz.
+ * @anker sichtung.bewertung Über- oder unterschätzt - Grundlage der Debriefing-Spalte
+ */
 export type Sichtungsbewertung = 'korrekt' | 'ueberschaetzt' | 'unterschaetzt' | 'offen';
 
 const RANG: Record<Sichtungskategorie, number> = {

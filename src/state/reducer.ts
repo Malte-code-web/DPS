@@ -21,6 +21,7 @@ import type {
 
 export type Phase = 'setup' | 'einsatz' | 'debriefing';
 
+/** @anker state.zustand Der gesamte Zustand einer laufenden Übung */
 export interface SimulationState {
   phase: Phase;
   szenarioId: string | null;
@@ -48,6 +49,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   ausgewaehlterAbschnitt: 'schadensstelle',
 };
 
+/** @anker state.aktionen Alles, was der Übende auslösen kann */
 export type SimulationAction =
   | { typ: 'szenarioStarten'; szenarioId: string }
   | { typ: 'tick'; dtSek: number }
@@ -63,6 +65,8 @@ export type SimulationAction =
   | { typ: 'zurueckZumSetup' };
 
 /**
+ * @anker state.zeit Kernmechanik: jede Handlung lässt die Uhr für alle laufen
+ *
  * Laesst Einsatzzeit verstreichen - fuer alle Patienten gleichzeitig.
  *
  * Das ist der Kern der Uebung: Wer sich an einem Patienten festarbeitet,
@@ -94,6 +98,7 @@ function mitPatient(
   };
 }
 
+/** @anker state.reducer Wie Aktionen den Zustand verändern, inklusive Zeitkosten */
 export function simulationReducer(
   state: SimulationState,
   action: SimulationAction,

@@ -9,6 +9,8 @@ import { useSimulation } from '../../state/useSimulation';
 import type { Patient } from '../../domain/types';
 
 /**
+ * @anker ui.ausgangssichtung Übergabe, schnelle Maßnahmen, Abschlusssichtung
+ *
  * Ausgangssichtung und Transportorganisation: alles Bekannte auf einen Blick,
  * kurze Maßnahmen für den Transport und die abschließende Sichtungskategorie,
  * die zugleich die Transportpriorität festlegt.

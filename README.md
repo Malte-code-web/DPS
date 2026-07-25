@@ -36,6 +36,13 @@ eingebettetem JavaScript und CSS. Sie läuft per Doppelklick im Browser – ohne
 Server, ohne Node, ohne Internet. Praktisch, um eine Übung auf einem beliebigen
 Rechner oder per USB-Stick bereitzustellen.
 
+## Dokumentation
+
+[DOKUMENTATION.md](DOKUMENTATION.md) beschreibt den aktuellen Stand, die
+Mechaniken und die offenen Punkte – und enthält eine Tabelle aller **Anker**
+(`@anker`-Markierungen im Quelltext), über die sich jede wichtige Stelle im Code
+sofort finden lässt.
+
 ## Aufbau
 
 ```

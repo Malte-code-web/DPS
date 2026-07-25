@@ -60,6 +60,7 @@ export interface Debriefingzeile {
   individualmedizinSek: number;
 }
 
+/** @anker auswertung.debriefing Eine Auswertungszeile je Patient */
 export function erstelleDebriefing(patienten: Patient[]): Debriefingzeile[] {
   return patienten.map((patient) => {
     // Bewertet wird die Vorsichtung an der Schadensstelle - spätere
@@ -93,6 +94,7 @@ export interface Kennzahlen {
   individualmedizinSek: number;
 }
 
+/** @anker auswertung.kennzahlen Die Zahlen über der Debriefing-Tabelle */
 export function berechneKennzahlen(zeilen: Debriefingzeile[]): Kennzahlen {
   const gesichtet = zeilen.filter((zeile) => zeile.vergeben !== null);
   const sichtungszeiten = gesichtet

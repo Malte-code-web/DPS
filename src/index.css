@@ -3,6 +3,7 @@
    Farbschema orientiert sich an den Sichtungskategorien.
    --------------------------------------------------------------- */
 
+/* @anker stil.tokens Farben, Radien und Schatten der gesamten Oberfläche */
 :root {
   --bg: #0f1218;
   --bg-panel: #161b24;
@@ -124,6 +125,8 @@ select {
 /* --- Sichtungs-Badges ------------------------------------------ */
 
 /*
+ * @anker stil.sk-farbe Kategoriefarbe als Variable - loest eine Spezifitaetsfalle
+ *
  * Jede Sichtungskategorie traegt ihre Farbe in --sk-farbe. Badges, Karten
  * und Sichtungs-Buttons lesen dieselbe Variable, statt die Farbe jeweils
  * eigenstaendig zu setzen. Wichtig fuer Hover-Zustaende: die generische
@@ -617,6 +620,7 @@ select {
  * durch. In der Versorgung teilen sich Untersuchung und Massnahmenkatalog die
  * Breite. Ohne feste Bereiche entstuende unter den kurzen Karten ein Loch.
  */
+/* @anker stil.raster Zweispaltiges Raster der Patientenansichten ab 900 px */
 @media (min-width: 900px) {
   .stufe-erst {
     display: grid;
@@ -1162,6 +1166,8 @@ tbody tr:last-child td {
 /* --- Hover ------------------------------------------------------- */
 
 /*
+ * @anker stil.hover Hover nur mit echtem Zeiger - sonst klebt der Zustand
+ *
  * Nur fuer Geraete mit echtem Zeiger. Auf Touchscreens bleibt ein
  * Hover-Zustand nach dem Antippen haengen - die Karte saehe dann dauerhaft
  * ausgewaehlt aus.
@@ -1267,6 +1273,7 @@ tbody tr:last-child td {
   }
 }
 
+/* @anker stil.telefon Anpassungen unter 760 px, inklusive Tabellenumbruch */
 /* --- Telefon ------------------------------------------------------ */
 
 @media (max-width: 760px) {
@@ -1394,6 +1401,8 @@ tbody tr:last-child td {
 }
 
 /*
+ * @anker stil.touch Mindestgroesse der Tippziele auf Touch-Geraeten
+ *
  * Touch-Bedienung: Finger brauchen groessere Ziele als ein Mauszeiger.
  * 44 px ist der gaengige Mindestwert und gilt erst recht mit Handschuhen.
  */

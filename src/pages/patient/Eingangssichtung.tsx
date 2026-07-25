@@ -7,6 +7,8 @@ import { useSimulation } from '../../state/useSimulation';
 import type { Patient } from '../../domain/types';
 
 /**
+ * @anker ui.eingangssichtung Sichten und einem Zelt zuweisen
+ *
  * Eingangssichtung des Behandlungsplatzes: Der Patient kommt mit einer
  * Vorsichtungskategorie an, wird erneut gesichtet und einem Zelt zugewiesen.
  *

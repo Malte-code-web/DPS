@@ -16,6 +16,8 @@ interface Props {
 }
 
 /**
+ * @anker ui.ersteinschaetzung Der schnelle Weg - und die Versuchung daneben
+ *
  * Schadensstelle: erster Eindruck, Vorsichtung, lebensrettende Handgriffe.
  *
  * Der Maßnahmenkatalog steht vollständig zur Verfügung, aber nur x und A sind

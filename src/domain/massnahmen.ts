@@ -1,6 +1,9 @@
 import type { Massnahme, MassnahmeId, MassnahmenKategorie } from './types';
 
-/** Katalog aller in der Simulation verfügbaren Maßnahmen (ABCDE-Schema). */
+/**
+ * Katalog aller in der Simulation verfügbaren Maßnahmen.
+ * @anker massnahmen.katalog Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen
+ */
 export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   atemwege_freimachen: {
     id: 'atemwege_freimachen',
@@ -130,7 +133,10 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
 
 export const MASSNAHMEN_LISTE: Massnahme[] = Object.values(MASSNAHMEN);
 
-/** Reihenfolge der Gruppen nach xABCDE. */
+/**
+ * Reihenfolge der Gruppen nach xABCDE.
+ * @anker massnahmen.xabcde Gruppierung und Reihenfolge der Maßnahmengruppen
+ */
 export const KATEGORIEN: MassnahmenKategorie[] = ['x', 'A', 'B', 'C', 'D', 'E'];
 
 export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
@@ -143,6 +149,8 @@ export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
 };
 
 /**
+ * @anker massnahmen.schnell Auswahl für die Ausgangssichtung (bis 60 Sekunden)
+ *
  * Maßnahmen, die sich auch kurz vor dem Abtransport noch durchführen lassen.
  * Alles darüber gehört in die Behandlung im Zelt.
  */

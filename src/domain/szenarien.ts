@@ -1,11 +1,14 @@
 import type { Szenario } from './types';
 
 /**
+ * @anker szenarien.liste Die Übungsszenarien - hier neue Lagen und Patienten anlegen
+ *
  * Übungsszenarien. Die Vitalwerte sind so gewählt, dass die erwartete
  * Sichtungskategorie zum Einsatzbeginn dem mSTaRT-Algorithmus entspricht -
  * durch den Zeitverlauf kann sie sich jedoch verändern (Nachsichtung!).
  */
 
+/** @anker szenarien.busunfall Zehn Patienten als Vorlage für eigene Szenarien */
 const busunfall: Szenario = {
   id: 'busunfall-b31',
   titel: 'Busunfall B31',

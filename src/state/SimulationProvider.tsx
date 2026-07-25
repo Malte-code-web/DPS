@@ -3,7 +3,10 @@ import type { ReactNode } from 'react';
 import { SimulationContext } from './context';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 
-/** Taktrate der Simulationsuhr in Millisekunden (Echtzeit). */
+/**
+ * Taktrate der Simulationsuhr in Millisekunden (Echtzeit).
+ * @anker state.uhr Der Taktgeber der laufenden Simulation
+ */
 const TAKT_MS = 500;
 
 export function SimulationProvider({ children }: { children: ReactNode }) {

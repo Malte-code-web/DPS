@@ -23,6 +23,7 @@ interface VitalMeta {
   nachkommastellen: number;
 }
 
+/** @anker format.vitalgrenzen Norm- und Kritischbereiche für die Farbgebung der Messwerte */
 export const VITAL_META: Record<VitalKey, VitalMeta> = {
   atemfrequenz: {
     label: 'Atemfrequenz',

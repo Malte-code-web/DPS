@@ -20,6 +20,7 @@ function patient(state: SimulationState, id: string) {
   return gefunden;
 }
 
+/** @anker test.zeitkosten Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst */
 describe('Einsatzzeit als Ressource', () => {
   it('lässt die Uhr um die Dauer der Maßnahme vorrücken', () => {
     const start = imEinsatz();
@@ -144,6 +145,7 @@ describe('Ablauf einer Vorsichtung', () => {
   });
 });
 
+/** @anker test.abschnitte Der Weg eines Patienten und die erlaubten Verlegungen */
 describe('Einsatzabschnitte', () => {
   it('startet alle Patienten an der Schadensstelle', () => {
     const start = imEinsatz();

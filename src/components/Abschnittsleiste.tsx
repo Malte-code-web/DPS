@@ -2,6 +2,8 @@ import { ABSCHNITTE } from '../domain/abschnitte';
 import { useSimulation } from '../state/useSimulation';
 
 /**
+ * @anker ui.abschnittsleiste Reiter mit der Belegung je Abschnitt
+ *
  * Wegweiser durch die Einsatzabschnitte mit der Zahl der Patienten je
  * Abschnitt - zugleich die Lageübersicht des Behandlungsplatzes.
  */

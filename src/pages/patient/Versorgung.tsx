@@ -21,6 +21,8 @@ interface Props {
 }
 
 /**
+ * @anker ui.versorgung Diagnostik und Behandlung - in den Zelten und als zweite Stufe
+ *
  * Diagnostik und Behandlung. An der Schadensstelle die zweite Stufe
  * ("Erweiterte Versorgung"), in den Zelten die reguläre Arbeitsansicht.
  */

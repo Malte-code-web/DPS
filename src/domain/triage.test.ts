@@ -36,6 +36,7 @@ function mitVitalwerten(teil: Partial<Vitalwerte>): Patient {
   return patient({ vitalwerte: { ...NORMWERTE, ...teil } });
 }
 
+/** @anker test.mstart Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte */
 describe('mSTaRT', () => {
   it('sichtet gehfähige Patienten als SK III', () => {
     expect(sichtungNachMstart(patient({ gehfaehig: true })).kategorie).toBe('SK3');

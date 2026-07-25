@@ -10,6 +10,8 @@ interface Props {
 }
 
 /**
+ * @anker ui.massnahmenliste Das einklappbare xABCDE-Akkordeon
+ *
  * Der vollständige Maßnahmenkatalog nach xABCDE, gruppenweise einklappbar.
  *
  * Welche Gruppen offen starten, entscheidet die aufrufende Ansicht: in der

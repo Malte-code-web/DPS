@@ -19,6 +19,7 @@ export interface AbschnittInfo {
   kategorie?: Sichtungskategorie;
 }
 
+/** @anker abschnitte.liste Namen und Aufgaben der Einsatzabschnitte */
 export const ABSCHNITTE: AbschnittInfo[] = [
   {
     id: 'schadensstelle',
@@ -75,7 +76,10 @@ export function abschnittInfo(id: Einsatzabschnitt): AbschnittInfo {
   return info;
 }
 
-/** Wohin ein Patient von hier aus verlegt werden kann. */
+/**
+ * Wohin ein Patient von hier aus verlegt werden kann.
+ * @anker abschnitte.wege Erlaubte Verlegungen - hier ändert man den Ablauf
+ */
 const ZIELE: Record<Einsatzabschnitt, Einsatzabschnitt[]> = {
   schadensstelle: ['eingangssichtung'],
   eingangssichtung: ['zelt_rot', 'zelt_gelb', 'zelt_gruen'],
@@ -94,7 +98,10 @@ export function istVerlegungMoeglich(von: Einsatzabschnitt, nach: Einsatzabschni
   return ZIELE[von].includes(nach);
 }
 
-/** Das Zelt, das zur Sichtungskategorie passt - Grundlage der Zuweisung. */
+/**
+ * Das Zelt, das zur Sichtungskategorie passt.
+ * @anker abschnitte.zeltzuordnung Welche Kategorie in welches Zelt gehört
+ */
 export function zeltFuerKategorie(kategorie: Sichtungskategorie): Einsatzabschnitt {
   switch (kategorie) {
     case 'SK1':
@@ -132,6 +139,8 @@ export const SICHTUNGSSTELLE_LABEL: Record<Sichtungsstelle, string> = {
 };
 
 /**
+ * @anker abschnitte.dauer Zeitkosten einer Verlegung
+ *
  * Zeitbedarf einer Verlegung: Trägertrupp holen, umlagern, transportieren.
  * Bewusst spürbar, damit das Verschieben eine Entscheidung bleibt.
  */

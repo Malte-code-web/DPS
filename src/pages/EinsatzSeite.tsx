@@ -6,6 +6,7 @@ import { findeSzenario } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
 import { PatientSeite } from './PatientSeite';
 
+/** @anker ui.einsatzseite Abschnittsliste oder Patientenseite */
 export function EinsatzSeite() {
   const { state, dispatch } = useSimulation();
   const szenario = state.szenarioId ? findeSzenario(state.szenarioId) : undefined;

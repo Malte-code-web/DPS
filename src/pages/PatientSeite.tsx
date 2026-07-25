@@ -10,6 +10,8 @@ import { Versorgung } from './patient/Versorgung';
 import type { Patient } from '../domain/types';
 
 /**
+ * @anker ui.patientseite Weiche: welcher Abschnitt zeigt welche Ansicht
+ *
  * Rahmen der Patientenseite: Navigation, Kopfzeile und die zum aktuellen
  * Einsatzabschnitt passende Ansicht.
  *

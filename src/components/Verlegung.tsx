@@ -3,6 +3,8 @@ import { useSimulation } from '../state/useSimulation';
 import type { Patient } from '../domain/types';
 
 /**
+ * @anker ui.verlegung Schaltflächen zum Verlegen, passendes Zelt hervorgehoben
+ *
  * Verlegung in den nächsten Einsatzabschnitt. Passt ein Ziel zur vergebenen
  * Sichtungskategorie, wird es hervorgehoben - abweichend verlegen bleibt aber
  * jederzeit möglich.

@@ -7,7 +7,10 @@
  * stoppt damit die Verschlechterung.
  */
 
-/** Sichtungskategorien nach bundeseinheitlicher Systematik. */
+/**
+ * Sichtungskategorien nach bundeseinheitlicher Systematik.
+ * @anker modell.sichtungskategorien Die vier Sichtungskategorien und EX mit Farbe und Bedeutung
+ */
 export type Sichtungskategorie = 'SK1' | 'SK2' | 'SK3' | 'SK4' | 'EX';
 
 export interface SichtungskategorieInfo {
@@ -50,7 +53,10 @@ export const SICHTUNGSKATEGORIEN: Record<Sichtungskategorie, SichtungskategorieI
   },
 };
 
-/** Messbare Vitalparameter. Alle Werte sind gerundete Momentanwerte. */
+/**
+ * Messbare Vitalparameter.
+ * @anker modell.vitalwerte Welche sechs Messwerte die Simulation führt
+ */
 export interface Vitalwerte {
   /** Atemfrequenz pro Minute. */
   atemfrequenz: number;
@@ -114,6 +120,7 @@ export interface Massnahme {
 /**
  * Ein pathophysiologisches Problem des Patienten.
  * Solange es nicht behandelt ist, wirkt `verlauf` pro Minute auf die Vitalwerte.
+ * @anker modell.problem Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute
  */
 export interface Problem {
   id: string;
@@ -128,6 +135,8 @@ export interface Problem {
 }
 
 /**
+ * @anker modell.abschnitte Die Stationen, die ein Patient durchläuft
+ *
  * Einsatzabschnitte, die ein Patient nacheinander durchläuft:
  * Schadensstelle -> Eingangssichtung -> Behandlungsplatz (Zelt nach
  * Sichtungskategorie) -> Ausgangssichtung -> Abtransport.
@@ -166,7 +175,10 @@ export interface Verlaufseintrag {
   text: string;
 }
 
-/** Statische Beschreibung eines Patienten in einem Szenario. */
+/**
+ * Statische Beschreibung eines Patienten in einem Szenario.
+ * @anker modell.patientvorlage Felder, die ein neuer Szenario-Patient braucht
+ */
 export interface PatientVorlage {
   id: string;
   name: string;
@@ -187,7 +199,10 @@ export interface PatientVorlage {
   erwarteteSK: Sichtungskategorie;
 }
 
-/** Laufzeitzustand eines Patienten während der Simulation. */
+/**
+ * Laufzeitzustand eines Patienten während der Simulation.
+ * @anker modell.patient Alles, was sich an einem Patienten im Einsatz ändert
+ */
 export interface Patient extends PatientVorlage {
   vitalwerte: Vitalwerte;
   status: PatientStatus;

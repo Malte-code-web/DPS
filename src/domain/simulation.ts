@@ -30,6 +30,7 @@ function begrenze(key: VitalKey, wert: number): number {
 
 /**
  * Wendet eine Vitalwert-Veränderung an und hält die Grenzen ein.
+ * @anker sim.gleitkomma Warum intern nicht gerundet wird - sonst verschwindet jede Änderung
  *
  * Intern wird bewusst mit Gleitkommawerten gerechnet: ein Tick umfasst nur
  * Sekundenbruchteile einer Minute, gerundete Zwischenwerte würden die
@@ -43,7 +44,10 @@ export function veraendereVitalwerte(basis: Vitalwerte, delta: VitalVerlauf): Vi
   return naechste;
 }
 
-/** Erzeugt den Laufzeit-Patienten aus der statischen Szenario-Vorlage. */
+/**
+ * Erzeugt den Laufzeit-Patienten aus der statischen Szenario-Vorlage.
+ * @anker sim.startzustand Womit ein Patient in den Einsatz startet
+ */
 export function patientAusVorlage(vorlage: PatientVorlage): Patient {
   return {
     ...vorlage,
@@ -78,6 +82,7 @@ export function latenteProbleme(patient: Patient, zeitSek: number): Problem[] {
   );
 }
 
+/** @anker sim.tod Ab welchen Werten ein Patient verstirbt */
 function istVerstorben(v: Vitalwerte): boolean {
   return v.spo2 <= 40 || v.systolischerRR <= 30 || v.herzfrequenz >= 220 || v.herzfrequenz <= 20;
 }
@@ -88,6 +93,7 @@ function protokolliere(patient: Patient, zeitSek: number, text: string): Patient
 
 /**
  * Rechnet den Zustand eines Patienten um `dtSek` Sekunden weiter.
+ * @anker sim.tick Ein Simulationsschritt: Probleme wirken auf die Vitalwerte
  * Reine Funktion - der Aufrufer ersetzt den alten Patienten durch das Ergebnis.
  */
 export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: number): Patient {
@@ -112,6 +118,7 @@ export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: numbe
 
   const v = naechster.vitalwerte;
 
+  // @anker sim.befunde Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten
   // Abgeleitete Befunde: der Zustand des Patienten folgt seinen Vitalwerten.
   const spontanatmung = v.atemfrequenz >= 1;
   const befolgtAufforderungen = v.gcs >= 9 && (patient.befolgtAufforderungen || v.gcs >= 13);
@@ -135,13 +142,18 @@ export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: numbe
   return naechster;
 }
 
-/** Zeitbedarf einer Vorsichtung nach mSTaRT (Anschauen, Prüfen, Kategorie vergeben). */
+/**
+ * Zeitbedarf einer Vorsichtung nach mSTaRT.
+ * @anker sim.zeitkosten Stellschrauben für Sichtungs- und Untersuchungsdauer
+ */
 export const SICHTUNGSDAUER_SEK = 20;
 
 /** Zeitbedarf einer körperlichen Untersuchung mit Messung der Vitalwerte. */
 export const UNTERSUCHUNGSDAUER_SEK = 30;
 
 /**
+ * @anker sim.zeitraum Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern
+ *
  * Rechnet einen Patienten über einen längeren Zeitraum weiter - etwa während
  * eine Maßnahme durchgeführt wird. Der Zeitraum wird in kleine Schritte
  * zerlegt, damit verzögert einsetzende Probleme (`startetNachMin`) nicht
@@ -163,7 +175,10 @@ export function simuliereZeitraum(
   return aktuell;
 }
 
-/** Führt eine Maßnahme durch: löst passende Probleme und wirkt sofort auf die Vitalwerte. */
+/**
+ * Führt eine Maßnahme durch: löst passende Probleme und wirkt sofort auf die Vitalwerte.
+ * @anker sim.massnahme Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde
+ */
 export function wendeMassnahmeAn(
   patient: Patient,
   massnahmeId: MassnahmeId,
@@ -240,6 +255,8 @@ export function sichtungAn(
 }
 
 /**
+ * @anker sim.verlegung Ortswechsel eines Patienten; Abtransport friert den Zustand ein
+ *
  * Verlegt einen Patienten in einen anderen Einsatzabschnitt. Der Abtransport
  * ist die letzte Station - danach verändert sich der Zustand nicht mehr.
  */
@@ -267,6 +284,8 @@ export function gebundeneZeitSek(patient: Patient): number {
 }
 
 /**
+ * @anker sim.individualmedizin Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen
+ *
  * Zeit, die über die lebensrettenden Sofortmaßnahmen hinaus in diesen einen
  * Patienten geflossen ist - das Maß für Individualmedizin im MANV.
  */

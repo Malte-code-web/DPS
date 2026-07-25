@@ -1,6 +1,7 @@
 import { SZENARIEN } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
 
+/** @anker ui.setup Szenarioauswahl und Einstieg */
 export function SetupSeite() {
   const { dispatch } = useSimulation();
 

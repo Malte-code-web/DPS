@@ -83,14 +83,14 @@ button {
   transition: background 120ms ease, border-color 120ms ease;
 }
 
-button:hover:not(:disabled) {
-  background: #273042;
-  border-color: #3a4557;
-}
-
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
 }
 
 button.primaer {
@@ -98,11 +98,6 @@ button.primaer {
   border-color: var(--akzent);
   color: #fff;
   font-weight: 600;
-}
-
-button.primaer:hover:not(:disabled) {
-  background: #2f6fd0;
-  border-color: #2f6fd0;
 }
 
 select {
@@ -347,15 +342,6 @@ select {
   border-radius: var(--radius);
   /* Farbstreifen als Innenschatten, damit Hover-Regeln ihn nicht ueberschreiben. */
   box-shadow: inset 4px 0 0 var(--sk-farbe, var(--rand));
-}
-
-.patient-karte:hover:not(:disabled) {
-  background: var(--bg-panel-hoch);
-  border-color: #3a4557;
-}
-
-.patient-karte:hover .patient-oeffnen {
-  color: var(--akzent);
 }
 
 .patient-karte-verstorben {
@@ -649,11 +635,6 @@ select {
   box-shadow: inset 4px 0 0 var(--sk-farbe);
 }
 
-.sichtung-button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--sk-farbe) 26%, var(--bg-panel-hoch));
-  border-color: color-mix(in srgb, var(--sk-farbe) 65%, transparent);
-}
-
 .sichtung-button small {
   font-size: 0.68rem;
   font-weight: 500;
@@ -845,6 +826,39 @@ tbody tr:last-child td {
   color: var(--text-leise);
 }
 
+/* --- Hover ------------------------------------------------------- */
+
+/*
+ * Nur fuer Geraete mit echtem Zeiger. Auf Touchscreens bleibt ein
+ * Hover-Zustand nach dem Antippen haengen - die Karte saehe dann dauerhaft
+ * ausgewaehlt aus.
+ */
+@media (hover: hover) {
+  button:hover:not(:disabled) {
+    background: #273042;
+    border-color: #3a4557;
+  }
+
+  button.primaer:hover:not(:disabled) {
+    background: #2f6fd0;
+    border-color: #2f6fd0;
+  }
+
+  .patient-karte:hover:not(:disabled) {
+    background: var(--bg-panel-hoch);
+    border-color: #3a4557;
+  }
+
+  .patient-karte:hover .patient-oeffnen {
+    color: var(--akzent);
+  }
+
+  .sichtung-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--sk-farbe) 26%, var(--bg-panel-hoch));
+    border-color: color-mix(in srgb, var(--sk-farbe) 65%, transparent);
+  }
+}
+
 /* --- Responsiv ---------------------------------------------------- */
 
 @media (max-width: 1000px) {
@@ -900,5 +914,155 @@ tbody tr:last-child td {
 
   .patientseite-nav {
     justify-content: space-between;
+  }
+}
+
+/* --- Telefon ------------------------------------------------------ */
+
+@media (max-width: 760px) {
+  .setup {
+    padding: 1.75rem 1rem 3rem;
+    gap: 1.75rem;
+  }
+
+  .debriefing {
+    padding: 1.5rem 1rem 3rem;
+    gap: 1.5rem;
+  }
+
+  .debriefing-kopf {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .kennzahlen {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .szenario-fuss {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  /* Zurueck-Schaltflaeche ueber die volle Breite, Blaettern darunter. */
+  .patientseite-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .patientseite-blaettern {
+    justify-content: space-between;
+  }
+
+  .patientseite-blaettern button {
+    flex: 1;
+  }
+
+  /* Kategorie unter den Namen statt daneben - sonst bricht die Zeile dreifach um. */
+  .patientseite-kopf {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .patientseite-kopf h2 {
+    font-size: 1.2rem;
+  }
+
+  /*
+   * Die Auswertung wird zur Kartenliste: sieben Spalten sind auf einem
+   * Telefon nur mit Querscrollen lesbar. Die Spaltentitel kommen aus
+   * data-spalte und stehen dann vor dem jeweiligen Wert.
+   */
+  .debriefing-tabelle {
+    overflow-x: visible;
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .debriefing-tabelle table,
+  .debriefing-tabelle tbody,
+  .debriefing-tabelle tr,
+  .debriefing-tabelle td {
+    display: block;
+    width: 100%;
+  }
+
+  .debriefing-tabelle thead {
+    display: none;
+  }
+
+  .debriefing-tabelle tr {
+    background: var(--bg-panel);
+    border: 1px solid var(--rand);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .debriefing-tabelle td {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr;
+    align-items: center;
+    /* Ohne start-Ausrichtung zieht das Raster die Badges auf volle Breite. */
+    justify-items: start;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    border-bottom: none;
+    white-space: normal;
+  }
+
+  .debriefing-tabelle td::before {
+    content: attr(data-spalte);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-leise);
+  }
+
+  .debriefing-tabelle .zelle-patient {
+    display: block;
+    font-size: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rand);
+  }
+
+  .debriefing-tabelle .zelle-patient::before {
+    content: none;
+  }
+}
+
+/*
+ * Touch-Bedienung: Finger brauchen groessere Ziele als ein Mauszeiger.
+ * 44 px ist der gaengige Mindestwert und gilt erst recht mit Handschuhen.
+ */
+@media (pointer: coarse) {
+  button,
+  select {
+    min-height: 44px;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .massnahme {
+    align-items: center;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .patient-karte {
+    padding: 1rem 1rem 1rem 1.2rem;
+  }
+
+  .assistent-schalter {
+    padding: 0.6rem 0.8rem;
   }
 }

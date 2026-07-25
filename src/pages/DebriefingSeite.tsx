@@ -5,6 +5,20 @@ import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
 import type { Sichtungsbewertung } from '../domain/triage';
 
+/**
+ * Spaltentitel der Auswertung. Auf schmalen Bildschirmen wird die Tabelle zu
+ * Karten umgebrochen; die Titel stehen dann per data-spalte vor jedem Wert.
+ */
+const SPALTE = {
+  patient: 'Patient',
+  vergeben: 'Ihre Sichtung',
+  referenz: 'Referenz (Eintreffen)',
+  aktuell: 'Zustand am Ende',
+  bewertung: 'Bewertung',
+  zeitpunkt: 'Sichtung um',
+  massnahmenzeit: 'Maßnahmenzeit',
+} as const;
+
 const BEWERTUNG_LABEL: Record<Sichtungsbewertung, string> = {
   korrekt: 'korrekt',
   ueberschaetzt: 'überschätzt',
@@ -71,41 +85,40 @@ export function DebriefingSeite() {
         <table>
           <thead>
             <tr>
-              <th>Patient</th>
-              <th>Ihre Sichtung</th>
-              <th>Referenz (Eintreffen)</th>
-              <th>Zustand am Ende</th>
-              <th>Bewertung</th>
-              <th>Sichtung um</th>
-              <th>Maßnahmenzeit</th>
+              {Object.values(SPALTE).map((titel) => (
+                <th key={titel}>{titel}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {zeilen.map((zeile) => (
               <tr key={zeile.patient.id}>
-                <td>
+                <td className="zelle-patient" data-spalte={SPALTE.patient}>
                   <strong>{zeile.patient.id}</strong> {zeile.patient.name}
                 </td>
-                <td>
+                <td data-spalte={SPALTE.vergeben}>
                   {zeile.vergeben ? (
                     <SichtungsBadge kategorie={zeile.vergeben} kompakt />
                   ) : (
                     <span className="sk-badge sk-offen">offen</span>
                   )}
                 </td>
-                <td>
+                <td data-spalte={SPALTE.referenz}>
                   <SichtungsBadge kategorie={zeile.referenz} kompakt />
                 </td>
-                <td>
+                <td data-spalte={SPALTE.aktuell}>
                   <SichtungsBadge kategorie={zeile.aktuell} kompakt />
                 </td>
-                <td className={`bewertung bewertung-${zeile.bewertung}`}>
+                <td
+                  className={`bewertung bewertung-${zeile.bewertung}`}
+                  data-spalte={SPALTE.bewertung}
+                >
                   {BEWERTUNG_LABEL[zeile.bewertung]}
                 </td>
-                <td>
+                <td data-spalte={SPALTE.zeitpunkt}>
                   {zeile.sichtungsdauerSek === null ? '-' : zeitFormat(zeile.sichtungsdauerSek)}
                 </td>
-                <td>{zeitFormat(zeile.massnahmenzeitSek)}</td>
+                <td data-spalte={SPALTE.massnahmenzeit}>{zeitFormat(zeile.massnahmenzeitSek)}</td>
               </tr>
             ))}
           </tbody>

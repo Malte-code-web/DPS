@@ -63,6 +63,20 @@ Nächster" direkt zum nächsten Betroffenen, ohne Umweg über die Liste.
 Die Einsatzleiste mit Uhr und Sichtungszählern bleibt dabei immer sichtbar – die
 Zeit läuft auch weiter, während ein einzelner Patient versorgt wird.
 
+### Bedienung auf dem Smartphone
+
+Die Oberfläche ist für den Einsatz auf dem Telefon ausgelegt – auch weil eine
+Übung selten am Schreibtisch stattfindet:
+
+- Alle Schaltflächen sind auf Touch-Geräten mindestens 44 px hoch (`pointer: coarse`).
+- Hover-Effekte gelten nur für Geräte mit echtem Zeiger (`hover: hover`), sonst
+  bliebe eine angetippte Karte dauerhaft hervorgehoben.
+- Die angeheftete Einsatzleiste ist auf schmalen Bildschirmen kompakt gesetzt und
+  belegt rund ein Fünftel der Bildschirmhöhe statt zwei Fünfteln.
+- Die Debriefing-Tabelle bricht unter 760 px zu einer Kartenliste um; die
+  Spaltentitel stehen dann über `data-spalte` vor dem jeweiligen Wert.
+- Keine Ansicht erzeugt horizontales Scrollen.
+
 Die Fachlogik ist bewusst frei von React: `simuliereSchritt`, `wendeMassnahmeAn` und
 `sichtungNachMstart` sind reine Funktionen und lassen sich unabhängig von der Oberfläche
 testen oder später auf einem Server ausführen.

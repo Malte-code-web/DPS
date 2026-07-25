@@ -1,8 +1,8 @@
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { PatientKarte } from '../components/PatientKarte';
-import { Patientendetail } from '../components/Patientendetail';
 import { findeSzenario } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
+import { PatientSeite } from './PatientSeite';
 
 export function EinsatzSeite() {
   const { state, dispatch } = useSimulation();
@@ -23,31 +23,25 @@ export function EinsatzSeite() {
     <div className="einsatz">
       <Einsatzleiste szenario={szenario} />
 
-      <div className="einsatz-inhalt">
+      {ausgewaehlt ? (
+        <PatientSeite patient={ausgewaehlt} />
+      ) : (
         <section className="patientenliste">
           <h2>Schadensstelle</h2>
+          <p className="hinweis">
+            Patient auswählen, um ihn zu untersuchen, zu sichten und zu versorgen.
+          </p>
           <div className="patienten-raster">
             {state.patienten.map((patient) => (
               <PatientKarte
                 key={patient.id}
                 patient={patient}
-                aktiv={patient.id === state.ausgewaehlterPatientId}
                 onAuswahl={(patientId) => dispatch({ typ: 'patientWaehlen', patientId })}
               />
             ))}
           </div>
         </section>
-
-        {ausgewaehlt ? (
-          <Patientendetail patient={ausgewaehlt} />
-        ) : (
-          <aside className="detail detail-leer">
-            <p className="hinweis">
-              Patient auswählen, um zu untersuchen, zu sichten und Maßnahmen durchzufuehren.
-            </p>
-          </aside>
-        )}
-      </div>
+      )}
     </div>
   );
 }

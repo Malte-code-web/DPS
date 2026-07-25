@@ -128,6 +128,37 @@ select {
 
 /* --- Sichtungs-Badges ------------------------------------------ */
 
+/*
+ * Jede Sichtungskategorie traegt ihre Farbe in --sk-farbe. Badges, Karten
+ * und Sichtungs-Buttons lesen dieselbe Variable, statt die Farbe jeweils
+ * eigenstaendig zu setzen. Wichtig fuer Hover-Zustaende: die generische
+ * Regel button:hover hat eine hoehere Spezifitaet als eine einzelne
+ * Klasse und wuerde direkt gesetzte Randfarben ueberschreiben.
+ */
+.sk-SK1,
+.rand-SK1 {
+  --sk-farbe: var(--sk1);
+}
+.sk-SK2,
+.rand-SK2 {
+  --sk-farbe: var(--sk2);
+}
+.sk-SK3,
+.rand-SK3 {
+  --sk-farbe: var(--sk3);
+}
+.sk-SK4,
+.rand-SK4 {
+  --sk-farbe: var(--sk4);
+}
+.sk-EX,
+.rand-EX {
+  --sk-farbe: var(--ex);
+}
+.rand-offen {
+  --sk-farbe: var(--rand);
+}
+
 .sk-badge {
   display: inline-flex;
   align-items: center;
@@ -137,33 +168,14 @@ select {
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
-  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--sk-farbe) 20%, transparent);
+  color: var(--sk-farbe);
+  border: 1px solid color-mix(in srgb, var(--sk-farbe) 45%, transparent);
 }
 
-.sk-SK1 {
-  background: color-mix(in srgb, var(--sk1) 22%, transparent);
-  color: var(--sk1);
-  border-color: color-mix(in srgb, var(--sk1) 45%, transparent);
-}
-.sk-SK2 {
-  background: color-mix(in srgb, var(--sk2) 20%, transparent);
-  color: var(--sk2);
-  border-color: color-mix(in srgb, var(--sk2) 45%, transparent);
-}
-.sk-SK3 {
-  background: color-mix(in srgb, var(--sk3) 20%, transparent);
-  color: var(--sk3);
-  border-color: color-mix(in srgb, var(--sk3) 45%, transparent);
-}
-.sk-SK4 {
-  background: color-mix(in srgb, var(--sk4) 20%, transparent);
-  color: var(--sk4);
-  border-color: color-mix(in srgb, var(--sk4) 45%, transparent);
-}
-.sk-EX {
-  background: color-mix(in srgb, var(--ex) 22%, transparent);
+/* Das Grau der Kategorie EX ist als Schriftfarbe zu dunkel. */
+.sk-badge.sk-EX {
   color: #cfd5e0;
-  border-color: color-mix(in srgb, var(--ex) 50%, transparent);
 }
 .sk-offen {
   display: inline-flex;
@@ -313,12 +325,8 @@ select {
 
 /* --- Einsatzansicht --------------------------------------------- */
 
-.einsatz-inhalt {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
-  gap: 1.5rem;
+.patientenliste {
   padding: 1.5rem;
-  align-items: start;
 }
 
 .patienten-raster {
@@ -333,36 +341,25 @@ select {
   flex-direction: column;
   gap: 0.4rem;
   text-align: left;
-  padding: 0.8rem 0.9rem;
+  padding: 0.8rem 0.9rem 0.8rem 1.1rem;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
-  border-left-width: 5px;
   border-radius: var(--radius);
+  /* Farbstreifen als Innenschatten, damit Hover-Regeln ihn nicht ueberschreiben. */
+  box-shadow: inset 4px 0 0 var(--sk-farbe, var(--rand));
 }
 
-.patient-karte-aktiv {
-  outline: 2px solid var(--akzent);
-  outline-offset: 1px;
+.patient-karte:hover:not(:disabled) {
+  background: var(--bg-panel-hoch);
+  border-color: #3a4557;
+}
+
+.patient-karte:hover .patient-oeffnen {
+  color: var(--akzent);
 }
 
 .patient-karte-verstorben {
   opacity: 0.6;
-}
-
-.rand-SK1 {
-  border-left-color: var(--sk1);
-}
-.rand-SK2 {
-  border-left-color: var(--sk2);
-}
-.rand-SK3 {
-  border-left-color: var(--sk3);
-}
-.rand-SK4 {
-  border-left-color: var(--sk4);
-}
-.rand-offen {
-  border-left-color: var(--rand);
 }
 
 .patient-kopf {
@@ -404,60 +401,126 @@ select {
 }
 
 .patient-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-leise);
 }
 
-/* --- Detailbereich ---------------------------------------------- */
+.patient-oeffnen {
+  font-weight: 700;
+  transition: color 120ms ease;
+}
 
-.detail {
-  position: sticky;
-  top: 6.5rem;
+/* --- Patientenseite ---------------------------------------------- */
+
+.patientseite {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.2rem;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.patientseite-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.patientseite-blaettern {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patientseite-zaehler {
+  font-size: 0.8rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5rem;
+  text-align: center;
+}
+
+.patientseite-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-left: 5px solid var(--sk-farbe, var(--rand));
+  border-radius: var(--radius);
+}
+
+.patientseite-kopf h2 {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 1.35rem;
+}
+
+.patientseite-kopf-verstorben {
+  opacity: 0.75;
+}
+
+.patientseite-raster {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+/*
+ * Ab Tablet-Breite zwei Spalten: links Befund und Sichtung untereinander,
+ * rechts der lange Massnahmenkatalog, darunter das Protokoll ueber die
+ * volle Breite. Ohne feste Bereiche entstuende unter den kurzen Karten
+ * ein grosses Loch.
+ */
+@media (min-width: 900px) {
+  .patientseite-raster {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'befund massnahmen'
+      'sichtung massnahmen'
+      'protokoll protokoll';
+  }
+
+  .karte-befund {
+    grid-area: befund;
+  }
+  .karte-sichtung {
+    grid-area: sichtung;
+  }
+  .karte-massnahmen {
+    grid-area: massnahmen;
+  }
+  .karte-protokoll {
+    grid-area: protokoll;
+  }
+}
+
+.karte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
   padding: 1.1rem 1.2rem;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
-  max-height: calc(100vh - 8rem);
-  overflow-y: auto;
   box-shadow: var(--schatten);
-}
-
-.detail-leer {
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 200px;
-}
-
-.detail-kopf {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.8rem;
-}
-
-.detail-kopf h2 {
-  margin: 0;
-  font-size: 1.1rem;
 }
 
 .detail-befund {
   font-size: 0.88rem;
   color: var(--text-leise);
   margin: 0;
-}
-
-.detail-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--rand);
 }
 
 /* --- Vitalmonitor ----------------------------------------------- */
@@ -578,8 +641,17 @@ select {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.1rem;
+  padding-left: 1rem;
   font-weight: 700;
-  border-left-width: 4px;
+  color: var(--sk-farbe);
+  background: color-mix(in srgb, var(--sk-farbe) 14%, var(--bg-panel-hoch));
+  border-color: color-mix(in srgb, var(--sk-farbe) 45%, transparent);
+  box-shadow: inset 4px 0 0 var(--sk-farbe);
+}
+
+.sichtung-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sk-farbe) 26%, var(--bg-panel-hoch));
+  border-color: color-mix(in srgb, var(--sk-farbe) 65%, transparent);
 }
 
 .sichtung-button small {
@@ -587,19 +659,6 @@ select {
   font-weight: 500;
   color: var(--text-leise);
   text-align: left;
-}
-
-.sichtung-button.sk-SK1 {
-  border-left-color: var(--sk1);
-}
-.sichtung-button.sk-SK2 {
-  border-left-color: var(--sk2);
-}
-.sichtung-button.sk-SK3 {
-  border-left-color: var(--sk3);
-}
-.sichtung-button.sk-SK4 {
-  border-left-color: var(--sk4);
 }
 
 .sichtung-gewaehlt {
@@ -789,21 +848,57 @@ tbody tr:last-child td {
 /* --- Responsiv ---------------------------------------------------- */
 
 @media (max-width: 1000px) {
+  /*
+   * Die Einsatzleiste bleibt oben angeheftet, muss dafuer aber schlank sein:
+   * in voller Hoehe belegte sie auf einem Telefon fast 40 % des Bildschirms.
+   * Die Lagemeldung steht ohnehin im Szenario, Uhr und Steuerung ruecken
+   * in eine gemeinsame Zeile.
+   */
   .einsatzleiste {
     grid-template-columns: 1fr;
-    gap: 0.8rem;
+    gap: 0.6rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .einsatzleiste h1 {
+    font-size: 1.15rem;
+  }
+
+  .einsatzleiste .lagemeldung {
+    display: none;
+  }
+
+  .einsatzleiste-mitte {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
+  }
+
+  .uhr {
+    font-size: 1.5rem;
   }
 
   .einsatzleiste-rechts {
     justify-content: flex-start;
   }
 
-  .einsatz-inhalt {
-    grid-template-columns: 1fr;
+  .zaehler {
+    min-width: 2.7rem;
+    padding: 0.2rem 0.35rem;
   }
 
-  .detail {
-    position: static;
-    max-height: none;
+  .zaehler-wert {
+    font-size: 1rem;
+  }
+
+  .patientseite,
+  .patientenliste {
+    padding: 1rem;
+  }
+
+  .patientseite-nav {
+    justify-content: space-between;
   }
 }

@@ -48,9 +48,20 @@ src/
     szenarien.ts     Übungsszenarien mit Patientenvorlagen
   state/         useReducer-Store, Simulationsuhr, React-Context
   components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmen, mSTaRT-Hilfe)
-  pages/         Die drei Phasen: Setup → Einsatz → Debriefing
+  pages/         Setup → Einsatz → Patientenseite → Debriefing
   lib/           Formatierung und Auswertung
 ```
+
+### Navigation
+
+Die Einsatzansicht zeigt die Schadensstelle als Kartenraster. Ein Klick auf eine
+Karte öffnet die **Patientenseite**: eine eigene, vollflächige Ansicht mit Befund,
+Vitalwerten, Sichtung und Maßnahmenkatalog. Von dort führen „Zurück zur
+Schadensstelle" (oder die Escape-Taste) in die Übersicht und „Vorheriger /
+Nächster" direkt zum nächsten Betroffenen, ohne Umweg über die Liste.
+
+Die Einsatzleiste mit Uhr und Sichtungszählern bleibt dabei immer sichtbar – die
+Zeit läuft auch weiter, während ein einzelner Patient versorgt wird.
 
 Die Fachlogik ist bewusst frei von React: `simuliereSchritt`, `wendeMassnahmeAn` und
 `sichtungNachMstart` sind reine Funktionen und lassen sich unabhängig von der Oberfläche

@@ -12,17 +12,15 @@ const STATUS_LABEL: Record<PatientStatus, string> = {
 
 interface Props {
   patient: Patient;
-  aktiv: boolean;
   onAuswahl: (patientId: string) => void;
 }
 
-export function PatientKarte({ patient, aktiv, onAuswahl }: Props) {
+export function PatientKarte({ patient, onAuswahl }: Props) {
   const verstorben = patient.status === 'verstorben';
   const klassen = [
     'patient-karte',
-    aktiv ? 'patient-karte-aktiv' : '',
     verstorben ? 'patient-karte-verstorben' : '',
-    patient.gesichtetAls ? `rand-${patient.gesichtetAls}` : 'rand-offen',
+    verstorben ? 'rand-EX' : patient.gesichtetAls ? `rand-${patient.gesichtetAls}` : 'rand-offen',
   ]
     .filter(Boolean)
     .join(' ');
@@ -50,7 +48,10 @@ export function PatientKarte({ patient, aktiv, onAuswahl }: Props) {
           {radialispulsTastbar(patient.vitalwerte) ? 'Radialispuls tastbar' : 'kein Radialispuls'}
         </span>
       </div>
-      <div className="patient-status">{STATUS_LABEL[patient.status]}</div>
+      <div className="patient-status">
+        <span>{STATUS_LABEL[patient.status]}</span>
+        <span className="patient-oeffnen">Öffnen &rarr;</span>
+      </div>
     </button>
   );
 }

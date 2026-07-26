@@ -479,8 +479,8 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
-| `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:7`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L7) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
-| `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:13`](src/pages/UebungsleitungSeite.tsx#L13) | Szenarien anlegen, prüfen, ein- und ausgeben |
+| `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
+| `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:6`](src/components/Verlegung.tsx#L6) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:24`](src/pages/patient/Versorgung.tsx#L24) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
 

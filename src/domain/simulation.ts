@@ -223,10 +223,14 @@ export function wendeMassnahmeAn(
     )
     .map((problem) => problem.id);
 
+  // @anker sim.effektnurbeiproblem Atemwegssicherung wirkt nur bei verlegtem Atemweg
+  const effektWirkt =
+    massnahme.sofortEffekt && (!massnahme.effektNurBeiProblem || geloest.length > 0);
+
   let naechster: Patient = {
     ...patient,
-    vitalwerte: massnahme.sofortEffekt
-      ? veraendereVitalwerte(patient.vitalwerte, massnahme.sofortEffekt)
+    vitalwerte: effektWirkt
+      ? veraendereVitalwerte(patient.vitalwerte, massnahme.sofortEffekt!)
       : patient.vitalwerte,
     behandelteProbleme: [...patient.behandelteProbleme, ...geloest],
     durchgefuehrteMassnahmen: [...patient.durchgefuehrteMassnahmen, massnahmeId],
@@ -247,7 +251,9 @@ export function wendeMassnahmeAn(
   const text =
     geloest.length > 0
       ? `${massnahme.label} - Problem behoben (${geloest.join(', ')}).`
-      : `${massnahme.label} - ohne Effekt auf ein bestehendes Problem.`;
+      : massnahme.effektNurBeiProblem
+        ? `${massnahme.label} - Atemweg war frei, kein Effekt.`
+        : `${massnahme.label} - ohne Effekt auf ein bestehendes Problem.`;
 
   return protokolliere(naechster, zeitSek, text);
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   KATEGORIEN,
   MASSNAHMEN,
+  SOFORTMASSNAHMEN,
   WAEHLBARE_MASSNAHMEN,
   fehlendeVoraussetzung,
   massnahmenDerKategorie,
@@ -188,5 +189,54 @@ describe('Maßnahmen', () => {
     const verstorben = simuliere(patient, 20);
     expect(verstorben.status).toBe('verstorben');
     expect(wendeMassnahmeAn(verstorben, 'tourniquet', 0)).toBe(verstorben);
+  });
+});
+
+/** @anker test.atemweg Sofortmaßnahmen und die Wirkung der Atemwegssicherung */
+describe('Atemwegssicherung', () => {
+  // B-03 Sabine Krüger: verlegter Atemweg, Blut im Mundraum.
+  const mitVerlegtemAtemweg = (): Patient =>
+    patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-03')!);
+  // B-01 Lena Hoffmann: spritzende Blutung, Atemweg frei.
+  const mitFreiemAtemweg = (): Patient =>
+    patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-01')!);
+
+  it('führt die lebensrettenden Griffe als Sofortmaßnahmen, Mundraumkontrolle inklusive', () => {
+    const ids = SOFORTMASSNAHMEN.map((m) => m.id);
+    expect(ids).toContain('mundraumkontrolle');
+    expect(ids).toContain('blutstillung');
+    expect(ids).toContain('atemwege_freimachen');
+    expect(ids).toContain('beatmung');
+    // Sofortmaßnahmen sind ausschließlich als solche markiert.
+    expect(SOFORTMASSNAHMEN.every((m) => m.sofortmassnahme)).toBe(true);
+  });
+
+  it('verlangt vor jeder Atemwegssicherung die Mundraumkontrolle', () => {
+    expect(fehlendeVoraussetzung(MASSNAHMEN.atemwege_freimachen, [])).toEqual(['mundraumkontrolle']);
+    expect(fehlendeVoraussetzung(MASSNAHMEN.intubation, [])).toEqual(['mundraumkontrolle']);
+    expect(
+      fehlendeVoraussetzung(MASSNAHMEN.atemwege_freimachen, ['mundraumkontrolle']),
+    ).toBeNull();
+    // Die Mundraumkontrolle selbst braucht keine Voraussetzung.
+    expect(fehlendeVoraussetzung(MASSNAHMEN.mundraumkontrolle, [])).toBeNull();
+  });
+
+  it('hebt die Sättigung nur, wenn der Atemweg wirklich verlegt war', () => {
+    const patient = mitVerlegtemAtemweg();
+    const vorher = patient.vitalwerte.spo2;
+    const delta = MASSNAHMEN.atemwege_freimachen.sofortEffekt?.spo2 ?? 0;
+    const versorgt = wendeMassnahmeAn(patient, 'atemwege_freimachen', 0);
+    expect(versorgt.behandelteProbleme).toContain('atemwegsverlegung');
+    expect(delta).toBeGreaterThan(0);
+    expect(versorgt.vitalwerte.spo2).toBe(vorher + delta);
+  });
+
+  it('lässt den freien Atemweg unverändert - der Griff bringt dort nichts', () => {
+    const patient = mitFreiemAtemweg();
+    const vorher = patient.vitalwerte.spo2;
+    const versorgt = wendeMassnahmeAn(patient, 'atemwege_freimachen', 0);
+    expect(versorgt.behandelteProbleme).toHaveLength(0);
+    expect(versorgt.vitalwerte.spo2).toBe(vorher);
+    expect(versorgt.verlauf.at(-1)?.text).toContain('kein Effekt');
   });
 });

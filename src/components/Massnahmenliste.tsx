@@ -6,31 +6,46 @@ import {
   QUALIFIKATION_LABEL,
   fehlendeVoraussetzung,
   massnahmenDerKategorie,
+  voraussetzungKurz,
 } from '../domain/massnahmen';
-import type { Massnahme, MassnahmeId, MassnahmenKategorie, Patient } from '../domain/types';
+import type {
+  Massnahme,
+  MassnahmeId,
+  Massnahmenart,
+  MassnahmenKategorie,
+  Patient,
+} from '../domain/types';
 
 interface Props {
   patient: Patient;
   onMassnahme: (massnahmeId: MassnahmeId) => void;
   /** Gruppen, die beim Öffnen der Seite bereits ausgeklappt sind. */
   standardOffen?: MassnahmenKategorie[];
+  /**
+   * Nur Maßnahmen dieser Art zeigen. Ohne Angabe alle. So trennt die Ansicht
+   * Handgriffe/Eingriffe (Maßnahmen) von den Medikamenten in eigene Reiter.
+   */
+  arten?: Massnahmenart[];
 }
 
 /**
  * @anker ui.massnahmenliste Das einklappbare xABCDE-Akkordeon
  *
- * Der vollständige Maßnahmenkatalog nach xABCDE, gruppenweise einklappbar.
+ * Der Maßnahmenkatalog nach xABCDE, gruppenweise einklappbar. Über `arten`
+ * trennt die Ansicht Handgriffe/Eingriffe (Maßnahmenreiter) von den Medikamenten
+ * (eigener Reiter); eine in diesem Reiter leere Gruppe fällt ganz weg.
  *
- * Welche Gruppen offen starten, entscheidet die aufrufende Ansicht: in der
- * Ersteinschätzung nur x und A, damit der lehrbuchgerechte Griff sofort da
- * ist - der Rest bleibt sichtbar, aber eingeklappt.
+ * Die Gruppen starten eingeklappt - der Reiter öffnet ruhig, nicht mit einer
+ * Wand aus Knöpfen. Der lebensrettende Griff wartet ohnehin nicht hier, sondern
+ * steht an der Schadensstelle dauerhaft im Sofortpanel (→ `ui.sofortmassnahmen`).
+ * Wer explizit eine Gruppe offen starten will, gibt sie über `standardOffen` an.
  *
- * Jede Zeile trägt drei Angaben: die Dauer, die nötige Qualifikation und - bei
- * Medikamenten - ob die Voraussetzung erfüllt ist. Die SAA-Details (Indikation,
- * Dosierung) liegen hinter einem eigenen Knopf und sind bewusst zugeklappt:
- * Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
+ * Jede Zeile trägt drei Angaben: die Dauer, die nötige Qualifikation und - wenn
+ * eine Voraussetzung fehlt - deren Kurztext (→ `voraussetzungKurz`). Die
+ * SAA-Details (Indikation, Dosierung) liegen hinter einem eigenen Knopf und sind
+ * bewusst zugeklappt: Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
  */
-export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Props) {
+export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arten }: Props) {
   const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
@@ -75,8 +90,8 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Pr
               ? 'durchgeführt'
               : fehlt
                 ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
-                  // Zugänge zählen, steht im SAA-Detail.
-                  'Zugang nötig'
+                  // Voraussetzung genau fehlt, steht im SAA-Detail.
+                  voraussetzungKurz(fehlt)
                 : `${massnahme.dauerSek} s`}
           </span>
         </button>
@@ -128,7 +143,12 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Pr
   return (
     <div className="massnahmen">
       {KATEGORIEN.map((kategorie) => {
-        const gruppe = massnahmenDerKategorie(kategorie);
+        const gruppe = massnahmenDerKategorie(kategorie).filter(
+          (massnahme) => !arten || arten.includes(massnahme.art),
+        );
+        // Reiter, in dem eine Gruppe leer bleibt (z. B. keine Medikamente in
+        // der Kategorie), gar nicht erst als Kopf zeigen.
+        if (gruppe.length === 0) return null;
         const istOffen = offen.has(kategorie);
         const erledigt = gruppe.filter((massnahme) =>
           patient.durchgefuehrteMassnahmen.includes(massnahme.id),

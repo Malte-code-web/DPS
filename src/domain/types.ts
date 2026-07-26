@@ -126,6 +126,7 @@ export type MassnahmenKategorie = 'x' | 'A' | 'B' | 'C' | 'D' | 'E';
 
 export type MassnahmeId =
   // Basismaßnahmen - kein invasiver Eingriff, keine Medikamente
+  | 'mundraumkontrolle'
   | 'atemwege_freimachen'
   | 'absaugen_oral'
   | 'guedeltubus'
@@ -222,6 +223,12 @@ export interface Massnahme {
    * MANV erst auf den Behandlungsplatz.
    */
   sofortmassnahme?: boolean;
+  /**
+   * Der Sofort-Effekt wirkt nur, wenn die Maßnahme ein aktives Problem löst.
+   * Für die Atemwegssicherung: Ein Tubus in einen freien Atemweg bringt
+   * nichts - die Sättigung steigt nur, wenn der Atemweg wirklich verlegt war.
+   */
+  effektNurBeiProblem?: boolean;
   /** Nicht mehr in der Auswahl, aber in alten Szenarien noch gültig. */
   veraltet?: boolean;
 }

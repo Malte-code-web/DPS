@@ -1504,14 +1504,14 @@ button.gefahr {
 
 .bereichswahl {
   display: grid;
-  /* Vier nebeneinander erst, wenn sie hineinpassen - sonst 2x2. */
+  /* Fünf nebeneinander erst, wenn sie hineinpassen - sonst zweispaltig. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
 }
 
 @media (min-width: 560px) {
   .bereichswahl {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -1545,6 +1545,68 @@ button.gefahr {
 
 .bereichswahl button.bereich-wartet .bereich-marke {
   color: var(--warn);
+}
+
+/* --- Sofortmaßnahmen: dauerhaft in der Übersicht der Schadensstelle --- */
+
+.sofortmassnahmen {
+  background: var(--bg-panel);
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--rand));
+  border-radius: var(--radius);
+  padding: 0.55rem 0.65rem;
+}
+
+.sofort-titel {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--warn);
+}
+
+.sofort-liste {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+@media (min-width: 560px) {
+  .sofort-liste {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/*
+ * Die Knöpfe tragen Label und Merkzeile in einer knappen, linksbündigen Kachel.
+ * Bewusst kompakt: sie stehen dauerhaft in der Übersicht und dürfen die Karte
+ * nicht verdrängen.
+ */
+.sofort-knopf {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: left;
+  border-left-width: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sofort-marke {
+  font-size: 0.58rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-leise);
+}
+
+.sofort-knopf.massnahme-erledigt .sofort-marke {
+  color: var(--ok);
 }
 
 .patientseite-kopf {

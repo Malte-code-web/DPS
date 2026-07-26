@@ -2,35 +2,47 @@ import { useState } from 'react';
 import { Anhaengekarte } from '../../components/Anhaengekarte';
 import { Befundtafel } from '../../components/Befundtafel';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
+import { Sofortmassnahmen } from '../../components/Sofortmassnahmen';
 import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
 import { Verlegung } from '../../components/Verlegung';
 import { Bereichsseite } from './Bereichsseite';
 import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
+import { MASSNAHMEN } from '../../domain/massnahmen';
 import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
 import { useSimulation } from '../../state/useSimulation';
 import { KOERPERREGION_TEXT } from '../../domain/types';
-import type { MassnahmenKategorie, Patient } from '../../domain/types';
-
-/** In der Ersteinschätzung sind nur die lebensrettenden Gruppen aufgeklappt. */
-const SOFORT: MassnahmenKategorie[] = ['x', 'A'];
-
-type Bereich = 'diagnostik' | 'massnahmen' | 'verlegung' | 'verlauf' | null;
+import type { Massnahmenart, Patient } from '../../domain/types';
 
 /**
- * @anker ui.patientenansicht Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte
+ * Der Maßnahmenreiter zeigt Handgriffe und Eingriffe, die Medikamente stehen im
+ * eigenen Reiter. So bleibt jede Liste kurz und die Trennung sichtbar.
+ */
+const MASSNAHMEN_ARTEN: Massnahmenart[] = ['basis', 'invasiv'];
+const MEDIKAMENT_ARTEN: Massnahmenart[] = ['medikament'];
+
+type Bereich = 'diagnostik' | 'massnahmen' | 'medikamente' | 'verlegung' | 'verlauf' | null;
+
+/**
+ * @anker ui.patientenansicht Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte
  *
- * Die Karte ist die Übersicht, alles Weitere liegt hinter vier Knöpfen:
- * Diagnostik, Maßnahmen, Verlegung, Verlauf. Jeder öffnet eine **eigene
- * Seite** (→ `ui.bereichsseite`) statt eines Blocks darunter - so bleibt die
- * Übersicht auf einem Bildschirm, egal wie lang der Maßnahmenkatalog wird.
+ * Die Karte ist die Übersicht, alles Weitere liegt hinter fünf Knöpfen:
+ * Diagnostik, Maßnahmen, Medikamente, Verlegung, Verlauf. Jeder öffnet eine
+ * **eigene Seite** (→ `ui.bereichsseite`) statt eines Blocks darunter - so
+ * bleibt die Übersicht auf einem Bildschirm, egal wie lang der
+ * Maßnahmenkatalog wird. Handgriffe/Eingriffe und Medikamente sind auf zwei
+ * Reiter getrennt, damit jede Liste kurz bleibt.
+ *
+ * Solange der Patient an der Schadensstelle liegt, stehen die lebensrettenden
+ * Sofortmaßnahmen (→ `ui.sofortmassnahmen`) dauerhaft unter der Karte - der
+ * Griff, der zählt, wartet nicht hinter einem Reiter.
  *
  * Damit gibt es keine getrennten Ansichten je Einsatzabschnitt mehr. Was sich
  * unterscheidet, ist ohnehin nur, welche Verlegungsziele erlaubt sind und
  * welche Sichtungszeile gerade dran ist - beides steht in der Domäne, nicht in
- * vier fast gleichen Komponenten.
+ * fast gleichen Komponenten.
  *
  * Der didaktische Kern bleibt: Die Karte zeigt nur den Ersteindruck, also das,
  * was ohne Gerät zu sehen ist. Wer Messwerte will, muss die Diagnostik öffnen
@@ -41,12 +53,16 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   const [bereich, setBereich] = useState<Bereich>(null);
 
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  const anSchadensstelle = patient.abschnitt === 'schadensstelle';
   const offeneProbleme = aktiveProbleme(patient, state.zeitSek);
   const geloesteProbleme = patient.probleme.filter((problem) =>
     patient.behandelteProbleme.includes(problem.id),
   );
   const erhoben = diagnostikZeitSek(patient);
   const erledigteMassnahmen = patient.durchgefuehrteMassnahmen.length;
+  const gegebeneMedikamente = patient.durchgefuehrteMassnahmen.filter(
+    (id) => MASSNAHMEN[id].art === 'medikament',
+  ).length;
   const zieleOffen = moeglicheZiele(patient.abschnitt).length;
   const sichtungFehlt = sichtungOffen(patient);
 
@@ -56,6 +72,15 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   return (
     <div className="stufe">
       <Anhaengekarte patient={patient} />
+
+      {anSchadensstelle && (
+        <Sofortmassnahmen
+          patient={patient}
+          onMassnahme={(massnahmeId) =>
+            dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+          }
+        />
+      )}
 
       <div className="bereichswahl" role="tablist">
         <button
@@ -78,6 +103,18 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
           Maßnahmen
           <span className="bereich-marke">
             {erledigteMassnahmen > 0 ? `${erledigteMassnahmen} durchgeführt` : 'keine'}
+          </span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={bereich === 'medikamente'}
+          className={bereich === 'medikamente' ? 'bereich-aktiv' : ''}
+          onClick={() => umschalten('medikamente')}
+        >
+          Medikamente
+          <span className="bereich-marke">
+            {gegebeneMedikamente > 0 ? `${gegebeneMedikamente} gegeben` : 'keine'}
           </span>
         </button>
         <button
@@ -189,7 +226,7 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
         >
           <Massnahmenliste
             patient={patient}
-            standardOffen={SOFORT}
+            arten={MASSNAHMEN_ARTEN}
             onMassnahme={(massnahmeId) =>
               dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
             }
@@ -200,6 +237,27 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
               <Massnahmenuebersicht patient={patient} />
             </>
           )}
+        </Bereichsseite>
+      )}
+
+      {bereich === 'medikamente' && (
+        <Bereichsseite
+          patient={patient}
+          titel="Medikamente"
+          marke={`${gegebeneMedikamente} gegeben`}
+          onSchliessen={() => setBereich(null)}
+        >
+          <p className="hinweis hinweis-knapp">
+            Medikamente nach SAA - viele setzen einen i.v.-Zugang voraus. Fehlt er, ist der Knopf
+            gesperrt.
+          </p>
+          <Massnahmenliste
+            patient={patient}
+            arten={MEDIKAMENT_ARTEN}
+            onMassnahme={(massnahmeId) =>
+              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+            }
+          />
         </Bereichsseite>
       )}
 

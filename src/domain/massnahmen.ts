@@ -74,8 +74,21 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
 
   // --- A: Atemweg ---------------------------------------------------
+  mundraumkontrolle: {
+    id: 'mundraumkontrolle',
+    label: 'Mundraumkontrolle',
+    kategorie: 'A',
+    art: 'basis',
+    qualifikation: 'basis',
+    dauerSek: 10,
+    hinweis: 'Mund öffnen, einsehen: Fremdkörper, Blut, Erbrochenes, Zunge?',
+    indikation: 'Vor jeder Atemwegssicherung - erst sehen, ob und womit der Atemweg verlegt ist.',
+    sofortmassnahme: true,
+  },
   atemwege_freimachen: {
     id: 'atemwege_freimachen',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Atemwege freimachen',
     kategorie: 'A',
     art: 'basis',
@@ -88,6 +101,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   absaugen_oral: {
     id: 'absaugen_oral',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Absaugen Mund / Rachen',
     kategorie: 'A',
     art: 'basis',
@@ -100,6 +115,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   guedeltubus: {
     id: 'guedeltubus',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Guedeltubus einlegen',
     kategorie: 'A',
     art: 'basis',
@@ -112,6 +129,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   larynxmaske: {
     id: 'larynxmaske',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Larynxmaske (extraglottischer Atemweg)',
     kategorie: 'A',
     art: 'invasiv',
@@ -123,6 +142,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   laryngoskopie: {
     id: 'laryngoskopie',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Laryngoskopie / Magillzange',
     kategorie: 'A',
     art: 'invasiv',
@@ -134,6 +155,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   absaugen_endobronchial: {
     id: 'absaugen_endobronchial',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Endobronchiales Absaugen',
     kategorie: 'A',
     art: 'invasiv',
@@ -145,6 +168,8 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   intubation: {
     id: 'intubation',
+    benoetigtEinesVon: ['mundraumkontrolle'],
+    effektNurBeiProblem: true,
     label: 'Endotracheale Intubation',
     kategorie: 'A',
     art: 'invasiv',
@@ -692,6 +717,19 @@ export const SCHNELLE_MASSNAHMEN: Massnahme[] = WAEHLBARE_MASSNAHMEN.filter(
   (massnahme) => massnahme.dauerSek <= 60 && massnahme.qualifikation === 'basis',
 );
 
+/**
+ * @anker massnahmen.sofort Lebensrettende Griffe der Schadensstelle
+ *
+ * Was am Verletzten noch vor jeder Sichtung zählt: kritische Blutung stillen,
+ * den Mundraum kontrollieren, den Atemweg sichern, beatmen. Solange der Patient
+ * an der Schadensstelle liegt, stehen diese Maßnahmen dauerhaft in der Übersicht
+ * - nicht erst hinter einem Knopf. Die Reihenfolge folgt xABCDE, so wie sie im
+ * Katalog stehen.
+ */
+export const SOFORTMASSNAHMEN: Massnahme[] = WAEHLBARE_MASSNAHMEN.filter(
+  (massnahme) => massnahme.sofortmassnahme,
+);
+
 export function massnahmenDerKategorie(kategorie: MassnahmenKategorie): Massnahme[] {
   // Innerhalb einer Gruppe zuerst der Handgriff, dann der Eingriff, dann das
   // Medikament - das ist die Reihenfolge, in der real gearbeitet wird.
@@ -708,6 +746,13 @@ export function massnahmenDerKategorie(kategorie: MassnahmenKategorie): Massnahm
  * eigene Zeit und macht den Unterschied zwischen "schnell mal etwas geben" und
  * dem, was es wirklich kostet.
  */
+/** Kurzer Sperrtext für den Maßnahmenknopf, wenn die Voraussetzung fehlt. */
+export function voraussetzungKurz(ids: MassnahmeId[]): string {
+  if (ids.includes('zugang_iv')) return 'Zugang nötig';
+  if (ids.includes('mundraumkontrolle')) return 'erst Mundraum prüfen';
+  return 'Voraussetzung fehlt';
+}
+
 export function fehlendeVoraussetzung(
   massnahme: Massnahme,
   erledigt: MassnahmeId[],

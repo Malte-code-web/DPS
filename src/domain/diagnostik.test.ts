@@ -6,8 +6,9 @@ import {
   VOLLSTAENDIGE_DIAGNOSTIK_SEK,
   diagnostikZeitSek,
   istBekannt,
+  koerperMarken,
 } from './diagnostik';
-import { fuehreDiagnostikDurch, patientAusVorlage } from './simulation';
+import { fuehreDiagnostikDurch, patientAusVorlage, wendeMassnahmeAn } from './simulation';
 import { SZENARIEN } from './szenarien';
 import type { Befundschluessel, Patient } from './types';
 
@@ -64,6 +65,35 @@ describe('DIAGNOSTIK_FUER', () => {
     for (const [schluessel, id] of Object.entries(DIAGNOSTIK_FUER)) {
       expect(DIAGNOSTIK[id].zeigt, schluessel).toContain(schluessel);
     }
+  });
+});
+
+describe('koerperMarken', () => {
+  // B-01 Lena Hoffmann: spritzende Blutung am Oberschenkel - offensichtlich.
+  const mitBlutung = (): Patient => patientAusVorlage(SZENARIEN[0]!.patienten[0]!);
+  // B-10 Julia Petersen: innere Blutung - die Falle bleibt verborgen.
+  const mitInnererBlutung = (): Patient =>
+    patientAusVorlage(SZENARIEN[0]!.patienten.find((p) => p.id === 'B-10')!);
+
+  it('zeigt Offensichtliches sofort, ohne Bodycheck', () => {
+    const marken = koerperMarken(mitBlutung());
+    expect(marken).toHaveLength(1);
+    expect(marken[0]!.region).toBe('bein_rechts');
+    expect(marken[0]!.versorgt).toBe(false);
+  });
+
+  it('hält Verborgenes bis zum Bodycheck zurück', () => {
+    const patient = mitInnererBlutung();
+    expect(koerperMarken(patient)).toHaveLength(0);
+    const untersucht = fuehreDiagnostikDurch(patient, 'bodycheck', 0);
+    expect(koerperMarken(untersucht)).toHaveLength(1);
+  });
+
+  it('markiert versorgte Probleme als versorgt', () => {
+    const versorgt = wendeMassnahmeAn(mitBlutung(), 'tourniquet', 0);
+    const marken = koerperMarken(versorgt);
+    expect(marken).toHaveLength(1);
+    expect(marken[0]!.versorgt).toBe(true);
   });
 });
 

@@ -165,6 +165,34 @@ export const DIAGNOSTIK_FUER: Record<Befundschluessel, DiagnostikId> = (() => {
   return zuordnung;
 })();
 
+/** Eine Markierung im Körperschema. */
+export interface Koerpermarke {
+  id: string;
+  label: string;
+  region: NonNullable<Patient['probleme'][number]['koerperregion']>;
+  versorgt: boolean;
+}
+
+/**
+ * @anker diagnostik.koerpermarken Was das Körperschema wann zeigt
+ *
+ * Offensichtliche Probleme - sichtbare Blutung, Fehlstellung, Verbrennung -
+ * erscheinen sofort: Man sieht sie, ohne den Patienten anzufassen. Alles
+ * andere erscheint erst nach dem Bodycheck. Versorgt bleibt versorgt sichtbar,
+ * damit der Erfolg ablesbar ist.
+ */
+export function koerperMarken(patient: Patient): Koerpermarke[] {
+  const bodycheck = istBekannt(patient, 'koerper');
+  return patient.probleme
+    .filter((problem) => problem.koerperregion && (bodycheck || problem.offensichtlich))
+    .map((problem) => ({
+      id: problem.id,
+      label: problem.label,
+      region: problem.koerperregion!,
+      versorgt: patient.behandelteProbleme.includes(problem.id),
+    }));
+}
+
 /** Summierter Zeitbedarf aller durchgeführten Untersuchungen. */
 export function diagnostikZeitSek(patient: Patient): number {
   return patient.durchgefuehrteDiagnostik.reduce(

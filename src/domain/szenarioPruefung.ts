@@ -1,8 +1,9 @@
 import { MASSNAHMEN } from './massnahmen';
 import { patientAusVorlage } from './simulation';
 import { sichtungNachMstart } from './triage';
-import { SICHTUNGSKATEGORIEN } from './types';
+import { KOERPERREGION_TEXT, SICHTUNGSKATEGORIEN } from './types';
 import type {
+  Koerperregion,
   MassnahmeId,
   PatientVorlage,
   Sichtungskategorie,
@@ -63,6 +64,7 @@ const KERN_KEYS: VitalKey[] = [
   'rekapzeit',
 ];
 const KATEGORIEN = Object.keys(SICHTUNGSKATEGORIEN) as Sichtungskategorie[];
+const REGIONEN = Object.keys(KOERPERREGION_TEXT) as Koerperregion[];
 
 function istText(wert: unknown): wert is string {
   return typeof wert === 'string' && wert.trim().length > 0;
@@ -200,6 +202,23 @@ function pruefePatient(vorlage: unknown, ort: string, befunde: Befund[]): void {
           schwere: 'fehler',
           ort: problemOrt,
           text: 'startetNachMin muss eine Zahl sein.',
+        });
+      }
+      if (
+        problem?.koerperregion !== undefined &&
+        !REGIONEN.includes(problem.koerperregion as Koerperregion)
+      ) {
+        befunde.push({
+          schwere: 'fehler',
+          ort: problemOrt,
+          text: `Unbekannte Körperregion "${problem.koerperregion}".`,
+        });
+      }
+      if (problem?.offensichtlich !== undefined && typeof problem.offensichtlich !== 'boolean') {
+        befunde.push({
+          schwere: 'fehler',
+          ort: problemOrt,
+          text: 'offensichtlich muss true oder false sein.',
         });
       }
     });

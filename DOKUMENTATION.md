@@ -51,7 +51,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-104 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+107 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -430,10 +430,18 @@ lässt sich das an jeder Station, nicht erst am Ausgang.
 
 ### Körperschema mit Markierungen
 
-Das Schema ist keine Zierde (→ `ui.koerperschema`). Nach dem Bodycheck markiert
-es die Körperregion jedes gefundenen Problems (→ `modell.koerperregion`):
-offene Probleme pulsieren rot, versorgte stehen grün. Ohne Bodycheck bleibt es
-leer - wo etwas ist, weiß man erst, wenn man nachgesehen hat.
+Das Schema ist keine Zierde (→ `ui.koerperschema`). Es markiert die
+Körperregion jedes bekannten Problems (→ `modell.koerperregion`): unbehandelte
+Marken pulsieren **rot**, versorgte stehen **grün**.
+
+Wann eine Marke erscheint, entscheidet `offensichtlich`
+(→ `diagnostik.koerpermarken`): Sichtbare Blutung, Fehlstellung, Verbrennung
+oder eine Klage des Patienten stehen **sofort** auf dem Schema - man sieht sie,
+ohne den Patienten anzufassen. Verborgenes erscheint erst nach dem Bodycheck.
+Die stimmige Regel für eigene Szenarien: Was der Kurzbefund beschreibt, ist
+offensichtlich; innere Verletzungen sind es nicht. Julia Petersens
+intraabdominelle Blutung bleibt deshalb unsichtbar, bis jemand nachsieht -
+genau das ist die Falle.
 
 Seitenangaben gelten für den Patienten: Auf der Vorderansicht liegt sein rechter
 Arm links im Bild, weil man ihm gegenübersteht. Klein steht das Schema auf der
@@ -510,7 +518,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_107 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -534,6 +542,7 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `diagnostik.bekannt` | [`src/domain/diagnostik.ts:133`](src/domain/diagnostik.ts#L133) | Ist dieser Befund schon erhoben? |
 | `diagnostik.katalog` | [`src/domain/diagnostik.ts:10`](src/domain/diagnostik.ts#L10) | Alle Untersuchungen mit Dauer und aufgedecktem Befund |
+| `diagnostik.koerpermarken` | [`src/domain/diagnostik.ts:177`](src/domain/diagnostik.ts#L177) | Was das Körperschema wann zeigt |
 | `diagnostik.zuordnung` | [`src/domain/diagnostik.ts:145`](src/domain/diagnostik.ts#L145) | Welche Untersuchung ein Feld der Befundtafel öffnet |
 
 #### format
@@ -547,17 +556,17 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `generator.baukasten` | [`src/domain/szenarioGenerator.ts:16`](src/domain/szenarioGenerator.ts#L16) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
-| `generator.muster` | [`src/domain/szenarioGenerator.ts:71`](src/domain/szenarioGenerator.ts#L71) | Der Vorrat an Verletzungsmustern - hier erweitern |
-| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:454`](src/domain/szenarioGenerator.ts#L454) | Aus der gewünschten Todesminute wird die Verlaufsrate |
+| `generator.muster` | [`src/domain/szenarioGenerator.ts:73`](src/domain/szenarioGenerator.ts#L73) | Der Vorrat an Verletzungsmustern - hier erweitern |
+| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:469`](src/domain/szenarioGenerator.ts#L469) | Aus der gewünschten Todesminute wird die Verlaufsrate |
 
 #### ki
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
-| `ki.korrektur` | [`src/lib/kiPrompt.ts:120`](src/lib/kiPrompt.ts#L120) | Rückmeldung der Prüfung an das Modell |
+| `ki.korrektur` | [`src/lib/kiPrompt.ts:123`](src/lib/kiPrompt.ts#L123) | Rückmeldung der Prüfung an das Modell |
 | `ki.livetest` | [`src/lib/kiClient.live.test.ts:8`](src/lib/kiClient.live.test.ts#L8) | Echter Durchlauf gegen die API - nur mit Schlüssel |
-| `ki.normalisieren` | [`src/lib/kiSchema.ts:145`](src/lib/kiSchema.ts#L145) | Räumt die Modellantwort auf, bevor sie geprüft wird |
+| `ki.normalisieren` | [`src/lib/kiSchema.ts:152`](src/lib/kiSchema.ts#L152) | Räumt die Modellantwort auf, bevor sie geprüft wird |
 | `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
 | `ki.schema` | [`src/lib/kiSchema.ts:6`](src/lib/kiSchema.ts#L6) | Das JSON-Schema, an das die KI gebunden wird |
 | `ki.zugang` | [`src/lib/kiZugang.ts:2`](src/lib/kiZugang.ts#L2) | Wo der API-Schlüssel liegt - und was das bedeutet |
@@ -576,13 +585,13 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:282`](src/domain/types.ts#L282) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:402`](src/domain/types.ts#L402) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:288`](src/domain/types.ts#L288) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:362`](src/domain/types.ts#L362) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:408`](src/domain/types.ts#L408) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:231`](src/domain/types.ts#L231) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:391`](src/domain/types.ts#L391) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:326`](src/domain/types.ts#L326) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.patient` | [`src/domain/types.ts:397`](src/domain/types.ts#L397) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:265`](src/domain/types.ts#L265) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:188`](src/domain/types.ts#L188) | Basis, Notfallsanitäter nach SAA, Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
@@ -667,7 +676,7 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `szenario.dynamik` | [`src/domain/szenarioDynamik.ts:6`](src/domain/szenarioDynamik.ts#L6) | Spielt ein Szenario durch, bevor es jemand übt |
-| `szenario.pruefung` | [`src/domain/szenarioPruefung.ts:15`](src/domain/szenarioPruefung.ts#L15) | Prüft ein Szenario auf Vollständigkeit und Stimmigkeit |
+| `szenario.pruefung` | [`src/domain/szenarioPruefung.ts:16`](src/domain/szenarioPruefung.ts#L16) | Prüft ein Szenario auf Vollständigkeit und Stimmigkeit |
 
 #### test
 
@@ -697,7 +706,7 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:20`](src/components/Massnahmenliste.tsx#L20) | Das einklappbare xABCDE-Akkordeon |
-| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:32`](src/pages/uebungsleitung/PatientEditor.tsx#L32) | Formular für einen Szenario-Patienten samt Problemen |
+| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:23`](src/pages/patient/Patientenansicht.tsx#L23) | Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
@@ -735,7 +744,7 @@ _106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           104 Tests
+npm run test           107 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

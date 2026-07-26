@@ -42,6 +42,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'blutung-femur',
+          offensichtlich: true,
           koerperregion: 'bein_rechts',
           label: 'Arterielle Blutung Oberschenkel',
           beschreibung: 'Pulsierende Blutung aus der Wunde, Kleidung durchtränkt, Blutlache am Boden.',
@@ -120,6 +121,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'atemwegsverlegung',
+          offensichtlich: true,
           koerperregion: 'kopf',
           label: 'Verlegter Atemweg',
           beschreibung: 'Schnarchende Atmung, Blut und Erbrochenes im Mundraum, Zunge fällt zurück.',
@@ -154,6 +156,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'beckenfraktur',
+          offensichtlich: true,
           koerperregion: 'becken',
           label: 'Instabile Beckenfraktur',
           beschreibung: 'Becken federt bei vorsichtigem Druck, Hämatom in der Leiste, blasse Haut.',
@@ -194,6 +197,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'schmerz-arm',
+          offensichtlich: true,
           koerperregion: 'arm_links',
           label: 'Starke Schmerzen',
           beschreibung: 'Fehlstellung des linken Unterarms, hält ihn schonend, jede Bewegung sehr schmerzhaft.',
@@ -225,6 +229,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'hyperventilation',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Hyperventilation / akute Belastungsreaktion',
           beschreibung: 'Weint, atmet sehr schnell und flach, Kribbeln in den Händen.',
@@ -257,6 +262,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'hypothermie',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Auskühlung',
           beschreibung: 'Durchnässte Kleidung, liegt auf kaltem Asphalt, Haut kühl, beginnt zu zittern.',
@@ -288,6 +294,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'sht-leicht',
+          offensichtlich: true,
           koerperregion: 'kopf',
           label: 'Leichtes Schädel-Hirn-Trauma',
           beschreibung: 'Erinnert sich nicht an den Unfall, fragt mehrfach dasselbe, Prellmarke am Hinterkopf.',
@@ -320,6 +327,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'atemstillstand',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Atemstillstand',
           beschreibung:
@@ -402,6 +410,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'rauchgas-schwer',
+          offensichtlich: true,
           koerperregion: 'hals',
           label: 'Schwere Rauchgasintoxikation',
           beschreibung: 'Ruß in Mund und Rachen, verbrannte Nasenhaare, heisere Stimme, hörbares Einatmen.',
@@ -465,6 +474,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'verbrennung',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Ausgedehnte Verbrennung',
           beschreibung: 'Blasenbildung an Armen und Rumpf, nässende Wundflächen, Patient friert.',
@@ -473,6 +483,7 @@ const wohnungsbrand: Szenario = {
         },
         {
           id: 'verbrennungsschmerz',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Stärkste Schmerzen',
           beschreibung: 'Stärkste Schmerzen, presst die Arme an den Körper, kaum zu beruhigen.',
@@ -504,6 +515,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'wirbelsaeulentrauma',
+          offensichtlich: true,
           koerperregion: 'ruecken',
           label: 'Verdacht auf Wirbelsäulenverletzung',
           beschreibung: 'Klagt über Kribbeln in beiden Beinen, Druckschmerz über der Brustwirbelsäule.',
@@ -566,6 +578,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'acs',
+          offensichtlich: true,
           koerperregion: 'thorax',
           label: 'Akutes Koronarsyndrom',
           beschreibung: 'Klagt über Druck hinter dem Brustbein mit Ausstrahlung in den linken Arm, kaltschweißig.',

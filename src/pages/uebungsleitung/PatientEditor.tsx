@@ -1,10 +1,11 @@
 import { KATEGORIEN, KATEGORIE_LABEL, massnahmenDerKategorie } from '../../domain/massnahmen';
 import { startwert } from '../../domain/simulation';
 import { mstartAbweichung } from '../../domain/szenarioPruefung';
-import { PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../../domain/types';
+import { KOERPERREGION_TEXT, PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../../domain/types';
 import { VITAL_META, VITAL_REIHENFOLGE } from '../../lib/format';
 import { leeresProblem } from '../../lib/vorlagen';
 import type {
+  Koerperregion,
   MassnahmeId,
   PatientVorlage,
   Problem,
@@ -297,6 +298,43 @@ function ProblemEditor({ problem, onAendern, onEntfernen }: ProblemProps) {
           onChange={(e) => onAendern({ ...problem, beschreibung: e.target.value })}
         />
       </label>
+
+      <div className="editor-zeile">
+        <label>
+          Körperregion
+          <select
+            value={problem.koerperregion ?? ''}
+            onChange={(e) => {
+              const { koerperregion, ...rest } = problem;
+              void koerperregion;
+              onAendern(
+                e.target.value
+                  ? { ...rest, koerperregion: e.target.value as Koerperregion }
+                  : rest,
+              );
+            }}
+          >
+            <option value="">ohne Markierung</option>
+            {(Object.keys(KOERPERREGION_TEXT) as Koerperregion[]).map((region) => (
+              <option key={region} value={region}>
+                {KOERPERREGION_TEXT[region]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="editor-haken">
+          <input
+            type="checkbox"
+            checked={problem.offensichtlich ?? false}
+            onChange={(e) => {
+              const { offensichtlich, ...rest } = problem;
+              void offensichtlich;
+              onAendern(e.target.checked ? { ...rest, offensichtlich: true } : rest);
+            }}
+          />
+          Offensichtlich – sofort im Körperschema, ohne Bodycheck
+        </label>
+      </div>
       <span className="editor-untertitel">
         Was die Einsatzkraft vorfindet - nicht, was sie tun soll. Die Anwendung
         sagt während der Übung nichts vor.

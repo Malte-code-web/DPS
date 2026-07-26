@@ -65,6 +65,8 @@ interface Muster {
   schmerz?: number;
   /** Wo am Körper - erscheint nach dem Bodycheck im Körperschema. */
   koerperregion: Koerperregion;
+  /** Auf den ersten Blick erkennbar - steht sofort auf dem Schema. */
+  offensichtlich?: boolean;
 }
 
 /**
@@ -76,6 +78,7 @@ interface Muster {
 const MUSTER: Muster[] = [
   {
     id: 'oberschenkelblutung',
+    offensichtlich: true,
     koerperregion: 'bein_rechts',
     ziel: 'SK1',
     weg: 'blutung',
@@ -91,6 +94,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'amputation',
+    offensichtlich: true,
     koerperregion: 'arm_links',
     ziel: 'SK1',
     weg: 'blutung',
@@ -122,6 +126,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'rauchgas_schwer',
+    offensichtlich: true,
     koerperregion: 'hals',
     ziel: 'SK1',
     weg: 'atmung',
@@ -154,6 +159,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'beckenfraktur',
+    offensichtlich: true,
     koerperregion: 'becken',
     ziel: 'SK1',
     weg: 'kreislauf',
@@ -169,6 +175,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'sht',
+    offensichtlich: true,
     koerperregion: 'kopf',
     ziel: 'SK1',
     weg: 'bewusstsein',
@@ -185,6 +192,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'oberschenkelfraktur',
+    offensichtlich: true,
     koerperregion: 'bein_links',
     ziel: 'SK2',
     kurzbefund: 'Liegt, Bein deutlich fehlgestellt, starke Schmerzen.',
@@ -199,6 +207,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'thoraxprellung',
+    offensichtlich: true,
     koerperregion: 'thorax',
     ziel: 'SK2',
     kurzbefund: 'Sitzt angelehnt, atmet flach wegen Schmerzen.',
@@ -214,6 +223,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'verbrennung',
+    offensichtlich: true,
     koerperregion: 'thorax',
     ziel: 'SK2',
     kurzbefund: 'Verbrennungen an Armen und Rumpf, wach und ansprechbar.',
@@ -228,6 +238,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'wirbelsaeule',
+    offensichtlich: true,
     koerperregion: 'ruecken',
     ziel: 'SK2',
     kurzbefund: 'Liegt still, klagt über Rückenschmerzen und Kribbeln in den Beinen.',
@@ -242,6 +253,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'schuerfwunden',
+    offensichtlich: true,
     koerperregion: 'arm_rechts',
     ziel: 'SK3',
     kurzbefund: 'Geht umher, Schürfwunden an Armen und Knien.',
@@ -256,6 +268,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'handgelenk',
+    offensichtlich: true,
     koerperregion: 'arm_rechts',
     ziel: 'SK3',
     kurzbefund: 'Steht abseits, hält das Handgelenk, ansprechbar.',
@@ -270,6 +283,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'unverletzt_betroffen',
+    offensichtlich: true,
     koerperregion: 'kopf',
     ziel: 'SK3',
     kurzbefund: 'Läuft aufgeregt umher, körperlich unverletzt.',
@@ -298,6 +312,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'apnoe',
+    offensichtlich: true,
     koerperregion: 'thorax',
     ziel: 'SK4',
     kurzbefund: 'Reglos, keine sichtbare Atmung.',
@@ -580,6 +595,7 @@ function baueProblem(muster: Muster, plan: ReturnType<typeof verlaufsplan>, star
     beschreibung: muster.problemBeschreibung,
     behandeltDurch: muster.behandeltDurch,
     koerperregion: muster.koerperregion,
+    ...(muster.offensichtlich ? { offensichtlich: true } : {}),
     verlauf,
     ...(plan.startetNachMin ? { startetNachMin: plan.startetNachMin } : {}),
   };

@@ -84,6 +84,9 @@ ${massnahmenliste()}
 9. "koerperregion" sagt, wo am Körper das Problem sitzt - erlaubt sind kopf,
    hals, thorax, abdomen, becken, arm_rechts, arm_links, bein_rechts,
    bein_links, ruecken. Seitenangaben aus Sicht des Patienten.
+   "offensichtlich": true, wenn man es auf den ersten Blick sieht oder hört
+   (Blutung, Fehlstellung, Verbrennung, Klage) - stimmige Regel: was der
+   Kurzbefund beschreibt, ist offensichtlich. Innere Verletzungen sind es nicht.
 10. Untersuchungsbefunde: "auskultation" ist bei Atemwegs- und Thoraxproblemen
    der Befund, über den das Problem überhaupt gefunden wird - setze ihn dort.
    "pupillen" bei Schädel-Hirn-Trauma, "ekg" bei Kreislaufproblemen.
@@ -186,6 +189,7 @@ STRUKTUR
           "behandeltDurch": ["tourniquet"],
           "verlauf": { "systolischerRR": -6, "herzfrequenz": 5 },
           "koerperregion": "bein_rechts",
+          "offensichtlich": true,
           "startetNachMin": 3
         }
       ],

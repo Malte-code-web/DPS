@@ -276,6 +276,12 @@ export interface Problem {
   startetNachMin?: number;
   /** Wo am Körper - wird nach dem Bodycheck im Körperschema markiert. */
   koerperregion?: Koerperregion;
+  /**
+   * Auf den ersten Blick erkennbar - sichtbare Blutung, Fehlstellung,
+   * Verbrennung, hörbare Atmung oder eine Klage des Patienten. Erscheint im
+   * Körperschema sofort, ohne Bodycheck.
+   */
+  offensichtlich?: boolean;
 }
 
 /**

@@ -1,15 +1,17 @@
-import { istBekannt } from '../domain/diagnostik';
+import { istBekannt, koerperMarken } from '../domain/diagnostik';
 import { KOERPERREGION_TEXT } from '../domain/types';
 import type { Koerperregion, Patient } from '../domain/types';
 
 /**
  * @anker ui.koerperschema Wo am Patienten etwas ist - Vorder- und Rückansicht
  *
- * Das Schema der Anhängekarte, aber nicht als Zierde: Nach dem Bodycheck
- * markiert es die Körperregion jedes gefundenen Problems. Offene Probleme
- * pulsieren rot, versorgte stehen grün und gefüllt da.
+ * Das Schema der Anhängekarte, aber nicht als Zierde: Es markiert die
+ * Körperregion jedes bekannten Problems. Unbehandelte Marken pulsieren rot,
+ * versorgte stehen grün und gefüllt da.
  *
- * Ohne Bodycheck bleibt es leer - wo etwas ist, weiß man eben erst, wenn man
+ * Offensichtliches - sichtbare Blutung, Fehlstellung, Verbrennung - steht
+ * sofort auf dem Schema. Verborgenes erscheint erst nach dem Bodycheck
+ * (→ `diagnostik.koerpermarken`): Wo innen etwas ist, weiß man erst, wenn man
  * nachgesehen hat.
  *
  * Seitenangaben gelten für den Patienten: Auf der Vorderansicht liegt sein
@@ -47,17 +49,7 @@ function Figur({ versatz }: { versatz: number }) {
 
 export function Koerperschema({ patient }: { patient: Patient }) {
   const bekannt = istBekannt(patient, 'koerper');
-
-  const markierungen = bekannt
-    ? patient.probleme
-        .filter((problem) => problem.koerperregion)
-        .map((problem) => ({
-          id: problem.id,
-          label: problem.label,
-          region: problem.koerperregion!,
-          versorgt: patient.behandelteProbleme.includes(problem.id),
-        }))
-    : [];
+  const markierungen = koerperMarken(patient);
 
   return (
     <figure className="koerperschema-rahmen">
@@ -66,9 +58,11 @@ export function Koerperschema({ patient }: { patient: Patient }) {
         viewBox="0 0 110 112"
         role="img"
         aria-label={
-          bekannt
-            ? `Körperschema: ${markierungen.map((m) => `${m.label} am ${KOERPERREGION_TEXT[m.region]}`).join(', ') || 'keine Auffälligkeit markiert'}`
-            : 'Körperschema, noch kein Bodycheck durchgeführt'
+          markierungen.length > 0
+            ? `Körperschema: ${markierungen.map((m) => `${m.label} am ${KOERPERREGION_TEXT[m.region]}`).join(', ')}`
+            : bekannt
+              ? 'Körperschema: keine Auffälligkeit markiert'
+              : 'Körperschema, noch kein Bodycheck durchgeführt'
         }
       >
         <g className="koerper-umriss">
@@ -92,7 +86,7 @@ export function Koerperschema({ patient }: { patient: Patient }) {
           );
         })}
       </svg>
-      <figcaption>{bekannt ? 'vorn · hinten' : 'Bodycheck offen'}</figcaption>
+      <figcaption>{bekannt ? 'vorn · hinten' : 'sichtbar · Bodycheck offen'}</figcaption>
     </figure>
   );
 }

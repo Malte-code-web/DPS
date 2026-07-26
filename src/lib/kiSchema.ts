@@ -95,6 +95,13 @@ const problem = objekt({
       'Wo am Körper das Problem sitzt - wird nach dem Bodycheck im Körperschema markiert. ' +
       'Seitenangaben aus Sicht des Patienten.',
   },
+  offensichtlich: {
+    type: 'boolean',
+    description:
+      'true, wenn das Problem auf den ersten Blick erkennbar ist (sichtbare Blutung, ' +
+      'Fehlstellung, Verbrennung, hörbare Atmung, Klage des Patienten) - es erscheint dann ' +
+      'sofort im Körperschema. false für alles, was erst der Bodycheck findet.',
+  },
 });
 
 const patient = objekt({

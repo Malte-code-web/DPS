@@ -954,9 +954,19 @@ button.gefahr {
 /* Farbreiter wie die Laschen der Anhängekarte. */
 .patient-karte-reiter {
   display: flex;
+  align-items: flex-start;
   gap: 3px;
   margin: -0.8rem -0.9rem 0;
   padding: 0 0.9rem;
+}
+
+/* Vorläufig wächst der aktive Reiter nach unten, endgültig nach oben. */
+.patient-karte-reiter-final {
+  align-items: flex-end;
+}
+
+.patient-karte-reiter-final .reiter-aktiv {
+  border-radius: 3px 3px 0 0;
 }
 
 .patient-karte-verstorben {
@@ -1126,9 +1136,18 @@ button.gefahr {
 /* Farbreiter wie die Laschen der echten Tasche */
 .anhaengekarte-reiter {
   display: flex;
+  align-items: flex-start;
   gap: 3px;
   margin: -0.7rem -0.8rem 0;
   padding: 0 0.8rem;
+}
+
+/*
+ * Vorläufig: der aktive Reiter wächst nach unten, in die Karte hinein.
+ * Endgültig: er wächst nach oben, deutlich sichtbar aus der Karte heraus.
+ */
+.anhaengekarte-reiter-final {
+  align-items: flex-end;
 }
 
 .reiter {
@@ -1141,6 +1160,10 @@ button.gefahr {
 .reiter-aktiv {
   height: 11px;
   background: var(--sk-farbe);
+}
+
+.anhaengekarte-reiter-final .reiter-aktiv {
+  border-radius: 3px 3px 0 0;
 }
 
 .anhaengekarte-oben {

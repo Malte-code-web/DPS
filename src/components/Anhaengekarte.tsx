@@ -58,7 +58,10 @@ export function Anhaengekarte({ patient }: { patient: Patient }) {
       }${verstorben ? ' anhaengekarte-verstorben' : ''}`}
     >
       {/* Farbreiter wie die herausstehenden Laschen der echten Tasche */}
-      <div className="anhaengekarte-reiter" aria-hidden="true">
+      <div
+        className={`anhaengekarte-reiter${patient.sichtungFinal ? ' anhaengekarte-reiter-final' : ''}`}
+        aria-hidden="true"
+      >
         {AUSWAHL.map((eintrag) => (
           <span
             key={eintrag}

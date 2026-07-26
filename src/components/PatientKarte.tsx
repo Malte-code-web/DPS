@@ -53,7 +53,12 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
 
   return (
     <div className={klassen}>
-      <div className="patient-karte-reiter" aria-hidden="true">
+      <div
+        className={`patient-karte-reiter${
+          patient.sichtungFinal ? ' patient-karte-reiter-final' : ''
+        }`}
+        aria-hidden="true"
+      >
         {AUSWAHL.map((eintrag) => (
           <span
             key={eintrag}

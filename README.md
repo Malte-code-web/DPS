@@ -149,8 +149,13 @@ aufgeklappt – die beiden Handgriffe, die in die Vorsichtung gehören. B bis E 
 eingeklappt, aber sichtbar. Genau darin liegt die Versuchung: Der Weg in die
 Individualmedizin ist ein Klick auf eine Gruppe, und nichts hält davon ab.
 
-**Stufe 2 – Erweiterte Versorgung** bringt Vitalwerte, den vollständig
-aufgeklappten Katalog und das Verlaufsprotokoll.
+**Stufe 2 – Erweiterte Versorgung** liest sich in drei Spalten: **erheben,
+sehen, handeln**. Links die 13 Einzeluntersuchungen, jede mit eigener Dauer;
+in der Mitte die Befundtafel, die nur zeigt, was auch erhoben wurde; rechts der
+vollständige Maßnahmenkatalog. Darunter das Verlaufsprotokoll.
+
+Ein nicht gemessener Wert steht als Strich da. Wer den Blutdruck wissen will,
+muss ihn messen – und die 45 Sekunden dafür bezahlen alle anderen Patienten mit.
 
 Die Anwendung gibt bewusst **keine Hinweise**, was richtig wäre – keine
 Algorithmus-Hilfe, keine Warnung vor zu viel Behandlung. Die Rückmeldung kommt
@@ -169,8 +174,11 @@ alle Betroffenen gleichzeitig**:
 | Vorsichtung eines Patienten | 20 s |
 | Verlegung in den nächsten Abschnitt | 30 s |
 | Blutung stillen (x) / Atemweg freimachen (A) | 20–60 s |
-| Körperliche Untersuchung | 30 s |
+| Blutdruck messen | 45 s |
+| Bodycheck (Ganzkörperuntersuchung) | 60 s |
+| i.v.-Zugang legen | 90 s |
 | Endotracheale Intubation | 180 s |
+| Vollständige Diagnostik an **einem** Patienten | 340 s |
 
 Wer intubiert, lässt die Uhr um drei Minuten springen, in denen sich alle anderen
 weiter verschlechtern. Zehn Patienten vorzusichten kostet weniger Zeit als drei

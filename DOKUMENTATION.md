@@ -223,6 +223,17 @@ Das Schema (→ `ki.schema`) wird aus dem echten Maßnahmenkatalog gebaut; erfun
 Maßnahmen-IDs sind damit ausgeschlossen. Die Antwort wird gestreamt, der
 Fortschritt läuft als Protokoll mit.
 
+**Zum Ausprobieren des eigenen Schlüssels** gibt es einen echten Durchlauf gegen
+die API (→ `ki.livetest`). Er ist im normalen Testlauf übersprungen und läuft nur
+mit gesetztem Schlüssel:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm run ki:test
+```
+
+Er gibt Titel, Lagemeldung und den vollständigen Probelauf aus - damit lässt sich
+ohne Browser beurteilen, ob die Verläufe taugen.
+
 Der API-Schlüssel liegt im localStorage des Geräts (→ `ki.zugang`) - eine
 bewusste Abwägung für ein Werkzeug, das die Übungsleitung selbst betreibt. Wer
 die App zentral hostet, trägt stattdessen die Adresse eines eigenen Dienstes ein
@@ -264,7 +275,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_80 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -294,6 +305,7 @@ _80 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
 | `ki.korrektur` | [`src/lib/kiPrompt.ts:102`](src/lib/kiPrompt.ts#L102) | Rückmeldung der Prüfung an das Modell |
+| `ki.livetest` | [`src/lib/kiClient.live.test.ts:8`](src/lib/kiClient.live.test.ts#L8) | Echter Durchlauf gegen die API - nur mit Schlüssel |
 | `ki.normalisieren` | [`src/lib/kiSchema.ts:116`](src/lib/kiSchema.ts#L116) | Räumt die Modellantwort auf, bevor sie geprüft wird |
 | `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
 | `ki.schema` | [`src/lib/kiSchema.ts:6`](src/lib/kiSchema.ts#L6) | Das JSON-Schema, an das die KI gebunden wird |
@@ -454,6 +466,7 @@ _80 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 ```bash
 npm run dev            Entwicklungsserver
 npm run test           77 Tests
+npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
 npm run build          Produktionsbuild

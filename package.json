@@ -12,6 +12,7 @@
     "anker:pruefen": "node scripts/anker.mjs --pruefen",
     "lint": "oxlint",
     "test": "vitest run",
+    "ki:test": "vitest run kiClient.live --reporter=verbose",
     "test:watch": "vitest",
     "typecheck": "tsc -b --force",
     "preview": "vite preview"

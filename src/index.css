@@ -926,20 +926,75 @@ button.gefahr {
 }
 
 .patient-karte {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   text-align: left;
-  padding: 0.8rem 0.9rem 0.8rem 1.1rem;
-  background: var(--bg-panel);
+  padding: 0.8rem 0.9rem 0.8rem 0.9rem;
+  background-color: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
-  /* Farbstreifen als Innenschatten, damit Hover-Regeln ihn nicht ueberschreiben. */
-  box-shadow: inset 4px 0 0 var(--sk-farbe, var(--rand));
+  /* Dieselbe Einfärbung wie die Anhängekarte: vorläufig nur obere Hälfte. */
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 20%, transparent) 0 50%,
+    transparent 50% 100%
+  );
+}
+
+.patient-karte-final {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 22%, transparent) 0 100%
+  );
+  border-color: color-mix(in srgb, var(--sk-farbe, var(--rand)) 55%, transparent);
+}
+
+/* Farbreiter wie die Laschen der Anhängekarte. */
+.patient-karte-reiter {
+  display: flex;
+  gap: 3px;
+  margin: -0.8rem -0.9rem 0;
+  padding: 0 0.9rem;
 }
 
 .patient-karte-verstorben {
   opacity: 0.6;
+}
+
+/* Der eigentliche Öffnen-Knopf trägt die bisherige Kachel-Optik ohne eigenen Rahmen. */
+.patient-karte-oeffnen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+
+/* Schnellzugriff auf die Sichtungskategorie, direkt auf der Kachel. */
+.patient-karte-sichtung {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.patient-karte-sichtung .sichtungskasten {
+  flex: 1;
+}
+
+/* Schnellzugriff auf Tourniquet und Wendeltubus, direkt auf der Kachel. */
+.patient-karte-sofort {
+  display: flex;
+  flex-direction: row;
+  gap: 0.3rem;
+}
+
+.patient-karte-sofort .massnahme {
+  flex: 1;
 }
 
 .patient-kopf {
@@ -1578,6 +1633,17 @@ button.gefahr {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* Schnellzugriff auf Tourniquet und Wendeltubus, ohne die Maßnahmenliste zu öffnen. */
+.sofortmassnahmen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--sk1) 45%, var(--rand));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sk1) 8%, var(--bg-panel));
 }
 
 /*
@@ -2308,8 +2374,13 @@ tbody tr:last-child td {
   }
 
   .patient-karte:hover:not(:disabled) {
-    background: var(--bg-panel-hoch);
+    background-color: var(--bg-panel-hoch);
     border-color: #3a4557;
+  }
+
+  .patient-karte-oeffnen:hover:not(:disabled) {
+    background: none;
+    border-color: transparent;
   }
 
   .patient-karte:hover .patient-oeffnen {

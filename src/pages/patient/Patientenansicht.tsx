@@ -4,6 +4,7 @@ import { Befundtafel } from '../../components/Befundtafel';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
 import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
+import { Sofortmassnahmen } from '../../components/Sofortmassnahmen';
 import { Verlegung } from '../../components/Verlegung';
 import { Bereichsseite } from './Bereichsseite';
 import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
@@ -15,7 +16,7 @@ import { KOERPERREGION_TEXT } from '../../domain/types';
 import type { MassnahmenKategorie, Patient } from '../../domain/types';
 
 /** In der Ersteinschätzung sind nur die lebensrettenden Gruppen aufgeklappt. */
-const SOFORT: MassnahmenKategorie[] = ['x', 'A'];
+const SOFORT: MassnahmenKategorie[] = [];
 
 type Bereich = 'diagnostik' | 'massnahmen' | 'verlegung' | 'verlauf' | null;
 
@@ -56,6 +57,13 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   return (
     <div className="stufe">
       <Anhaengekarte patient={patient} />
+
+      <Sofortmassnahmen
+        patient={patient}
+        onMassnahme={(massnahmeId) =>
+          dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+        }
+      />
 
       <div className="bereichswahl" role="tablist">
         <button

@@ -9,6 +9,9 @@ import {
 } from '../domain/massnahmen';
 import type { Massnahme, MassnahmeId, MassnahmenKategorie, Patient } from '../domain/types';
 
+/** Zusätzlich zur xABCDE-Gruppierung ein eigener Reiter für alle Medikamente. */
+type Gruppenschluessel = MassnahmenKategorie | 'medikamente';
+
 interface Props {
   patient: Patient;
   onMassnahme: (massnahmeId: MassnahmeId) => void;
@@ -31,17 +34,17 @@ interface Props {
  * Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
  */
 export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Props) {
-  const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
+  const [offen, setOffen] = useState<Set<Gruppenschluessel>>(() => new Set(standardOffen));
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
 
-  const umschalten = (kategorie: MassnahmenKategorie) =>
+  const umschalten = (gruppe: Gruppenschluessel) =>
     setOffen((bisher) => {
       const naechste = new Set(bisher);
-      if (naechste.has(kategorie)) {
-        naechste.delete(kategorie);
+      if (naechste.has(gruppe)) {
+        naechste.delete(gruppe);
       } else {
-        naechste.add(kategorie);
+        naechste.add(gruppe);
       }
       return naechste;
     });
@@ -125,39 +128,62 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Pr
     );
   };
 
+  // Medikamente bekommen einen eigenen Reiter statt in ihrer xABCDE-Gruppe
+  // aufzugehen - die Kategorie-Zuordnung selbst bleibt unverändert, sie steuert
+  // weiterhin z. B. den PatientEditor und die Simulation. Die Sauerstoffgabe
+  // bleibt bewusst bei Beatmung, da sie dort erwartet wird.
+  const istEigeneMedikamentengruppe = (massnahme: Massnahme) =>
+    massnahme.art === 'medikament' && massnahme.id !== 'sauerstoffgabe';
+
+  const medikamente = KATEGORIEN.flatMap((kategorie) =>
+    massnahmenDerKategorie(kategorie).filter(istEigeneMedikamentengruppe),
+  );
+
+  const gruppenKopf = (
+    schluessel: Gruppenschluessel,
+    kuerzel: string,
+    titel: string,
+    gruppe: Massnahme[],
+  ) => {
+    const istOffen = offen.has(schluessel);
+    const erledigt = gruppe.filter((massnahme) =>
+      patient.durchgefuehrteMassnahmen.includes(massnahme.id),
+    ).length;
+
+    return (
+      <div key={schluessel} className={`gruppe${istOffen ? ' gruppe-offen' : ''}`}>
+        <button
+          type="button"
+          className="gruppe-kopf"
+          aria-expanded={istOffen}
+          onClick={() => umschalten(schluessel)}
+        >
+          <span className="gruppe-kuerzel">{kuerzel}</span>
+          <span className="gruppe-titel">{titel}</span>
+          {erledigt > 0 && (
+            <span className="gruppe-erledigt">
+              {erledigt}/{gruppe.length}
+            </span>
+          )}
+          <span className="gruppe-pfeil" aria-hidden="true">
+            {istOffen ? '▾' : '▸'}
+          </span>
+        </button>
+
+        {istOffen && <div className="gruppe-inhalt">{gruppe.map(zeile)}</div>}
+      </div>
+    );
+  };
+
   return (
     <div className="massnahmen">
       {KATEGORIEN.map((kategorie) => {
-        const gruppe = massnahmenDerKategorie(kategorie);
-        const istOffen = offen.has(kategorie);
-        const erledigt = gruppe.filter((massnahme) =>
-          patient.durchgefuehrteMassnahmen.includes(massnahme.id),
-        ).length;
-
-        return (
-          <div key={kategorie} className={`gruppe${istOffen ? ' gruppe-offen' : ''}`}>
-            <button
-              type="button"
-              className="gruppe-kopf"
-              aria-expanded={istOffen}
-              onClick={() => umschalten(kategorie)}
-            >
-              <span className="gruppe-kuerzel">{kategorie}</span>
-              <span className="gruppe-titel">{KATEGORIE_LABEL[kategorie]}</span>
-              {erledigt > 0 && (
-                <span className="gruppe-erledigt">
-                  {erledigt}/{gruppe.length}
-                </span>
-              )}
-              <span className="gruppe-pfeil" aria-hidden="true">
-                {istOffen ? '▾' : '▸'}
-              </span>
-            </button>
-
-            {istOffen && <div className="gruppe-inhalt">{gruppe.map(zeile)}</div>}
-          </div>
+        const gruppe = massnahmenDerKategorie(kategorie).filter(
+          (massnahme) => !istEigeneMedikamentengruppe(massnahme),
         );
+        return gruppenKopf(kategorie, kategorie, KATEGORIE_LABEL[kategorie], gruppe);
       })}
+      {gruppenKopf('medikamente', '💊', 'Medikamente', medikamente)}
     </div>
   );
 }

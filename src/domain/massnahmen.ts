@@ -100,7 +100,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   guedeltubus: {
     id: 'guedeltubus',
-    label: 'Guedeltubus einlegen',
+    label: 'Wendeltubus einlegen',
     kategorie: 'A',
     art: 'basis',
     qualifikation: 'basis',

@@ -1,27 +1,31 @@
 import { useState } from 'react';
 import { Anhaengekarte } from '../../components/Anhaengekarte';
 import { Befundtafel } from '../../components/Befundtafel';
-import { Ersteindruck } from '../../components/Ersteindruck';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
+import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
 import { Verlegung } from '../../components/Verlegung';
+import { Bereichsseite } from './Bereichsseite';
 import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
 import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
 import { useSimulation } from '../../state/useSimulation';
+import { KOERPERREGION_TEXT } from '../../domain/types';
 import type { MassnahmenKategorie, Patient } from '../../domain/types';
 
 /** In der Ersteinschätzung sind nur die lebensrettenden Gruppen aufgeklappt. */
 const SOFORT: MassnahmenKategorie[] = ['x', 'A'];
 
-type Bereich = 'diagnostik' | 'massnahmen' | 'verlegung' | null;
+type Bereich = 'diagnostik' | 'massnahmen' | 'verlegung' | 'verlauf' | null;
 
 /**
  * @anker ui.patientenansicht Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte
  *
- * Die Karte ist die Übersicht, alles Weitere liegt hinter drei Knöpfen:
- * Diagnostik, Maßnahmen, Verlegung. Immer nur einer ist offen.
+ * Die Karte ist die Übersicht, alles Weitere liegt hinter vier Knöpfen:
+ * Diagnostik, Maßnahmen, Verlegung, Verlauf. Jeder öffnet eine **eigene
+ * Seite** (→ `ui.bereichsseite`) statt eines Blocks darunter - so bleibt die
+ * Übersicht auf einem Bildschirm, egal wie lang der Maßnahmenkatalog wird.
  *
  * Damit gibt es keine getrennten Ansichten je Einsatzabschnitt mehr. Was sich
  * unterscheidet, ist ohnehin nur, welche Verlegungsziele erlaubt sind und
@@ -52,11 +56,6 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   return (
     <div className="stufe">
       <Anhaengekarte patient={patient} />
-
-      <section className="karte karte-eindruck">
-        <h3>Erster Eindruck</h3>
-        <Ersteindruck patient={patient} />
-      </section>
 
       <div className="bereichswahl" role="tablist">
         <button
@@ -100,10 +99,25 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
                 : `${zieleOffen} Ziele`}
           </span>
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={bereich === 'verlauf'}
+          className={bereich === 'verlauf' ? 'bereich-aktiv' : ''}
+          onClick={() => umschalten('verlauf')}
+        >
+          Verlauf
+          <span className="bereich-marke">{patient.verlauf.length} Einträge</span>
+        </button>
       </div>
 
       {bereich === 'diagnostik' && (
-        <section className="karte karte-befund">
+        <Bereichsseite
+          patient={patient}
+          titel="Diagnostik"
+          marke={erhoben > 0 ? `${zeitFormat(erhoben)} erhoben` : 'nichts erhoben'}
+          onSchliessen={() => setBereich(null)}
+        >
           <p className="hinweis hinweis-knapp">Leeres Feld antippen, um den Wert zu erheben.</p>
           <Befundtafel
             patient={patient}
@@ -112,6 +126,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
             }
           />
 
+          <Koerperschema patient={patient} />
+
           {istBekannt(patient, 'koerper') ? (
             <>
               <p className="detail-befund">{patient.untersuchungsbefund}</p>
@@ -119,7 +135,14 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
                 <ul className="problemliste">
                   {offeneProbleme.map((problem) => (
                     <li key={problem.id}>
-                      <strong>{problem.label}</strong>
+                      <strong>
+                        {problem.label}
+                        {problem.koerperregion && (
+                          <span className="problem-region">
+                            {KOERPERREGION_TEXT[problem.koerperregion]}
+                          </span>
+                        )}
+                      </strong>
                       <span>{problem.beschreibung}</span>
                     </li>
                   ))}
@@ -154,11 +177,16 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
               ))}
             </ul>
           )}
-        </section>
+        </Bereichsseite>
       )}
 
       {bereich === 'massnahmen' && (
-        <section className="karte karte-massnahmen">
+        <Bereichsseite
+          patient={patient}
+          titel="Maßnahmen"
+          marke={`${erledigteMassnahmen} durchgeführt`}
+          onSchliessen={() => setBereich(null)}
+        >
           <Massnahmenliste
             patient={patient}
             standardOffen={SOFORT}
@@ -172,15 +200,20 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
               <Massnahmenuebersicht patient={patient} />
             </>
           )}
-        </section>
+        </Bereichsseite>
       )}
 
       {bereich === 'verlegung' && (
-        <section className="karte karte-verlegung">
+        <Bereichsseite
+          patient={patient}
+          titel="Verlegung"
+          marke={sichtungFehlt ? 'Sichtung offen' : 'Sichtung bestätigt'}
+          onSchliessen={() => setBereich(null)}
+        >
           {sichtungFehlt ? (
             <p className="hinweis warnung-text">
-              Vor der Verlegung muss die Sichtung an dieser Station bestätigt werden – oben auf
-              der Anhängekarte in der markierten Zeile.
+              Vor der Verlegung muss die Sichtung an dieser Station bestätigt werden – zurück auf
+              die Anhängekarte, in der markierten Zeile.
             </p>
           ) : (
             <p className="hinweis hinweis-knapp">
@@ -188,15 +221,16 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
             </p>
           )}
           <Verlegung patient={patient} />
-        </section>
+        </Bereichsseite>
       )}
 
-      <section className="karte karte-protokoll">
-        <details>
-          <summary>
-            Verlaufsprotokoll
-            <span className="karte-nebentitel">{patient.verlauf.length} Einträge</span>
-          </summary>
+      {bereich === 'verlauf' && (
+        <Bereichsseite
+          patient={patient}
+          titel="Verlaufsprotokoll"
+          marke={`${patient.verlauf.length} Einträge`}
+          onSchliessen={() => setBereich(null)}
+        >
           {patient.verlauf.length === 0 ? (
             <p className="hinweis">Noch keine Einträge.</p>
           ) : (
@@ -209,8 +243,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
               ))}
             </ul>
           )}
-        </details>
-      </section>
+        </Bereichsseite>
+      )}
     </div>
   );
 }

@@ -81,11 +81,14 @@ ${massnahmenliste()}
    dann, wenn sie fachlich richtig wären.
    schlecht: "Nicht komprimierbare Blutung - Tourniquet indiziert."
    gut:      "Pulsierende Blutung aus der Wunde, Hose durchtränkt."
-9. Untersuchungsbefunde: "auskultation" ist bei Atemwegs- und Thoraxproblemen
+9. "koerperregion" sagt, wo am Körper das Problem sitzt - erlaubt sind kopf,
+   hals, thorax, abdomen, becken, arm_rechts, arm_links, bein_rechts,
+   bein_links, ruecken. Seitenangaben aus Sicht des Patienten.
+10. Untersuchungsbefunde: "auskultation" ist bei Atemwegs- und Thoraxproblemen
    der Befund, über den das Problem überhaupt gefunden wird - setze ihn dort.
    "pupillen" bei Schädel-Hirn-Trauma, "ekg" bei Kreislaufproblemen.
-10. Patienten-IDs sind eindeutig. Namen und Befunde auf Deutsch.
-11. Mische realistisch: wenige SK1, mehr SK2 und SK3, höchstens ein SK4.`;
+11. Patienten-IDs sind eindeutig. Namen und Befunde auf Deutsch.
+12. Mische realistisch: wenige SK1, mehr SK2 und SK3, höchstens ein SK4.`;
 }
 
 function auftragskopf(wunsch: PromptWunsch): string {
@@ -182,6 +185,7 @@ STRUKTUR
           "beschreibung": "Was die Einsatzkraft vorfindet - reiner Befund.",
           "behandeltDurch": ["tourniquet"],
           "verlauf": { "systolischerRR": -6, "herzfrequenz": 5 },
+          "koerperregion": "bein_rechts",
           "startetNachMin": 3
         }
       ],

@@ -1044,8 +1044,8 @@ button.gefahr {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.9rem 1rem 0.8rem;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem 0.6rem;
   border: 1px solid var(--rand);
   border-radius: var(--radius);
   background-color: var(--bg-panel);
@@ -1072,8 +1072,8 @@ button.gefahr {
 .anhaengekarte-reiter {
   display: flex;
   gap: 3px;
-  margin: -0.9rem -1rem 0;
-  padding: 0 1rem;
+  margin: -0.7rem -0.8rem 0;
+  padding: 0 0.8rem;
 }
 
 .reiter {
@@ -1176,10 +1176,25 @@ button.gefahr {
 }
 
 .sichtungszeile-titel {
+  display: flex;
+  gap: 0.3rem;
   font-size: 0.75rem;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* Auf schmalen Anzeigen die Kurzform - "Ausgangssichtung" passt dort nicht. */
+.sichtungszeile-lang {
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .sichtungszeile-lang {
+    display: inline;
+  }
+  .sichtungszeile-kurz {
+    display: none;
+  }
 }
 
 .sichtungszeile-nummer {
@@ -1267,12 +1282,237 @@ button.gefahr {
   color: var(--warn);
 }
 
+/*
+ * @anker stil.patientnav Navigation einzeilig - sie darf keine Bildhöhe fressen
+ *
+ * Zurück links, Blättern rechts, in einer Zeile. Gestapelt kostete das auf dem
+ * Telefon 120 px, bevor der erste Befund zu sehen war.
+ */
+.patientseite-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.patientseite-nav > button {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.patientseite-blaettern {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.patientseite-blaettern button {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.patientseite-zaehler {
+  font-size: 0.7rem;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+/* --- Körperschema -------------------------------------------------- */
+
+.koerperschema-rahmen {
+  margin: 0.6rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.koerperschema {
+  width: 100%;
+  max-width: 230px;
+  height: auto;
+}
+
+/* Auf der Anhängekarte nur als Miniatur neben der Person. */
+.anhaengekarte-oben .koerperschema-rahmen {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.anhaengekarte-oben .koerperschema {
+  width: 72px;
+}
+
+.anhaengekarte-oben figcaption {
+  display: none;
+}
+
+.koerper-umriss {
+  fill: none;
+  stroke: var(--text-leise);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.koerper-marke circle {
+  fill: color-mix(in srgb, var(--sk1) 35%, transparent);
+  stroke: var(--sk1);
+  stroke-width: 1.6;
+}
+
+/* Offene Probleme pulsieren - versorgte stehen ruhig. */
+@media (prefers-reduced-motion: no-preference) {
+  .koerper-marke:not(.koerper-marke-versorgt) circle {
+    animation: markePulsiert 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes markePulsiert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.koerper-marke-versorgt circle {
+  fill: color-mix(in srgb, var(--ok) 40%, transparent);
+  stroke: var(--ok);
+}
+
+.koerperschema-rahmen figcaption {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.problem-region {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--rand);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+/* --- Bereichsseiten: eigene Seite statt langem Block ---------------- */
+
+/*
+ * @anker stil.bereichsseite Vollbildseite mit stehendem Kopf
+ *
+ * Fixiert über allem, damit die Übersicht darunter unangetastet bleibt.
+ * Gescrollt wird nur der Inhalt - der Kopf mit dem Zurück-Knopf steht.
+ */
+.bereichsseite {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.bereichsseite-kopf {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--rand);
+  background: var(--bg-panel);
+}
+
+.bereichsseite-titel h2 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bereichsseite-titel span {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+}
+
+.bereichsseite-inhalt {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+@media (min-width: 760px) {
+  .bereichsseite-inhalt {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
+/*
+ * @anker stil.ersteindruck Kompakte Befundchips statt gestapelter Zeilen
+ *
+ * Fünf gestapelte Zeilen brauchten auf dem Telefon 382 px - fast die halbe
+ * Bildhöhe für fünf Ja/Nein-Angaben. Als umbrechende Chips sind es rund 140.
+ */
+.ersteindruck {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ersteindruck .befund {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1 1 8.5rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid var(--rand);
+  border-left: 3px solid var(--rand);
+  background: var(--bg-panel-hoch);
+}
+
+.ersteindruck .befund-frage {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.ersteindruck .befund-antwort {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.ersteindruck .befund-auffaellig {
+  border-left-color: var(--sk1);
+}
+
+.ersteindruck .befund-auffaellig .befund-antwort {
+  color: var(--sk1);
+}
+
 /* --- Bereichswahl der Patientenansicht ---------------------------- */
 
 .bereichswahl {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  /* Vier nebeneinander erst, wenn sie hineinpassen - sonst 2x2. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+@media (min-width: 560px) {
+  .bereichswahl {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .bereichswahl button {
@@ -1280,8 +1520,8 @@ button.gefahr {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.1rem;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.9rem;
+  padding: 0.5rem 0.55rem;
+  font-size: 0.85rem;
   font-weight: 600;
   text-align: left;
 }
@@ -1392,44 +1632,6 @@ button.gefahr {
   .patientseite-raster .karte-protokoll {
     grid-area: protokoll;
   }
-}
-
-/* --- Erster Eindruck --------------------------------------------- */
-
-.ersteindruck {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.befund {
-  display: grid;
-  grid-template-columns: 10.5rem 1fr;
-  gap: 0.6rem;
-  align-items: center;
-  padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  background: var(--bg-panel-hoch);
-  border-left: 3px solid var(--rand);
-}
-
-.befund-frage {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-leise);
-}
-
-.befund-antwort {
-  font-weight: 600;
-}
-
-.befund-auffaellig {
-  border-left-color: var(--sk1);
-  background: color-mix(in srgb, var(--sk1) 12%, var(--bg-panel-hoch));
-}
-
-.befund-auffaellig .befund-antwort {
-  color: var(--sk1);
 }
 
 /* --- Abschluss der Ersteinschaetzung ------------------------------ */
@@ -2133,14 +2335,16 @@ tbody tr:last-child td {
    * Die Lagemeldung steht ohnehin im Szenario, Uhr und Steuerung ruecken
    * in eine gemeinsame Zeile.
    */
+  /* @anker stil.einsatzleiste Die angeheftete Leiste so flach wie möglich */
   .einsatzleiste {
     grid-template-columns: 1fr;
-    gap: 0.6rem;
-    padding: 0.7rem 1rem;
+    gap: 0.35rem;
+    padding: 0.45rem 0.8rem;
   }
 
   .einsatzleiste h1 {
-    font-size: 1.15rem;
+    font-size: 1rem;
+    margin: 0;
   }
 
   .einsatzleiste .lagemeldung {
@@ -2156,11 +2360,17 @@ tbody tr:last-child td {
   }
 
   .uhr {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
   .einsatzleiste-rechts {
     justify-content: flex-start;
+  }
+
+  .einsatzleiste-mitte button,
+  .einsatzleiste-mitte select {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
   }
 
   .zaehler {
@@ -2245,12 +2455,6 @@ tbody tr:last-child td {
   .pruefliste li {
     grid-template-columns: 1fr;
     gap: 0.15rem;
-  }
-
-  /* Befundzeilen gestapelt - nebeneinander bliebe für die Antwort zu wenig Platz. */
-  .befund {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
   }
 
   /* Kategorie unter den Namen statt daneben - sonst bricht die Zeile dreifach um. */

@@ -1,6 +1,6 @@
 import { WAEHLBARE_MASSNAHMEN } from '../domain/massnahmen';
-import { PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../domain/types';
-import type { Pupillenbefund, Sichtungskategorie, VitalKey } from '../domain/types';
+import { KOERPERREGION_TEXT, PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../domain/types';
+import type { Koerperregion, Pupillenbefund, Sichtungskategorie, VitalKey } from '../domain/types';
 
 /**
  * @anker ki.schema Das JSON-Schema, an das die KI gebunden wird
@@ -19,6 +19,7 @@ import type { Pupillenbefund, Sichtungskategorie, VitalKey } from '../domain/typ
 const MASSNAHMEN_IDS = WAEHLBARE_MASSNAHMEN.map((massnahme) => massnahme.id);
 const KATEGORIEN = Object.keys(SICHTUNGSKATEGORIEN) as Sichtungskategorie[];
 const PUPILLEN = Object.keys(PUPILLEN_TEXT) as Pupillenbefund[];
+const REGIONEN = Object.keys(KOERPERREGION_TEXT) as Koerperregion[];
 
 const VITAL_BESCHREIBUNG: Record<VitalKey, string> = {
   atemfrequenz: 'Atemfrequenz pro Minute, 0 bis 60.',
@@ -86,6 +87,13 @@ const problem = objekt({
   startetNachMin: {
     type: ['number', 'null'],
     description: 'Minute, ab der das Problem wirkt. null bedeutet: von Anfang an.',
+  },
+  koerperregion: {
+    type: 'string',
+    enum: REGIONEN,
+    description:
+      'Wo am Körper das Problem sitzt - wird nach dem Bodycheck im Körperschema markiert. ' +
+      'Seitenangaben aus Sicht des Patienten.',
   },
 });
 

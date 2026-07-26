@@ -227,6 +227,39 @@ export interface Massnahme {
 }
 
 /**
+ * Körperregion, in der ein Problem sitzt.
+ * @anker modell.koerperregion Wo am Patienten das Problem sitzt - für das Körperschema
+ *
+ * Seitenangaben sind aus Sicht des Patienten. Auf der Vorderansicht liegt die
+ * rechte Körperhälfte deshalb links im Bild - so, wie man vor dem Patienten
+ * steht.
+ */
+export type Koerperregion =
+  | 'kopf'
+  | 'hals'
+  | 'thorax'
+  | 'abdomen'
+  | 'becken'
+  | 'arm_rechts'
+  | 'arm_links'
+  | 'bein_rechts'
+  | 'bein_links'
+  | 'ruecken';
+
+export const KOERPERREGION_TEXT: Record<Koerperregion, string> = {
+  kopf: 'Kopf',
+  hals: 'Hals',
+  thorax: 'Thorax',
+  abdomen: 'Abdomen',
+  becken: 'Becken',
+  arm_rechts: 'rechter Arm',
+  arm_links: 'linker Arm',
+  bein_rechts: 'rechtes Bein',
+  bein_links: 'linkes Bein',
+  ruecken: 'Rücken',
+};
+
+/**
  * Ein pathophysiologisches Problem des Patienten.
  * Solange es nicht behandelt ist, wirkt `verlauf` pro Minute auf die Vitalwerte.
  * @anker modell.problem Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute
@@ -241,6 +274,8 @@ export interface Problem {
   verlauf: VitalVerlauf;
   /** Problem wird erst ab dieser Einsatzminute wirksam (z. B. Spannungspneu). */
   startetNachMin?: number;
+  /** Wo am Körper - wird nach dem Bodycheck im Körperschema markiert. */
+  koerperregion?: Koerperregion;
 }
 
 /**

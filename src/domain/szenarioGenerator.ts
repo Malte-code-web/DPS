@@ -1,6 +1,7 @@
 import { patientAusVorlage } from './simulation';
 import { sichtungNachMstart } from './triage';
 import type {
+  Koerperregion,
   MassnahmeId,
   PatientVorlage,
   Problem,
@@ -62,6 +63,8 @@ interface Muster {
   ekg?: string;
   /** Schmerzstärke auf der NRS. */
   schmerz?: number;
+  /** Wo am Körper - erscheint nach dem Bodycheck im Körperschema. */
+  koerperregion: Koerperregion;
 }
 
 /**
@@ -73,6 +76,7 @@ interface Muster {
 const MUSTER: Muster[] = [
   {
     id: 'oberschenkelblutung',
+    koerperregion: 'bein_rechts',
     ziel: 'SK1',
     weg: 'blutung',
     kurzbefund: 'Spritzende Blutung am Oberschenkel, große Blutlache.',
@@ -87,6 +91,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'amputation',
+    koerperregion: 'arm_links',
     ziel: 'SK1',
     weg: 'blutung',
     kurzbefund: 'Unterarm subtotal amputiert, blutet stark.',
@@ -101,6 +106,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'spannungspneu',
+    koerperregion: 'thorax',
     ziel: 'SK1',
     weg: 'atmung',
     kurzbefund: 'Ringt nach Luft, atmet sehr schnell und flach.',
@@ -116,6 +122,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'rauchgas_schwer',
+    koerperregion: 'hals',
     ziel: 'SK1',
     weg: 'atmung',
     kurzbefund: 'Rußgeschwärzt, hustet, atmet mühsam und laut.',
@@ -131,6 +138,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'verschuetteter_thorax',
+    koerperregion: 'thorax',
     ziel: 'SK1',
     weg: 'kreislauf',
     kurzbefund: 'War verschüttet, blass und kaltschweißig, kaum ansprechbar.',
@@ -146,6 +154,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'beckenfraktur',
+    koerperregion: 'becken',
     ziel: 'SK1',
     weg: 'kreislauf',
     kurzbefund: 'Liegt eingeklemmt, klagt über stärkste Schmerzen im Becken.',
@@ -160,6 +169,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'sht',
+    koerperregion: 'kopf',
     ziel: 'SK1',
     weg: 'bewusstsein',
     kurzbefund: 'Reagiert nicht auf Ansprache, blutende Kopfplatzwunde.',
@@ -175,6 +185,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'oberschenkelfraktur',
+    koerperregion: 'bein_links',
     ziel: 'SK2',
     kurzbefund: 'Liegt, Bein deutlich fehlgestellt, starke Schmerzen.',
     untersuchungsbefund: 'Geschlossene Oberschenkelfraktur, Schwellung.',
@@ -188,6 +199,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'thoraxprellung',
+    koerperregion: 'thorax',
     ziel: 'SK2',
     kurzbefund: 'Sitzt angelehnt, atmet flach wegen Schmerzen.',
     untersuchungsbefund: 'Rippenserienfraktur, Atemexkursion schmerzbedingt vermindert.',
@@ -202,6 +214,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'verbrennung',
+    koerperregion: 'thorax',
     ziel: 'SK2',
     kurzbefund: 'Verbrennungen an Armen und Rumpf, wach und ansprechbar.',
     untersuchungsbefund: 'Verbrennungen zweiten Grades, etwa 15 Prozent der Körperoberfläche.',
@@ -215,6 +228,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'wirbelsaeule',
+    koerperregion: 'ruecken',
     ziel: 'SK2',
     kurzbefund: 'Liegt still, klagt über Rückenschmerzen und Kribbeln in den Beinen.',
     untersuchungsbefund: 'Druckschmerz über der Brustwirbelsäule, Sensibilitätsstörung.',
@@ -228,6 +242,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'schuerfwunden',
+    koerperregion: 'arm_rechts',
     ziel: 'SK3',
     kurzbefund: 'Geht umher, Schürfwunden an Armen und Knien.',
     untersuchungsbefund: 'Oberflächliche Schürfwunden, sonst unauffällig.',
@@ -241,6 +256,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'handgelenk',
+    koerperregion: 'arm_rechts',
     ziel: 'SK3',
     kurzbefund: 'Steht abseits, hält das Handgelenk, ansprechbar.',
     untersuchungsbefund: 'Schmerzhafte Schwellung des Handgelenks, Durchblutung intakt.',
@@ -254,6 +270,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'unverletzt_betroffen',
+    koerperregion: 'kopf',
     ziel: 'SK3',
     kurzbefund: 'Läuft aufgeregt umher, körperlich unverletzt.',
     untersuchungsbefund: 'Keine Verletzungszeichen, deutliche Belastungsreaktion.',
@@ -267,6 +284,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'innere_blutung',
+    koerperregion: 'abdomen',
     ziel: 'SK3',
     kurzbefund: 'Geht umher, klagt über leichte Bauchschmerzen.',
     untersuchungsbefund: 'Gurtmarke am Abdomen, zunehmender Druckschmerz.',
@@ -280,6 +298,7 @@ const MUSTER: Muster[] = [
   },
   {
     id: 'apnoe',
+    koerperregion: 'thorax',
     ziel: 'SK4',
     kurzbefund: 'Reglos, keine sichtbare Atmung.',
     untersuchungsbefund: 'Keine Spontanatmung, zentrale Zyanose, weite Pupillen.',
@@ -560,6 +579,7 @@ function baueProblem(muster: Muster, plan: ReturnType<typeof verlaufsplan>, star
     label: muster.problemLabel,
     beschreibung: muster.problemBeschreibung,
     behandeltDurch: muster.behandeltDurch,
+    koerperregion: muster.koerperregion,
     verlauf,
     ...(plan.startetNachMin ? { startetNachMin: plan.startetNachMin } : {}),
   };

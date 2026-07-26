@@ -87,6 +87,9 @@ Probelauf, Diagnostik und Baukasten.
   Vordergrund.
 - Eine Untersuchung liefert immer den korrekten Befund. Fehlmessungen, nicht
   verfügbare Geräte oder ein unkooperativer Patient sind nicht abgebildet.
+- Das Körperschema kennt zehn grobe Regionen, keine Seitenlokalisation
+  innerhalb einer Region und keine Verletzungsart. Für "Fraktur Unterarm
+  links" steht die Marke am linken Arm, nicht am Unterarm.
 - Blutzucker, Temperatur und Schmerz dürfen in einer Szenariodatei fehlen; die
   Simulation füllt sie dann unauffällig auf (→ `sim.standardwerte`). Ältere
   Dateien bleiben dadurch gültig.
@@ -425,16 +428,43 @@ Die Ausnahme ist die **endgültige Sichtung**: Wer als endgültig markiert ist,
 wird nicht wieder aufgemacht und darf ohne erneute Sichtung weiter. Markieren
 lässt sich das an jeder Station, nicht erst am Ausgang.
 
-### Drei Knöpfe statt vier Ansichten
+### Körperschema mit Markierungen
 
-Unter der Karte stehen der Ersteindruck und drei Bereiche
-(→ `ui.patientenansicht`), von denen immer nur einer offen ist:
+Das Schema ist keine Zierde (→ `ui.koerperschema`). Nach dem Bodycheck markiert
+es die Körperregion jedes gefundenen Problems (→ `modell.koerperregion`):
+offene Probleme pulsieren rot, versorgte stehen grün. Ohne Bodycheck bleibt es
+leer - wo etwas ist, weiß man erst, wenn man nachgesehen hat.
+
+Seitenangaben gelten für den Patienten: Auf der Vorderansicht liegt sein rechter
+Arm links im Bild, weil man ihm gegenübersteht. Klein steht das Schema auf der
+Karte, groß auf der Diagnostikseite.
+
+### Alles auf eine Seite - notfalls auf eine eigene
+
+Unter der Karte stehen vier Knöpfe (→ `ui.patientenansicht`). Jeder öffnet eine
+**eigene Vollbildseite** (→ `ui.bereichsseite`) statt eines Blocks darunter:
 
 | Knopf | Inhalt | Marke am Knopf |
 | --- | --- | --- |
-| Diagnostik | Befundtafel, Bodycheck | erhobene Zeit |
+| Diagnostik | Befundtafel, Körperschema, Bodycheck | erhobene Zeit |
 | Maßnahmen | xABCDE-Katalog, Durchgeführtes | Anzahl durchgeführt |
 | Verlegung | erlaubte Ziele | offene Sichtung oder Anzahl Ziele |
+| Verlauf | Protokoll | Anzahl Einträge |
+
+Damit bleibt die Übersicht unabhängig davon, wie lang der Maßnahmenkatalog
+wird. Auf der Bereichsseite steht der Kopf, gescrollt wird nur der Inhalt;
+Escape schließt sie und führt zurück auf die Karte.
+
+Gemessen an derselben Lage:
+
+| | Übersicht | Bereichsseite |
+| --- | --- | --- |
+| Desktop 1440×950 | **1,00** Bildschirme | 1,00 |
+| Telefon 390×844 | 1,10 Bildschirme | 1,08 |
+
+Auf dem Desktop passt die Übersicht damit exakt auf eine Seite. Auf dem Telefon
+bleibt ein kurzer Rest - die angeheftete Einsatzleiste (Titel, Uhr, sechs
+Zähler) belegt dort allein 173 px.
 
 Damit sind die vier fast gleichen Abschnittsansichten (Ersteinschätzung,
 Eingangssichtung, Versorgung, Ausgangssichtung) zu **einer** Ansicht geworden.
@@ -480,7 +510,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_106 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -516,18 +546,18 @@ _99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:15`](src/domain/szenarioGenerator.ts#L15) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
-| `generator.muster` | [`src/domain/szenarioGenerator.ts:68`](src/domain/szenarioGenerator.ts#L68) | Der Vorrat an Verletzungsmustern - hier erweitern |
-| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:435`](src/domain/szenarioGenerator.ts#L435) | Aus der gewünschten Todesminute wird die Verlaufsrate |
+| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:16`](src/domain/szenarioGenerator.ts#L16) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
+| `generator.muster` | [`src/domain/szenarioGenerator.ts:71`](src/domain/szenarioGenerator.ts#L71) | Der Vorrat an Verletzungsmustern - hier erweitern |
+| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:454`](src/domain/szenarioGenerator.ts#L454) | Aus der gewünschten Todesminute wird die Verlaufsrate |
 
 #### ki
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
-| `ki.korrektur` | [`src/lib/kiPrompt.ts:117`](src/lib/kiPrompt.ts#L117) | Rückmeldung der Prüfung an das Modell |
+| `ki.korrektur` | [`src/lib/kiPrompt.ts:120`](src/lib/kiPrompt.ts#L120) | Rückmeldung der Prüfung an das Modell |
 | `ki.livetest` | [`src/lib/kiClient.live.test.ts:8`](src/lib/kiClient.live.test.ts#L8) | Echter Durchlauf gegen die API - nur mit Schlüssel |
-| `ki.normalisieren` | [`src/lib/kiSchema.ts:137`](src/lib/kiSchema.ts#L137) | Räumt die Modellantwort auf, bevor sie geprüft wird |
+| `ki.normalisieren` | [`src/lib/kiSchema.ts:145`](src/lib/kiSchema.ts#L145) | Räumt die Modellantwort auf, bevor sie geprüft wird |
 | `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
 | `ki.schema` | [`src/lib/kiSchema.ts:6`](src/lib/kiSchema.ts#L6) | Das JSON-Schema, an das die KI gebunden wird |
 | `ki.zugang` | [`src/lib/kiZugang.ts:2`](src/lib/kiZugang.ts#L2) | Wo der API-Schlüssel liegt - und was das bedeutet |
@@ -546,13 +576,14 @@ _99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:247`](src/domain/types.ts#L247) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:321`](src/domain/types.ts#L321) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:367`](src/domain/types.ts#L367) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:282`](src/domain/types.ts#L282) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:402`](src/domain/types.ts#L402) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.patient` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:291`](src/domain/types.ts#L291) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:232`](src/domain/types.ts#L232) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.koerperregion` | [`src/domain/types.ts:231`](src/domain/types.ts#L231) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.patient` | [`src/domain/types.ts:391`](src/domain/types.ts#L391) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:326`](src/domain/types.ts#L326) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:265`](src/domain/types.ts#L265) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:188`](src/domain/types.ts#L188) | Basis, Notfallsanitäter nach SAA, Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
@@ -611,14 +642,18 @@ _99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.anhaengekarte` | [`src/index.css:1036`](src/index.css#L1036) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1407`](src/index.css#L1407) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:2091`](src/index.css#L2091) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.einsatzleiste` | [`src/index.css:2338`](src/index.css#L2338) | Die angeheftete Leiste so flach wie möglich |
+| `stil.ersteindruck` | [`src/index.css:1460`](src/index.css#L1460) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:2293`](src/index.css#L2293) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.raster` | [`src/index.css:1349`](src/index.css#L1349) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.patientnav` | [`src/index.css:1286`](src/index.css#L1286) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.raster` | [`src/index.css:1589`](src/index.css#L1589) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:2198`](src/index.css#L2198) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:2408`](src/index.css#L2408) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2335`](src/index.css#L2335) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2539`](src/index.css#L2539) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -650,18 +685,20 @@ _99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
-| `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:19`](src/components/Anhaengekarte.tsx#L19) | Die Übersicht als Verletztenanhängekarte |
+| `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
+| `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
-| `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:30`](src/components/Anhaengekarte.tsx#L30) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
+| `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
+| `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:20`](src/components/Massnahmenliste.tsx#L20) | Das einklappbare xABCDE-Akkordeon |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:32`](src/pages/uebungsleitung/PatientEditor.tsx#L32) | Formular für einen Szenario-Patienten samt Problemen |
-| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:21`](src/pages/patient/Patientenansicht.tsx#L21) | Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte |
+| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:23`](src/pages/patient/Patientenansicht.tsx#L23) | Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |

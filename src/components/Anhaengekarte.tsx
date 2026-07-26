@@ -1,3 +1,5 @@
+import { Ersteindruck } from './Ersteindruck';
+import { Koerperschema } from './Koerperschema';
 import { abschnittInfo, sichtungsstelleIn } from '../domain/abschnitte';
 import { sichtungOffen } from '../domain/simulation';
 import { SICHTUNGSKATEGORIEN } from '../domain/types';
@@ -8,11 +10,11 @@ import type { Patient, Sichtungskategorie, Sichtungsstelle } from '../domain/typ
 const AUSWAHL: Sichtungskategorie[] = ['SK1', 'SK2', 'SK3', 'SK4', 'EX'];
 
 /** Die vier Sichtungen der Anhängekarte, in der Reihenfolge des Einsatzes. */
-const ZEILEN: { stelle: Sichtungsstelle; nummer: string; titel: string }[] = [
-  { stelle: 'vorsichtung', nummer: '1.', titel: 'Vorsichtung' },
-  { stelle: 'eingangssichtung', nummer: '2.', titel: 'Eingangssichtung' },
-  { stelle: 'nachsichtung', nummer: '3.', titel: 'Nachsichtung' },
-  { stelle: 'ausgangssichtung', nummer: '4.', titel: 'Ausgangssichtung' },
+const ZEILEN: { stelle: Sichtungsstelle; nummer: string; titel: string; kurz: string }[] = [
+  { stelle: 'vorsichtung', nummer: '1.', titel: 'Vorsichtung', kurz: 'Vor' },
+  { stelle: 'eingangssichtung', nummer: '2.', titel: 'Eingangssichtung', kurz: 'Eingang' },
+  { stelle: 'nachsichtung', nummer: '3.', titel: 'Nachsichtung', kurz: 'Nach' },
+  { stelle: 'ausgangssichtung', nummer: '4.', titel: 'Ausgangssichtung', kurz: 'Ausgang' },
 ];
 
 /**
@@ -21,7 +23,9 @@ const ZEILEN: { stelle: Sichtungsstelle; nummer: string; titel: string }[] = [
  * Nachgebaut ist die Patienten-Anhängetasche, wie sie im MANV am Patienten
  * hängt: oben die Farbreiter der Kategorien, darunter die Kennung, das
  * Körperschema und - der eigentliche Kern - **vier Sichtungszeilen** mit je
- * I, II, III, IV, EX und der Uhrzeit.
+ * I, II, III, IV, EX und der Uhrzeit. Dazwischen die fünf Befunde der
+ * Vorsichtung - auf der echten Karte stehen sie ebenfalls dort und nicht auf
+ * einem zweiten Blatt.
  *
  * Gesichtet wird direkt hier: ein Klick auf das Kästchen der Kategorie in der
  * Zeile der aktuellen Station. Es gibt keine getrennte Sichtungsauswahl mehr -
@@ -74,10 +78,12 @@ export function Anhaengekarte({ patient }: { patient: Patient }) {
             {patient.alter} Jahre · {patient.geschlecht === 'w' ? 'weiblich' : patient.geschlecht === 'm' ? 'männlich' : 'divers'}
           </span>
         </div>
-        <Koerperschema />
+        <Koerperschema patient={patient} />
       </div>
 
       <p className="anhaengekarte-befund">{patient.kurzbefund}</p>
+
+      <Ersteindruck patient={patient} />
 
       <div className="sichtungszeilen">
         {ZEILEN.map((zeile) => {
@@ -91,7 +97,9 @@ export function Anhaengekarte({ patient }: { patient: Patient }) {
               }`}
             >
               <span className="sichtungszeile-titel">
-                <span className="sichtungszeile-nummer">{zeile.nummer}</span> {zeile.titel}
+                <span className="sichtungszeile-nummer">{zeile.nummer}</span>
+                <span className="sichtungszeile-lang">{zeile.titel}</span>
+                <span className="sichtungszeile-kurz">{zeile.kurz}</span>
               </span>
               <div className="sichtungszeile-kaesten">
                 {AUSWAHL.map((eintragKategorie) => {
@@ -140,27 +148,5 @@ export function Anhaengekarte({ patient }: { patient: Patient }) {
         )}
       </div>
     </section>
-  );
-}
-
-/** Körperschema der Anhängekarte - Vorder- und Rückansicht. */
-function Koerperschema() {
-  const figur = (versatz: number) => (
-    <g transform={`translate(${versatz} 0)`}>
-      <circle cx="14" cy="8" r="6" />
-      <path d="M14 14 L14 40 M4 20 L24 20 M14 40 L7 62 M14 40 L21 62" />
-    </g>
-  );
-
-  return (
-    <svg
-      className="koerperschema"
-      viewBox="0 0 60 68"
-      role="img"
-      aria-label="Körperschema, Vorder- und Rückansicht"
-    >
-      {figur(1)}
-      {figur(31)}
-    </svg>
   );
 }

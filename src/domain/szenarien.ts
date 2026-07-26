@@ -42,6 +42,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'blutung-femur',
+          koerperregion: 'bein_rechts',
           label: 'Arterielle Blutung Oberschenkel',
           beschreibung: 'Pulsierende Blutung aus der Wunde, Kleidung durchtränkt, Blutlache am Boden.',
           behandeltDurch: ['tourniquet', 'blutstillung'],
@@ -79,6 +80,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'spannungspneumothorax',
+          koerperregion: 'thorax',
           label: 'Spannungspneumothorax links',
           beschreibung: 'Gestaute Halsvenen, hypersonorer Klopfschall, Atemnot nimmt zu.',
           behandeltDurch: ['thoraxentlastung'],
@@ -118,6 +120,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'atemwegsverlegung',
+          koerperregion: 'kopf',
           label: 'Verlegter Atemweg',
           beschreibung: 'Schnarchende Atmung, Blut und Erbrochenes im Mundraum, Zunge fällt zurück.',
           behandeltDurch: ['atemwege_freimachen', 'guedeltubus', 'intubation'],
@@ -151,6 +154,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'beckenfraktur',
+          koerperregion: 'becken',
           label: 'Instabile Beckenfraktur',
           beschreibung: 'Becken federt bei vorsichtigem Druck, Hämatom in der Leiste, blasse Haut.',
           behandeltDurch: ['beckenschlinge'],
@@ -158,6 +162,7 @@ const busunfall: Szenario = {
         },
         {
           id: 'volumenmangel',
+          koerperregion: 'abdomen',
           label: 'Hämorrhagischer Schock',
           beschreibung: 'Puls fadenförmig und schnell, Haut kaltschweißig, Patient zunehmend unruhig.',
           behandeltDurch: ['volumengabe', 'schocklage'],
@@ -189,6 +194,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'schmerz-arm',
+          koerperregion: 'arm_links',
           label: 'Starke Schmerzen',
           beschreibung: 'Fehlstellung des linken Unterarms, hält ihn schonend, jede Bewegung sehr schmerzhaft.',
           behandeltDurch: ['paracetamol', 'immobilisation'],
@@ -219,6 +225,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'hyperventilation',
+          koerperregion: 'thorax',
           label: 'Hyperventilation / akute Belastungsreaktion',
           beschreibung: 'Weint, atmet sehr schnell und flach, Kribbeln in den Händen.',
           behandeltDurch: ['betreuung'],
@@ -250,6 +257,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'hypothermie',
+          koerperregion: 'thorax',
           label: 'Auskühlung',
           beschreibung: 'Durchnässte Kleidung, liegt auf kaltem Asphalt, Haut kühl, beginnt zu zittern.',
           behandeltDurch: ['waermeerhalt'],
@@ -280,6 +288,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'sht-leicht',
+          koerperregion: 'kopf',
           label: 'Leichtes Schädel-Hirn-Trauma',
           beschreibung: 'Erinnert sich nicht an den Unfall, fragt mehrfach dasselbe, Prellmarke am Hinterkopf.',
           behandeltDurch: ['immobilisation'],
@@ -311,6 +320,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'atemstillstand',
+          koerperregion: 'thorax',
           label: 'Atemstillstand',
           beschreibung:
             'Keine Atembewegung, keine Reaktion auf Schmerzreiz, Haut fahl.',
@@ -346,6 +356,7 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'innere-blutung',
+          koerperregion: 'abdomen',
           label: 'Intraabdominelle Blutung',
           beschreibung:
             'Bauchdecke zunehmend gespannt, Druckschmerz nimmt zu, Patientin wird stiller.',
@@ -391,6 +402,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'rauchgas-schwer',
+          koerperregion: 'hals',
           label: 'Schwere Rauchgasintoxikation',
           beschreibung: 'Ruß in Mund und Rachen, verbrannte Nasenhaare, heisere Stimme, hörbares Einatmen.',
           behandeltDurch: ['sauerstoffgabe', 'intubation'],
@@ -422,6 +434,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'rauchgas-leicht',
+          koerperregion: 'kopf',
           label: 'Leichte Rauchgasexposition',
           beschreibung: 'Klagt über Kopfschmerz und Übelkeit, wirkt benommen, Haut auffällig rosig.',
           behandeltDurch: ['sauerstoffgabe'],
@@ -452,6 +465,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'verbrennung',
+          koerperregion: 'thorax',
           label: 'Ausgedehnte Verbrennung',
           beschreibung: 'Blasenbildung an Armen und Rumpf, nässende Wundflächen, Patient friert.',
           behandeltDurch: ['volumengabe'],
@@ -459,6 +473,7 @@ const wohnungsbrand: Szenario = {
         },
         {
           id: 'verbrennungsschmerz',
+          koerperregion: 'thorax',
           label: 'Stärkste Schmerzen',
           beschreibung: 'Stärkste Schmerzen, presst die Arme an den Körper, kaum zu beruhigen.',
           behandeltDurch: ['esketamin', 'morphin'],
@@ -489,6 +504,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'wirbelsaeulentrauma',
+          koerperregion: 'ruecken',
           label: 'Verdacht auf Wirbelsäulenverletzung',
           beschreibung: 'Klagt über Kribbeln in beiden Beinen, Druckschmerz über der Brustwirbelsäule.',
           behandeltDurch: ['immobilisation'],
@@ -519,6 +535,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'rauchgas-kind',
+          koerperregion: 'hals',
           label: 'Rauchgasintoxikation (Kind)',
           beschreibung: 'Auffällig ruhig, blasse Haut, Puls schnell und schwach zu tasten.',
           behandeltDurch: ['sauerstoffgabe', 'beatmung'],
@@ -549,6 +566,7 @@ const wohnungsbrand: Szenario = {
       probleme: [
         {
           id: 'acs',
+          koerperregion: 'thorax',
           label: 'Akutes Koronarsyndrom',
           beschreibung: 'Klagt über Druck hinter dem Brustbein mit Ausstrahlung in den linken Arm, kaltschweißig.',
           behandeltDurch: ['sauerstoffgabe', 'morphin'],

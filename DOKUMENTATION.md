@@ -51,7 +51,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-98 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+101 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -209,6 +209,26 @@ verraten, ob sie auffällig wären. Manche Probleme sind ohne die passende
 Untersuchung gar nicht zu finden: Der Spannungspneumothorax zeigt sich in der
 Auskultation, das Schädel-Hirn-Trauma an den Pupillen.
 
+**Die Befundtafel ist zugleich die Bedienfläche** (→ `ui.befundtafel`,
+`diagnostik.zuordnung`). Ein Tippen auf das leere Feld startet die Untersuchung,
+die genau diesen Wert liefert; der Preis steht vorher am Feld:
+
+```
+┌──────────┐  Tippen   ┌──────────────┐
+│ RR SYS   │  ───────► │ RR SYS       │   Uhr 00:00 → 00:45
+│ –   45 s │           │ 130 mmHg     │
+└──────────┘           └──────────────┘
+```
+
+Wo mehrere Untersuchungen denselben Wert liefern, gewinnt die günstigste: die
+Herzfrequenz kommt über den getasteten Puls (10 s), nicht über das EKG (60 s).
+Die Zuordnung wird aus dem Katalog abgeleitet, nicht von Hand gepflegt - eine
+neue Untersuchung ordnet sich selbst zu.
+
+Damit gibt es keine getrennte Diagnostikliste mehr. Der Weg vom "das weiß ich
+nicht" zum "dann messe ich es" ist ein Klick an genau der Stelle, an der die
+Frage entsteht.
+
 ### Versuchung
 
 Der Maßnahmenkatalog ist in jeder Ansicht vollständig vorhanden. In der
@@ -352,6 +372,32 @@ bestehen: für Geräte ohne Zugang und für den Betrieb ohne Netz.
 
 ---
 
+## 4b. Aufbau der Patientenseite
+
+Oben steht die **Anhängekarte** (→ `ui.anhaengekarte`) - nachgebaut ist die Idee
+der Verletztenanhängekarte, nicht das Formular: farbiger Streifen für die
+Sichtungskategorie, daneben Kennung, Name, Alter, Geschlecht, Aufenthaltsort und
+die an diesem Patienten gebundene Zeit. Flach gehalten, weil der alte Kopf auf
+dem Telefon ein Sechstel der Bildhöhe verbrauchte, bevor ein Befund zu sehen war.
+
+Darunter zwei Spalten: **Befunde** und **Maßnahmen**, das Protokoll zugeklappt
+darunter. Gegenüber der vorigen Fassung sind drei Dinge kürzer geworden:
+
+| Was | Vorher | Jetzt |
+| --- | --- | --- |
+| Diagnostik | eigene Spalte mit 13 Knöpfen | steckt in der Befundtafel |
+| Maßnahmen | alle 6 Gruppen offen, 51 Zeilen | Gruppen eingeklappt, 6 Zeilen |
+| Protokoll | immer ausgeklappt | zugeklappt mit Zähler |
+
+Gemessen an einer Lage mit Sabine Krüger: die Seite war 5,5 Bildschirme hoch,
+jetzt sind es 2,0 auf dem Telefon und 1,0 auf dem Desktop - dort also gar kein
+Scrollen mehr.
+
+Die Maßnahmengruppen eingeklappt starten zu lassen nimmt der Versuchung nichts:
+Die Gruppenköpfe stehen weiterhin da, mit Zähler, einen Klick entfernt.
+
+---
+
 ## 5. Ablauf der Einsatzabschnitte
 
 ```
@@ -385,7 +431,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -409,6 +455,7 @@ _97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `diagnostik.bekannt` | [`src/domain/diagnostik.ts:133`](src/domain/diagnostik.ts#L133) | Ist dieser Befund schon erhoben? |
 | `diagnostik.katalog` | [`src/domain/diagnostik.ts:10`](src/domain/diagnostik.ts#L10) | Alle Untersuchungen mit Dauer und aufgedecktem Befund |
+| `diagnostik.zuordnung` | [`src/domain/diagnostik.ts:145`](src/domain/diagnostik.ts#L145) | Welche Untersuchung ein Feld der Befundtafel öffnet |
 
 #### format
 
@@ -513,13 +560,13 @@ _97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1765`](src/index.css#L1765) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:1901`](src/index.css#L1901) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.raster` | [`src/index.css:1072`](src/index.css#L1072) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1159`](src/index.css#L1159) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:1872`](src/index.css#L1872) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:2008`](src/index.css#L2008) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2009`](src/index.css#L2009) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2232`](src/index.css#L2232) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -551,12 +598,12 @@ _97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
+| `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:8`](src/components/Anhaengekarte.tsx#L8) | Der Kopf der Patientenseite im Stil der Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.ausgangssichtung` | [`src/pages/patient/Ausgangssichtung.tsx:12`](src/pages/patient/Ausgangssichtung.tsx#L12) | Übergabe, schnelle Maßnahmen, Abschlusssichtung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
-| `ui.befundtafel` | [`src/components/Befundtafel.tsx:7`](src/components/Befundtafel.tsx#L7) | Nur was erhoben wurde, ist zu sehen |
+| `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
-| `ui.diagnostikliste` | [`src/components/Diagnostikliste.tsx:19`](src/components/Diagnostikliste.tsx#L19) | Untersuchungen einzeln wählen - jede mit ihrem Preis |
 | `ui.eingangssichtung` | [`src/pages/patient/Eingangssichtung.tsx:10`](src/pages/patient/Eingangssichtung.tsx#L10) | Sichten und einem Zelt zuweisen |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
@@ -601,7 +648,7 @@ _97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           98 Tests
+npm run test           101 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

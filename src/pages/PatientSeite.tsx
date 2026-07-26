@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Anhaengekarte } from '../components/Anhaengekarte';
 import { Massnahmenuebersicht } from '../components/Massnahmenuebersicht';
-import { SichtungsBadge } from '../components/SichtungsBadge';
 import { abschnittInfo } from '../domain/abschnitte';
 import { useSimulation } from '../state/useSimulation';
 import { Ausgangssichtung } from './patient/Ausgangssichtung';
@@ -26,12 +26,6 @@ export function PatientSeite({ patient }: { patient: Patient }) {
   const [erweitert, setErweitert] = useState(false);
 
   const abschnitt = abschnittInfo(patient.abschnitt);
-  const verstorben = patient.status === 'verstorben';
-  const randKlasse = verstorben
-    ? 'rand-EX'
-    : patient.gesichtetAls
-      ? `rand-${patient.gesichtetAls}`
-      : 'rand-offen';
 
   // Nur Patienten desselben Abschnitts sind über die Blättern-Schaltflächen erreichbar.
   const nachbarn = state.patienten.filter(
@@ -88,28 +82,7 @@ export function PatientSeite({ patient }: { patient: Patient }) {
         </div>
       </nav>
 
-      <header
-        className={`patientseite-kopf ${randKlasse}${
-          verstorben ? ' patientseite-kopf-verstorben' : ''
-        }`}
-      >
-        <div>
-          <span className="patient-id">
-            {patient.id} · {abschnitt.name}
-          </span>
-          <h2>
-            {patient.name}, {patient.alter} J. ({patient.geschlecht})
-          </h2>
-          <p className="detail-befund">{patient.kurzbefund}</p>
-        </div>
-        {verstorben ? (
-          <SichtungsBadge kategorie="EX" />
-        ) : patient.gesichtetAls ? (
-          <SichtungsBadge kategorie={patient.gesichtetAls} />
-        ) : (
-          <span className="sk-badge sk-offen">nicht gesichtet</span>
-        )}
-      </header>
+      <Anhaengekarte patient={patient} />
 
       <Abschnittsansicht
         patient={patient}

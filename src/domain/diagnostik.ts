@@ -141,6 +141,30 @@ export function istBekannt(patient: Patient, schluessel: Befundschluessel): bool
   );
 }
 
+/**
+ * @anker diagnostik.zuordnung Welche Untersuchung ein Feld der Befundtafel öffnet
+ *
+ * Damit die Befundtafel selbst bedienbar ist: Ein Tippen auf "RR sys –" soll
+ * die Blutdruckmessung starten. Wo mehrere Untersuchungen denselben Wert
+ * liefern, gewinnt die günstigste - die Herzfrequenz kommt über den getasteten
+ * Puls (10 s), nicht über das EKG (60 s).
+ *
+ * Abgeleitet statt von Hand gepflegt: eine neue Untersuchung im Katalog
+ * ordnet sich automatisch zu.
+ */
+export const DIAGNOSTIK_FUER: Record<Befundschluessel, DiagnostikId> = (() => {
+  const zuordnung = {} as Record<Befundschluessel, DiagnostikId>;
+  for (const eintrag of DIAGNOSTIK_LISTE) {
+    for (const schluessel of eintrag.zeigt) {
+      const bisher = zuordnung[schluessel];
+      if (!bisher || eintrag.dauerSek < DIAGNOSTIK[bisher].dauerSek) {
+        zuordnung[schluessel] = eintrag.id;
+      }
+    }
+  }
+  return zuordnung;
+})();
+
 /** Summierter Zeitbedarf aller durchgeführten Untersuchungen. */
 export function diagnostikZeitSek(patient: Patient): number {
   return patient.durchgefuehrteDiagnostik.reduce(

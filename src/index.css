@@ -1030,6 +1030,93 @@ button.gefahr {
   text-align: center;
 }
 
+/* --- Anhängekarte ------------------------------------------------- */
+
+.anhaengekarte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-left: 5px solid var(--sk-farbe, var(--rand));
+  border-radius: var(--radius);
+}
+
+.anhaengekarte-verstorben {
+  opacity: 0.75;
+}
+
+.anhaengekarte-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.anhaengekarte-kopf h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.anhaengekarte-id {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sk-farbe, var(--rand)) 22%, transparent);
+  color: var(--sk-farbe, var(--text-leise));
+}
+
+.anhaengekarte-person {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-befund {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-fuss {
+  display: flex;
+  gap: 1.2rem;
+  margin: 0;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.anhaengekarte-fuss > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.anhaengekarte-fuss dt {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-fuss dd {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.anhaengekarte-individual dd {
+  color: var(--warn);
+}
+
 .patientseite-kopf {
   display: flex;
   align-items: flex-start;
@@ -1099,16 +1186,13 @@ button.gefahr {
   }
 
   .patientseite-raster {
-    /* Erheben, sehen, handeln - in genau dieser Leserichtung. */
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr) minmax(0, 1fr);
+    /* Sehen und handeln. Die Diagnostik steckt jetzt in der Befundtafel. */
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     grid-template-areas:
-      'diagnostik befund massnahmen'
-      'protokoll protokoll protokoll';
+      'befund massnahmen'
+      'protokoll protokoll';
   }
 
-  .patientseite-raster .karte-diagnostik {
-    grid-area: diagnostik;
-  }
   .patientseite-raster .karte-befund {
     grid-area: befund;
   }
@@ -1363,6 +1447,73 @@ button.gefahr {
   font-weight: 500;
 }
 
+/* Leere Felder sind Knöpfe: ein Tipp erhebt den Wert. */
+.vital-zelle {
+  display: contents;
+}
+
+button.vital {
+  width: 100%;
+  text-align: left;
+  align-items: flex-start;
+}
+
+button.vital-unbekannt:not(:disabled) {
+  cursor: pointer;
+}
+
+.vital-preis {
+  /* Deutlich vom Strich abgesetzt, sonst liest es sich als negativer Wert. */
+  margin-left: 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--akzent);
+  letter-spacing: 0.03em;
+}
+
+.befund-erheben {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  border-style: dashed;
+  color: var(--akzent);
+}
+
+.befund-erheben:disabled {
+  color: var(--text-leise);
+}
+
+.bodycheck-knopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  border-style: dashed;
+  font-size: 0.86rem;
+}
+
+.hinweis-knapp {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+}
+
+.karte-nebentitel {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-leise);
+}
+
+.karte-protokoll summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
 .textbefunde {
   margin: 0;
   display: flex;
@@ -1392,21 +1543,6 @@ button.gefahr {
 .textbefunde .befund-offen dd {
   color: var(--text-leise);
   font-style: italic;
-}
-
-/* --- Diagnostik --------------------------------------------------- */
-
-.diagnostik {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.diagnostik-konto {
-  margin: 0 0 0.2rem;
-  font-size: 0.8rem;
-  color: var(--text-leise);
-  font-variant-numeric: tabular-nums;
 }
 
 .vital {
@@ -1928,7 +2064,94 @@ tbody tr:last-child td {
   }
 
   /* Kategorie unter den Namen statt daneben - sonst bricht die Zeile dreifach um. */
-  .patientseite-kopf {
+  /* --- Anhängekarte ------------------------------------------------- */
+
+.anhaengekarte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-left: 5px solid var(--sk-farbe, var(--rand));
+  border-radius: var(--radius);
+}
+
+.anhaengekarte-verstorben {
+  opacity: 0.75;
+}
+
+.anhaengekarte-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.anhaengekarte-kopf h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.anhaengekarte-id {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sk-farbe, var(--rand)) 22%, transparent);
+  color: var(--sk-farbe, var(--text-leise));
+}
+
+.anhaengekarte-person {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-befund {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-fuss {
+  display: flex;
+  gap: 1.2rem;
+  margin: 0;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.anhaengekarte-fuss > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.anhaengekarte-fuss dt {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-fuss dd {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.anhaengekarte-individual dd {
+  color: var(--warn);
+}
+
+.patientseite-kopf {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.6rem;

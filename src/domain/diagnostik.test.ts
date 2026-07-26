@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DIAGNOSTIK,
+  DIAGNOSTIK_FUER,
   DIAGNOSTIK_LISTE,
   VOLLSTAENDIGE_DIAGNOSTIK_SEK,
   diagnostikZeitSek,
@@ -39,6 +40,30 @@ describe('Diagnostikkatalog', () => {
   it('kostet vollständig deutlich mehr als fünf Minuten', () => {
     // Die Kernaussage der Umstellung: Rundumdiagnostik ist teuer.
     expect(VOLLSTAENDIGE_DIAGNOSTIK_SEK).toBeGreaterThan(300);
+  });
+});
+
+describe('DIAGNOSTIK_FUER', () => {
+  it('ordnet jedem Feld der Befundtafel eine Untersuchung zu', () => {
+    // Sonst hätte ein Feld keinen Knopf und wäre nicht zu erheben.
+    for (const eintrag of DIAGNOSTIK_LISTE) {
+      for (const schluessel of eintrag.zeigt) {
+        expect(DIAGNOSTIK_FUER[schluessel], schluessel).toBeDefined();
+      }
+    }
+  });
+
+  it('wählt bei mehreren Wegen den günstigsten', () => {
+    // Herzfrequenz liefern Puls (10 s), Pulsoxymeter (20 s) und EKG (60 s).
+    expect(DIAGNOSTIK_FUER.herzfrequenz).toBe('puls_tasten');
+    expect(DIAGNOSTIK_FUER.systolischerRR).toBe('blutdruck_messen');
+    expect(DIAGNOSTIK_FUER.koerper).toBe('bodycheck');
+  });
+
+  it('deckt mit der zugeordneten Untersuchung wirklich den Wert auf', () => {
+    for (const [schluessel, id] of Object.entries(DIAGNOSTIK_FUER)) {
+      expect(DIAGNOSTIK[id].zeigt, schluessel).toContain(schluessel);
+    }
   });
 });
 

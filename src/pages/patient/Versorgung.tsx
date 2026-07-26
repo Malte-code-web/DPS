@@ -1,18 +1,18 @@
 import { Befundtafel } from '../../components/Befundtafel';
-import { Diagnostikliste } from '../../components/Diagnostikliste';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
 import { Verlegung } from '../../components/Verlegung';
-import { istBekannt } from '../../domain/diagnostik';
-import {
-  aktiveProbleme,
-  gebundeneZeitSek,
-  individualmedizinZeitSek,
-} from '../../domain/simulation';
+import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
+import { aktiveProbleme } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
 import { useSimulation } from '../../state/useSimulation';
 import type { MassnahmenKategorie, Patient } from '../../domain/types';
 
-const OFFEN: MassnahmenKategorie[] = ['x', 'A', 'B', 'C', 'D', 'E'];
+/**
+ * In der Versorgung startet der Katalog eingeklappt. 51 Maßnahmen offen zu
+ * zeigen hieß, dass alles andere aus dem Bild scrollte - die Gruppenköpfe mit
+ * ihrem Zähler stehen weiterhin da, die Versuchung ist einen Klick entfernt.
+ */
+const OFFEN: MassnahmenKategorie[] = [];
 
 interface Props {
   patient: Patient;
@@ -24,9 +24,9 @@ interface Props {
 /**
  * @anker ui.versorgung Diagnostik und Behandlung - in den Zelten und als zweite Stufe
  *
- * Drei Spalten in fester Reihenfolge: erheben, sehen, handeln. Die Diagnostik
- * steht bewusst vor den Maßnahmen - wer behandeln will, ohne gemessen zu haben,
- * kann das, sieht aber daneben die leere Befundtafel.
+ * Zwei Spalten statt drei: links Befunde, rechts Maßnahmen. Die Diagnostik hat
+ * keine eigene Spalte mehr - sie steckt in der Befundtafel, wo ein Tippen auf
+ * den fehlenden Wert die passende Untersuchung startet (→ `ui.befundtafel`).
  *
  * Die Befunde nennen, was zu finden ist, nicht was zu tun ist. Was daraus folgt,
  * ist die Entscheidung des Übenden - die Anwendung sagt es ihm nicht.
@@ -37,39 +37,34 @@ export function Versorgung({ patient, zurueck, ueberschrift = 'Befunde' }: Props
   const geloesteProbleme = patient.probleme.filter((problem) =>
     patient.behandelteProbleme.includes(problem.id),
   );
-  const individualzeit = individualmedizinZeitSek(patient);
   const koerperBekannt = istBekannt(patient, 'koerper');
+  const erhoben = diagnostikZeitSek(patient);
 
   return (
     <div className="stufe">
-      <div className="versorgung-leiste">
-        {zurueck ? (
+      {zurueck && (
+        <div className="versorgung-leiste">
           <button type="button" onClick={zurueck}>
             &larr; Ersteinschätzung
           </button>
-        ) : (
-          <span />
-        )}
-        <span className="zeitkonto">
-          An diesem Patienten gebunden: <strong>{zeitFormat(gebundeneZeitSek(patient))}</strong>
-          {individualzeit > 0 && <em> · davon {zeitFormat(individualzeit)} Individualmedizin</em>}
-        </span>
-      </div>
+        </div>
+      )}
 
       <div className="patientseite-raster">
-        <section className="karte karte-diagnostik">
-          <h3>Diagnostik</h3>
-          <Diagnostikliste
+        <section className="karte karte-befund">
+          <h3>
+            {ueberschrift}
+            {erhoben > 0 && <span className="karte-nebentitel">Diagnostik {zeitFormat(erhoben)}</span>}
+          </h3>
+          <p className="hinweis hinweis-knapp">
+            Leeres Feld antippen, um den Wert zu erheben.
+          </p>
+          <Befundtafel
             patient={patient}
             onDiagnostik={(diagnostikId) =>
               dispatch({ typ: 'diagnostikDurchfuehren', patientId: patient.id, diagnostikId })
             }
           />
-        </section>
-
-        <section className="karte karte-befund">
-          <h3>{ueberschrift}</h3>
-          <Befundtafel patient={patient} />
 
           {koerperBekannt ? (
             <>
@@ -86,9 +81,21 @@ export function Versorgung({ patient, zurueck, ueberschrift = 'Befunde' }: Props
               )}
             </>
           ) : (
-            <p className="hinweis">
-              Ohne Bodycheck bleibt der Ganzkörperbefund unbekannt.
-            </p>
+            <button
+              type="button"
+              className="bodycheck-knopf"
+              disabled={patient.status === 'verstorben' || patient.status === 'transportiert'}
+              onClick={() =>
+                dispatch({
+                  typ: 'diagnostikDurchfuehren',
+                  patientId: patient.id,
+                  diagnostikId: 'bodycheck',
+                })
+              }
+            >
+              <span>Bodycheck – Ganzkörperbefund erheben</span>
+              <span className="massnahme-dauer">60 s</span>
+            </button>
           )}
 
           {geloesteProbleme.length > 0 && (
@@ -117,19 +124,24 @@ export function Versorgung({ patient, zurueck, ueberschrift = 'Befunde' }: Props
         </section>
 
         <section className="karte karte-protokoll">
-          <h3>Verlaufsprotokoll</h3>
-          {patient.verlauf.length === 0 ? (
-            <p className="hinweis">Noch keine Einträge.</p>
-          ) : (
-            <ul className="protokoll">
-              {patient.verlauf.map((eintrag, index) => (
-                <li key={`${eintrag.zeitSek}-${index}`}>
-                  <time>{zeitFormat(eintrag.zeitSek)}</time>
-                  <span>{eintrag.text}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <details>
+            <summary>
+              Verlaufsprotokoll
+              <span className="karte-nebentitel">{patient.verlauf.length} Einträge</span>
+            </summary>
+            {patient.verlauf.length === 0 ? (
+              <p className="hinweis">Noch keine Einträge.</p>
+            ) : (
+              <ul className="protokoll">
+                {patient.verlauf.map((eintrag, index) => (
+                  <li key={`${eintrag.zeitSek}-${index}`}>
+                    <time>{zeitFormat(eintrag.zeitSek)}</time>
+                    <span>{eintrag.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
         </section>
       </div>
     </div>

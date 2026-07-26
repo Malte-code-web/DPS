@@ -2,16 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { VERLEGUNGSDAUER_SEK } from '../domain/abschnitte';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { SICHTUNGSDAUER_SEK, UNTERSUCHUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
+import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
 import type { Einsatzabschnitt } from '../domain/types';
 
 /** Startet den Busunfall und liefert den Zustand direkt nach dem Alarm. */
 function imEinsatz(): SimulationState {
-  return simulationReducer(ANFANGSZUSTAND, {
-    typ: 'szenarioStarten',
-    szenarioId: 'busunfall-b31',
-  });
+  const busunfall = SZENARIEN.find((szenario) => szenario.id === 'busunfall-b31')!;
+  return simulationReducer(ANFANGSZUSTAND, { typ: 'szenarioStarten', szenario: busunfall });
 }
 
 function patient(state: SimulationState, id: string) {

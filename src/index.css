@@ -237,6 +237,326 @@ select {
   gap: 0.35rem;
 }
 
+/* @anker stil.modi Karten der Trainingsmodus-Auswahl */
+/* --- Trainingsmodi ------------------------------------------------ */
+
+.modus-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.9rem;
+}
+
+.modus-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  background: var(--bg-panel);
+  border-top: 3px solid var(--akzent);
+}
+
+.modus-vorbereitung {
+  border-top-color: var(--rand);
+}
+
+.modus-aktiv {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+
+.modus-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.modus-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.modus-stand {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px dashed var(--rand);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.modus-stand-frei {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  color: var(--ok);
+}
+
+.modus-text {
+  font-size: 0.85rem;
+  color: var(--text-leise);
+}
+
+.aufzaehlung {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+  color: var(--text-leise);
+}
+
+/* @anker stil.editor Formularfelder und Prueflisten des Szenario-Editors */
+/* --- Uebungsleitung ------------------------------------------------ */
+
+.uebungsleitung {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.meldung {
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ok) 12%, var(--bg-panel));
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  color: var(--ok);
+  font-size: 0.88rem;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.editor-leiste {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0.7rem 0;
+  background: var(--bg);
+}
+
+.editor-status {
+  font-size: 0.85rem;
+  color: var(--text-leise);
+}
+
+.editor label,
+.karte label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-leise);
+}
+
+input[type='text'],
+input[type='number'],
+input:not([type]),
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  text-transform: none;
+  letter-spacing: normal;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ki-prompt {
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+}
+
+.editor-zeile {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+}
+
+.editor-patient,
+.editor-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.editor-problem {
+  padding: 0.8rem;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+}
+
+.editor-untertitel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.editor-vitalwerte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.5rem;
+}
+
+.editor-schalter,
+.editor-massnahmen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+/*
+ * Höhere Spezifität als ".editor label" - sonst gewinnt dessen Spaltenrichtung
+ * und das Kästchen steht über der Beschriftung statt daneben.
+ */
+.editor label.editor-haken,
+.karte label.editor-haken {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.editor-haken input {
+  width: auto;
+  accent-color: var(--akzent);
+}
+
+.editor-gruppe {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.editor-kategorien {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.editor-abweichung,
+.editor-stimmig {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.editor-abweichung {
+  color: var(--warn);
+}
+
+.editor-stimmig {
+  color: var(--ok);
+}
+
+.editor-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.editor-patientenliste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+button.gefahr {
+  border-color: color-mix(in srgb, var(--sk1) 45%, transparent);
+  color: var(--sk1);
+}
+
+.editor label.datei-knopf,
+.karte label.datei-knopf,
+.datei-knopf {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  background: var(--bg-panel-hoch);
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+}
+
+.datei-knopf input {
+  display: none;
+}
+
+.pruefliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.pruefliste li {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--rand);
+  background: var(--bg-panel-hoch);
+}
+
+.befund-fehler {
+  border-left-color: var(--sk1);
+  color: var(--sk1);
+}
+
+.befund-warnung {
+  border-left-color: var(--warn);
+  color: var(--warn);
+}
+
+.befund-ort {
+  color: var(--text-leise);
+  font-size: 0.75rem;
+}
+
 /* --- Einsatzleiste ---------------------------------------------- */
 
 .einsatzleiste {
@@ -1314,6 +1634,15 @@ tbody tr:last-child td {
 
   .patientseite-blaettern button {
     flex: 1;
+  }
+
+  .uebungsleitung {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  .pruefliste li {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
   }
 
   /* Befundzeilen gestapelt - nebeneinander bliebe für die Antwort zu wenig Platz. */

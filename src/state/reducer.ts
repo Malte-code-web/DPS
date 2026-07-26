@@ -11,20 +11,27 @@ import {
   untersuchePatient,
   wendeMassnahmeAn,
 } from '../domain/simulation';
-import { findeSzenario } from '../domain/szenarien';
+import type { Trainingsmodus } from '../domain/modi';
 import type {
   Einsatzabschnitt,
   MassnahmeId,
   Patient,
   Sichtungskategorie,
+  Szenario,
 } from '../domain/types';
 
-export type Phase = 'setup' | 'einsatz' | 'debriefing';
+/** @anker state.phase Die Hauptzustände der Anwendung */
+export type Phase = 'start' | 'setup' | 'einsatz' | 'debriefing' | 'uebungsleitung';
 
 /** @anker state.zustand Der gesamte Zustand einer laufenden Übung */
 export interface SimulationState {
   phase: Phase;
-  szenarioId: string | null;
+  /** Gewählter Trainingsmodus; null auf der Startseite. */
+  modus: Trainingsmodus | null;
+  /** Das laufende Szenario - eingebaut oder selbst gebaut. */
+  szenario: Szenario | null;
+  /** Selbst gebaute Szenarien der Übungsleitung. */
+  eigeneSzenarien: Szenario[];
   /** Vergangene Einsatzzeit in Sekunden (Simulationszeit, nicht Echtzeit). */
   zeitSek: number;
   laufend: boolean;
@@ -37,8 +44,10 @@ export interface SimulationState {
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
-  phase: 'setup',
-  szenarioId: null,
+  phase: 'start',
+  modus: null,
+  szenario: null,
+  eigeneSzenarien: [],
   zeitSek: 0,
   laufend: false,
   // Jede Handlung kostet zusaetzlich ihre eigene Dauer - der Zeitraffer darf
@@ -51,7 +60,11 @@ export const ANFANGSZUSTAND: SimulationState = {
 
 /** @anker state.aktionen Alles, was der Übende auslösen kann */
 export type SimulationAction =
-  | { typ: 'szenarioStarten'; szenarioId: string }
+  | { typ: 'modusWaehlen'; modus: Trainingsmodus }
+  | { typ: 'uebungsleitungOeffnen' }
+  | { typ: 'zurueckZumStart' }
+  | { typ: 'eigeneSzenarienSetzen'; szenarien: Szenario[] }
+  | { typ: 'szenarioStarten'; szenario: Szenario }
   | { typ: 'tick'; dtSek: number }
   | { typ: 'pauseUmschalten' }
   | { typ: 'geschwindigkeitSetzen'; wert: number }
@@ -104,19 +117,36 @@ export function simulationReducer(
   action: SimulationAction,
 ): SimulationState {
   switch (action.typ) {
-    case 'szenarioStarten': {
-      const szenario = findeSzenario(action.szenarioId);
-      if (!szenario) return state;
+    case 'modusWaehlen':
+      return {
+        ...state,
+        modus: action.modus,
+        // Nur die digitale Übung führt weiter; die übrigen Modi zeigen
+        // vorerst nur, was sie können sollen.
+        phase: action.modus === 'digital' ? 'setup' : 'start',
+      };
+
+    case 'uebungsleitungOeffnen':
+      return { ...state, phase: 'uebungsleitung' };
+
+    case 'zurueckZumStart':
+      return { ...ANFANGSZUSTAND, geschwindigkeit: state.geschwindigkeit, eigeneSzenarien: state.eigeneSzenarien };
+
+    case 'eigeneSzenarienSetzen':
+      return { ...state, eigeneSzenarien: action.szenarien };
+
+    case 'szenarioStarten':
       return {
         ...ANFANGSZUSTAND,
         geschwindigkeit: state.geschwindigkeit,
+        eigeneSzenarien: state.eigeneSzenarien,
+        modus: state.modus ?? 'digital',
         phase: 'einsatz',
-        szenarioId: szenario.id,
+        szenario: action.szenario,
         laufend: true,
         ausgewaehlterAbschnitt: 'schadensstelle',
-        patienten: szenario.patienten.map(patientAusVorlage),
+        patienten: action.szenario.patienten.map(patientAusVorlage),
       };
-    }
 
     case 'tick': {
       if (!state.laufend || state.phase !== 'einsatz') return state;
@@ -191,7 +221,13 @@ export function simulationReducer(
       return { ...state, phase: 'debriefing', laufend: false, ausgewaehlterPatientId: null };
 
     case 'zurueckZumSetup':
-      return { ...ANFANGSZUSTAND, geschwindigkeit: state.geschwindigkeit };
+      return {
+        ...ANFANGSZUSTAND,
+        geschwindigkeit: state.geschwindigkeit,
+        eigeneSzenarien: state.eigeneSzenarien,
+        modus: state.modus,
+        phase: 'setup',
+      };
 
     default:
       return state;

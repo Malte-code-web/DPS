@@ -1,5 +1,4 @@
 import { SichtungsBadge } from '../components/SichtungsBadge';
-import { findeSzenario } from '../domain/szenarien';
 import { berechneKennzahlen, erstelleDebriefing } from '../lib/auswertung';
 import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
@@ -31,7 +30,7 @@ const BEWERTUNG_LABEL: Record<Sichtungsbewertung, string> = {
 /** @anker ui.debriefing Auswertung nach dem Einsatz */
 export function DebriefingSeite() {
   const { state, dispatch } = useSimulation();
-  const szenario = state.szenarioId ? findeSzenario(state.szenarioId) : undefined;
+  const szenario = state.szenario;
   const zeilen = erstelleDebriefing(state.patienten);
   const kennzahlen = berechneKennzahlen(zeilen);
 

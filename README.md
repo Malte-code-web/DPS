@@ -12,6 +12,22 @@ Geübt werden
 
 Anschließend zeigt ein **Debriefing** die vergebenen gegen die korrekten Kategorien.
 
+## Trainingsmodi
+
+Die Startseite führt in einen von drei Modi:
+
+| Modus | Stand |
+| --- | --- |
+| **Digitale Übung** | ausgebaut – die vollständige Lage am Bildschirm |
+| **Führungskräfte** | in Vorbereitung – Lagebeurteilung und Kräfteeinteilung |
+| **Realübung** | in Vorbereitung – Begleitung einer Übung mit Mimen im Gelände |
+
+Daneben steht die **Übungsleitung**: eigene Szenarien anlegen, bearbeiten,
+als Datei weitergeben – oder von einer KI entwerfen lassen. Die App ruft dafür
+kein Modell auf, sondern erzeugt den vollständigen Auftrag zum Einfügen in eine
+beliebige KI; das Ergebnis kommt als JSON zurück und wird gegen dieselben Regeln
+geprüft wie die mitgelieferten Szenarien.
+
 ## Schnellstart
 
 ```bash
@@ -54,9 +70,12 @@ src/
     massnahmen.ts    Maßnahmenkatalog nach xABCDE-Schema
     szenarien.ts     Übungsszenarien mit Patientenvorlagen
     abschnitte.ts    Einsatzabschnitte und die erlaubten Wege dazwischen
+    modi.ts          Trainingsmodi und ihr Ausbaustand
+    szenarioPruefung.ts  Prüfung eigener und importierter Szenarien
   state/         useReducer-Store, Simulationsuhr, React-Context
   components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmenkatalog)
-  pages/         Setup → Einsatz → Patientenseite → Debriefing
+  pages/         Start → Setup → Einsatz → Patientenseite → Debriefing
+                 pages/uebungsleitung/ der Szenario-Editor
   lib/           Formatierung und Auswertung
 ```
 

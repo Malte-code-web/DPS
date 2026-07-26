@@ -1,42 +1,60 @@
 import { SZENARIEN } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
+import type { Szenario } from '../domain/types';
 
-/** @anker ui.setup Szenarioauswahl und Einstieg */
+/** @anker ui.setup Szenarioauswahl der digitalen Übung */
 export function SetupSeite() {
-  const { dispatch } = useSimulation();
+  const { state, dispatch } = useSimulation();
+
+  const gruppen: { titel: string; szenarien: Szenario[]; leer: string }[] = [
+    { titel: 'Mitgelieferte Szenarien', szenarien: SZENARIEN, leer: '' },
+    {
+      titel: 'Eigene Szenarien',
+      szenarien: state.eigeneSzenarien,
+      leer: 'Noch keine eigenen Szenarien - in der Übungsleitung anlegen.',
+    },
+  ];
 
   return (
     <main className="setup">
       <section className="setup-kopf">
-        <h1>DPS - Dynamische Patienten-Simulation</h1>
+        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
+          &larr; Trainingsmodus
+        </button>
+        <h1>Digitale Übung</h1>
         <p>
-          Trainingsumgebung für den Massenanfall von Verletzten. Die Patienten verändern sich in
-          Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und
-          kann versterben. Ziel ist eine vollständige Vorsichtung nach mSTaRT und eine sinnvolle
-          Verteilung der knappen Ressourcen.
+          Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert
+          wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung
+          nach mSTaRT und eine sinnvolle Verteilung der knappen Ressourcen.
         </p>
       </section>
 
-      <section className="szenarioliste">
-        <h2>Szenario wählen</h2>
-        {SZENARIEN.map((szenario) => (
-          <article key={szenario.id} className="szenario-karte">
-            <h3>{szenario.titel}</h3>
-            <p className="lagemeldung">{szenario.lagemeldung}</p>
-            <p className="hinweis">{szenario.einsatzhinweis}</p>
-            <div className="szenario-fuss">
-              <span>{szenario.patienten.length} Betroffene</span>
-              <button
-                type="button"
-                className="primaer"
-                onClick={() => dispatch({ typ: 'szenarioStarten', szenarioId: szenario.id })}
-              >
-                Einsatz starten
-              </button>
-            </div>
-          </article>
-        ))}
-      </section>
+      {gruppen.map((gruppe) => (
+        <section key={gruppe.titel} className="szenarioliste">
+          <h2>{gruppe.titel}</h2>
+          {gruppe.szenarien.length === 0 ? (
+            <p className="hinweis">{gruppe.leer}</p>
+          ) : (
+            gruppe.szenarien.map((szenario) => (
+              <article key={szenario.id} className="szenario-karte">
+                <h3>{szenario.titel}</h3>
+                <p className="lagemeldung">{szenario.lagemeldung}</p>
+                <p className="hinweis">{szenario.einsatzhinweis}</p>
+                <div className="szenario-fuss">
+                  <span>{szenario.patienten.length} Betroffene</span>
+                  <button
+                    type="button"
+                    className="primaer"
+                    onClick={() => dispatch({ typ: 'szenarioStarten', szenario })}
+                  >
+                    Einsatz starten
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+      ))}
 
       <section className="setup-hinweise">
         <h2>Ablauf einer Übung</h2>
@@ -47,7 +65,7 @@ export function SetupSeite() {
             Atemfrequenz, Kreislauf, Bewusstsein.
           </li>
           <li>Lebensrettende Sofortmaßnahmen durchführen - jede Maßnahme kostet Zeit.</li>
-          <li>Patienten an den Transport übergeben und den Einsatz zum Debriefing beenden.</li>
+          <li>Patienten über den Behandlungsplatz führen und den Einsatz zum Debriefing beenden.</li>
         </ol>
       </section>
     </main>

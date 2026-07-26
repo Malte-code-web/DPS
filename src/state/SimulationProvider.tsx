@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import type { ReactNode } from 'react';
+import { ladeEigeneSzenarien, sichereEigeneSzenarien } from '../lib/speicher';
 import { SimulationContext } from './context';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 
@@ -10,7 +11,11 @@ import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 const TAKT_MS = 500;
 
 export function SimulationProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(simulationReducer, ANFANGSZUSTAND);
+  // Eigene Szenarien liegen im Browser und werden beim Start eingelesen.
+  const [state, dispatch] = useReducer(simulationReducer, ANFANGSZUSTAND, (basis) => ({
+    ...basis,
+    eigeneSzenarien: ladeEigeneSzenarien(),
+  }));
   const { laufend, geschwindigkeit, phase } = state;
 
   useEffect(() => {
@@ -19,6 +24,10 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const timer = window.setInterval(() => dispatch({ typ: 'tick', dtSek }), TAKT_MS);
     return () => window.clearInterval(timer);
   }, [laufend, geschwindigkeit, phase]);
+
+  useEffect(() => {
+    sichereEigeneSzenarien(state.eigeneSzenarien);
+  }, [state.eigeneSzenarien]);
 
   const wert = useMemo(() => ({ state, dispatch }), [state]);
 

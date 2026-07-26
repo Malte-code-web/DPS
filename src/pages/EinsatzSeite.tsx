@@ -2,14 +2,13 @@ import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
-import { findeSzenario } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
 import { PatientSeite } from './PatientSeite';
 
 /** @anker ui.einsatzseite Abschnittsliste oder Patientenseite */
 export function EinsatzSeite() {
   const { state, dispatch } = useSimulation();
-  const szenario = state.szenarioId ? findeSzenario(state.szenarioId) : undefined;
+  const szenario = state.szenario;
   const ausgewaehlt = state.patienten.find(
     (patient) => patient.id === state.ausgewaehlterPatientId,
   );

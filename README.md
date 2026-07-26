@@ -37,6 +37,13 @@ als Datei weitergeben – oder erzeugen lassen. Dafür gibt es zwei Wege:
   Kosten je Szenario. Alternativ lässt sich der fertige Auftrag in eine
   beliebige KI kopieren und das Ergebnis als JSON importieren.
 
+Der Maßnahmenkatalog folgt den **Standardarbeitsanweisungen und Behandlungspfaden
+Rettungsdienst des Kreises Steinfurt (Januar 2026)**: 51 Maßnahmen mit Indikation,
+Dosierung und der Frage, wer sie durchführen darf. Ein i.v.-Medikament ist
+gesperrt, bis ein Zugang liegt – und der kostet erst einmal 90 Sekunden.
+Zeitdauern und Sofortwirkungen sind didaktisch gesetzt und **keine medizinischen
+Aussagen**.
+
 ## Schnellstart
 
 ```bash

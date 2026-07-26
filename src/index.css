@@ -1258,6 +1258,86 @@ button.gefahr {
   margin: 0;
 }
 
+/* --- Maßnahmenzeile: Qualifikation und SAA-Detail ------------------ */
+
+.massnahme-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem;
+  align-items: start;
+}
+
+.massnahme-zeile .massnahme {
+  grid-column: 1;
+}
+
+/* Art der Maßnahme als schmaler Streifen - Handgriff, Eingriff, Medikament. */
+.massnahme-invasiv {
+  border-left: 3px solid color-mix(in srgb, var(--warn) 55%, transparent);
+}
+
+.massnahme-medikament {
+  border-left: 3px solid color-mix(in srgb, var(--akzent) 55%, transparent);
+}
+
+.qualifikation {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--rand);
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.qualifikation-notarzt {
+  border-color: color-mix(in srgb, var(--sk1) 55%, transparent);
+  color: var(--sk1);
+}
+
+.massnahme-info {
+  grid-column: 2;
+  align-self: stretch;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.saa-detail {
+  grid-column: 1 / -1;
+  margin: 0 0 0.3rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+  border: 1px dashed var(--rand);
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.saa-detail > div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.5rem;
+}
+
+.saa-detail dt {
+  color: var(--text-leise);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.saa-detail dd {
+  margin: 0;
+}
+
 /* --- Befundtafel und Vitalmonitor -------------------------------- */
 
 .befundtafel {

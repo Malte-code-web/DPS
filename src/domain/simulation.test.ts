@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { KATEGORIEN, MASSNAHMEN, massnahmenDerKategorie } from './massnahmen';
+import {
+  KATEGORIEN,
+  MASSNAHMEN,
+  WAEHLBARE_MASSNAHMEN,
+  fehlendeVoraussetzung,
+  massnahmenDerKategorie,
+} from './massnahmen';
 import {
   aktiveProbleme,
   patientAusVorlage,
@@ -47,7 +53,37 @@ describe('Szenariodaten', () => {
       (anzahl, kategorie) => anzahl + massnahmenDerKategorie(kategorie).length,
       0,
     );
-    expect(summe).toBe(Object.keys(MASSNAHMEN).length);
+    // Veraltete Maßnahmen bleiben gültig, erscheinen aber in keiner Gruppe.
+    expect(summe).toBe(WAEHLBARE_MASSNAHMEN.length);
+    expect(summe).toBe(Object.keys(MASSNAHMEN).length - 1);
+  });
+
+  it('behält veraltete Maßnahmen im Katalog, aber nicht in der Auswahl', () => {
+    // Alte Szenariodateien nennen sie noch - sie müssen gültig bleiben.
+    expect(MASSNAHMEN.analgesie).toBeDefined();
+    expect(WAEHLBARE_MASSNAHMEN.some((m) => m.id === 'analgesie')).toBe(false);
+  });
+
+  it('verlangt für jedes i.v.-Medikament einen Zugang', () => {
+    const ivMedikamente = WAEHLBARE_MASSNAHMEN.filter(
+      (m) => m.art === 'medikament' && m.label.includes('i.v.'),
+    );
+    expect(ivMedikamente.length).toBeGreaterThan(8);
+    for (const medikament of ivMedikamente) {
+      expect(medikament.benoetigtEinesVon, medikament.id).toEqual(['zugang_iv', 'zugang_io']);
+    }
+  });
+
+  it('meldet die fehlende Voraussetzung erst, wenn kein Zugang liegt', () => {
+    expect(fehlendeVoraussetzung(MASSNAHMEN.volumengabe, [])).toEqual(['zugang_iv', 'zugang_io']);
+    expect(fehlendeVoraussetzung(MASSNAHMEN.volumengabe, ['zugang_io'])).toBeNull();
+    expect(fehlendeVoraussetzung(MASSNAHMEN.blutstillung, [])).toBeNull();
+  });
+
+  it('kennt genau eine ärztliche Maßnahme jenseits der SAA', () => {
+    // Im MANV die knappste Ressource - das muss sichtbar bleiben.
+    const aerztlich = WAEHLBARE_MASSNAHMEN.filter((m) => m.qualifikation === 'notarzt');
+    expect(aerztlich.map((m) => m.id)).toEqual(['intubation']);
   });
 
   it('führt die blutstillenden Maßnahmen unter x', () => {

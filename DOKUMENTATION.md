@@ -42,7 +42,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
-| Maßnahmen | 15 Maßnahmen nach xABCDE, gruppenweise einklappbar |
+| Maßnahmen | 51 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
 | Sichtung an drei Stellen | Vor-, Eingangs- und Abschlusssichtung, jede mit Ort und Zeitpunkt protokolliert |
@@ -51,7 +51,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-94 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+98 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -79,8 +79,12 @@ Probelauf, Diagnostik und Baukasten.
   stoppt die Blutung also, bevor die 60 Sekunden vergangen sind.
 - SK IV und Verstorbene werden dem roten Zelt zugeordnet; ein eigener
   Betreuungsabschnitt fehlt (→ `abschnitte.zeltzuordnung`).
-- Die Maßnahmen tragen `hinweis`-Texte, die nirgends angezeigt werden. Sie sind
-  für einen späteren Übungsleitermodus aufgehoben.
+- Die Wirkung einer Maßnahme hängt nicht von der Indikation ab: Wer Atropin bei
+  einer Blutung gibt, verliert nur Zeit, bekommt aber keine Rückmeldung, dass es
+  fachlich falsch war. Das Debriefing zählt es als Individualmedizin.
+- Kontraindikationen, Dosisgrenzen und Wechselwirkungen sind nicht abgebildet.
+  Die SAA nennen sie ausführlich; für die MANV-Übung stand die Zeitmechanik im
+  Vordergrund.
 - Eine Untersuchung liefert immer den korrekten Befund. Fehlmessungen, nicht
   verfügbare Geräte oder ein unkooperativer Patient sind nicht abgebildet.
 - Blutzucker, Temperatur und Schmerz dürfen in einer Szenariodatei fehlen; die
@@ -147,6 +151,39 @@ Jede Handlung kostet ihre Dauer, und zwar **für alle Patienten gleichzeitig**
 
 Zehn Patienten vorzusichten kostet 3:20 – weniger als zwei Intubationen. Ein Test
 hält das fest (→ `test.zeitkosten`).
+
+### Der Maßnahmenkatalog
+
+Fachliche Grundlage sind die **Standardarbeitsanweisungen und Behandlungspfade
+Rettungsdienst des Kreises Steinfurt, Version Januar 2026** (ÄLRD Kreis
+Steinfurt) - siehe Abschnitt 10. Aus ihnen stammen Bezeichnung, Indikation,
+Dosierung und die Zuordnung zur Qualifikation (→ `massnahmen.katalog`).
+
+Drei Angaben pro Maßnahme sind neu und verändern das Spiel:
+
+**Art** (→ Farbstreifen links): Handgriff, invasiver Eingriff oder Medikament.
+
+**Qualifikation** (→ `modell.qualifikation`): Was jeder darf, was der
+Notfallsanitäter nach SAA eigenverantwortlich darf, und was ärztlich ist. Genau
+eine Maßnahme im Katalog ist ärztlich - die endotracheale Intubation. Im MANV
+ist die Notärztin die knappste Ressource überhaupt; dass ihre eine Maßnahme rot
+markiert ist und 180 Sekunden kostet, ist die Aussage.
+
+**Voraussetzung** (→ `massnahmen.voraussetzung`): Ein i.v.-Medikament ohne
+Zugang gibt es nicht. Die 17 i.v.-Medikamente sind gesperrt, bis ein i.v.- oder
+i.o.-Zugang liegt - und der kostet erst einmal 90 bzw. 120 Sekunden. Damit wird
+sichtbar, was "schnell mal etwas geben" wirklich kostet:
+
+```
+Vollelektrolytlösung an einem Patienten
+  i.v.-Zugang     90 s
++ Volumengabe    120 s
+= 3:30 Minuten, die bei allen anderen fehlen
+```
+
+Indikation und Dosierung liegen hinter dem Knopf **SAA** an jeder Zeile und sind
+zugeklappt. Das ist Nachschlagewissen wie die Kitteltaschenkarte - kein Hinweis
+darauf, was bei *diesem* Patienten zu tun ist.
 
 ### Diagnostik als Entscheidung
 
@@ -348,7 +385,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_97 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -392,7 +429,7 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
-| `ki.korrektur` | [`src/lib/kiPrompt.ts:115`](src/lib/kiPrompt.ts#L115) | Rückmeldung der Prüfung an das Modell |
+| `ki.korrektur` | [`src/lib/kiPrompt.ts:117`](src/lib/kiPrompt.ts#L117) | Rückmeldung der Prüfung an das Modell |
 | `ki.livetest` | [`src/lib/kiClient.live.test.ts:8`](src/lib/kiClient.live.test.ts#L8) | Echter Durchlauf gegen die API - nur mit Schlüssel |
 | `ki.normalisieren` | [`src/lib/kiSchema.ts:137`](src/lib/kiSchema.ts#L137) | Räumt die Modellantwort auf, bevor sie geprüft wird |
 | `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
@@ -404,19 +441,22 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.schnell` | [`src/domain/massnahmen.ts:152`](src/domain/massnahmen.ts#L152) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:138`](src/domain/massnahmen.ts#L138) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.schnell` | [`src/domain/massnahmen.ts:684`](src/domain/massnahmen.ts#L684) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:652`](src/domain/massnahmen.ts#L652) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:705`](src/domain/massnahmen.ts#L705) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:664`](src/domain/massnahmen.ts#L664) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:179`](src/domain/types.ts#L179) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:251`](src/domain/types.ts#L251) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.abschnitte` | [`src/domain/types.ts:247`](src/domain/types.ts#L247) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:319`](src/domain/types.ts#L319) | Einzelne Untersuchungen statt einer Rundumschau |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.patient` | [`src/domain/types.ts:286`](src/domain/types.ts#L286) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:221`](src/domain/types.ts#L221) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:164`](src/domain/types.ts#L164) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.patient` | [`src/domain/types.ts:354`](src/domain/types.ts#L354) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:289`](src/domain/types.ts#L289) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:232`](src/domain/types.ts#L232) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.qualifikation` | [`src/domain/types.ts:188`](src/domain/types.ts#L188) | Basis, Notfallsanitäter nach SAA, Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -473,13 +513,13 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1685`](src/index.css#L1685) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:1765`](src/index.css#L1765) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
 | `stil.raster` | [`src/index.css:1072`](src/index.css#L1072) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:1792`](src/index.css#L1792) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:1872`](src/index.css#L1872) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:1929`](src/index.css#L1929) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2009`](src/index.css#L2009) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -501,10 +541,10 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `test.abschnitte` | [`src/state/reducer.test.ts:186`](src/state/reducer.test.ts#L186) | Der Weg eines Patienten und die erlaubten Verlegungen |
 | `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
-| `test.szenariodaten` | [`src/domain/simulation.test.ts:26`](src/domain/simulation.test.ts#L26) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
+| `test.szenariodaten` | [`src/domain/simulation.test.ts:32`](src/domain/simulation.test.ts#L32) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:28`](src/state/reducer.test.ts#L28) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
-| `test.zeitverlauf` | [`src/domain/simulation.test.ts:71`](src/domain/simulation.test.ts#L71) | Verschlechterung, Todesfaelle und Latenzzeiten |
+| `test.zeitverlauf` | [`src/domain/simulation.test.ts:107`](src/domain/simulation.test.ts#L107) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
 
@@ -522,7 +562,7 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.ersteinschaetzung` | [`src/pages/patient/Ersteinschaetzung.tsx:19`](src/pages/patient/Ersteinschaetzung.tsx#L19) | Der schnelle Weg - und die Versuchung daneben |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:13`](src/components/Massnahmenliste.tsx#L13) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:20`](src/components/Massnahmenliste.tsx#L20) | Das einklappbare xABCDE-Akkordeon |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:32`](src/pages/uebungsleitung/PatientEditor.tsx#L32) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:13`](src/pages/PatientSeite.tsx#L13) | Weiche: welcher Abschnitt zeigt welche Ansicht |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
@@ -561,7 +601,7 @@ _94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           94 Tests
+npm run test           98 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -570,6 +610,26 @@ npm run build:single   dist/dps.html – eine Datei, ohne Server lauffähig
 npm run anker          Ankertabelle in dieser Datei neu erzeugen
 npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 ```
+
+## 7a. Quellen
+
+| Was | Woher |
+| --- | --- |
+| Maßnahmen, Indikationen, Dosierungen, Qualifikationszuordnung | [SAA und BPR Kreis Steinfurt, Version Januar 2026](https://www.kreis-steinfurt.de/kv_steinfurt/Ressourcen/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/SAA%20BPR%20Kreis%20Steinfurt%202026.pdf), ÄLRD Kreis Steinfurt |
+| Sichtungskategorien SK I-IV | Bundeseinheitliche Systematik |
+| mSTaRT-Algorithmus und Grenzwerte | Fachliteratur, umgesetzt in `triage.ts` |
+
+**Was NICHT aus der Quelle stammt:** die Zeitdauern (`dauerSek`) und die
+Sofortwirkungen (`sofortEffekt`) der Maßnahmen. Beides sind didaktische
+Stellschrauben der Übung und ausdrücklich **keine medizinischen Aussagen**. Wer
+die Simulation fachlich ernst nimmt, kalibriert diese Zahlen - der Probelauf im
+Editor macht jede Änderung sofort sichtbar.
+
+Die SAA sind eine regional gültige Anweisung des ÄLRD Kreis Steinfurt. Sie
+gelten dort und sind hier als fachliche Referenz verwendet; andere
+Rettungsdienstbereiche haben eigene Vorgaben.
+
+---
 
 ## 8a. Ausblick: was ein Server ändern würde
 

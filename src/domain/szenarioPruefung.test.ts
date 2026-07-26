@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { baueKiPrompt } from '../lib/kiPrompt';
 import { leererPatient, leeresSzenario } from '../lib/vorlagen';
-import { MASSNAHMEN_LISTE } from './massnahmen';
+import { WAEHLBARE_MASSNAHMEN } from './massnahmen';
 import { SZENARIEN } from './szenarien';
 import { mstartAbweichung, pruefeSzenario } from './szenarioPruefung';
 import type { Szenario } from './types';
@@ -105,7 +105,7 @@ describe('Szenarioprüfung', () => {
 describe('KI-Auftrag', () => {
   it('nennt alle verfügbaren Maßnahmen-IDs', () => {
     const prompt = baueKiPrompt({ lage: 'Test', anzahl: 5, schwerpunkt: 'Test' });
-    for (const massnahme of MASSNAHMEN_LISTE) {
+    for (const massnahme of WAEHLBARE_MASSNAHMEN) {
       expect(prompt, `Maßnahme ${massnahme.id} fehlt im Auftrag`).toContain(`"${massnahme.id}"`);
     }
   });

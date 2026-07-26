@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MASSNAHMEN } from '../domain/massnahmen';
+import { WAEHLBARE_MASSNAHMEN } from '../domain/massnahmen';
 import { normalisiereSzenario, SZENARIO_SCHEMA } from './kiSchema';
 
 /** Läuft rekursiv durch das Schema und sammelt alle Objektknoten ein. */
@@ -46,7 +46,7 @@ describe('SZENARIO_SCHEMA', () => {
       'enum',
     ) as unknown as string[];
 
-    expect([...enumWerte].sort()).toEqual(Object.keys(MASSNAHMEN).sort());
+    expect([...enumWerte].sort()).toEqual(WAEHLBARE_MASSNAHMEN.map((m) => m.id).sort());
   });
 });
 

@@ -125,21 +125,76 @@ export type VitalVerlauf = Partial<Record<VitalKey, number>>;
 export type MassnahmenKategorie = 'x' | 'A' | 'B' | 'C' | 'D' | 'E';
 
 export type MassnahmeId =
+  // Basismaßnahmen - kein invasiver Eingriff, keine Medikamente
   | 'atemwege_freimachen'
+  | 'absaugen_oral'
   | 'guedeltubus'
-  | 'intubation'
-  | 'sauerstoffgabe'
   | 'beatmung'
-  | 'thoraxentlastung'
   | 'blutstillung'
-  | 'tourniquet'
-  | 'beckenschlinge'
-  | 'volumengabe'
   | 'schocklage'
-  | 'analgesie'
   | 'immobilisation'
   | 'waermeerhalt'
-  | 'betreuung';
+  | 'betreuung'
+  // SAA - invasive Maßnahmen
+  | 'zugang_iv'
+  | 'zugang_io'
+  | 'larynxmaske'
+  | 'laryngoskopie'
+  | 'cpap_niv'
+  | 'tourniquet'
+  | 'beckenschlinge'
+  | 'achsengerechte_immobilisation'
+  | 'thoraxentlastung'
+  | 'defibrillation'
+  | 'kardioversion'
+  | 'schrittmacher'
+  | 'absaugen_endobronchial'
+  | 'injektion_im'
+  | 'gabe_intranasal'
+  // SAA - Medikamente
+  | 'sauerstoffgabe'
+  | 'ass'
+  | 'amiodaron'
+  | 'atropin'
+  | 'butylscopolamin'
+  | 'dimenhydrinat'
+  | 'dimetinden'
+  | 'epinephrin'
+  | 'esketamin'
+  | 'furosemid'
+  | 'glucose'
+  | 'nitrat'
+  | 'heparin'
+  | 'ipratropium'
+  | 'lidocain'
+  | 'metoprolol'
+  | 'midazolam'
+  | 'morphin'
+  | 'naloxon'
+  | 'paracetamol'
+  | 'prednisolon'
+  | 'salbutamol'
+  | 'thiamin'
+  | 'tranexamsaeure'
+  | 'urapidil'
+  | 'volumengabe'
+  // Ärztliche Maßnahme, nicht von der SAA gedeckt
+  | 'intubation'
+  // Sammelbegriff aus der ersten Fassung - siehe massnahmen.veraltet
+  | 'analgesie';
+
+/**
+ * Wer eine Maßnahme im Regeldienst eigenverantwortlich durchführen darf.
+ * @anker modell.qualifikation Basis, Notfallsanitäter nach SAA, Notärztin
+ *
+ * Im MANV ist das keine Formalie: Notärztinnen sind die knappste Ressource
+ * überhaupt. Eine Maßnahme, die nur sie durchführen dürfen, bindet die eine
+ * Kraft, die an mehreren Stellen gleichzeitig gebraucht wird.
+ */
+export type Qualifikation = 'basis' | 'notsan' | 'notarzt';
+
+/** Handgriff, invasiver Eingriff oder Medikament. */
+export type Massnahmenart = 'basis' | 'invasiv' | 'medikament';
 
 export interface Massnahme {
   id: MassnahmeId;
@@ -148,6 +203,17 @@ export interface Massnahme {
   /** Zeitbedarf in Sekunden - fließt in die Auswertung des Debriefings ein. */
   dauerSek: number;
   hinweis: string;
+  art: Massnahmenart;
+  qualifikation: Qualifikation;
+  /** Indikation nach SAA - Nachschlagewissen, kein Hinweis auf diesen Patienten. */
+  indikation?: string;
+  /** Dosierung nach SAA. */
+  dosierung?: string;
+  /**
+   * Voraussetzung: mindestens eine dieser Maßnahmen muss vorher erfolgt sein.
+   * Für i.v.-Medikamente also der Zugang.
+   */
+  benoetigtEinesVon?: MassnahmeId[];
   /** Einmalige Verbesserung der Vitalwerte direkt nach Durchführung. */
   sofortEffekt?: VitalVerlauf;
   /**
@@ -156,6 +222,8 @@ export interface Massnahme {
    * MANV erst auf den Behandlungsplatz.
    */
   sofortmassnahme?: boolean;
+  /** Nicht mehr in der Auswahl, aber in alten Szenarien noch gültig. */
+  veraltet?: boolean;
 }
 
 /**

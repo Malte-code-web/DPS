@@ -1,4 +1,4 @@
-import { MASSNAHMEN_LISTE } from '../domain/massnahmen';
+import { WAEHLBARE_MASSNAHMEN } from '../domain/massnahmen';
 import { HORIZONT_MIN } from '../domain/szenarioDynamik';
 import { GRENZWERTE } from '../domain/triage';
 import type { Befund } from '../domain/szenarioPruefung';
@@ -37,9 +37,11 @@ Maßnahme daraus folgt, ist ihre Entscheidung und ihre Prüfung.
 Antworte ausschließlich mit den geforderten Daten, ohne Begleittext.`;
 
 function massnahmenliste(): string {
-  return MASSNAHMEN_LISTE.map(
+  return WAEHLBARE_MASSNAHMEN.map(
     (massnahme) =>
-      `  "${massnahme.id}" - ${massnahme.label} (${massnahme.kategorie}, ${massnahme.dauerSek} s)`,
+      `  "${massnahme.id}" - ${massnahme.label} (${massnahme.kategorie}, ${massnahme.dauerSek} s${
+        massnahme.qualifikation === 'notarzt' ? ', nur ärztlich' : ''
+      })`,
   ).join('\n');
 }
 

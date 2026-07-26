@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import { KATEGORIEN, KATEGORIE_LABEL, massnahmenDerKategorie } from '../domain/massnahmen';
-import type { MassnahmeId, MassnahmenKategorie, Patient } from '../domain/types';
+import {
+  KATEGORIEN,
+  KATEGORIE_LABEL,
+  MASSNAHMEN,
+  QUALIFIKATION_LABEL,
+  fehlendeVoraussetzung,
+  massnahmenDerKategorie,
+} from '../domain/massnahmen';
+import type { Massnahme, MassnahmeId, MassnahmenKategorie, Patient } from '../domain/types';
 
 interface Props {
   patient: Patient;
@@ -17,9 +24,15 @@ interface Props {
  * Welche Gruppen offen starten, entscheidet die aufrufende Ansicht: in der
  * Ersteinschätzung nur x und A, damit der lehrbuchgerechte Griff sofort da
  * ist - der Rest bleibt sichtbar, aber eingeklappt.
+ *
+ * Jede Zeile trägt drei Angaben: die Dauer, die nötige Qualifikation und - bei
+ * Medikamenten - ob die Voraussetzung erfüllt ist. Die SAA-Details (Indikation,
+ * Dosierung) liegen hinter einem eigenen Knopf und sind bewusst zugeklappt:
+ * Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
  */
 export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Props) {
   const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
+  const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
 
   const umschalten = (kategorie: MassnahmenKategorie) =>
@@ -32,6 +45,85 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Pr
       }
       return naechste;
     });
+
+  const zeile = (massnahme: Massnahme) => {
+    const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
+    const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
+    const detailOffen = detail === massnahme.id;
+    const hatDetails = Boolean(massnahme.indikation ?? massnahme.dosierung);
+
+    return (
+      <div key={massnahme.id} className="massnahme-zeile">
+        <button
+          type="button"
+          className={`massnahme massnahme-${massnahme.art}${
+            bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
+          }`}
+          disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null}
+          onClick={() => onMassnahme(massnahme.id)}
+        >
+          <span className="massnahme-label">
+            {massnahme.label}
+            {massnahme.qualifikation !== 'basis' && (
+              <span className={`qualifikation qualifikation-${massnahme.qualifikation}`}>
+                {QUALIFIKATION_LABEL[massnahme.qualifikation]}
+              </span>
+            )}
+          </span>
+          <span className="massnahme-dauer">
+            {bereitsDurchgefuehrt
+              ? 'durchgeführt'
+              : fehlt
+                ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
+                  // Zugänge zählen, steht im SAA-Detail.
+                  'Zugang nötig'
+                : `${massnahme.dauerSek} s`}
+          </span>
+        </button>
+
+        {hatDetails && (
+          <button
+            type="button"
+            className="massnahme-info"
+            aria-expanded={detailOffen}
+            aria-label={`SAA zu ${massnahme.label}`}
+            onClick={() => setDetail(detailOffen ? null : massnahme.id)}
+          >
+            SAA
+          </button>
+        )}
+
+        {detailOffen && (
+          <dl className="saa-detail">
+            {massnahme.indikation && (
+              <div>
+                <dt>Indikation</dt>
+                <dd>{massnahme.indikation}</dd>
+              </div>
+            )}
+            {massnahme.dosierung && (
+              <div>
+                <dt>Dosierung</dt>
+                <dd>{massnahme.dosierung}</dd>
+              </div>
+            )}
+            {massnahme.benoetigtEinesVon && (
+              <div>
+                <dt>Voraussetzung</dt>
+                <dd>
+                  {massnahme.benoetigtEinesVon.map((id) => MASSNAHMEN[id].label).join(' oder ')}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>Hinweis</dt>
+              <dd>{massnahme.hinweis}</dd>
+            </div>
+          </dl>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="massnahmen">
@@ -62,29 +154,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [] }: Pr
               </span>
             </button>
 
-            {istOffen && (
-              <div className="gruppe-inhalt">
-                {gruppe.map((massnahme) => {
-                  const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(
-                    massnahme.id,
-                  );
-                  return (
-                    <button
-                      key={massnahme.id}
-                      type="button"
-                      className={`massnahme${bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''}`}
-                      disabled={gesperrt || bereitsDurchgefuehrt}
-                      onClick={() => onMassnahme(massnahme.id)}
-                    >
-                      <span className="massnahme-label">{massnahme.label}</span>
-                      <span className="massnahme-dauer">
-                        {bereitsDurchgefuehrt ? 'durchgeführt' : `${massnahme.dauerSek} s`}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {istOffen && <div className="gruppe-inhalt">{gruppe.map(zeile)}</div>}
           </div>
         );
       })}

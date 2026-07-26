@@ -1,4 +1,4 @@
-import { MASSNAHMEN_LISTE } from '../domain/massnahmen';
+import { WAEHLBARE_MASSNAHMEN } from '../domain/massnahmen';
 import { PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../domain/types';
 import type { Pupillenbefund, Sichtungskategorie, VitalKey } from '../domain/types';
 
@@ -16,7 +16,7 @@ import type { Pupillenbefund, Sichtungskategorie, VitalKey } from '../domain/typ
  * wird von `pruefeSzenario` geprüft.
  */
 
-const MASSNAHMEN_IDS = MASSNAHMEN_LISTE.map((massnahme) => massnahme.id);
+const MASSNAHMEN_IDS = WAEHLBARE_MASSNAHMEN.map((massnahme) => massnahme.id);
 const KATEGORIEN = Object.keys(SICHTUNGSKATEGORIEN) as Sichtungskategorie[];
 const PUPILLEN = Object.keys(PUPILLEN_TEXT) as Pupillenbefund[];
 

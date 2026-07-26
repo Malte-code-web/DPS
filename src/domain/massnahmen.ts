@@ -103,7 +103,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     kategorie: 'D',
     dauerSek: 90,
     hinweis: 'Schmerzreduktion senkt Herzfrequenz und Stressantwort.',
-    sofortEffekt: { herzfrequenz: -15, atemfrequenz: -3 },
+    sofortEffekt: { herzfrequenz: -15, atemfrequenz: -3, schmerz: -5 },
   },
   immobilisation: {
     id: 'immobilisation',
@@ -119,7 +119,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     kategorie: 'E',
     dauerSek: 30,
     hinweis: 'Rettungsdecke - Hypothermie verschlechtert die Gerinnung.',
-    sofortEffekt: { rekapzeit: -0.3 },
+    sofortEffekt: { rekapzeit: -0.3, temperatur: 0.6 },
   },
   betreuung: {
     id: 'betreuung',
@@ -127,7 +127,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     kategorie: 'E',
     dauerSek: 60,
     hinweis: 'Auch bei SK IV die wichtigste Maßnahme.',
-    sofortEffekt: { herzfrequenz: -8, atemfrequenz: -2 },
+    sofortEffekt: { herzfrequenz: -8, atemfrequenz: -2, schmerz: -1 },
   },
 };
 

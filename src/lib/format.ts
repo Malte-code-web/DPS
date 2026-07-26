@@ -73,6 +73,30 @@ export const VITAL_META: Record<VitalKey, VitalMeta> = {
     kritisch: [0.5, 2],
     nachkommastellen: 1,
   },
+  blutzucker: {
+    label: 'Blutzucker',
+    kurz: 'BZ',
+    einheit: 'mg/dl',
+    norm: [70, 140],
+    kritisch: [50, 250],
+    nachkommastellen: 0,
+  },
+  temperatur: {
+    label: 'Körpertemperatur',
+    kurz: 'Temp',
+    einheit: '°C',
+    norm: [36, 37.5],
+    kritisch: [35, 39],
+    nachkommastellen: 1,
+  },
+  schmerz: {
+    label: 'Schmerz (NRS)',
+    kurz: 'NRS',
+    einheit: '/10',
+    norm: [0, 3],
+    kritisch: [0, 7],
+    nachkommastellen: 0,
+  },
 };
 
 export function vitalStufe(key: VitalKey, wert: number): Vitalstufe {
@@ -94,4 +118,7 @@ export const VITAL_REIHENFOLGE: VitalKey[] = [
   'spo2',
   'gcs',
   'rekapzeit',
+  'blutzucker',
+  'temperatur',
+  'schmerz',
 ];

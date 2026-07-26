@@ -4,10 +4,11 @@ import type {
   MassnahmeId,
   PatientVorlage,
   Problem,
+  Pupillenbefund,
   Sichtungskategorie,
+  Startwerte,
   Szenario,
   VitalVerlauf,
-  Vitalwerte,
 } from './types';
 
 /**
@@ -55,6 +56,12 @@ interface Muster {
   begleit?: VitalVerlauf;
   /** Nur für SK1: welcher Zweig des mSTaRT greifen soll. */
   weg?: 'blutung' | 'atmung' | 'kreislauf' | 'bewusstsein';
+  /** Körperliche Befunde - der Weg, das Problem überhaupt zu finden. */
+  pupillen?: Pupillenbefund;
+  auskultation?: string;
+  ekg?: string;
+  /** Schmerzstärke auf der NRS. */
+  schmerz?: number;
 }
 
 /**
@@ -71,7 +78,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Spritzende Blutung am Oberschenkel, große Blutlache.',
     untersuchungsbefund: 'Tiefe Weichteilwunde am Oberschenkel, arterielle Blutung.',
     problemLabel: 'Arterielle Blutung Oberschenkel',
-    problemBeschreibung: 'Tourniquet proximal anlegen, sonst Verblutung.',
+    problemBeschreibung: 'Pulsierende Blutung aus der Wunde, Hose durchtränkt, Blutlache am Boden.',
+    schmerz: 8,
     behandeltDurch: ['tourniquet', 'blutstillung'],
     leitwert: 'systolischerRR',
     start: 105,
@@ -84,7 +92,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Unterarm subtotal amputiert, blutet stark.',
     untersuchungsbefund: 'Subtotale Amputation im Unterarm, pulsierende Blutung.',
     problemLabel: 'Subtotale Amputation',
-    problemBeschreibung: 'Abbinden, Stumpf hochlagern.',
+    problemBeschreibung: 'Unterarm nur noch über Weichteile verbunden, spritzende Blutung aus dem Stumpf.',
+    schmerz: 9,
     behandeltDurch: ['tourniquet'],
     leitwert: 'systolischerRR',
     start: 100,
@@ -97,7 +106,9 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Ringt nach Luft, atmet sehr schnell und flach.',
     untersuchungsbefund: 'Einseitig fehlendes Atemgeräusch, gestaute Halsvenen.',
     problemLabel: 'Spannungspneumothorax',
-    problemBeschreibung: 'Entlastungspunktion im zweiten ICR medioklavikulär.',
+    problemBeschreibung: 'Gestaute Halsvenen, hypersonorer Klopfschall, Atemnot nimmt rasch zu.',
+    auskultation: 'einseitig kein Atemgeräusch, Gegenseite seitengleich belüftet',
+    schmerz: 6,
     behandeltDurch: ['thoraxentlastung'],
     leitwert: 'spo2',
     start: 84,
@@ -110,7 +121,9 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Rußgeschwärzt, hustet, atmet mühsam und laut.',
     untersuchungsbefund: 'Rußpartikel in Mund und Rachen, Stridor, verbrannte Nasenhaare.',
     problemLabel: 'Inhalationstrauma',
-    problemBeschreibung: 'Sauerstoff hochdosiert, Atemweg beobachten - Schwellung droht.',
+    problemBeschreibung: 'Ruß in Mund und Rachen, heisere Stimme, hörbares Einatmen.',
+    auskultation: 'inspiratorischer Stridor, giemende Nebengeräusche beidseits',
+    schmerz: 4,
     behandeltDurch: ['sauerstoffgabe', 'intubation'],
     leitwert: 'spo2',
     start: 82,
@@ -123,7 +136,9 @@ const MUSTER: Muster[] = [
     kurzbefund: 'War verschüttet, blass und kaltschweißig, kaum ansprechbar.',
     untersuchungsbefund: 'Instabiler Thorax, Prellmarken, schwacher Radialispuls.',
     problemLabel: 'Thoraxtrauma mit Blutverlust',
-    problemBeschreibung: 'Volumen geben, zügiger Transport.',
+    problemBeschreibung: 'Thorax instabil bei Kompression, Haut kaltschweißig, Puls kaum zu tasten.',
+    ekg: 'Sinustachykardie, vereinzelt Extrasystolen',
+    schmerz: 7,
     behandeltDurch: ['volumengabe', 'schocklage'],
     leitwert: 'systolischerRR',
     start: 85,
@@ -136,7 +151,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Liegt eingeklemmt, klagt über stärkste Schmerzen im Becken.',
     untersuchungsbefund: 'Instabiles Becken, zunehmende Kreislaufzentralisation.',
     problemLabel: 'Beckenringfraktur mit Blutung',
-    problemBeschreibung: 'Beckenschlinge anlegen, Volumen geben.',
+    problemBeschreibung: 'Becken federt bei vorsichtigem Druck, Hämatom in der Leiste, blasse Haut.',
+    schmerz: 8,
     behandeltDurch: ['beckenschlinge', 'volumengabe'],
     leitwert: 'systolischerRR',
     start: 88,
@@ -149,7 +165,9 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Reagiert nicht auf Ansprache, blutende Kopfplatzwunde.',
     untersuchungsbefund: 'Schädel-Hirn-Trauma, ungleiche Pupillen, Schnarchatmung.',
     problemLabel: 'Schweres Schädel-Hirn-Trauma',
-    problemBeschreibung: 'Atemweg sichern, Sauerstoff geben.',
+    problemBeschreibung: 'Keine Reaktion auf Ansprache, schnarchende Atmung, Blut im Mundraum.',
+    pupillen: 'seitendifferent',
+    schmerz: 0,
     behandeltDurch: ['atemwege_freimachen', 'guedeltubus', 'intubation'],
     leitwert: 'spo2',
     start: 86,
@@ -161,7 +179,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Liegt, Bein deutlich fehlgestellt, starke Schmerzen.',
     untersuchungsbefund: 'Geschlossene Oberschenkelfraktur, Schwellung.',
     problemLabel: 'Oberschenkelfraktur',
-    problemBeschreibung: 'Schienen, Analgesie, Blutverlust beachten.',
+    problemBeschreibung: 'Deutliche Fehlstellung des Oberschenkels, Schwellung, jede Bewegung schmerzt.',
+    schmerz: 8,
     behandeltDurch: ['immobilisation', 'analgesie'],
     leitwert: 'systolischerRR',
     start: 112,
@@ -173,7 +192,9 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Sitzt angelehnt, atmet flach wegen Schmerzen.',
     untersuchungsbefund: 'Rippenserienfraktur, Atemexkursion schmerzbedingt vermindert.',
     problemLabel: 'Rippenserienfraktur',
-    problemBeschreibung: 'Sauerstoff geben, Analgesie, Verlauf beobachten.',
+    problemBeschreibung: 'Druckschmerz über den Rippen, atmet flach und schont die verletzte Seite.',
+    auskultation: 'rechts abgeschwächt, keine Rasselgeräusche',
+    schmerz: 6,
     behandeltDurch: ['sauerstoffgabe', 'analgesie'],
     leitwert: 'spo2',
     start: 93,
@@ -185,7 +206,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Verbrennungen an Armen und Rumpf, wach und ansprechbar.',
     untersuchungsbefund: 'Verbrennungen zweiten Grades, etwa 15 Prozent der Körperoberfläche.',
     problemLabel: 'Verbrennung 2. Grades',
-    problemBeschreibung: 'Wärmeerhalt, Analgesie, Volumen nach Bedarf.',
+    problemBeschreibung: 'Blasenbildung an Armen und Rumpf, nässende Wundflächen, Patient friert.',
+    schmerz: 8,
     behandeltDurch: ['waermeerhalt', 'analgesie', 'volumengabe'],
     leitwert: 'systolischerRR',
     start: 110,
@@ -197,7 +219,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Liegt still, klagt über Rückenschmerzen und Kribbeln in den Beinen.',
     untersuchungsbefund: 'Druckschmerz über der Brustwirbelsäule, Sensibilitätsstörung.',
     problemLabel: 'Verdacht auf Wirbelsäulenverletzung',
-    problemBeschreibung: 'Achsgerecht immobilisieren, Wärmeerhalt.',
+    problemBeschreibung: 'Druckschmerz über der Brustwirbelsäule, Kribbeln in beiden Beinen.',
+    schmerz: 5,
     behandeltDurch: ['immobilisation', 'waermeerhalt'],
     leitwert: 'systolischerRR',
     start: 115,
@@ -209,7 +232,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Geht umher, Schürfwunden an Armen und Knien.',
     untersuchungsbefund: 'Oberflächliche Schürfwunden, sonst unauffällig.',
     problemLabel: 'Schürfwunden',
-    problemBeschreibung: 'Wundversorgung, Betreuung.',
+    problemBeschreibung: 'Oberflächliche Schürfwunden an Armen und Knien, stark verschmutzt.',
+    schmerz: 3,
     behandeltDurch: ['betreuung', 'waermeerhalt'],
     leitwert: 'systolischerRR',
     start: 126,
@@ -221,7 +245,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Steht abseits, hält das Handgelenk, ansprechbar.',
     untersuchungsbefund: 'Schmerzhafte Schwellung des Handgelenks, Durchblutung intakt.',
     problemLabel: 'Distale Radiusfraktur',
-    problemBeschreibung: 'Schienen, später ambulant versorgen.',
+    problemBeschreibung: 'Schmerzhafte Schwellung über dem Handgelenk, Finger gut durchblutet.',
+    schmerz: 4,
     behandeltDurch: ['immobilisation', 'analgesie'],
     leitwert: 'systolischerRR',
     start: 124,
@@ -233,7 +258,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Läuft aufgeregt umher, körperlich unverletzt.',
     untersuchungsbefund: 'Keine Verletzungszeichen, deutliche Belastungsreaktion.',
     problemLabel: 'Akute Belastungsreaktion',
-    problemBeschreibung: 'Aus dem Gefahrenbereich führen, betreuen.',
+    problemBeschreibung: 'Läuft aufgeregt umher, spricht hastig, keine Verletzungszeichen.',
+    schmerz: 1,
     behandeltDurch: ['betreuung'],
     leitwert: 'systolischerRR',
     start: 130,
@@ -245,7 +271,8 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Geht umher, klagt über leichte Bauchschmerzen.',
     untersuchungsbefund: 'Gurtmarke am Abdomen, zunehmender Druckschmerz.',
     problemLabel: 'Intraabdominelle Blutung',
-    problemBeschreibung: 'Präklinisch nicht stillbar - entscheidend ist der Transport.',
+    problemBeschreibung: 'Gurtmarke am Abdomen, Bauchdecke zunehmend gespannt, Patient wird stiller.',
+    schmerz: 4,
     behandeltDurch: ['volumengabe'],
     leitwert: 'systolischerRR',
     start: 120,
@@ -257,7 +284,10 @@ const MUSTER: Muster[] = [
     kurzbefund: 'Reglos, keine sichtbare Atmung.',
     untersuchungsbefund: 'Keine Spontanatmung, zentrale Zyanose, weite Pupillen.',
     problemLabel: 'Atemstillstand nach Schädel-Hirn-Trauma',
-    problemBeschreibung: 'Im MANV betreuende Behandlung - Kräfte werden anderswo gebraucht.',
+    problemBeschreibung: 'Keine Atembewegung, keine Reaktion auf Schmerzreiz, Haut fahl.',
+    pupillen: 'weit',
+    auskultation: 'kein Atemgeräusch beidseits',
+    schmerz: 0,
     behandeltDurch: ['beatmung', 'intubation'],
     leitwert: 'spo2',
     start: 68,
@@ -429,20 +459,23 @@ export function verteilung(anzahl: number): Sichtungskategorie[] {
 }
 
 /** Die Startwerte, die den gewünschten mSTaRT-Zweig auslösen. */
-function grundwerte(muster: Muster, w: Wuerfel): { werte: Vitalwerte; flags: Flags } {
+function grundwerte(muster: Muster, w: Wuerfel): { werte: Startwerte; flags: Flags } {
   const flags: Flags = {
     gehfaehig: false,
     kritischeBlutung: false,
     spontanatmung: true,
     befolgtAufforderungen: true,
   };
-  const werte: Vitalwerte = {
+  const werte: Startwerte = {
     atemfrequenz: streuung(w, 20, 2),
     herzfrequenz: streuung(w, 108, 8),
     systolischerRR: 120,
     spo2: 96,
     gcs: 15,
     rekapzeit: streuung(w, 1.6, 0.3),
+    blutzucker: Math.round(streuung(w, 100, 20)),
+    temperatur: streuung(w, 36.6, 0.3),
+    schmerz: 0,
   };
 
   switch (muster.ziel) {
@@ -477,6 +510,7 @@ function grundwerte(muster: Muster, w: Wuerfel): { werte: Vitalwerte; flags: Fla
 
   // Der Leitwert kommt aus dem Muster - er trägt den Verlauf.
   werte[muster.leitwert] = streuung(w, muster.start, 3);
+  werte.schmerz = muster.schmerz ?? 0;
   return { werte, flags };
 }
 
@@ -557,6 +591,9 @@ function bauePatient(
     untersuchungsbefund: muster.untersuchungsbefund,
     ...flags,
     startVitalwerte: werte,
+    ...(muster.pupillen ? { pupillen: muster.pupillen } : {}),
+    ...(muster.auskultation ? { auskultation: muster.auskultation } : {}),
+    ...(muster.ekg ? { ekg: muster.ekg } : {}),
     probleme: [baueProblem(muster, plan, werte[muster.leitwert])],
     // Die Referenzkategorie wird nicht behauptet, sondern gerechnet - damit
     // kann sie nie von mSTaRT abweichen.

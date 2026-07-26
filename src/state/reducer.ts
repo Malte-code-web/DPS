@@ -1,18 +1,19 @@
 import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
+import { DIAGNOSTIK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import {
   SICHTUNGSDAUER_SEK,
-  UNTERSUCHUNGSDAUER_SEK,
+  fuehreDiagnostikDurch,
   patientAusVorlage,
   sichtePatient,
   simuliereSchritt,
   simuliereZeitraum,
   verlegePatient,
-  untersuchePatient,
   wendeMassnahmeAn,
 } from '../domain/simulation';
 import type { Trainingsmodus } from '../domain/modi';
 import type {
+  DiagnostikId,
   Einsatzabschnitt,
   MassnahmeId,
   Patient,
@@ -69,7 +70,7 @@ export type SimulationAction =
   | { typ: 'pauseUmschalten' }
   | { typ: 'geschwindigkeitSetzen'; wert: number }
   | { typ: 'patientWaehlen'; patientId: string | null }
-  | { typ: 'patientUntersuchen'; patientId: string }
+  | { typ: 'diagnostikDurchfuehren'; patientId: string; diagnostikId: DiagnostikId }
   | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie }
   | { typ: 'massnahmeDurchfuehren'; patientId: string; massnahmeId: MassnahmeId }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
@@ -169,14 +170,16 @@ export function simulationReducer(
     case 'patientWaehlen':
       return { ...state, ausgewaehlterPatientId: action.patientId };
 
-    case 'patientUntersuchen': {
+    case 'diagnostikDurchfuehren': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
-      if (!patient || patient.untersucht) return state;
+      if (!patient || patient.durchgefuehrteDiagnostik.includes(action.diagnostikId)) {
+        return state;
+      }
       return zeitVergehen(
         mitPatient(state, action.patientId, (eintrag) =>
-          untersuchePatient(eintrag, state.zeitSek),
+          fuehreDiagnostikDurch(eintrag, action.diagnostikId, state.zeitSek),
         ),
-        UNTERSUCHUNGSDAUER_SEK,
+        DIAGNOSTIK[action.diagnostikId].dauerSek,
       );
     }
 

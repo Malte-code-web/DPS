@@ -1,12 +1,14 @@
 import { KATEGORIEN, KATEGORIE_LABEL, massnahmenDerKategorie } from '../../domain/massnahmen';
+import { startwert } from '../../domain/simulation';
 import { mstartAbweichung } from '../../domain/szenarioPruefung';
-import { SICHTUNGSKATEGORIEN } from '../../domain/types';
+import { PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../../domain/types';
 import { VITAL_META, VITAL_REIHENFOLGE } from '../../lib/format';
 import { leeresProblem } from '../../lib/vorlagen';
 import type {
   MassnahmeId,
   PatientVorlage,
   Problem,
+  Pupillenbefund,
   Sichtungskategorie,
   VitalKey,
 } from '../../domain/types';
@@ -91,13 +93,48 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
       </label>
 
       <label>
-        Untersuchungsbefund
+        Untersuchungsbefund (Bodycheck)
         <textarea
           rows={2}
           value={patient.untersuchungsbefund}
           onChange={(e) => setze('untersuchungsbefund', e.target.value)}
         />
       </label>
+
+      <span className="editor-untertitel">
+        Ergebnisse der einzelnen Untersuchungen - leer heißt unauffällig
+      </span>
+      <div className="editor-zeile">
+        <label>
+          Pupillen
+          <select
+            value={patient.pupillen ?? 'unauffaellig'}
+            onChange={(e) => setze('pupillen', e.target.value as Pupillenbefund)}
+          >
+            {(Object.keys(PUPILLEN_TEXT) as Pupillenbefund[]).map((wert) => (
+              <option key={wert} value={wert}>
+                {PUPILLEN_TEXT[wert]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Auskultation
+          <input
+            value={patient.auskultation ?? ''}
+            placeholder="seitengleich belüftet"
+            onChange={(e) => setze('auskultation', e.target.value || undefined)}
+          />
+        </label>
+        <label>
+          EKG
+          <input
+            value={patient.ekg ?? ''}
+            placeholder="Sinusrhythmus"
+            onChange={(e) => setze('ekg', e.target.value || undefined)}
+          />
+        </label>
+      </div>
 
       <h4>Befunde der Vorsichtung</h4>
       <div className="editor-schalter">
@@ -120,8 +157,9 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
             {VITAL_META[key].kurz}
             <input
               type="number"
-              step={key === 'rekapzeit' ? 0.1 : 1}
-              value={patient.startVitalwerte[key]}
+              step={key === 'rekapzeit' || key === 'temperatur' ? 0.1 : 1}
+              // Die später ergänzten Werte dürfen in der Vorlage fehlen.
+              value={startwert(patient.startVitalwerte, key)}
               onChange={(e) => setzeVital(key, Number(e.target.value))}
             />
           </label>
@@ -253,12 +291,16 @@ function ProblemEditor({ problem, onAendern, onEntfernen }: ProblemProps) {
       </div>
 
       <label>
-        Beschreibung
+        Befund
         <input
           value={problem.beschreibung}
           onChange={(e) => onAendern({ ...problem, beschreibung: e.target.value })}
         />
       </label>
+      <span className="editor-untertitel">
+        Was die Einsatzkraft vorfindet - nicht, was sie tun soll. Die Anwendung
+        sagt während der Übung nichts vor.
+      </span>
 
       <span className="editor-untertitel">Veränderung pro Minute, solange unbehandelt</span>
       <div className="editor-vitalwerte">

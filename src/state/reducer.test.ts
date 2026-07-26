@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { VERLEGUNGSDAUER_SEK } from '../domain/abschnitte';
 import { MASSNAHMEN } from '../domain/massnahmen';
-import { SICHTUNGSDAUER_SEK, UNTERSUCHUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
+import {
+  DIAGNOSTIK,
+  DIAGNOSTIK_LISTE,
+  VOLLSTAENDIGE_DIAGNOSTIK_SEK,
+  istBekannt,
+} from '../domain/diagnostik';
+import { SICHTUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
@@ -98,20 +104,53 @@ describe('Zeitkosten der einzelnen Handlungen', () => {
     expect(patient(korrigiert, 'B-01').gesichtetAls).toBe('SK2');
   });
 
-  it('berechnet die Untersuchung nur beim ersten Mal', () => {
+  it('berechnet jede Untersuchung nur beim ersten Mal', () => {
     const start = imEinsatz();
     const untersucht = simulationReducer(start, {
-      typ: 'patientUntersuchen',
+      typ: 'diagnostikDurchfuehren',
       patientId: 'B-01',
+      diagnostikId: 'bodycheck',
     });
-    expect(untersucht.zeitSek).toBe(start.zeitSek + UNTERSUCHUNGSDAUER_SEK);
+    expect(untersucht.zeitSek).toBe(start.zeitSek + DIAGNOSTIK.bodycheck.dauerSek);
     expect(patient(untersucht, 'B-01').untersucht).toBe(true);
 
     const nochmal = simulationReducer(untersucht, {
-      typ: 'patientUntersuchen',
+      typ: 'diagnostikDurchfuehren',
       patientId: 'B-01',
+      diagnostikId: 'bodycheck',
     });
     expect(nochmal).toBe(untersucht);
+  });
+
+  it('deckt mit jeder Untersuchung nur ihren eigenen Befund auf', () => {
+    // Der Kern der Umstellung: kein Rundumschlag mehr.
+    const start = imEinsatz();
+    const nachPuls = simulationReducer(start, {
+      typ: 'diagnostikDurchfuehren',
+      patientId: 'B-01',
+      diagnostikId: 'puls_tasten',
+    });
+
+    expect(istBekannt(patient(nachPuls, 'B-01'), 'herzfrequenz')).toBe(true);
+    expect(istBekannt(patient(nachPuls, 'B-01'), 'systolischerRR')).toBe(false);
+    expect(nachPuls.zeitSek).toBe(start.zeitSek + DIAGNOSTIK.puls_tasten.dauerSek);
+  });
+
+  it('lässt die vollständige Diagnostik über fünf Minuten kosten', () => {
+    // Wer an einem Patienten alles erhebt, verliert die Zeit bei allen anderen.
+    const start = imEinsatz();
+    const alles = DIAGNOSTIK_LISTE.reduce(
+      (zustand, eintrag) =>
+        simulationReducer(zustand, {
+          typ: 'diagnostikDurchfuehren',
+          patientId: 'B-01',
+          diagnostikId: eintrag.id,
+        }),
+      start,
+    );
+
+    expect(alles.zeitSek - start.zeitSek).toBe(VOLLSTAENDIGE_DIAGNOSTIK_SEK);
+    expect(VOLLSTAENDIGE_DIAGNOSTIK_SEK).toBeGreaterThan(300);
   });
 
   it('hält den Sichtungszeitpunkt fest, auch wenn Zeit vergeht', () => {

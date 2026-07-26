@@ -41,9 +41,27 @@ const VITAL_GRENZEN: Record<VitalKey, [number, number]> = {
   spo2: [0, 100],
   gcs: [3, 15],
   rekapzeit: [0.5, 10],
+  blutzucker: [10, 600],
+  temperatur: [25, 43],
+  schmerz: [0, 10],
 };
 
 const VITAL_KEYS = Object.keys(VITAL_GRENZEN) as VitalKey[];
+
+/**
+ * Nur diese sechs muss eine Vorlage nennen. Blutzucker, Temperatur und Schmerz
+ * sind freiwillig - fehlen sie, setzt die Simulation Standardwerte ein
+ * (→ `sim.standardwerte`). Angegeben werden dürfen sie trotzdem, dann werden
+ * sie wie alle anderen auf ihren Bereich geprüft.
+ */
+const KERN_KEYS: VitalKey[] = [
+  'atemfrequenz',
+  'herzfrequenz',
+  'systolischerRR',
+  'spo2',
+  'gcs',
+  'rekapzeit',
+];
 const KATEGORIEN = Object.keys(SICHTUNGSKATEGORIEN) as Sichtungskategorie[];
 
 function istText(wert: unknown): wert is string {
@@ -62,6 +80,7 @@ function pruefeVitalwerte(werte: unknown, ort: string, befunde: Befund[]): void 
   const vitalwerte = werte as Partial<Vitalwerte>;
   for (const key of VITAL_KEYS) {
     const wert = vitalwerte[key];
+    if (wert === undefined && !KERN_KEYS.includes(key)) continue;
     if (!istZahl(wert)) {
       befunde.push({ schwere: 'fehler', ort, text: `Vitalwert ${key} fehlt oder ist keine Zahl.` });
       continue;

@@ -43,7 +43,7 @@ const busunfall: Szenario = {
         {
           id: 'blutung-femur',
           label: 'Arterielle Blutung Oberschenkel',
-          beschreibung: 'Nicht komprimierbare Blutung - Tourniquet indiziert.',
+          beschreibung: 'Pulsierende Blutung aus der Wunde, Kleidung durchtränkt, Blutlache am Boden.',
           behandeltDurch: ['tourniquet', 'blutstillung'],
           verlauf: {
             systolischerRR: -6,
@@ -80,7 +80,7 @@ const busunfall: Szenario = {
         {
           id: 'spannungspneumothorax',
           label: 'Spannungspneumothorax links',
-          beschreibung: 'Gestaute Halsvenen, hypersonorer Klopfschall - Entlastung erforderlich.',
+          beschreibung: 'Gestaute Halsvenen, hypersonorer Klopfschall, Atemnot nimmt zu.',
           behandeltDurch: ['thoraxentlastung'],
           startetNachMin: 3,
           verlauf: {
@@ -93,6 +93,7 @@ const busunfall: Szenario = {
         },
       ],
       erwarteteSK: 'SK2',
+      auskultation: 'links kein Atemgeräusch, rechts seitengleich; hypersonorer Klopfschall links',
     },
     {
       id: 'B-03',
@@ -118,12 +119,14 @@ const busunfall: Szenario = {
         {
           id: 'atemwegsverlegung',
           label: 'Verlegter Atemweg',
-          beschreibung: 'Zurückfallende Zunge und Blut - Atemwegsmanagement erforderlich.',
+          beschreibung: 'Schnarchende Atmung, Blut und Erbrochenes im Mundraum, Zunge fällt zurück.',
           behandeltDurch: ['atemwege_freimachen', 'guedeltubus', 'intubation'],
           verlauf: { spo2: -4, gcs: -0.3, herzfrequenz: 2 },
         },
       ],
       erwarteteSK: 'SK1',
+      pupillen: 'seitendifferent',
+      auskultation: 'grobblasige Rasselgeräusche beidseits',
     },
     {
       id: 'B-04',
@@ -149,19 +152,20 @@ const busunfall: Szenario = {
         {
           id: 'beckenfraktur',
           label: 'Instabile Beckenfraktur',
-          beschreibung: 'Retroperitoneale Blutung - Beckenschlinge anlegen.',
+          beschreibung: 'Becken federt bei vorsichtigem Druck, Hämatom in der Leiste, blasse Haut.',
           behandeltDurch: ['beckenschlinge'],
           verlauf: { systolischerRR: -4, herzfrequenz: 4, rekapzeit: 0.1 },
         },
         {
           id: 'volumenmangel',
           label: 'Hämorrhagischer Schock',
-          beschreibung: 'Kreislauf zunehmend instabil - Volumentherapie erwägen.',
+          beschreibung: 'Puls fadenförmig und schnell, Haut kaltschweißig, Patient zunehmend unruhig.',
           behandeltDurch: ['volumengabe', 'schocklage'],
           verlauf: { systolischerRR: -2, herzfrequenz: 2, gcs: -0.1 },
         },
       ],
       erwarteteSK: 'SK1',
+      ekg: 'Sinustachykardie 130/min, keine Extrasystolen',
     },
     {
       id: 'B-05',
@@ -186,7 +190,7 @@ const busunfall: Szenario = {
         {
           id: 'schmerz-arm',
           label: 'Starke Schmerzen',
-          beschreibung: 'Schmerzbedingte Tachykardie - Analgesie und Schienung.',
+          beschreibung: 'Fehlstellung des linken Unterarms, hält ihn schonend, jede Bewegung sehr schmerzhaft.',
           behandeltDurch: ['analgesie', 'immobilisation'],
           verlauf: { herzfrequenz: 1, atemfrequenz: 0.4 },
         },
@@ -216,7 +220,7 @@ const busunfall: Szenario = {
         {
           id: 'hyperventilation',
           label: 'Hyperventilation / akute Belastungsreaktion',
-          beschreibung: 'Betreuung durch PSNV-Kraft, Atmung anleiten.',
+          beschreibung: 'Weint, atmet sehr schnell und flach, Kribbeln in den Händen.',
           behandeltDurch: ['betreuung'],
           verlauf: { atemfrequenz: 0.8, herzfrequenz: 1 },
         },
@@ -247,7 +251,7 @@ const busunfall: Szenario = {
         {
           id: 'hypothermie',
           label: 'Auskühlung',
-          beschreibung: 'Nasse Kleidung, kalter Untergrund - konsequenter Wärmeerhalt.',
+          beschreibung: 'Durchnässte Kleidung, liegt auf kaltem Asphalt, Haut kühl, beginnt zu zittern.',
           behandeltDurch: ['waermeerhalt'],
           verlauf: { rekapzeit: 0.06, systolischerRR: -1, herzfrequenz: 1 },
         },
@@ -277,7 +281,7 @@ const busunfall: Szenario = {
         {
           id: 'sht-leicht',
           label: 'Leichtes Schädel-Hirn-Trauma',
-          beschreibung: 'Engmaschige Kontrolle der Vigilanz, achsengerechte Lagerung.',
+          beschreibung: 'Erinnert sich nicht an den Unfall, fragt mehrfach dasselbe, Prellmarke am Hinterkopf.',
           behandeltDurch: ['immobilisation'],
           verlauf: { gcs: -0.12 },
         },
@@ -309,12 +313,15 @@ const busunfall: Szenario = {
           id: 'atemstillstand',
           label: 'Atemstillstand',
           beschreibung:
-            'Im MANV nach mSTaRT SK IV - individualmedizinische Maßnahmen binden zu viel Personal.',
+            'Keine Atembewegung, keine Reaktion auf Schmerzreiz, Haut fahl.',
           behandeltDurch: ['beatmung', 'intubation'],
           verlauf: { spo2: -8, herzfrequenz: -4, systolischerRR: -5 },
         },
       ],
       erwarteteSK: 'SK4',
+      pupillen: 'weit',
+      auskultation: 'kein Atemgeräusch beidseits',
+      ekg: 'bradykarder Rhythmus ohne tastbaren Puls',
     },
     {
       id: 'B-10',
@@ -341,7 +348,7 @@ const busunfall: Szenario = {
           id: 'innere-blutung',
           label: 'Intraabdominelle Blutung',
           beschreibung:
-            'Präklinisch nicht stillbar - Volumengabe verzögert, entscheidend ist der Transport.',
+            'Bauchdecke zunehmend gespannt, Druckschmerz nimmt zu, Patientin wird stiller.',
           behandeltDurch: ['volumengabe'],
           startetNachMin: 2,
           verlauf: { systolischerRR: -5, herzfrequenz: 6, rekapzeit: 0.12, gcs: -0.15 },
@@ -385,12 +392,13 @@ const wohnungsbrand: Szenario = {
         {
           id: 'rauchgas-schwer',
           label: 'Schwere Rauchgasintoxikation',
-          beschreibung: 'Inhalationstrauma mit drohender Atemwegsschwellung.',
+          beschreibung: 'Ruß in Mund und Rachen, verbrannte Nasenhaare, heisere Stimme, hörbares Einatmen.',
           behandeltDurch: ['sauerstoffgabe', 'intubation'],
           verlauf: { spo2: -2, gcs: -0.25, atemfrequenz: 0.8, herzfrequenz: 3 },
         },
       ],
       erwarteteSK: 'SK1',
+      auskultation: 'inspiratorischer Stridor, giemende Nebengeräusche beidseits',
     },
     {
       id: 'W-02',
@@ -415,7 +423,7 @@ const wohnungsbrand: Szenario = {
         {
           id: 'rauchgas-leicht',
           label: 'Leichte Rauchgasexposition',
-          beschreibung: 'Sauerstoffgabe und Überwachung, spätere Klinikvorstellung.',
+          beschreibung: 'Klagt über Kopfschmerz und Übelkeit, wirkt benommen, Haut auffällig rosig.',
           behandeltDurch: ['sauerstoffgabe'],
           verlauf: { spo2: -0.4, herzfrequenz: 1 },
         },
@@ -445,14 +453,14 @@ const wohnungsbrand: Szenario = {
         {
           id: 'verbrennung',
           label: 'Ausgedehnte Verbrennung',
-          beschreibung: 'Flüssigkeitsverlust und Auskühlung - Volumen und Wärmeerhalt.',
+          beschreibung: 'Blasenbildung an Armen und Rumpf, nässende Wundflächen, Patient friert.',
           behandeltDurch: ['volumengabe'],
           verlauf: { systolischerRR: -2.5, herzfrequenz: 1.5, rekapzeit: 0.08 },
         },
         {
           id: 'verbrennungsschmerz',
           label: 'Stärkste Schmerzen',
-          beschreibung: 'Analgesie hat hohe Priorität.',
+          beschreibung: 'Stärkste Schmerzen, presst die Arme an den Körper, kaum zu beruhigen.',
           behandeltDurch: ['analgesie'],
           verlauf: { herzfrequenz: 1, atemfrequenz: 0.5 },
         },
@@ -482,7 +490,7 @@ const wohnungsbrand: Szenario = {
         {
           id: 'wirbelsaeulentrauma',
           label: 'Verdacht auf Wirbelsäulenverletzung',
-          beschreibung: 'Achsengerechte Immobilisation, möglichst wenig Umlagerungen.',
+          beschreibung: 'Klagt über Kribbeln in beiden Beinen, Druckschmerz über der Brustwirbelsäule.',
           behandeltDurch: ['immobilisation'],
           verlauf: { herzfrequenz: 1.5, atemfrequenz: 0.3 },
         },
@@ -512,7 +520,7 @@ const wohnungsbrand: Szenario = {
         {
           id: 'rauchgas-kind',
           label: 'Rauchgasintoxikation (Kind)',
-          beschreibung: 'Kinder dekompensieren spät, dann aber sehr schnell.',
+          beschreibung: 'Auffällig ruhig, blasse Haut, Puls schnell und schwach zu tasten.',
           behandeltDurch: ['sauerstoffgabe', 'beatmung'],
           verlauf: { spo2: -2.5, gcs: -0.3, herzfrequenz: 2 },
         },
@@ -542,12 +550,13 @@ const wohnungsbrand: Szenario = {
         {
           id: 'acs',
           label: 'Akutes Koronarsyndrom',
-          beschreibung: 'Sauerstoff, Ruhe, schneller Transport in ein Herzkatheterzentrum.',
+          beschreibung: 'Klagt über Druck hinter dem Brustbein mit Ausstrahlung in den linken Arm, kaltschweißig.',
           behandeltDurch: ['sauerstoffgabe', 'analgesie'],
           verlauf: { systolischerRR: -3, herzfrequenz: 2, spo2: -1, gcs: -0.1 },
         },
       ],
       erwarteteSK: 'SK1',
+      ekg: 'ST-Hebungen in II, III und aVF',
     },
   ],
 };

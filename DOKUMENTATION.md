@@ -43,6 +43,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Maßnahmen | 15 Maßnahmen nach xABCDE, gruppenweise einklappbar |
+| Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
 | Sichtung an drei Stellen | Vor-, Eingangs- und Abschlusssichtung, jede mit Ort und Zeitpunkt protokolliert |
 | Debriefing | Kennzahlen, Vergleich gegen die Referenz, Ausweis der Individualmedizin |
@@ -50,8 +51,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-84 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
-Probelauf und Baukasten.
+94 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+Probelauf, Diagnostik und Baukasten.
 
 ### Bewusst noch nicht gebaut
 
@@ -80,6 +81,11 @@ Probelauf und Baukasten.
   Betreuungsabschnitt fehlt (→ `abschnitte.zeltzuordnung`).
 - Die Maßnahmen tragen `hinweis`-Texte, die nirgends angezeigt werden. Sie sind
   für einen späteren Übungsleitermodus aufgehoben.
+- Eine Untersuchung liefert immer den korrekten Befund. Fehlmessungen, nicht
+  verfügbare Geräte oder ein unkooperativer Patient sind nicht abgebildet.
+- Blutzucker, Temperatur und Schmerz dürfen in einer Szenariodatei fehlen; die
+  Simulation füllt sie dann unauffällig auf (→ `sim.standardwerte`). Ältere
+  Dateien bleiben dadurch gültig.
 
 ---
 
@@ -112,7 +118,7 @@ Parallel dazu tickt die Uhr (`state.uhr`) alle 500 ms und schickt `tick`-Aktione
 
 ---
 
-## 4. Die drei Mechaniken
+## 4. Die vier Mechaniken
 
 ### Verschlechterung
 
@@ -135,12 +141,36 @@ Jede Handlung kostet ihre Dauer, und zwar **für alle Patienten gleichzeitig**
 | --- | --- |
 | Vorsichtung | 20 s |
 | Verlegung | 30 s |
-| Untersuchung | 30 s |
 | Blutstillung / Atemweg | 20–60 s |
 | Intubation | 180 s |
+| Vollständige Diagnostik an einem Patienten | 340 s |
 
 Zehn Patienten vorzusichten kostet 3:20 – weniger als zwei Intubationen. Ein Test
 hält das fest (→ `test.zeitkosten`).
+
+### Diagnostik als Entscheidung
+
+Ein Wert ist erst zu sehen, wenn ihn jemand erhoben hat (→ `diagnostik.katalog`,
+`ui.befundtafel`). Jede der 13 Untersuchungen kostet ihre eigene Zeit:
+
+| Ohne Hilfsmittel | Mit Gerät | Körperliche Untersuchung |
+| --- | --- | --- |
+| Puls tasten 10 s | Blutdruck messen 45 s | Lunge auskultieren 30 s |
+| Atemfrequenz zählen 15 s | Pulsoxymetrie 20 s | Bodycheck 60 s |
+| Rekapzeit prüfen 10 s | Blutzucker messen 30 s | |
+| Pupillen kontrollieren 10 s | Temperatur messen 20 s | |
+| Bewusstsein prüfen 20 s | EKG-Monitoring 60 s | |
+| Schmerz erfragen 10 s | | |
+
+Wer an einem Patienten alles erhebt, zahlt **5:40** - mehr als drei Vorsichtungen
+plus zwei Intubationen. Vorher war es ein einziger Knopf für 30 Sekunden, der
+alles gleichzeitig zeigte; damit war die Rundumdiagnostik in jeder Lage die beste
+Wahl und deshalb keine Entscheidung.
+
+Nicht erhobene Werte stehen als Strich da - sichtbar, dass sie fehlen, ohne zu
+verraten, ob sie auffällig wären. Manche Probleme sind ohne die passende
+Untersuchung gar nicht zu finden: Der Spannungspneumothorax zeigt sich in der
+Auskultation, das Schädel-Hirn-Trauma an den Pupillen.
 
 ### Versuchung
 
@@ -149,6 +179,12 @@ Ersteinschätzung sind nur **x** und **A** aufgeklappt; B bis E sind einen Klick
 entfernt (→ `ui.ersteinschaetzung`, `ui.massnahmenliste`). Nichts hindert daran,
 sich festzuarbeiten – das Debriefing weist die Zeit jenseits der Sofortmaßnahmen
 als Individualmedizin aus (→ `sim.individualmedizin`).
+
+**Die Anwendung sagt nie, was zu tun ist.** Befundtexte beschreiben ausschließlich
+Beobachtbares - "Pulsierende Blutung aus der Wunde, Hose durchtränkt", nicht
+"Tourniquet indiziert". Was daraus folgt, ist die Prüfung des Übenden. Für die
+KI-Erzeugung steht diese Regel mit Positiv- und Negativbeispiel im Auftrag
+(→ `ki.prompt`, Regel 8); im Editor steht sie unter dem Befundfeld.
 
 ---
 
@@ -312,7 +348,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_94 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -330,6 +366,13 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `auswertung.debriefing` | [`src/lib/auswertung.ts:63`](src/lib/auswertung.ts#L63) | Eine Auswertungszeile je Patient |
 | `auswertung.kennzahlen` | [`src/lib/auswertung.ts:97`](src/lib/auswertung.ts#L97) | Die Zahlen über der Debriefing-Tabelle |
 
+#### diagnostik
+
+| Anker | Datei | Bedeutung |
+| --- | --- | --- |
+| `diagnostik.bekannt` | [`src/domain/diagnostik.ts:133`](src/domain/diagnostik.ts#L133) | Ist dieser Befund schon erhoben? |
+| `diagnostik.katalog` | [`src/domain/diagnostik.ts:10`](src/domain/diagnostik.ts#L10) | Alle Untersuchungen mit Dauer und aufgedecktem Befund |
+
 #### format
 
 | Anker | Datei | Bedeutung |
@@ -340,18 +383,18 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:14`](src/domain/szenarioGenerator.ts#L14) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
-| `generator.muster` | [`src/domain/szenarioGenerator.ts:61`](src/domain/szenarioGenerator.ts#L61) | Der Vorrat an Verletzungsmustern - hier erweitern |
-| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:405`](src/domain/szenarioGenerator.ts#L405) | Aus der gewünschten Todesminute wird die Verlaufsrate |
+| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:15`](src/domain/szenarioGenerator.ts#L15) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
+| `generator.muster` | [`src/domain/szenarioGenerator.ts:68`](src/domain/szenarioGenerator.ts#L68) | Der Vorrat an Verletzungsmustern - hier erweitern |
+| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:435`](src/domain/szenarioGenerator.ts#L435) | Aus der gewünschten Todesminute wird die Verlaufsrate |
 
 #### ki
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
-| `ki.korrektur` | [`src/lib/kiPrompt.ts:102`](src/lib/kiPrompt.ts#L102) | Rückmeldung der Prüfung an das Modell |
+| `ki.korrektur` | [`src/lib/kiPrompt.ts:115`](src/lib/kiPrompt.ts#L115) | Rückmeldung der Prüfung an das Modell |
 | `ki.livetest` | [`src/lib/kiClient.live.test.ts:8`](src/lib/kiClient.live.test.ts#L8) | Echter Durchlauf gegen die API - nur mit Schlüssel |
-| `ki.normalisieren` | [`src/lib/kiSchema.ts:116`](src/lib/kiSchema.ts#L116) | Räumt die Modellantwort auf, bevor sie geprüft wird |
+| `ki.normalisieren` | [`src/lib/kiSchema.ts:137`](src/lib/kiSchema.ts#L137) | Räumt die Modellantwort auf, bevor sie geprüft wird |
 | `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
 | `ki.schema` | [`src/lib/kiSchema.ts:6`](src/lib/kiSchema.ts#L6) | Das JSON-Schema, an das die KI gebunden wird |
 | `ki.zugang` | [`src/lib/kiZugang.ts:2`](src/lib/kiZugang.ts#L2) | Wo der API-Schlüssel liegt - und was das bedeutet |
@@ -368,10 +411,12 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:138`](src/domain/types.ts#L138) | Die Stationen, die ein Patient durchläuft |
-| `modell.patient` | [`src/domain/types.ts:204`](src/domain/types.ts#L204) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:180`](src/domain/types.ts#L180) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:123`](src/domain/types.ts#L123) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.abschnitte` | [`src/domain/types.ts:179`](src/domain/types.ts#L179) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:251`](src/domain/types.ts#L251) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
+| `modell.patient` | [`src/domain/types.ts:286`](src/domain/types.ts#L286) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:221`](src/domain/types.ts#L221) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:164`](src/domain/types.ts#L164) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -393,16 +438,18 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sim.befunde` | [`src/domain/simulation.ts:121`](src/domain/simulation.ts#L121) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.gleitkomma` | [`src/domain/simulation.ts:33`](src/domain/simulation.ts#L33) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:287`](src/domain/simulation.ts#L287) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:180`](src/domain/simulation.ts#L180) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
-| `sim.startzustand` | [`src/domain/simulation.ts:49`](src/domain/simulation.ts#L49) | Womit ein Patient in den Einsatz startet |
-| `sim.tick` | [`src/domain/simulation.ts:96`](src/domain/simulation.ts#L96) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
-| `sim.tod` | [`src/domain/simulation.ts:85`](src/domain/simulation.ts#L85) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:258`](src/domain/simulation.ts#L258) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
-| `sim.zeitkosten` | [`src/domain/simulation.ts:147`](src/domain/simulation.ts#L147) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:155`](src/domain/simulation.ts#L155) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.befunde` | [`src/domain/simulation.ts:145`](src/domain/simulation.ts#L145) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
+| `sim.diagnostik` | [`src/domain/simulation.ts:256`](src/domain/simulation.ts#L256) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.gleitkomma` | [`src/domain/simulation.ts:55`](src/domain/simulation.ts#L55) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:332`](src/domain/simulation.ts#L332) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:207`](src/domain/simulation.ts#L207) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.standardwerte` | [`src/domain/simulation.ts:35`](src/domain/simulation.ts#L35) | Unauffällige Vorgaben für die später ergänzten Werte |
+| `sim.startzustand` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Womit ein Patient in den Einsatz startet |
+| `sim.tick` | [`src/domain/simulation.ts:120`](src/domain/simulation.ts#L120) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
+| `sim.tod` | [`src/domain/simulation.ts:109`](src/domain/simulation.ts#L109) | Ab welchen Werten ein Patient verstirbt |
+| `sim.verlegung` | [`src/domain/simulation.ts:303`](src/domain/simulation.ts#L303) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.zeitkosten` | [`src/domain/simulation.ts:171`](src/domain/simulation.ts#L171) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
+| `sim.zeitraum` | [`src/domain/simulation.ts:182`](src/domain/simulation.ts#L182) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### speicher
 
@@ -414,25 +461,25 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:61`](src/state/reducer.ts#L61) | Alles, was der Übende auslösen kann |
-| `state.phase` | [`src/state/reducer.ts:23`](src/state/reducer.ts#L23) | Die Hauptzustände der Anwendung |
-| `state.reducer` | [`src/state/reducer.ts:114`](src/state/reducer.ts#L114) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.aktionen` | [`src/state/reducer.ts:62`](src/state/reducer.ts#L62) | Alles, was der Übende auslösen kann |
+| `state.phase` | [`src/state/reducer.ts:24`](src/state/reducer.ts#L24) | Die Hauptzustände der Anwendung |
+| `state.reducer` | [`src/state/reducer.ts:115`](src/state/reducer.ts#L115) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:9`](src/state/SimulationProvider.tsx#L9) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:81`](src/state/reducer.ts#L81) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:26`](src/state/reducer.ts#L26) | Der gesamte Zustand einer laufenden Übung |
+| `state.zeit` | [`src/state/reducer.ts:82`](src/state/reducer.ts#L82) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zustand` | [`src/state/reducer.ts:27`](src/state/reducer.ts#L27) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1618`](src/index.css#L1618) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:1685`](src/index.css#L1685) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
 | `stil.raster` | [`src/index.css:1072`](src/index.css#L1072) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:1725`](src/index.css#L1725) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:1792`](src/index.css#L1792) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:1862`](src/index.css#L1862) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:1929`](src/index.css#L1929) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -452,11 +499,11 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `test.abschnitte` | [`src/state/reducer.test.ts:147`](src/state/reducer.test.ts#L147) | Der Weg eines Patienten und die erlaubten Verlegungen |
-| `test.mstart` | [`src/domain/triage.test.ts:39`](src/domain/triage.test.ts#L39) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
+| `test.abschnitte` | [`src/state/reducer.test.ts:186`](src/state/reducer.test.ts#L186) | Der Weg eines Patienten und die erlaubten Verlegungen |
+| `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:26`](src/domain/simulation.test.ts#L26) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
-| `test.zeitkosten` | [`src/state/reducer.test.ts:22`](src/state/reducer.test.ts#L22) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
+| `test.zeitkosten` | [`src/state/reducer.test.ts:28`](src/state/reducer.test.ts#L28) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:71`](src/domain/simulation.test.ts#L71) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -467,14 +514,16 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.ausgangssichtung` | [`src/pages/patient/Ausgangssichtung.tsx:12`](src/pages/patient/Ausgangssichtung.tsx#L12) | Übergabe, schnelle Maßnahmen, Abschlusssichtung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
+| `ui.befundtafel` | [`src/components/Befundtafel.tsx:7`](src/components/Befundtafel.tsx#L7) | Nur was erhoben wurde, ist zu sehen |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
+| `ui.diagnostikliste` | [`src/components/Diagnostikliste.tsx:19`](src/components/Diagnostikliste.tsx#L19) | Untersuchungen einzeln wählen - jede mit ihrem Preis |
 | `ui.eingangssichtung` | [`src/pages/patient/Eingangssichtung.tsx:10`](src/pages/patient/Eingangssichtung.tsx#L10) | Sichten und einem Zelt zuweisen |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.ersteinschaetzung` | [`src/pages/patient/Ersteinschaetzung.tsx:19`](src/pages/patient/Ersteinschaetzung.tsx#L19) | Der schnelle Weg - und die Versuchung daneben |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:13`](src/components/Massnahmenliste.tsx#L13) | Das einklappbare xABCDE-Akkordeon |
-| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:30`](src/pages/uebungsleitung/PatientEditor.tsx#L30) | Formular für einen Szenario-Patienten samt Problemen |
+| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:32`](src/pages/uebungsleitung/PatientEditor.tsx#L32) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:13`](src/pages/PatientSeite.tsx#L13) | Weiche: welcher Abschnitt zeigt welche Ansicht |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
@@ -482,7 +531,7 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:6`](src/components/Verlegung.tsx#L6) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:24`](src/pages/patient/Versorgung.tsx#L24) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
+| `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:25`](src/pages/patient/Versorgung.tsx#L25) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
 
 #### vorlagen
 
@@ -512,7 +561,7 @@ _86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           84 Tests
+npm run test           94 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

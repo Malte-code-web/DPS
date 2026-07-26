@@ -1,13 +1,17 @@
 import { abschnittInfo, sichtungsstelleIn } from './abschnitte';
+import { DIAGNOSTIK } from './diagnostik';
 import { MASSNAHMEN } from './massnahmen';
 import type {
+  DiagnostikId,
   Einsatzabschnitt,
+  KernVitalKey,
   MassnahmeId,
   Patient,
   PatientVorlage,
   Problem,
   Sichtungskategorie,
   Sichtungsstelle,
+  Startwerte,
   VitalKey,
   VitalVerlauf,
   Vitalwerte,
@@ -21,7 +25,25 @@ const GRENZEN: Record<VitalKey, { min: number; max: number }> = {
   spo2: { min: 0, max: 100 },
   gcs: { min: 3, max: 15 },
   rekapzeit: { min: 0.5, max: 10 },
+  blutzucker: { min: 10, max: 600 },
+  temperatur: { min: 25, max: 43 },
+  schmerz: { min: 0, max: 10 },
 };
+
+/**
+ * Werte, die eine Vorlage weglassen darf.
+ * @anker sim.standardwerte Unauffällige Vorgaben für die später ergänzten Werte
+ */
+export const STANDARD_ZUSATZWERTE: Omit<Vitalwerte, KernVitalKey> = {
+  blutzucker: 95,
+  temperatur: 36.6,
+  schmerz: 0,
+};
+
+/** Liest einen Startwert aus einer Vorlage und füllt fehlende Werte auf. */
+export function startwert(werte: Startwerte, key: VitalKey): number {
+  return { ...STANDARD_ZUSATZWERTE, ...werte }[key];
+}
 
 function begrenze(key: VitalKey, wert: number): number {
   const { min, max } = GRENZEN[key];
@@ -51,7 +73,8 @@ export function veraendereVitalwerte(basis: Vitalwerte, delta: VitalVerlauf): Vi
 export function patientAusVorlage(vorlage: PatientVorlage): Patient {
   return {
     ...vorlage,
-    vitalwerte: { ...vorlage.startVitalwerte },
+    // Fehlende Zusatzwerte werden aufgefüllt - ältere Vorlagen kennen sie nicht.
+    vitalwerte: { ...STANDARD_ZUSATZWERTE, ...vorlage.startVitalwerte },
     status: 'unbehandelt',
     abschnitt: 'schadensstelle',
     gesichtetAls: null,
@@ -59,6 +82,7 @@ export function patientAusVorlage(vorlage: PatientVorlage): Patient {
     sichtungsverlauf: [],
     behandelteProbleme: [],
     durchgefuehrteMassnahmen: [],
+    durchgefuehrteDiagnostik: [],
     untersucht: false,
     verlauf: [],
   };
@@ -148,8 +172,11 @@ export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: numbe
  */
 export const SICHTUNGSDAUER_SEK = 20;
 
-/** Zeitbedarf einer körperlichen Untersuchung mit Messung der Vitalwerte. */
-export const UNTERSUCHUNGSDAUER_SEK = 30;
+/**
+ * Zeitbedarf des Bodychecks - die Dauern aller Untersuchungen stehen in
+ * `diagnostik.ts` (→ `diagnostik.katalog`).
+ */
+export const UNTERSUCHUNGSDAUER_SEK = DIAGNOSTIK.bodycheck.dauerSek;
 
 /**
  * @anker sim.zeitraum Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern
@@ -224,9 +251,27 @@ export function wendeMassnahmeAn(
   return protokolliere(naechster, zeitSek, text);
 }
 
-export function untersuchePatient(patient: Patient, zeitSek: number): Patient {
-  if (patient.untersucht) return patient;
-  return protokolliere({ ...patient, untersucht: true }, zeitSek, 'Körperliche Untersuchung durchgeführt.');
+/**
+ * Führt eine einzelne Untersuchung durch.
+ * @anker sim.diagnostik Eine Untersuchung deckt genau ihren Befund auf
+ *
+ * Der Patient verändert sich dadurch nicht - erhoben wird nur, was ohnehin da
+ * ist. Bezahlt wird trotzdem: mit der Zeit, die im Reducer für alle vergeht.
+ */
+export function fuehreDiagnostikDurch(
+  patient: Patient,
+  diagnostikId: DiagnostikId,
+  zeitSek: number,
+): Patient {
+  if (patient.durchgefuehrteDiagnostik.includes(diagnostikId)) return patient;
+
+  const diagnostik = DIAGNOSTIK[diagnostikId];
+  const naechster: Patient = {
+    ...patient,
+    durchgefuehrteDiagnostik: [...patient.durchgefuehrteDiagnostik, diagnostikId],
+    untersucht: patient.untersucht || diagnostikId === 'bodycheck',
+  };
+  return protokolliere(naechster, zeitSek, `${diagnostik.label} durchgeführt.`);
 }
 
 export function sichtePatient(

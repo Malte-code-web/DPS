@@ -70,9 +70,50 @@ export interface Vitalwerte {
   gcs: number;
   /** Rekapillarisierungszeit in Sekunden. */
   rekapzeit: number;
+  /** Blutzucker in mg/dl. */
+  blutzucker: number;
+  /** Körperkerntemperatur in Grad Celsius. */
+  temperatur: number;
+  /** Schmerzstärke auf der numerischen Rangskala, 0-10. */
+  schmerz: number;
 }
 
 export type VitalKey = keyof Vitalwerte;
+
+/**
+ * Die sechs Werte, die jede Szenario-Vorlage nennen muss.
+ * @anker modell.kernwerte Pflichtwerte einer Vorlage - der Rest wird aufgefüllt
+ *
+ * Blutzucker, Temperatur und Schmerz sind erst später dazugekommen. Sie sind
+ * in der Vorlage freiwillig: fehlen sie, setzt `patientAusVorlage` unauffällige
+ * Standardwerte ein. Dadurch bleiben ältere Szenariodateien gültig.
+ */
+export type KernVitalKey =
+  | 'atemfrequenz'
+  | 'herzfrequenz'
+  | 'systolischerRR'
+  | 'spo2'
+  | 'gcs'
+  | 'rekapzeit';
+
+export type Startwerte = Pick<Vitalwerte, KernVitalKey> &
+  Partial<Omit<Vitalwerte, KernVitalKey>>;
+
+/** Pupillenbefund - Ergebnis der Pupillenkontrolle. */
+export type Pupillenbefund =
+  | 'unauffaellig'
+  | 'eng'
+  | 'weit'
+  | 'seitendifferent'
+  | 'entrundet';
+
+export const PUPILLEN_TEXT: Record<Pupillenbefund, string> = {
+  unauffaellig: 'mittelweit, seitengleich, prompte Lichtreaktion',
+  eng: 'beidseits eng, träge Lichtreaktion',
+  weit: 'beidseits weit, kaum Lichtreaktion',
+  seitendifferent: 'seitendifferent (Anisokorie)',
+  entrundet: 'entrundet, keine Lichtreaktion',
+};
 
 /** Veränderung von Vitalparametern pro Minute. */
 export type VitalVerlauf = Partial<Record<VitalKey, number>>;
@@ -186,17 +227,58 @@ export interface PatientVorlage {
   geschlecht: 'w' | 'm' | 'd';
   /** Was die Einsatzkraft auf den ersten Blick sieht. */
   kurzbefund: string;
-  /** Detailbefund nach körperlicher Untersuchung. */
+  /** Detailbefund nach körperlicher Untersuchung (Bodycheck). */
   untersuchungsbefund: string;
   gehfaehig: boolean;
   kritischeBlutung: boolean;
   spontanatmung: boolean;
   /** Reagiert auf Ansprache und befolgt Aufforderungen. */
   befolgtAufforderungen: boolean;
-  startVitalwerte: Vitalwerte;
+  startVitalwerte: Startwerte;
   probleme: Problem[];
   /** Erwartete Sichtungskategorie zum Einsatzbeginn - Referenz für das Debriefing. */
   erwarteteSK: Sichtungskategorie;
+  /** Ergebnis der Pupillenkontrolle. Fehlt es, ist der Befund unauffällig. */
+  pupillen?: Pupillenbefund;
+  /** Auskultationsbefund der Lunge. Fehlt er, ist er seitengleich unauffällig. */
+  auskultation?: string;
+  /** Rhythmus im Monitoring. Fehlt er, ist es ein Sinusrhythmus. */
+  ekg?: string;
+}
+
+/**
+ * Diagnostische Maßnahmen - jede deckt genau ihren Befund auf.
+ * @anker modell.diagnostik Einzelne Untersuchungen statt einer Rundumschau
+ */
+export type DiagnostikId =
+  | 'puls_tasten'
+  | 'atemfrequenz_zaehlen'
+  | 'rekapzeit_pruefen'
+  | 'pupillen_kontrollieren'
+  | 'bewusstsein_pruefen'
+  | 'schmerz_erfragen'
+  | 'blutdruck_messen'
+  | 'pulsoxymetrie'
+  | 'blutzucker_messen'
+  | 'temperatur_messen'
+  | 'ekg_monitoring'
+  | 'auskultation'
+  | 'bodycheck';
+
+/** Was eine Untersuchung aufdecken kann. */
+export type Befundschluessel = VitalKey | 'pupillen' | 'auskultation' | 'ekg' | 'koerper';
+
+/** Grobe Einteilung: was ohne Gerät geht, was Technik braucht, was Zeit kostet. */
+export type Diagnostikgruppe = 'basis' | 'geraet' | 'koerperlich';
+
+export interface Diagnostik {
+  id: DiagnostikId;
+  label: string;
+  gruppe: Diagnostikgruppe;
+  /** Zeitbedarf in Sekunden - läuft für alle Patienten mit. */
+  dauerSek: number;
+  /** Welche Befunde danach sichtbar sind. */
+  zeigt: Befundschluessel[];
 }
 
 /**
@@ -216,6 +298,9 @@ export interface Patient extends PatientVorlage {
   /** IDs bereits gelöster Probleme. */
   behandelteProbleme: string[];
   durchgefuehrteMassnahmen: MassnahmeId[];
+  /** Welche Untersuchungen durchgeführt wurden - steuert, was sichtbar ist. */
+  durchgefuehrteDiagnostik: DiagnostikId[];
+  /** Abkürzung für "Bodycheck erfolgt". */
   untersucht: boolean;
   verlauf: Verlaufseintrag[];
 }

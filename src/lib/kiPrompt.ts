@@ -30,6 +30,10 @@ pro Minute weiter, solange es nicht behandelt ist. Genau daraus entsteht der
 Zeitdruck, den die Übenden spüren sollen. Du planst diese Verläufe bewusst -
 wer rot ist, muss ohne Hilfe sterben; wer grün ist, muss die Übung überleben.
 
+Du sagst den Übenden nie, was zu tun ist. Du beschreibst ausschließlich, was
+sie vorfinden - Aussehen, Tastbefund, Geräusch, Äußerung des Patienten. Welche
+Maßnahme daraus folgt, ist ihre Entscheidung und ihre Prüfung.
+
 Antworte ausschließlich mit den geforderten Daten, ohne Begleittext.`;
 
 function massnahmenliste(): string {
@@ -69,8 +73,17 @@ ${massnahmenliste()}
      nach 15 Minuten kritisch wird.
    - SK4: verstirbt auch mit Behandlung.
 7. Jeder Patient außer SK4 muss mit den genannten Maßnahmen zu retten sein.
-8. Patienten-IDs sind eindeutig. Namen, Befunde und Hinweise auf Deutsch.
-9. Mische realistisch: wenige SK1, mehr SK2 und SK3, höchstens ein SK4.`;
+8. "beschreibung" ist ein Befund, keine Anweisung. Erlaubt ist, was man sieht,
+   tastet, hört oder erfragt. Verboten sind Formulierungen wie "Tourniquet
+   anlegen", "Sauerstoff geben", "Entlastungspunktion" oder "indiziert" - auch
+   dann, wenn sie fachlich richtig wären.
+   schlecht: "Nicht komprimierbare Blutung - Tourniquet indiziert."
+   gut:      "Pulsierende Blutung aus der Wunde, Hose durchtränkt."
+9. Untersuchungsbefunde: "auskultation" ist bei Atemwegs- und Thoraxproblemen
+   der Befund, über den das Problem überhaupt gefunden wird - setze ihn dort.
+   "pupillen" bei Schädel-Hirn-Trauma, "ekg" bei Kreislaufproblemen.
+10. Patienten-IDs sind eindeutig. Namen und Befunde auf Deutsch.
+11. Mische realistisch: wenige SK1, mehr SK2 und SK3, höchstens ein SK4.`;
 }
 
 function auftragskopf(wunsch: PromptWunsch): string {
@@ -157,11 +170,14 @@ STRUKTUR
         "gcs": 15,
         "rekapzeit": 2
       },
+      "pupillen": "unauffaellig",
+      "auskultation": "seitengleich belüftet",
+      "ekg": "Sinusrhythmus",
       "probleme": [
         {
           "id": "kurzname-des-problems",
           "label": "Anzeigename",
-          "beschreibung": "Was zu tun ist.",
+          "beschreibung": "Was die Einsatzkraft vorfindet - reiner Befund.",
           "behandeltDurch": ["tourniquet"],
           "verlauf": { "systolischerRR": -6, "herzfrequenz": 5 },
           "startetNachMin": 3
@@ -172,7 +188,8 @@ STRUKTUR
   ]
 }
 
-"startetNachMin" ist optional und kann entfallen.
+"startetNachMin", "pupillen", "auskultation" und "ekg" sind optional und
+können entfallen.
 
 REGELN
 

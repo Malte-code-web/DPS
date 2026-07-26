@@ -1,7 +1,7 @@
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
 import { Sichtungsauswahl } from '../../components/Sichtungsauswahl';
 import { Verlegung } from '../../components/Verlegung';
-import { Vitalmonitor } from '../../components/Vitalmonitor';
+import { Befundtafel } from '../../components/Befundtafel';
 import { SCHNELLE_MASSNAHMEN } from '../../domain/massnahmen';
 import { aktiveProbleme } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
@@ -26,13 +26,11 @@ export function Ausgangssichtung({ patient }: { patient: Patient }) {
         <h3>Übergabe</h3>
         <p className="detail-befund">{patient.kurzbefund}</p>
         {patient.untersucht ? (
-          <>
-            <p className="detail-befund">{patient.untersuchungsbefund}</p>
-            <Vitalmonitor vitalwerte={patient.vitalwerte} />
-          </>
+          <p className="detail-befund">{patient.untersuchungsbefund}</p>
         ) : (
           <p className="hinweis">Der Patient wurde bisher nicht körperlich untersucht.</p>
         )}
+        <Befundtafel patient={patient} />
         {offeneProbleme.length > 0 && (
           <ul className="problemliste">
             {offeneProbleme.map((problem) => (

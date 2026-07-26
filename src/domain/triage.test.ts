@@ -10,6 +10,9 @@ const NORMWERTE: Vitalwerte = {
   spo2: 98,
   gcs: 15,
   rekapzeit: 1.5,
+  blutzucker: 95,
+  temperatur: 36.6,
+  schmerz: 0,
 };
 
 const BASIS: PatientVorlage = {

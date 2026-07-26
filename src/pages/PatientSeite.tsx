@@ -1,29 +1,17 @@
-import { useEffect, useState } from 'react';
-import { Anhaengekarte } from '../components/Anhaengekarte';
-import { Massnahmenuebersicht } from '../components/Massnahmenuebersicht';
+import { useEffect } from 'react';
 import { abschnittInfo } from '../domain/abschnitte';
 import { useSimulation } from '../state/useSimulation';
-import { Ausgangssichtung } from './patient/Ausgangssichtung';
-import { Eingangssichtung } from './patient/Eingangssichtung';
-import { Ersteinschaetzung } from './patient/Ersteinschaetzung';
-import { Versorgung } from './patient/Versorgung';
+import { Patientenansicht } from './patient/Patientenansicht';
 import type { Patient } from '../domain/types';
 
 /**
- * @anker ui.patientseite Weiche: welcher Abschnitt zeigt welche Ansicht
+ * @anker ui.patientseite Rahmen der Patientenseite: Navigation und Blättern
  *
- * Rahmen der Patientenseite: Navigation, Kopfzeile und die zum aktuellen
- * Einsatzabschnitt passende Ansicht.
- *
- *   Schadensstelle    -> Ersteinschätzung, dahinter erweiterte Versorgung
- *   Eingangssichtung  -> Sichten und einem Zelt zuweisen
- *   Zelt              -> Diagnostik und Behandlung
- *   Ausgangssichtung  -> Übergabe, schnelle Maßnahmen, Abschlusssichtung
- *   Abtransport       -> abgeschlossen, nur noch Einsicht
+ * Die Ansicht selbst ist für alle Einsatzabschnitte dieselbe
+ * (→ `ui.patientenansicht`); was sich unterscheidet, steht in der Domäne.
  */
 export function PatientSeite({ patient }: { patient: Patient }) {
   const { state, dispatch } = useSimulation();
-  const [erweitert, setErweitert] = useState(false);
 
   const abschnitt = abschnittInfo(patient.abschnitt);
 
@@ -37,19 +25,14 @@ export function PatientSeite({ patient }: { patient: Patient }) {
 
   const zurueckZurListe = () => dispatch({ typ: 'patientWaehlen', patientId: null });
 
-  // Escape führt zurück - erst aus der erweiterten Versorgung, dann zur Liste.
+  // Escape führt zurück zur Liste des Abschnitts.
   useEffect(() => {
     const beiTaste = (ereignis: KeyboardEvent) => {
-      if (ereignis.key !== 'Escape') return;
-      if (erweitert) {
-        setErweitert(false);
-      } else {
-        dispatch({ typ: 'patientWaehlen', patientId: null });
-      }
+      if (ereignis.key === 'Escape') dispatch({ typ: 'patientWaehlen', patientId: null });
     };
     window.addEventListener('keydown', beiTaste);
     return () => window.removeEventListener('keydown', beiTaste);
-  }, [dispatch, erweitert]);
+  }, [dispatch]);
 
   return (
     <div className="patientseite">
@@ -82,75 +65,7 @@ export function PatientSeite({ patient }: { patient: Patient }) {
         </div>
       </nav>
 
-      <Anhaengekarte patient={patient} />
-
-      <Abschnittsansicht
-        patient={patient}
-        erweitert={erweitert}
-        setErweitert={setErweitert}
-        aufNaechsten={() =>
-          naechster
-            ? dispatch({ typ: 'patientWaehlen', patientId: naechster.id })
-            : zurueckZurListe()
-        }
-        naechsterName={naechster ? `${naechster.id} ${naechster.name}` : null}
-      />
+      <Patientenansicht patient={patient} />
     </div>
   );
-}
-
-interface AnsichtProps {
-  patient: Patient;
-  erweitert: boolean;
-  setErweitert: (wert: boolean) => void;
-  aufNaechsten: () => void;
-  naechsterName: string | null;
-}
-
-function Abschnittsansicht({
-  patient,
-  erweitert,
-  setErweitert,
-  aufNaechsten,
-  naechsterName,
-}: AnsichtProps) {
-  switch (patient.abschnitt) {
-    case 'schadensstelle':
-      return erweitert ? (
-        <Versorgung patient={patient} zurueck={() => setErweitert(false)} />
-      ) : (
-        <Ersteinschaetzung
-          patient={patient}
-          aufVersorgung={() => setErweitert(true)}
-          aufNaechsten={aufNaechsten}
-          naechsterName={naechsterName}
-        />
-      );
-
-    case 'eingangssichtung':
-      return <Eingangssichtung patient={patient} />;
-
-    case 'zelt_rot':
-    case 'zelt_gelb':
-    case 'zelt_gruen':
-      return <Versorgung patient={patient} ueberschrift="Diagnostik" />;
-
-    case 'ausgangssichtung':
-      return <Ausgangssichtung patient={patient} />;
-
-    case 'transport':
-    default:
-      return (
-        <div className="stufe">
-          <section className="karte">
-            <h3>Abgeschlossen</h3>
-            <p className="hinweis">
-              Der Patient hat den Behandlungsplatz verlassen. Sein Zustand verändert sich nicht
-              mehr.
-            </p>
-            <Massnahmenuebersicht patient={patient} />
-          </section>
-        </div>
-      );
-  }
 }

@@ -1032,88 +1032,278 @@ button.gefahr {
 
 /* --- Anhängekarte ------------------------------------------------- */
 
+/*
+ * @anker stil.anhaengekarte Die Karte, ihre Farbreiter und die Einfärbung
+ *
+ * Die Einfärbung trägt die Aussage: eine vorläufige Sichtung färbt die obere
+ * Hälfte der Karte, eine endgültige die ganze. Umgesetzt als linearer Verlauf
+ * mit hartem Farbstopp bei 50 % - kein zweites Element, keine Überlagerung der
+ * Schrift.
+ */
 .anhaengekarte {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.7rem 0.9rem;
-  background: var(--bg-panel);
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 0.8rem;
   border: 1px solid var(--rand);
-  border-left: 5px solid var(--sk-farbe, var(--rand));
   border-radius: var(--radius);
+  background-color: var(--bg-panel);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 20%, transparent) 0 50%,
+    transparent 50% 100%
+  );
+}
+
+.anhaengekarte-final {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 22%, transparent) 0 100%
+  );
+  border-color: color-mix(in srgb, var(--sk-farbe, var(--rand)) 55%, transparent);
 }
 
 .anhaengekarte-verstorben {
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
-.anhaengekarte-kopf {
+/* Farbreiter wie die Laschen der echten Tasche */
+.anhaengekarte-reiter {
   display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  gap: 3px;
+  margin: -0.9rem -1rem 0;
+  padding: 0 1rem;
 }
 
-.anhaengekarte-kopf h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  flex: 1 1 auto;
+.reiter {
+  height: 7px;
+  flex: 1 1 0;
+  border-radius: 0 0 3px 3px;
+  background: color-mix(in srgb, var(--sk-farbe) 35%, transparent);
+}
+
+.reiter-aktiv {
+  height: 11px;
+  background: var(--sk-farbe);
+}
+
+.anhaengekarte-oben {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.9rem;
 }
 
-.anhaengekarte-id {
+.anhaengekarte-kennung {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0.55rem;
+  border: 2px solid var(--rand);
+  border-radius: 6px;
+  background: var(--bg-panel-hoch);
+}
+
+.kennung-label {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.anhaengekarte-kennung strong {
   font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--sk-farbe, var(--rand)) 22%, transparent);
-  color: var(--sk-farbe, var(--text-leise));
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
 }
 
 .anhaengekarte-person {
-  font-size: 0.8rem;
-  font-weight: 500;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.anhaengekarte-person h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.anhaengekarte-person span {
+  font-size: 0.78rem;
   color: var(--text-leise);
+}
+
+.koerperschema {
+  width: 54px;
+  height: 62px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--text-leise);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.7;
 }
 
 .anhaengekarte-befund {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.85rem;
   color: var(--text-leise);
+}
+
+/* --- Sichtungszeilen ---------------------------------------------- */
+
+.sichtungszeilen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sichtungszeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.sichtungszeile-dran {
+  border-color: color-mix(in srgb, var(--akzent) 55%, transparent);
+  background: color-mix(in srgb, var(--akzent) 8%, transparent);
+}
+
+.sichtungszeile-leer .sichtungszeile-titel {
+  color: var(--text-leise);
+}
+
+.sichtungszeile-titel {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sichtungszeile-nummer {
+  font-weight: 700;
+  color: var(--text-leise);
+}
+
+.sichtungszeile-kaesten {
+  display: flex;
+  gap: 2px;
+}
+
+.sichtungskasten {
+  min-width: 2.1rem;
+  padding: 0.2rem 0;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--sk-farbe) 40%, transparent);
+  background: transparent;
+  color: color-mix(in srgb, var(--sk-farbe) 80%, var(--text));
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sichtungskasten:disabled {
+  opacity: 0.35;
+}
+
+.sichtungskasten-gewaehlt {
+  background: var(--sk-farbe);
+  border-color: var(--sk-farbe);
+  color: #0f1218;
+}
+
+/* Auch gewählt bleibt sichtbar, wenn die Zeile gesperrt ist. */
+.sichtungskasten-gewaehlt:disabled {
+  opacity: 0.9;
+}
+
+.sichtungszeile-zeit {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sichtungszeile-zeit em {
+  font-style: normal;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ok);
 }
 
 .anhaengekarte-fuss {
   display: flex;
-  gap: 1.2rem;
-  margin: 0;
+  align-items: center;
+  gap: 0.7rem;
   flex-wrap: wrap;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
 }
 
-.anhaengekarte-fuss > div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-
-.anhaengekarte-fuss dt {
-  font-size: 0.65rem;
+.anhaengekarte-ort {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-leise);
 }
 
-.anhaengekarte-fuss dd {
-  margin: 0;
-  font-size: 0.82rem;
+.anhaengekarte-final-knopf {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  border-style: dashed;
+}
+
+.anhaengekarte-endgueltig {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ok) 50%, transparent);
+  color: var(--ok);
   font-weight: 600;
 }
 
-.anhaengekarte-individual dd {
+.anhaengekarte-offen {
+  color: var(--warn);
+}
+
+/* --- Bereichswahl der Patientenansicht ---------------------------- */
+
+.bereichswahl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.bereichswahl button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.bereich-marke {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.bereichswahl button.bereich-aktiv {
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+}
+
+.bereichswahl button.bereich-aktiv .bereich-marke {
+  color: var(--akzent);
+}
+
+.bereichswahl button.bereich-wartet .bereich-marke {
   color: var(--warn);
 }
 
@@ -2064,94 +2254,7 @@ tbody tr:last-child td {
   }
 
   /* Kategorie unter den Namen statt daneben - sonst bricht die Zeile dreifach um. */
-  /* --- Anhängekarte ------------------------------------------------- */
-
-.anhaengekarte {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.7rem 0.9rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--rand);
-  border-left: 5px solid var(--sk-farbe, var(--rand));
-  border-radius: var(--radius);
-}
-
-.anhaengekarte-verstorben {
-  opacity: 0.75;
-}
-
-.anhaengekarte-kopf {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.anhaengekarte-kopf h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  flex: 1 1 auto;
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.anhaengekarte-id {
-  font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--sk-farbe, var(--rand)) 22%, transparent);
-  color: var(--sk-farbe, var(--text-leise));
-}
-
-.anhaengekarte-person {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-leise);
-}
-
-.anhaengekarte-befund {
-  margin: 0;
-  font-size: 0.86rem;
-  color: var(--text-leise);
-}
-
-.anhaengekarte-fuss {
-  display: flex;
-  gap: 1.2rem;
-  margin: 0;
-  flex-wrap: wrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.anhaengekarte-fuss > div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-
-.anhaengekarte-fuss dt {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-leise);
-}
-
-.anhaengekarte-fuss dd {
-  margin: 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.anhaengekarte-individual dd {
-  color: var(--warn);
-}
-
-.patientseite-kopf {
+  .patientseite-kopf {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.6rem;

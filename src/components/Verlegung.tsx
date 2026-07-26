@@ -1,4 +1,5 @@
 import { VERLEGUNGSDAUER_SEK, moeglicheZiele, zeltFuerKategorie } from '../domain/abschnitte';
+import { sichtungOffen } from '../domain/simulation';
 import { useSimulation } from '../state/useSimulation';
 import type { Patient } from '../domain/types';
 
@@ -8,11 +9,16 @@ import type { Patient } from '../domain/types';
  * Verlegung in den nächsten Einsatzabschnitt. Passt ein Ziel zur vergebenen
  * Sichtungskategorie, wird es hervorgehoben - abweichend verlegen bleibt aber
  * jederzeit möglich.
+ *
+ * Solange die Sichtung dieser Station aussteht, sind alle Ziele gesperrt
+ * (→ `sim.sichtungOffen`). Der Reducer weist die Verlegung ohnehin ab; hier
+ * ist sie zusätzlich sichtbar gesperrt, damit kein Klick ins Leere geht.
  */
 export function Verlegung({ patient }: { patient: Patient }) {
   const { dispatch } = useSimulation();
   const ziele = moeglicheZiele(patient.abschnitt);
   const verstorben = patient.status === 'verstorben';
+  const wartetAufSichtung = sichtungOffen(patient);
 
   if (ziele.length === 0) {
     return <p className="hinweis">Der Patient hat den Behandlungsplatz verlassen.</p>;
@@ -31,7 +37,7 @@ export function Verlegung({ patient }: { patient: Patient }) {
             className={`verlegung-button${passend ? ' verlegung-empfohlen' : ''}${
               ziel.kategorie ? ` rand-${ziel.kategorie}` : ''
             }`}
-            disabled={verstorben}
+            disabled={verstorben || wartetAufSichtung}
             onClick={() => dispatch({ typ: 'patientVerlegen', patientId: patient.id, ziel: ziel.id })}
           >
             <span className="verlegung-ziel">{ziel.name}</span>

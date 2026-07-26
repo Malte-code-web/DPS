@@ -270,6 +270,8 @@ export interface Sichtungseintrag {
   stelle: Sichtungsstelle;
   kategorie: Sichtungskategorie;
   zeitSek: number;
+  /** Endgültige Sichtung - danach ist die Kategorie nicht mehr vorläufig. */
+  final?: boolean;
 }
 
 export type PatientStatus =
@@ -360,6 +362,15 @@ export interface Patient extends PatientVorlage {
   abschnitt: Einsatzabschnitt;
   /** Zuletzt gültige Sichtungskategorie, unabhängig davon, wo sie fiel. */
   gesichtetAls: Sichtungskategorie | null;
+  /**
+   * Die Kategorie wurde als endgültig bestätigt.
+   * @anker modell.finalsichtung Vorläufig oder endgültig - die Anhängekarte zeigt es
+   *
+   * Auf der Verletztenanhängekarte ist jede Sichtung zunächst vorläufig; erst
+   * die Abschlusssichtung legt fest. In der Oberfläche ist die Karte deshalb
+   * bei vorläufiger Sichtung zur Hälfte eingefärbt, bei endgültiger ganz.
+   */
+  sichtungFinal: boolean;
   gesichtetUmSek: number | null;
   /** Jede Sichtungsentscheidung mit Ort und Zeitpunkt. */
   sichtungsverlauf: Sichtungseintrag[];

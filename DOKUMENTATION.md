@@ -45,13 +45,13 @@ nur über den Zustand der Patienten und das Debriefing.
 | Maßnahmen | 51 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
-| Sichtung an drei Stellen | Vor-, Eingangs- und Abschlusssichtung, jede mit Ort und Zeitpunkt protokolliert |
+| Sichtung auf der Anhängekarte | Vier Sichtungszeilen mit I–IV/EX und Uhrzeit; vor jeder Verlegung Pflicht, endgültige Sichtung jederzeit möglich |
 | Debriefing | Kennzahlen, Vergleich gegen die Referenz, Ausweis der Individualmedizin |
 | Szenarien | Zwei Lagen mit zusammen 16 Patienten |
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-101 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+104 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -372,29 +372,78 @@ bestehen: für Geräte ohne Zugang und für den Betrieb ohne Netz.
 
 ---
 
-## 4b. Aufbau der Patientenseite
+## 4b. Die Patientenseite als Anhängekarte
 
-Oben steht die **Anhängekarte** (→ `ui.anhaengekarte`) - nachgebaut ist die Idee
-der Verletztenanhängekarte, nicht das Formular: farbiger Streifen für die
-Sichtungskategorie, daneben Kennung, Name, Alter, Geschlecht, Aufenthaltsort und
-die an diesem Patienten gebundene Zeit. Flach gehalten, weil der alte Kopf auf
-dem Telefon ein Sechstel der Bildhöhe verbrauchte, bevor ein Befund zu sehen war.
+Vorbild ist die **Patienten-Anhängetasche**, wie sie im MANV am Patienten hängt
+(→ `ui.anhaengekarte`). Übernommen ist ihr Aufbau:
 
-Darunter zwei Spalten: **Befunde** und **Maßnahmen**, das Protokoll zugeklappt
-darunter. Gegenüber der vorigen Fassung sind drei Dinge kürzer geworden:
+```
+ ▇▇  ▇▇  ▇▇  ▇▇  ▇▇          Farbreiter der Kategorien
+┌──────────────────────────────────────────┐
+│ ┌──────┐  Lena Hoffmann          ☖  ☖    │  Kennung, Person, Körperschema
+│ │ B-01 │  17 Jahre · weiblich              │
+│ └──────┘                                   │
+│ Liegt neben dem Bus, spritzende Blutung …  │
+│                                            │
+│ 1. Vorsichtung      [I][II][III][IV][EX] 00:20 │  ← die aktuelle Zeile
+│ 2. Eingangssichtung [I][II][III][IV][EX] --:-- │
+│ 3. Nachsichtung     [I][II][III][IV][EX] --:-- │
+│ 4. Ausgangssichtung [I][II][III][IV][EX] --:-- │
+│                                            │
+│ SCHADENSSTELLE   [Als endgültig markieren] │
+└──────────────────────────────────────────┘
+```
 
-| Was | Vorher | Jetzt |
+**Gesichtet wird auf der Karte selbst**: ein Klick auf das Kästchen der
+Kategorie in der Zeile der aktuellen Station. Eine getrennte Sichtungsauswahl
+gibt es nicht mehr - die Karte ist das Bedienelement, so wie im Einsatz der
+Stift auf der Karte.
+
+### Vorläufig oder endgültig
+
+Die Fläche der Karte trägt die Kategorie (→ `ui.einfaerbung`, `stil.anhaengekarte`):
+
+| Zustand | Karte |
+| --- | --- |
+| noch nicht gesichtet | keine Farbe |
+| vorläufig gesichtet | obere **Hälfte** in der Kategoriefarbe |
+| endgültig gesichtet | **ganze** Karte, Rahmen in der Kategoriefarbe |
+
+Umgesetzt als linearer Verlauf mit hartem Farbstopp bei 50 % - kein zweites
+Element, keine Überlagerung der Schrift. Damit ist in der Übersicht auf einen
+Blick zu sehen, wer noch nachzusichten ist.
+
+### Sichtung vor jeder Verlegung
+
+Jede Station sichtet neu (→ `sim.sichtungOffen`). Solange die Zeile der
+aktuellen Station leer ist, sind **alle Verlegungsziele gesperrt** - sichtbar
+im Knopf ("Sichtung offen") und im Reducer, der die Verlegung ohnehin abweist.
+Die erste Sichtung einer Station kostet 20 Sekunden, ein Korrigieren an
+derselben Stelle nichts.
+
+Die Ausnahme ist die **endgültige Sichtung**: Wer als endgültig markiert ist,
+wird nicht wieder aufgemacht und darf ohne erneute Sichtung weiter. Markieren
+lässt sich das an jeder Station, nicht erst am Ausgang.
+
+### Drei Knöpfe statt vier Ansichten
+
+Unter der Karte stehen der Ersteindruck und drei Bereiche
+(→ `ui.patientenansicht`), von denen immer nur einer offen ist:
+
+| Knopf | Inhalt | Marke am Knopf |
 | --- | --- | --- |
-| Diagnostik | eigene Spalte mit 13 Knöpfen | steckt in der Befundtafel |
-| Maßnahmen | alle 6 Gruppen offen, 51 Zeilen | Gruppen eingeklappt, 6 Zeilen |
-| Protokoll | immer ausgeklappt | zugeklappt mit Zähler |
+| Diagnostik | Befundtafel, Bodycheck | erhobene Zeit |
+| Maßnahmen | xABCDE-Katalog, Durchgeführtes | Anzahl durchgeführt |
+| Verlegung | erlaubte Ziele | offene Sichtung oder Anzahl Ziele |
 
-Gemessen an einer Lage mit Sabine Krüger: die Seite war 5,5 Bildschirme hoch,
-jetzt sind es 2,0 auf dem Telefon und 1,0 auf dem Desktop - dort also gar kein
-Scrollen mehr.
+Damit sind die vier fast gleichen Abschnittsansichten (Ersteinschätzung,
+Eingangssichtung, Versorgung, Ausgangssichtung) zu **einer** Ansicht geworden.
+Was sich je Abschnitt unterscheidet - erlaubte Ziele und die dran seiende
+Sichtungszeile - steht in der Domäne, nicht in vier Komponenten.
 
-Die Maßnahmengruppen eingeklappt starten zu lassen nimmt der Versuchung nichts:
-Die Gruppenköpfe stehen weiterhin da, mit Zähler, einen Klick entfernt.
+Der didaktische Kern bleibt: Die Karte zeigt nur den Ersteindruck, also das,
+was ohne Gerät zu sehen ist. Wer Messwerte will, öffnet die Diagnostik und
+bezahlt sie mit Einsatzzeit.
 
 ---
 
@@ -431,7 +480,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_99 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -498,10 +547,11 @@ _98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:247`](src/domain/types.ts#L247) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:319`](src/domain/types.ts#L319) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.diagnostik` | [`src/domain/types.ts:321`](src/domain/types.ts#L321) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:367`](src/domain/types.ts#L367) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.patient` | [`src/domain/types.ts:354`](src/domain/types.ts#L354) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:289`](src/domain/types.ts#L289) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.patient` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:291`](src/domain/types.ts#L291) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:232`](src/domain/types.ts#L232) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:188`](src/domain/types.ts#L188) | Basis, Notfallsanitäter nach SAA, Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
@@ -525,18 +575,19 @@ _98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sim.befunde` | [`src/domain/simulation.ts:145`](src/domain/simulation.ts#L145) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.diagnostik` | [`src/domain/simulation.ts:256`](src/domain/simulation.ts#L256) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.befunde` | [`src/domain/simulation.ts:146`](src/domain/simulation.ts#L146) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
+| `sim.diagnostik` | [`src/domain/simulation.ts:257`](src/domain/simulation.ts#L257) | Eine Untersuchung deckt genau ihren Befund auf |
 | `sim.gleitkomma` | [`src/domain/simulation.ts:55`](src/domain/simulation.ts#L55) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:332`](src/domain/simulation.ts#L332) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:207`](src/domain/simulation.ts#L207) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:355`](src/domain/simulation.ts#L355) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:208`](src/domain/simulation.ts#L208) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.sichtungOffen` | [`src/domain/simulation.ts:304`](src/domain/simulation.ts#L304) | Steht an dieser Station noch eine Sichtung aus? |
 | `sim.standardwerte` | [`src/domain/simulation.ts:35`](src/domain/simulation.ts#L35) | Unauffällige Vorgaben für die später ergänzten Werte |
 | `sim.startzustand` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Womit ein Patient in den Einsatz startet |
-| `sim.tick` | [`src/domain/simulation.ts:120`](src/domain/simulation.ts#L120) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
-| `sim.tod` | [`src/domain/simulation.ts:109`](src/domain/simulation.ts#L109) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:303`](src/domain/simulation.ts#L303) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
-| `sim.zeitkosten` | [`src/domain/simulation.ts:171`](src/domain/simulation.ts#L171) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:182`](src/domain/simulation.ts#L182) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.tick` | [`src/domain/simulation.ts:121`](src/domain/simulation.ts#L121) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
+| `sim.tod` | [`src/domain/simulation.ts:110`](src/domain/simulation.ts#L110) | Ab welchen Werten ein Patient verstirbt |
+| `sim.verlegung` | [`src/domain/simulation.ts:326`](src/domain/simulation.ts#L326) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.zeitkosten` | [`src/domain/simulation.ts:172`](src/domain/simulation.ts#L172) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
+| `sim.zeitraum` | [`src/domain/simulation.ts:183`](src/domain/simulation.ts#L183) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### speicher
 
@@ -548,25 +599,26 @@ _98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:62`](src/state/reducer.ts#L62) | Alles, was der Übende auslösen kann |
-| `state.phase` | [`src/state/reducer.ts:24`](src/state/reducer.ts#L24) | Die Hauptzustände der Anwendung |
-| `state.reducer` | [`src/state/reducer.ts:115`](src/state/reducer.ts#L115) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.aktionen` | [`src/state/reducer.ts:63`](src/state/reducer.ts#L63) | Alles, was der Übende auslösen kann |
+| `state.phase` | [`src/state/reducer.ts:25`](src/state/reducer.ts#L25) | Die Hauptzustände der Anwendung |
+| `state.reducer` | [`src/state/reducer.ts:116`](src/state/reducer.ts#L116) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:9`](src/state/SimulationProvider.tsx#L9) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:82`](src/state/reducer.ts#L82) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:27`](src/state/reducer.ts#L27) | Der gesamte Zustand einer laufenden Übung |
+| `state.zeit` | [`src/state/reducer.ts:83`](src/state/reducer.ts#L83) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zustand` | [`src/state/reducer.ts:28`](src/state/reducer.ts#L28) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `stil.anhaengekarte` | [`src/index.css:1036`](src/index.css#L1036) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1901`](src/index.css#L1901) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:2091`](src/index.css#L2091) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.raster` | [`src/index.css:1159`](src/index.css#L1159) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1349`](src/index.css#L1349) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:2008`](src/index.css#L2008) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:2198`](src/index.css#L2198) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2232`](src/index.css#L2232) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2335`](src/index.css#L2335) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -598,27 +650,25 @@ _98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
-| `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:8`](src/components/Anhaengekarte.tsx#L8) | Der Kopf der Patientenseite im Stil der Verletztenanhängekarte |
+| `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:19`](src/components/Anhaengekarte.tsx#L19) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
-| `ui.ausgangssichtung` | [`src/pages/patient/Ausgangssichtung.tsx:12`](src/pages/patient/Ausgangssichtung.tsx#L12) | Übergabe, schnelle Maßnahmen, Abschlusssichtung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
-| `ui.eingangssichtung` | [`src/pages/patient/Eingangssichtung.tsx:10`](src/pages/patient/Eingangssichtung.tsx#L10) | Sichten und einem Zelt zuweisen |
+| `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:30`](src/components/Anhaengekarte.tsx#L30) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
-| `ui.ersteinschaetzung` | [`src/pages/patient/Ersteinschaetzung.tsx:19`](src/pages/patient/Ersteinschaetzung.tsx#L19) | Der schnelle Weg - und die Versuchung daneben |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:20`](src/components/Massnahmenliste.tsx#L20) | Das einklappbare xABCDE-Akkordeon |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:32`](src/pages/uebungsleitung/PatientEditor.tsx#L32) | Formular für einen Szenario-Patienten samt Problemen |
-| `ui.patientseite` | [`src/pages/PatientSeite.tsx:13`](src/pages/PatientSeite.tsx#L13) | Weiche: welcher Abschnitt zeigt welche Ansicht |
+| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:21`](src/pages/patient/Patientenansicht.tsx#L21) | Anhängekarte plus drei Knöpfe - eine Ansicht für alle Abschnitte |
+| `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
-| `ui.verlegung` | [`src/components/Verlegung.tsx:6`](src/components/Verlegung.tsx#L6) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:25`](src/pages/patient/Versorgung.tsx#L25) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
+| `ui.verlegung` | [`src/components/Verlegung.tsx:7`](src/components/Verlegung.tsx#L7) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 
 #### vorlagen
 
@@ -648,7 +698,7 @@ _98 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           101 Tests
+npm run test           104 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

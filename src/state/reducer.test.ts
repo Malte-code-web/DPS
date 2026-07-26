@@ -11,7 +11,7 @@ import { SICHTUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
-import type { Einsatzabschnitt } from '../domain/types';
+import type { Einsatzabschnitt, Sichtungskategorie } from '../domain/types';
 
 /** Startet den Busunfall und liefert den Zustand direkt nach dem Alarm. */
 function imEinsatz(): SimulationState {
@@ -190,6 +190,20 @@ describe('Einsatzabschnitte', () => {
     expect(start.patienten.every((eintrag) => eintrag.abschnitt === 'schadensstelle')).toBe(true);
   });
 
+  /** Jede Station sichtet, dann wird verlegt - so verlangt es die Anhängekarte. */
+  function sichtenUndVerlegen(
+    state: SimulationState,
+    ziel: Einsatzabschnitt,
+    kategorie: Sichtungskategorie = 'SK1',
+  ): SimulationState {
+    const gesichtet = simulationReducer(state, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie,
+    });
+    return simulationReducer(gesichtet, { typ: 'patientVerlegen', patientId: 'B-01', ziel });
+  }
+
   it('führt einen Patienten über den gesamten Behandlungsplatz', () => {
     let state = imEinsatz();
     const weg: Einsatzabschnitt[] = [
@@ -199,11 +213,69 @@ describe('Einsatzabschnitte', () => {
       'transport',
     ];
     for (const ziel of weg) {
-      state = simulationReducer(state, { typ: 'patientVerlegen', patientId: 'B-01', ziel });
+      state = sichtenUndVerlegen(state, ziel);
       expect(patient(state, 'B-01').abschnitt).toBe(ziel);
     }
     expect(patient(state, 'B-01').status).toBe('transportiert');
-    expect(state.zeitSek).toBe(weg.length * VERLEGUNGSDAUER_SEK);
+    // Vier Verlegungen und vier Sichtungen - je Station eine.
+    expect(state.zeitSek).toBe(weg.length * (VERLEGUNGSDAUER_SEK + SICHTUNGSDAUER_SEK));
+  });
+
+  it('verweigert die Verlegung, solange die Sichtung dieser Station fehlt', () => {
+    const start = imEinsatz();
+    const ohneSichtung = simulationReducer(start, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'eingangssichtung',
+    });
+    expect(ohneSichtung).toBe(start);
+
+    const nachSichtung = sichtenUndVerlegen(start, 'eingangssichtung');
+    expect(patient(nachSichtung, 'B-01').abschnitt).toBe('eingangssichtung');
+  });
+
+  it('lässt eine endgültig gesichtete Patientin ohne erneute Sichtung durch', () => {
+    let state = imEinsatz();
+    state = simulationReducer(state, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie: 'SK1',
+      final: true,
+    });
+    expect(patient(state, 'B-01').sichtungFinal).toBe(true);
+
+    state = simulationReducer(state, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'eingangssichtung',
+    });
+    state = simulationReducer(state, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'zelt_rot',
+    });
+    expect(patient(state, 'B-01').abschnitt).toBe('zelt_rot');
+  });
+
+  it('berechnet je Station eine Sichtung, ein Korrigieren nicht', () => {
+    let state = imEinsatz();
+    const start = state.zeitSek;
+    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK1' });
+    expect(state.zeitSek).toBe(start + SICHTUNGSDAUER_SEK);
+
+    // Korrektur an derselben Stelle kostet nichts.
+    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' });
+    expect(state.zeitSek).toBe(start + SICHTUNGSDAUER_SEK);
+
+    // Die nächste Station sichtet erneut - und das kostet wieder.
+    state = simulationReducer(state, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'eingangssichtung',
+    });
+    const vorEingang = state.zeitSek;
+    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' });
+    expect(state.zeitSek).toBe(vorEingang + SICHTUNGSDAUER_SEK);
   });
 
   it('lässt keine Sprünge im Ablauf zu', () => {
@@ -218,21 +290,9 @@ describe('Einsatzabschnitte', () => {
 
   it('erlaubt die Verlegung zwischen den Zelten nach einer Nachsichtung', () => {
     let state = imEinsatz();
-    state = simulationReducer(state, {
-      typ: 'patientVerlegen',
-      patientId: 'B-01',
-      ziel: 'eingangssichtung',
-    });
-    state = simulationReducer(state, {
-      typ: 'patientVerlegen',
-      patientId: 'B-01',
-      ziel: 'zelt_gruen',
-    });
-    state = simulationReducer(state, {
-      typ: 'patientVerlegen',
-      patientId: 'B-01',
-      ziel: 'zelt_rot',
-    });
+    state = sichtenUndVerlegen(state, 'eingangssichtung');
+    state = sichtenUndVerlegen(state, 'zelt_gruen', 'SK3');
+    state = sichtenUndVerlegen(state, 'zelt_rot', 'SK1');
     expect(patient(state, 'B-01').abschnitt).toBe('zelt_rot');
   });
 
@@ -265,7 +325,7 @@ describe('Einsatzabschnitte', () => {
   it('verändert abtransportierte Patienten nicht mehr', () => {
     let state = imEinsatz();
     for (const ziel of ['eingangssichtung', 'zelt_rot', 'ausgangssichtung', 'transport'] as const) {
-      state = simulationReducer(state, { typ: 'patientVerlegen', patientId: 'B-01', ziel });
+      state = sichtenUndVerlegen(state, ziel);
     }
     const vitalwerte = patient(state, 'B-01').vitalwerte;
     for (let i = 0; i < 200; i++) {

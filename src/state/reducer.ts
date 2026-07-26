@@ -4,6 +4,7 @@ import { MASSNAHMEN } from '../domain/massnahmen';
 import {
   SICHTUNGSDAUER_SEK,
   fuehreDiagnostikDurch,
+  sichtungOffen,
   patientAusVorlage,
   sichtePatient,
   simuliereSchritt,
@@ -71,7 +72,7 @@ export type SimulationAction =
   | { typ: 'geschwindigkeitSetzen'; wert: number }
   | { typ: 'patientWaehlen'; patientId: string | null }
   | { typ: 'diagnostikDurchfuehren'; patientId: string; diagnostikId: DiagnostikId }
-  | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie }
+  | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie; final?: boolean }
   | { typ: 'massnahmeDurchfuehren'; patientId: string; massnahmeId: MassnahmeId }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
@@ -185,11 +186,12 @@ export function simulationReducer(
 
     case 'patientSichten': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
-      // Nur die erste Sichtung kostet Zeit, ein Korrigieren der Kategorie nicht.
-      const dauerSek = patient?.gesichtetUmSek === null ? SICHTUNGSDAUER_SEK : 0;
+      if (!patient) return state;
+      // Jede Station sichtet einmal - ein Korrigieren an derselben Stelle nicht.
+      const dauerSek = sichtungOffen(patient) ? SICHTUNGSDAUER_SEK : 0;
       return zeitVergehen(
         mitPatient(state, action.patientId, (eintrag) =>
-          sichtePatient(eintrag, action.kategorie, state.zeitSek),
+          sichtePatient(eintrag, action.kategorie, state.zeitSek, action.final),
         ),
         dauerSek,
       );
@@ -206,6 +208,8 @@ export function simulationReducer(
     case 'patientVerlegen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return state;
+      // Ohne bestätigte Sichtung wird niemand weitergereicht.
+      if (sichtungOffen(patient)) return state;
       const verlegt = zeitVergehen(
         mitPatient(state, action.patientId, (eintrag) =>
           verlegePatient(eintrag, action.ziel, state.zeitSek),

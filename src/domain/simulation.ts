@@ -80,6 +80,7 @@ export function patientAusVorlage(vorlage: PatientVorlage): Patient {
     gesichtetAls: null,
     gesichtetUmSek: null,
     sichtungsverlauf: [],
+    sichtungFinal: false,
     behandelteProbleme: [],
     durchgefuehrteMassnahmen: [],
     durchgefuehrteDiagnostik: [],
@@ -278,16 +279,38 @@ export function sichtePatient(
   patient: Patient,
   kategorie: Sichtungskategorie,
   zeitSek: number,
+  final = false,
 ): Patient {
   const stelle = sichtungsstelleIn(patient.abschnitt);
   const naechster: Patient = {
     ...patient,
     gesichtetAls: kategorie,
     gesichtetUmSek: patient.gesichtetUmSek ?? zeitSek,
-    sichtungsverlauf: [...patient.sichtungsverlauf, { stelle, kategorie, zeitSek }],
+    sichtungFinal: patient.sichtungFinal || final,
+    sichtungsverlauf: [
+      ...patient.sichtungsverlauf,
+      { stelle, kategorie, zeitSek, ...(final ? { final: true } : {}) },
+    ],
     status: patient.status === 'unbehandelt' ? 'gesichtet' : patient.status,
   };
-  return protokolliere(naechster, zeitSek, `Sichtung (${stelle}): ${kategorie}.`);
+  return protokolliere(
+    naechster,
+    zeitSek,
+    `Sichtung (${stelle}): ${kategorie}${final ? ', endgültig' : ''}.`,
+  );
+}
+
+/**
+ * @anker sim.sichtungOffen Steht an dieser Station noch eine Sichtung aus?
+ *
+ * Jede Station sichtet neu - erst danach darf verlegt werden. Ist die Kategorie
+ * als endgültig bestätigt, entfällt die Pflicht: eine Abschlusssichtung wird
+ * nicht wieder aufgemacht.
+ */
+export function sichtungOffen(patient: Patient): boolean {
+  if (patient.sichtungFinal) return false;
+  const stelle = sichtungsstelleIn(patient.abschnitt);
+  return !patient.sichtungsverlauf.some((eintrag) => eintrag.stelle === stelle);
 }
 
 /** Die Kategorie, die an einer bestimmten Stelle vergeben wurde. */

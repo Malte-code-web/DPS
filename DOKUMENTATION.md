@@ -522,6 +522,35 @@ npm run anker          Ankertabelle in dieser Datei neu erzeugen
 npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 ```
 
+## 8a. Ausblick: was ein Server ändern würde
+
+Heute läuft alles im Browser - bewusst, weil die App damit ohne Betreuung
+weitergegeben werden kann. Sobald sie in den regelmäßigen Betrieb geht, lohnt
+sich ein eigener Server. Drei Stellen sind darauf schon vorbereitet:
+
+| Vorbereitet | Wo | Was dann passiert |
+| --- | --- | --- |
+| Eigene API-Adresse | `ki.zugang`, Feld "Adresse" | Der Schlüssel liegt serverseitig, das Schlüsselfeld bleibt leer. Die Sicherheitsabwägung entfällt |
+| Reine Fachlogik | `domain/` kennt kein React | Simulation, Prüfung und Probelauf laufen unverändert auf dem Server |
+| Reine Erzeugung | `ki.client`, `generator.baukasten` | Die Prüfschleife wandert hinter einen Endpunkt, der Aufruf bleibt derselbe |
+
+Was ein Server darüber hinaus erst möglich macht:
+
+- **Mehrere Übende auf einer Lage.** Der eigentliche MANV ist Teamarbeit; heute
+  gibt es genau einen Handelnden. Das ist die größte Lücke - größer als alles,
+  was die KI betrifft.
+- **Eingriff zur Laufzeit.** Die Übungsleitung könnte Störgrößen einspielen,
+  statt die Lage nur vorab zu bauen.
+- **Szenarien auf Vorrat.** Statt bei jedem Aufruf zu erzeugen, lässt sich ein
+  geprüfter Vorrat vorhalten - kostenlos im Gebrauch und ohne Wartezeit.
+- **Prompt-Caching.** Der Regeltext ist bei jedem Auftrag identisch; zentral
+  aufgerufen wird er zwischengespeichert und deutlich billiger.
+
+Der Baukasten wird dadurch nicht überflüssig: Er bleibt der Weg für den Betrieb
+ohne Netz und die Rückfallebene, wenn der Dienst nicht erreichbar ist.
+
+---
+
 ## 9. Woran ich mich beim Weiterbauen halte
 
 - Vor jeder Änderung: `npm run test`, danach erneut.

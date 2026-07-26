@@ -36,6 +36,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | --- | --- |
 | Trainingsmodi | Auswahl aus drei Modi; die digitale Übung ist ausgebaut, Führungskräfte und Realübung zeigen bisher nur ihre Planung |
 | Übungsleitung | Eigene Szenarien anlegen, bearbeiten, duplizieren, als JSON aus- und einlesen; Prüfung gegen dieselben Regeln wie die mitgelieferten |
+| Baukasten | Erzeugt Szenarien kostenfrei im Browser, ohne Schlüssel und ohne Netz; Verläufe werden aus der Zielminute zurückgerechnet, die Saat macht jede Lage wiederholbar |
 | KI-Unterstützung | Erzeugt Szenarien direkt aus der App: Auftrag ans Modell, an ein JSON-Schema gebunden, Ergebnis geprüft und durchgespielt, Befunde gehen automatisch zur Nachbesserung zurück. Der Auftrag zum Kopieren bleibt als Weg ohne Zugang |
 | Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
@@ -49,8 +50,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-77 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung
-und Probelauf.
+84 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+Probelauf und Baukasten.
 
 ### Bewusst noch nicht gebaut
 
@@ -169,8 +170,10 @@ einem eigenen Szenario:
 
 1. **Von Hand** anlegen und im Editor ausfüllen (→ `ui.szenarioeditor`).
 2. **Eine Vorlage duplizieren** - ein mitgeliefertes Szenario als Kopie öffnen.
-3. **Eine KI beauftragen** (→ `ui.kigenerator`): Lage, Umfang und Schwerpunkt
-   eintragen, Knopf drücken - das fertige Szenario landet im Editor.
+3. **Erzeugen lassen** (→ `ui.szenarioquelle`) - auf zwei Wegen:
+   - **Baukasten** (→ `ui.baukasten`): kostenfrei, ohne Zugang, ohne Netz.
+   - **Sprachmodell** (→ `ui.kigenerator`): für eine frei beschriebene Lage,
+     die der Baukasten nicht kennt. Braucht einen API-Schlüssel.
 
 Alle drei Wege laufen durch dieselbe Prüfung (→ `szenario.pruefung`). **Fehler**
 verhindern das Sichern - fehlende Felder, unbekannte Maßnahmen-IDs, Werte
@@ -199,6 +202,40 @@ Maßnahmen sofort. Aus den beiden Todeszeitpunkten fällt ab, ob die Lage trägt
 Dazu kommen zwei Fragen an die Lage als Ganzes: Gibt es überhaupt einen SK-I-
 Patienten, und ist der rote Anteil realistisch? Der Editor zeigt das Ergebnis
 als Tabelle; ein Test pinnt die mitgelieferten Szenarien darauf fest.
+
+### Der Baukasten - kostenfrei erzeugen
+
+Der Baukasten (→ `generator.baukasten`) braucht kein Modell, keinen Schlüssel und
+kein Netz. Er läuft deshalb überall, wo die App läuft - auch in der Einzeldatei
+ohne Internet.
+
+Sein Kniff ist die **Richtung der Rechnung** (→ `generator.zielminute`). Ein
+Sprachmodell muss raten, welche Verlaufswerte einen Patienten rechtzeitig sterben
+lassen - genau dafür gibt es die Nachbesserungsschleife. Der Baukasten dreht das
+um: Die Zielminute ist die Vorgabe, die Änderung pro Minute folgt daraus.
+
+```
+Zielminute 12 min, Startdruck 105 mmHg, Todesschwelle 30 mmHg
+                    ↓
+      Rate = -(105 - 30) / (12 - 0.25) = -6.38 mmHg/min
+```
+
+Damit besteht ein Szenario aus dem Baukasten den Probelauf von vornherein - es
+gibt nichts nachzubessern. Ebenso wird die Referenzkategorie nicht behauptet,
+sondern nach dem Bauen mit `sichtungNachMstart` **gerechnet**; sie kann also nie
+abweichen.
+
+Gebaut wird aus einem Vorrat an **Verletzungsmustern** (→ `generator.muster`),
+die je Lage unterschiedlich zusammengestellt sind - fünf Lagen von Verkehrsunfall
+bis Gebäudeeinsturz. Ab sechs Betroffenen enthält jede Lage genau eine Falle für
+die Nachsichtung: einen gehfähigen Patienten, der später doch kippt.
+
+Die **Saat** macht das Ergebnis wiederholbar: gleiche Zahl, gleiche Lage. Eine
+Übung lässt sich damit an einem anderen Tag oder auf einem anderen Gerät exakt
+wiederholen, ohne eine Datei weiterzugeben.
+
+Ein Test baut 360 Szenarien über alle Lagen, Größen und Saaten und verlangt von
+jedem einzelnen: kein Fehler, keine Warnung, kein Befund im Probelauf.
 
 ### KI-Erzeugung im Detail
 
@@ -275,7 +312,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_86 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -298,6 +335,14 @@ _81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `format.vitalgrenzen` | [`src/lib/format.ts:26`](src/lib/format.ts#L26) | Norm- und Kritischbereiche für die Farbgebung der Messwerte |
+
+#### generator
+
+| Anker | Datei | Bedeutung |
+| --- | --- | --- |
+| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:14`](src/domain/szenarioGenerator.ts#L14) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
+| `generator.muster` | [`src/domain/szenarioGenerator.ts:61`](src/domain/szenarioGenerator.ts#L61) | Der Vorrat an Verletzungsmustern - hier erweitern |
+| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:405`](src/domain/szenarioGenerator.ts#L405) | Aus der gewünschten Todesminute wird die Verlaufsrate |
 
 #### ki
 
@@ -381,13 +426,13 @@ _81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1581`](src/index.css#L1581) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:1618`](src/index.css#L1618) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.raster` | [`src/index.css:1035`](src/index.css#L1035) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1072`](src/index.css#L1072) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:1688`](src/index.css#L1688) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:1725`](src/index.css#L1725) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:1825`](src/index.css#L1825) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:1862`](src/index.css#L1862) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -421,18 +466,20 @@ _81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.ausgangssichtung` | [`src/pages/patient/Ausgangssichtung.tsx:12`](src/pages/patient/Ausgangssichtung.tsx#L12) | Übergabe, schnelle Maßnahmen, Abschlusssichtung |
+| `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
 | `ui.eingangssichtung` | [`src/pages/patient/Eingangssichtung.tsx:10`](src/pages/patient/Eingangssichtung.tsx#L10) | Sichten und einem Zelt zuweisen |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.ersteinschaetzung` | [`src/pages/patient/Ersteinschaetzung.tsx:19`](src/pages/patient/Ersteinschaetzung.tsx#L19) | Der schnelle Weg - und die Versuchung daneben |
-| `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Szenario direkt erzeugen lassen - Zugang, Lauf, Befunde |
+| `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:13`](src/components/Massnahmenliste.tsx#L13) | Das einklappbare xABCDE-Akkordeon |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:30`](src/pages/uebungsleitung/PatientEditor.tsx#L30) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:13`](src/pages/PatientSeite.tsx#L13) | Weiche: welcher Abschnitt zeigt welche Ansicht |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
+| `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:7`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L7) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:13`](src/pages/UebungsleitungSeite.tsx#L13) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:6`](src/components/Verlegung.tsx#L6) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:24`](src/pages/patient/Versorgung.tsx#L24) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
@@ -465,7 +512,7 @@ _81 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           77 Tests
+npm run test           84 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

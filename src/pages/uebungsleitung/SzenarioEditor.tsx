@@ -134,7 +134,7 @@ export function SzenarioEditor({ szenario, onAendern, onSichern, onVerwerfen }: 
                       {eintrag.todUnbehandeltMin !== null
                         ? `† nach ${eintrag.todUnbehandeltMin} min`
                         : eintrag.veraendertSich
-                          ? 'überlebt, verschlechtert sich'
+                          ? 'überlebt, Werte in Bewegung'
                           : 'unverändert'}
                     </td>
                     <td>

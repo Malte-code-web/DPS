@@ -13,11 +13,12 @@ import type { Szenario } from '../../domain/types';
 import type { PromptWunsch } from '../../lib/kiPrompt';
 
 /**
- * @anker ui.kigenerator Szenario direkt erzeugen lassen - Zugang, Lauf, Befunde
+ * @anker ui.kigenerator Vom Modell erzeugen lassen - Zugang, Lauf, Befunde
  *
- * Der direkte Weg: Lage beschreiben, Knopf drücken, fertiges Szenario im
- * Editor. Der Umweg über die Zwischenablage bleibt daneben bestehen - für
- * Geräte ohne hinterlegten Zugang und für den Betrieb ohne Netz.
+ * Der Weg über ein Sprachmodell: Lage frei beschreiben, Knopf drücken,
+ * fertiges Szenario im Editor. Kostet Geld und braucht Netz - wer beides nicht
+ * will, nimmt den Baukasten (→ `ui.baukasten`). Der Umweg über die
+ * Zwischenablage bleibt für Geräte ohne hinterlegten Zugang bestehen.
  */
 export interface KiGeneratorProps {
   onEntwurf: (szenario: Szenario) => void;
@@ -78,11 +79,11 @@ export function KiGenerator({ onEntwurf, onMeldung }: KiGeneratorProps) {
   };
 
   return (
-    <section className="karte ki-karte">
-      <h3>Szenario von einer KI entwerfen lassen</h3>
+    <>
       <p className="hinweis">
         Die App schickt den Auftrag direkt an das Modell, prüft das Ergebnis und spielt jeden
-        Patienten durch. Was nicht stimmt, geht automatisch zur Nachbesserung zurück.
+        Patienten durch. Was nicht stimmt, geht automatisch zur Nachbesserung zurück. Braucht
+        einen eigenen API-Schlüssel und verursacht Kosten je Szenario.
       </p>
 
       <div className="editor-zeile">
@@ -242,6 +243,6 @@ export function KiGenerator({ onEntwurf, onMeldung }: KiGeneratorProps) {
           Auftrag kopieren
         </button>
       </details>
-    </section>
+    </>
   );
 }

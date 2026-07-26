@@ -23,13 +23,19 @@ Die Startseite führt in einen von drei Modi:
 | **Realübung** | in Vorbereitung – Begleitung einer Übung mit Mimen im Gelände |
 
 Daneben steht die **Übungsleitung**: eigene Szenarien anlegen, bearbeiten,
-als Datei weitergeben – oder von einer KI entwerfen lassen. Lage, Umfang und
-Schwerpunkt eintragen genügt: Die App beauftragt das Modell direkt, prüft das
-Ergebnis, spielt jeden Patienten über 30 Minuten durch und schickt alles, was
-nicht stimmt, automatisch zur Nachbesserung zurück. Dafür wird einmalig ein
-eigener API-Schlüssel hinterlegt – er bleibt im Browser des Geräts. Wer keinen
-hinterlegen möchte, kopiert weiterhin den fertigen Auftrag in eine beliebige KI
-und importiert das Ergebnis als JSON.
+als Datei weitergeben – oder erzeugen lassen. Dafür gibt es zwei Wege:
+
+- **Baukasten** – kostenfrei, ohne Zugang, ohne Internet. Lage und Anzahl
+  wählen, fertig. Die Verläufe werden aus der gewünschten Todesminute
+  zurückgerechnet, deshalb ist jedes Szenario auf Anhieb stimmig. Die *Saat*
+  macht eine Lage wiederholbar: gleiche Zahl, gleiche Übung.
+- **Sprachmodell** – für eine frei beschriebene Lage, die der Baukasten nicht
+  kennt. Die App beauftragt das Modell direkt, prüft das Ergebnis, spielt jeden
+  Patienten über 30 Minuten durch und schickt alles, was nicht stimmt,
+  automatisch zur Nachbesserung zurück. Dafür wird einmalig ein eigener
+  API-Schlüssel hinterlegt – er bleibt im Browser des Geräts – und es entstehen
+  Kosten je Szenario. Alternativ lässt sich der fertige Auftrag in eine
+  beliebige KI kopieren und das Ergebnis als JSON importieren.
 
 ## Schnellstart
 

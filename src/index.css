@@ -557,6 +557,43 @@ button.gefahr {
   font-size: 0.75rem;
 }
 
+/* --- Szenario erzeugen ------------------------------------------- */
+
+.quelle-wahl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.quelle-wahl button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.92rem;
+  text-align: left;
+}
+
+.quelle-marke {
+  font-size: 0.7rem;
+  color: var(--text-leise);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quelle-wahl button.quelle-aktiv {
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--text);
+}
+
+.quelle-wahl button.quelle-aktiv .quelle-marke {
+  color: var(--akzent);
+}
+
 /* --- KI-Erzeugung ------------------------------------------------ */
 
 .ki-zugang {

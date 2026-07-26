@@ -4,9 +4,10 @@ import { pruefeSzenario } from '../domain/szenarioPruefung';
 import { freieSzenarioId } from '../lib/speicher';
 import { leeresSzenario } from '../lib/vorlagen';
 import { useSimulation } from '../state/useSimulation';
-import { KiGenerator } from './uebungsleitung/KiGenerator';
 import { SzenarioEditor } from './uebungsleitung/SzenarioEditor';
+import { SzenarioQuelle } from './uebungsleitung/SzenarioQuelle';
 import type { Befund } from '../domain/szenarioPruefung';
+import type { Quelle } from './uebungsleitung/SzenarioQuelle';
 import type { Szenario } from '../domain/types';
 
 /**
@@ -21,6 +22,7 @@ export function UebungsleitungSeite() {
   const [meldung, setMeldung] = useState<string | null>(null);
   const [importText, setImportText] = useState('');
   const [importBefunde, setImportBefunde] = useState<Befund[]>([]);
+  const [quelle, setQuelle] = useState<Quelle>('baukasten');
 
   const alleIds = [...SZENARIEN, ...state.eigeneSzenarien].map((szenario) => szenario.id);
 
@@ -163,7 +165,7 @@ export function UebungsleitungSeite() {
         ))}
       </section>
 
-      <KiGenerator
+      <SzenarioQuelle
         onEntwurf={(szenario) =>
           setEntwurf({
             ...szenario,
@@ -173,6 +175,8 @@ export function UebungsleitungSeite() {
           })
         }
         onMeldung={setMeldung}
+        quelle={quelle}
+        onQuelle={setQuelle}
       />
 
       <section className="karte">

@@ -23,10 +23,13 @@ Die Startseite führt in einen von drei Modi:
 | **Realübung** | in Vorbereitung – Begleitung einer Übung mit Mimen im Gelände |
 
 Daneben steht die **Übungsleitung**: eigene Szenarien anlegen, bearbeiten,
-als Datei weitergeben – oder von einer KI entwerfen lassen. Die App ruft dafür
-kein Modell auf, sondern erzeugt den vollständigen Auftrag zum Einfügen in eine
-beliebige KI; das Ergebnis kommt als JSON zurück und wird gegen dieselben Regeln
-geprüft wie die mitgelieferten Szenarien.
+als Datei weitergeben – oder von einer KI entwerfen lassen. Lage, Umfang und
+Schwerpunkt eintragen genügt: Die App beauftragt das Modell direkt, prüft das
+Ergebnis, spielt jeden Patienten über 30 Minuten durch und schickt alles, was
+nicht stimmt, automatisch zur Nachbesserung zurück. Dafür wird einmalig ein
+eigener API-Schlüssel hinterlegt – er bleibt im Browser des Geräts. Wer keinen
+hinterlegen möchte, kopiert weiterhin den fertigen Auftrag in eine beliebige KI
+und importiert das Ergebnis als JSON.
 
 ## Schnellstart
 

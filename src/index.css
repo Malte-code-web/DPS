@@ -557,6 +557,98 @@ button.gefahr {
   font-size: 0.75rem;
 }
 
+/* --- KI-Erzeugung ------------------------------------------------ */
+
+.ki-zugang {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 7%, transparent);
+}
+
+.warnung-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--warn);
+}
+
+.fehler-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--sk1);
+}
+
+.ki-protokoll {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.ki-protokoll li::before {
+  content: '› ';
+  color: var(--akzent);
+}
+
+.ki-protokoll li:last-child {
+  color: var(--text);
+}
+
+.ki-kopieren summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-leise);
+  padding: 0.3rem 0;
+}
+
+.ki-kopieren[open] summary {
+  color: var(--text);
+  margin-bottom: 0.6rem;
+}
+
+.ki-kopieren > *:not(summary) {
+  margin-top: 0.6rem;
+}
+
+.tabelle-scroll {
+  overflow-x: auto;
+  /* Auf schmalen Geräten scrollt die Tabelle in sich - nie die ganze Seite. */
+  max-width: 100%;
+}
+
+.probelauf {
+  width: 100%;
+  min-width: 26rem;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.probelauf th,
+.probelauf td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--rand);
+}
+
+.probelauf th {
+  color: var(--text-leise);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
 /* --- Einsatzleiste ---------------------------------------------- */
 
 .einsatzleiste {

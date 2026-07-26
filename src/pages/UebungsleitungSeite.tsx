@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { SZENARIEN } from '../domain/szenarien';
 import { pruefeSzenario } from '../domain/szenarioPruefung';
-import { baueKiPrompt } from '../lib/kiPrompt';
 import { freieSzenarioId } from '../lib/speicher';
 import { leeresSzenario } from '../lib/vorlagen';
 import { useSimulation } from '../state/useSimulation';
+import { KiGenerator } from './uebungsleitung/KiGenerator';
 import { SzenarioEditor } from './uebungsleitung/SzenarioEditor';
 import type { Befund } from '../domain/szenarioPruefung';
 import type { Szenario } from '../domain/types';
@@ -13,8 +13,7 @@ import type { Szenario } from '../domain/types';
  * @anker ui.uebungsleitung Szenarien anlegen, prüfen, ein- und ausgeben
  *
  * Drei Wege zu einem eigenen Szenario: von Hand anlegen, ein mitgeliefertes
- * duplizieren oder eine KI beauftragen und das Ergebnis importieren. Alles
- * läuft über dieselbe Prüfung.
+ * duplizieren oder eine KI beauftragen. Alles läuft über dieselbe Prüfung.
  */
 export function UebungsleitungSeite() {
   const { state, dispatch } = useSimulation();
@@ -22,12 +21,6 @@ export function UebungsleitungSeite() {
   const [meldung, setMeldung] = useState<string | null>(null);
   const [importText, setImportText] = useState('');
   const [importBefunde, setImportBefunde] = useState<Befund[]>([]);
-  const [kiOffen, setKiOffen] = useState(false);
-  const [wunsch, setWunsch] = useState({
-    lage: 'Zugunglück am Bahnhof, ein Waggon entgleist.',
-    anzahl: 8,
-    schwerpunkt: 'Mehrere Eingeklemmte, eine verzögerte Verschlechterung.',
-  });
 
   const alleIds = [...SZENARIEN, ...state.eigeneSzenarien].map((szenario) => szenario.id);
 
@@ -170,61 +163,17 @@ export function UebungsleitungSeite() {
         ))}
       </section>
 
-      <section className="karte">
-        <h3>Szenario von einer KI entwerfen lassen</h3>
-        <p className="hinweis">
-          Die App ruft selbst kein Modell auf. Sie erzeugt den vollständigen Auftrag mit allen
-          Regeln und Maßnahmen-IDs; das Ergebnis fügst du unten wieder ein.
-        </p>
-
-        <button type="button" onClick={() => setKiOffen(!kiOffen)}>
-          {kiOffen ? 'Auftrag ausblenden' : 'Auftrag erstellen'}
-        </button>
-
-        {kiOffen && (
-          <>
-            <div className="editor-zeile">
-              <label>
-                Lage
-                <input
-                  value={wunsch.lage}
-                  onChange={(e) => setWunsch({ ...wunsch, lage: e.target.value })}
-                />
-              </label>
-              <label>
-                Betroffene
-                <input
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={wunsch.anzahl}
-                  onChange={(e) => setWunsch({ ...wunsch, anzahl: Number(e.target.value) })}
-                />
-              </label>
-            </div>
-            <label>
-              Schwerpunkt
-              <input
-                value={wunsch.schwerpunkt}
-                onChange={(e) => setWunsch({ ...wunsch, schwerpunkt: e.target.value })}
-              />
-            </label>
-            <textarea className="ki-prompt" rows={10} readOnly value={baueKiPrompt(wunsch)} />
-            <button
-              type="button"
-              className="primaer"
-              onClick={() => {
-                void navigator.clipboard
-                  ?.writeText(baueKiPrompt(wunsch))
-                  .then(() => setMeldung('Auftrag kopiert - in eine KI einfügen.'))
-                  .catch(() => setMeldung('Kopieren nicht möglich - Text von Hand markieren.'));
-              }}
-            >
-              Auftrag kopieren
-            </button>
-          </>
-        )}
-      </section>
+      <KiGenerator
+        onEntwurf={(szenario) =>
+          setEntwurf({
+            ...szenario,
+            id: alleIds.includes(szenario.id)
+              ? freieSzenarioId(szenario.titel, alleIds)
+              : szenario.id,
+          })
+        }
+        onMeldung={setMeldung}
+      />
 
       <section className="karte">
         <h3>Szenario einfügen oder importieren</h3>

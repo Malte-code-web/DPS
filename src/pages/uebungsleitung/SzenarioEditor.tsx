@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { HORIZONT_MIN, pruefeDynamik } from '../../domain/szenarioDynamik';
 import { pruefeSzenario } from '../../domain/szenarioPruefung';
 import { leererPatient, naechstePatientenNummer } from '../../lib/vorlagen';
 import { PatientEditor } from './PatientEditor';
@@ -16,6 +17,10 @@ interface Props {
  *
  * Gesichert werden kann nur ein Szenario ohne Fehler. Warnungen - etwa eine
  * bewusst abweichende Referenzkategorie - halten nicht auf.
+ *
+ * Neben der formalen Prüfung läuft der Probelauf: jeder Patient wird
+ * unbehandelt und bestversorgt durchgespielt, damit sichtbar wird, ob die Lage
+ * überhaupt Zeitdruck erzeugt.
  */
 export function SzenarioEditor({ szenario, onAendern, onSichern, onVerwerfen }: Props) {
   const [offenerPatient, setOffenerPatient] = useState<string | null>(
@@ -23,7 +28,15 @@ export function SzenarioEditor({ szenario, onAendern, onSichern, onVerwerfen }: 
   );
   const ergebnis = pruefeSzenario(szenario);
   const fehler = ergebnis.befunde.filter((befund) => befund.schwere === 'fehler');
-  const warnungen = ergebnis.befunde.filter((befund) => befund.schwere === 'warnung');
+
+  // Der Probelauf rechnet - er läuft nur auf strukturell heilen Szenarien.
+  const dynamik = useMemo(
+    () => (pruefeSzenario(szenario).gueltig ? pruefeDynamik(szenario) : null),
+    [szenario],
+  );
+
+  const alleBefunde = [...ergebnis.befunde, ...(dynamik?.befunde ?? [])];
+  const warnungen = alleBefunde.filter((befund) => befund.schwere === 'warnung');
 
   const setzePatient = (index: number, patient: PatientVorlage) =>
     onAendern({
@@ -79,17 +92,61 @@ export function SzenarioEditor({ szenario, onAendern, onSichern, onVerwerfen }: 
         </label>
       </section>
 
-      {ergebnis.befunde.length > 0 && (
+      {alleBefunde.length > 0 && (
         <section className="karte">
           <h3>Prüfung</h3>
           <ul className="pruefliste">
-            {ergebnis.befunde.map((befund, index) => (
+            {alleBefunde.map((befund, index) => (
               <li key={index} className={`befund-${befund.schwere}`}>
                 <span className="befund-ort">{befund.ort}</span>
                 <span>{befund.text}</span>
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {dynamik && (
+        <section className="karte">
+          <h3>Probelauf über {HORIZONT_MIN} Minuten</h3>
+          <p className="hinweis">
+            Jeder Patient wird zweimal durchgespielt: ohne jede Hilfe und mit allen passenden
+            Maßnahmen sofort.
+          </p>
+          <div className="tabelle-scroll">
+            <table className="probelauf">
+              <thead>
+                <tr>
+                  <th scope="col">Patient</th>
+                  <th scope="col">SK</th>
+                  <th scope="col">ohne Hilfe</th>
+                  <th scope="col">versorgt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dynamik.patienten.map((eintrag) => (
+                  <tr key={eintrag.id}>
+                    <td>
+                      {eintrag.id} · {eintrag.name}
+                    </td>
+                    <td>{eintrag.erwarteteSK.replace('SK', '')}</td>
+                    <td>
+                      {eintrag.todUnbehandeltMin !== null
+                        ? `† nach ${eintrag.todUnbehandeltMin} min`
+                        : eintrag.veraendertSich
+                          ? 'überlebt, verschlechtert sich'
+                          : 'unverändert'}
+                    </td>
+                    <td>
+                      {eintrag.todBehandeltMin !== null
+                        ? `† nach ${eintrag.todBehandeltMin} min`
+                        : 'gerettet'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 

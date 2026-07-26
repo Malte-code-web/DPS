@@ -36,7 +36,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | --- | --- |
 | Trainingsmodi | Auswahl aus drei Modi; die digitale Übung ist ausgebaut, Führungskräfte und Realübung zeigen bisher nur ihre Planung |
 | Übungsleitung | Eigene Szenarien anlegen, bearbeiten, duplizieren, als JSON aus- und einlesen; Prüfung gegen dieselben Regeln wie die mitgelieferten |
-| KI-Unterstützung | Erzeugt den vollständigen Auftrag für eine KI; das Ergebnis kommt über den JSON-Import zurück und wird geprüft |
+| KI-Unterstützung | Erzeugt Szenarien direkt aus der App: Auftrag ans Modell, an ein JSON-Schema gebunden, Ergebnis geprüft und durchgespielt, Befunde gehen automatisch zur Nachbesserung zurück. Der Auftrag zum Kopieren bleibt als Weg ohne Zugang |
+| Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
@@ -48,7 +49,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-62 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung und Szenarioprüfung.
+77 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung
+und Probelauf.
 
 ### Bewusst noch nicht gebaut
 
@@ -59,9 +61,10 @@ nur über den Zustand der Patienten und das Debriefing.
 - **Personal**: Es gibt genau einen handelnden Übenden ohne eigenes Zeitbudget.
 - **Störgrößen zur Laufzeit**: Die Übungsleitung baut Szenarien vorab, kann aber
   in eine laufende Übung nicht eingreifen.
-- **Direkter KI-Aufruf**: Die App ruft kein Modell auf, sondern erzeugt den
-  Auftrag zum Einfügen. Ein echter Aufruf bräuchte einen Server oder einen
-  API-Schlüssel im Browser (→ `ki.prompt`).
+- **Server für den KI-Aufruf**: Die App spricht direkt aus dem Browser mit der
+  API und braucht dafür den API-Schlüssel der Übungsleitung auf dem Gerät
+  (→ `ki.zugang`). Für eine gemeinsam genutzte Installation gehört ein eigener
+  Dienst davor; das Feld "Adresse" ist dafür schon vorgesehen.
 - **Mehrbenutzerbetrieb**: Die Simulation läuft vollständig im Browser; eigene
   Szenarien liegen im localStorage des Geräts (→ `speicher.szenarien`).
 
@@ -166,10 +169,8 @@ einem eigenen Szenario:
 
 1. **Von Hand** anlegen und im Editor ausfüllen (→ `ui.szenarioeditor`).
 2. **Eine Vorlage duplizieren** - ein mitgeliefertes Szenario als Kopie öffnen.
-3. **Eine KI beauftragen**: Die App erzeugt aus dem echten Maßnahmenkatalog und
-   den echten mSTaRT-Grenzwerten einen vollständigen Auftrag (→ `ki.prompt`).
-   Dieser wird in eine beliebige KI eingefügt, das Ergebnis kommt als JSON
-   zurück in den Import.
+3. **Eine KI beauftragen** (→ `ui.kigenerator`): Lage, Umfang und Schwerpunkt
+   eintragen, Knopf drücken - das fertige Szenario landet im Editor.
 
 Alle drei Wege laufen durch dieselbe Prüfung (→ `szenario.pruefung`). **Fehler**
 verhindern das Sichern - fehlende Felder, unbekannte Maßnahmen-IDs, Werte
@@ -180,6 +181,53 @@ erzwingt sie aber nicht, weil eine Abweichung didaktisch gewollt sein kann.
 
 Eigene Szenarien liegen im localStorage und erscheinen in der digitalen Übung
 neben den mitgelieferten. Zum Weitergeben dient der JSON-Export.
+
+### Der Probelauf
+
+Die formale Prüfung sagt nur, ob ein Szenario heil ist - nicht, ob es taugt.
+Deshalb spielt der **Probelauf** (→ `szenario.dynamik`) jeden Patienten über 30
+Minuten zweimal durch: einmal ohne jede Hilfe, einmal mit allen passenden
+Maßnahmen sofort. Aus den beiden Todeszeitpunkten fällt ab, ob die Lage trägt:
+
+| Kategorie | Erwartung unbehandelt |
+| --- | --- |
+| SK I | verstirbt zwischen Minute 4 und 25 |
+| SK II | hält mindestens 10 Minuten durch |
+| SK III | stabil, oder kippt frühestens nach 15 Minuten (Falle für die Nachsichtung) |
+| SK IV | verstirbt auch bestversorgt |
+
+Dazu kommen zwei Fragen an die Lage als Ganzes: Gibt es überhaupt einen SK-I-
+Patienten, und ist der rote Anteil realistisch? Der Editor zeigt das Ergebnis
+als Tabelle; ein Test pinnt die mitgelieferten Szenarien darauf fest.
+
+### KI-Erzeugung im Detail
+
+Der eigentliche Gewinn ist die Schleife, nicht der Aufruf (→ `ki.client`):
+
+```
+Auftrag (ki.prompt) ──► Modell, an JSON-Schema gebunden (ki.schema)
+                              │
+                              ▼
+                   pruefeSzenario + pruefeDynamik
+                              │
+             ┌────────────────┴────────────────┐
+        alles stimmig                    Befunde offen
+             │                                 │
+             ▼                                 ▼
+        in den Editor          Befunde zurück ans Modell (ki.korrektur)
+                                    max. 3 Durchgänge, Abbruch sobald
+                                    eine Nachbesserung nichts mehr bringt
+```
+
+Das Schema (→ `ki.schema`) wird aus dem echten Maßnahmenkatalog gebaut; erfundene
+Maßnahmen-IDs sind damit ausgeschlossen. Die Antwort wird gestreamt, der
+Fortschritt läuft als Protokoll mit.
+
+Der API-Schlüssel liegt im localStorage des Geräts (→ `ki.zugang`) - eine
+bewusste Abwägung für ein Werkzeug, das die Übungsleitung selbst betreibt. Wer
+die App zentral hostet, trägt stattdessen die Adresse eines eigenen Dienstes ein
+und lässt das Schlüsselfeld leer. Der **Auftrag zum Kopieren** bleibt daneben
+bestehen: für Geräte ohne Zugang und für den Betrieb ohne Netz.
 
 ---
 
@@ -216,7 +264,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_80 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -244,7 +292,12 @@ _73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `ki.prompt` | [`src/lib/kiPrompt.ts:5`](src/lib/kiPrompt.ts#L5) | Erzeugt den Auftrag für eine KI, ein Szenario zu bauen |
+| `ki.client` | [`src/lib/kiClient.ts:12`](src/lib/kiClient.ts#L12) | Szenario direkt erzeugen - mit Prüfschleife statt Copy-und-Paste |
+| `ki.korrektur` | [`src/lib/kiPrompt.ts:102`](src/lib/kiPrompt.ts#L102) | Rückmeldung der Prüfung an das Modell |
+| `ki.normalisieren` | [`src/lib/kiSchema.ts:116`](src/lib/kiSchema.ts#L116) | Räumt die Modellantwort auf, bevor sie geprüft wird |
+| `ki.prompt` | [`src/lib/kiPrompt.ts:7`](src/lib/kiPrompt.ts#L7) | Der Auftrag an die KI - für den direkten Aufruf und zum Kopieren |
+| `ki.schema` | [`src/lib/kiSchema.ts:6`](src/lib/kiSchema.ts#L6) | Das JSON-Schema, an das die KI gebunden wird |
+| `ki.zugang` | [`src/lib/kiZugang.ts:2`](src/lib/kiZugang.ts#L2) | Wo der API-Schlüssel liegt - und was das bedeutet |
 
 #### massnahmen
 
@@ -316,13 +369,13 @@ _73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.hover` | [`src/index.css:1489`](src/index.css#L1489) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:1581`](src/index.css#L1581) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.raster` | [`src/index.css:943`](src/index.css#L943) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1035`](src/index.css#L1035) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:1596`](src/index.css#L1596) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:1688`](src/index.css#L1688) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:1733`](src/index.css#L1733) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:1825`](src/index.css#L1825) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -335,6 +388,7 @@ _73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `szenario.dynamik` | [`src/domain/szenarioDynamik.ts:6`](src/domain/szenarioDynamik.ts#L6) | Spielt ein Szenario durch, bevor es jemand übt |
 | `szenario.pruefung` | [`src/domain/szenarioPruefung.ts:15`](src/domain/szenarioPruefung.ts#L15) | Prüft ein Szenario auf Vollständigkeit und Stimmigkeit |
 
 #### test
@@ -360,12 +414,13 @@ _73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:8`](src/pages/EinsatzSeite.tsx#L8) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.ersteinschaetzung` | [`src/pages/patient/Ersteinschaetzung.tsx:19`](src/pages/patient/Ersteinschaetzung.tsx#L19) | Der schnelle Weg - und die Versuchung daneben |
+| `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Szenario direkt erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:13`](src/components/Massnahmenliste.tsx#L13) | Das einklappbare xABCDE-Akkordeon |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:30`](src/pages/uebungsleitung/PatientEditor.tsx#L30) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:13`](src/pages/PatientSeite.tsx#L13) | Weiche: welcher Abschnitt zeigt welche Ansicht |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
-| `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:15`](src/pages/uebungsleitung/SzenarioEditor.tsx#L15) | Formular für ein ganzes Szenario mit laufender Prüfung |
+| `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:13`](src/pages/UebungsleitungSeite.tsx#L13) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:6`](src/components/Verlegung.tsx#L6) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.versorgung` | [`src/pages/patient/Versorgung.tsx:24`](src/pages/patient/Versorgung.tsx#L24) | Diagnostik und Behandlung - in den Zelten und als zweite Stufe |
@@ -398,7 +453,7 @@ _73 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           62 Tests
+npm run test           77 Tests
 npm run lint           oxlint
 npm run typecheck      TypeScript
 npm run build          Produktionsbuild

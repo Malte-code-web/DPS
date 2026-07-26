@@ -118,7 +118,8 @@ function pruefePatient(vorlage: unknown, ort: string, befunde: Befund[]): void {
   if (!Array.isArray(patient.probleme)) {
     befunde.push({ schwere: 'fehler', ort, text: 'probleme muss eine Liste sein.' });
   } else {
-    if (patient.probleme.length === 0) {
+    // Bei Leichtverletzten ist genau das der Normalfall - sie sollen stabil bleiben.
+    if (patient.probleme.length === 0 && patient.erwarteteSK !== 'SK3') {
       befunde.push({
         schwere: 'warnung',
         ort,

@@ -37,10 +37,15 @@ export const MONITOR_VITALS: VitalKey[] = [
 export const MONITOR_BEFUNDE: Befundschluessel[] = [...MONITOR_VITALS, 'ekg'];
 
 /**
- * Alarmgrenzen des Monitors. Sie sind bewusst deckungsgleich mit dem Bereich,
- * ab dem die Oberfläche einen Wert rot färbt (`kritisch` in `VITAL_META`): Was
- * rot leuchtet, alarmiert auch - das erspart eine zweite Erklärung.
+/**
+ * Zwei Alarmstufen wie am corpuls³ und nach IEC 60601-1-8: "gelb" (mittel) für
+ * einen auffälligen Wert, "rot" (hoch) für einen kritischen. Sie sind bewusst
+ * deckungsgleich mit der Farbgebung der Anzeige (`norm`/`kritisch` in
+ * `VITAL_META`): Was gelb leuchtet, alarmiert gelb; was rot leuchtet, rot.
  */
+export type Alarmstufe = 'mittel' | 'hoch';
+
+/** Rote Grenze: außerhalb wird der Wert kritisch (hohe Priorität). */
 export const MONITOR_GRENZEN: Partial<Record<VitalKey, { min?: number; max?: number }>> = {
   herzfrequenz: { min: 50, max: 130 },
   spo2: { min: 90 },
@@ -48,10 +53,19 @@ export const MONITOR_GRENZEN: Partial<Record<VitalKey, { min?: number; max?: num
   systolischerRR: { min: 90, max: 200 },
 };
 
+/** Gelbe Grenze: außerhalb wird der Wert auffällig (mittlere Priorität). */
+export const MONITOR_WARN_GRENZEN: Partial<Record<VitalKey, { min?: number; max?: number }>> = {
+  herzfrequenz: { min: 60, max: 100 },
+  spo2: { min: 95 },
+  atemfrequenz: { min: 12, max: 20 },
+  systolischerRR: { min: 110, max: 140 },
+};
+
 export interface MonitorAlarm {
   vital: VitalKey;
   wert: number;
   richtung: 'niedrig' | 'hoch';
+  stufe: Alarmstufe;
 }
 
 /** Läuft am Patienten ein Monitor? Abgeleitet aus der durchgeführten Maßnahme. */
@@ -59,12 +73,25 @@ export function monitorAngeschlossen(patient: Patient): boolean {
   return patient.durchgefuehrteMassnahmen.includes(MONITORING_ID);
 }
 
+/** Prüft einen Wert gegen ein Grenzpaar und gibt die verletzte Richtung zurück. */
+function verletzung(
+  wert: number,
+  grenze: { min?: number; max?: number } | undefined,
+): 'niedrig' | 'hoch' | null {
+  if (!grenze) return null;
+  if (grenze.min !== undefined && wert < grenze.min) return 'niedrig';
+  if (grenze.max !== undefined && wert > grenze.max) return 'hoch';
+  return null;
+}
+
 /**
- * @anker monitor.alarme Welche Grenzwerte gerade verletzt sind
+ * @anker monitor.alarme Welche Grenzwerte gerade verletzt sind - gelb oder rot
  *
  * Nur bei angeschlossenem Monitor und nur bei einem Patienten, der noch versorgt
  * wird. Ein Verstorbener und ein Übergebener lösen keinen Ton mehr aus - der
- * Monitor ist ab dann kein Thema der Übung mehr.
+ * Monitor ist ab dann kein Thema der Übung mehr. Je Wert entscheidet die
+ * äußere (rote) Grenze zuerst: Was kritisch ist, meldet sich hoch; was nur
+ * auffällig ist, mittel.
  */
 export function monitorAlarme(patient: Patient): MonitorAlarm[] {
   if (!monitorAngeschlossen(patient)) return [];
@@ -72,19 +99,32 @@ export function monitorAlarme(patient: Patient): MonitorAlarm[] {
 
   const alarme: MonitorAlarm[] = [];
   for (const vital of MONITOR_VITALS) {
-    const grenze = MONITOR_GRENZEN[vital];
-    if (!grenze) continue;
     const wert = patient.vitalwerte[vital];
-    if (grenze.min !== undefined && wert < grenze.min) {
-      alarme.push({ vital, wert, richtung: 'niedrig' });
-    } else if (grenze.max !== undefined && wert > grenze.max) {
-      alarme.push({ vital, wert, richtung: 'hoch' });
+    const rot = verletzung(wert, MONITOR_GRENZEN[vital]);
+    if (rot) {
+      alarme.push({ vital, wert, richtung: rot, stufe: 'hoch' });
+      continue;
+    }
+    const gelb = verletzung(wert, MONITOR_WARN_GRENZEN[vital]);
+    if (gelb) {
+      alarme.push({ vital, wert, richtung: gelb, stufe: 'mittel' });
     }
   }
   return alarme;
 }
 
+/**
+ * Die höchste anstehende Alarmstufe des Patienten, oder null, wenn alles ruhig
+ * ist. Ein einziger kritischer Wert hebt den ganzen Monitor auf Rot.
+ */
+export function monitorPrioritaet(patient: Patient): Alarmstufe | null {
+  const alarme = monitorAlarme(patient);
+  if (alarme.some((alarm) => alarm.stufe === 'hoch')) return 'hoch';
+  if (alarme.length > 0) return 'mittel';
+  return null;
+}
+
 /** Kurzform: schlägt der Monitor gerade an? */
 export function istMonitorImAlarm(patient: Patient): boolean {
-  return monitorAlarme(patient).length > 0;
+  return monitorPrioritaet(patient) !== null;
 }

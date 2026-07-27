@@ -2,7 +2,7 @@ import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
-import { istMonitorImAlarm } from '../domain/monitor';
+import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { PatientSeite } from './PatientSeite';
@@ -15,15 +15,20 @@ export function EinsatzSeite() {
     (patient) => patient.id === state.ausgewaehlterPatientId,
   );
 
-  // Der Alarmton ist an den Aufenthaltsort gebunden: nur, wenn ein überwachter,
-  // alarmierter Patient im gerade gezeigten Abschnitt liegt (→ `ui.monitoralarm`).
-  const alarmImBereich =
-    state.laufend &&
-    state.patienten.some(
-      (patient) =>
-        patient.abschnitt === state.ausgewaehlterAbschnitt && istMonitorImAlarm(patient),
-    );
-  useMonitorAlarm(alarmImBereich);
+  // Der Alarmton ist an den Aufenthaltsort gebunden: es zählt die höchste Stufe,
+  // die im gerade gezeigten Abschnitt ansteht (→ `ui.monitoralarm`). Ein
+  // kritischer Wert (rot) setzt sich gegen jeden gelben durch.
+  const stufenImBereich = state.laufend
+    ? state.patienten
+        .filter((patient) => patient.abschnitt === state.ausgewaehlterAbschnitt)
+        .map(monitorPrioritaet)
+    : [];
+  const alarmStufe = stufenImBereich.includes('hoch')
+    ? 'hoch'
+    : stufenImBereich.includes('mittel')
+      ? 'mittel'
+      : null;
+  useMonitorAlarm(alarmStufe);
 
   if (!szenario) {
     return (

@@ -1736,8 +1736,8 @@ button.gefahr {
 }
 
 .monitor-status-alarm {
-  border-color: color-mix(in srgb, var(--sk1) 60%, transparent);
-  color: var(--sk1);
+  border-color: color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 60%, transparent);
+  color: var(--alarm-farbe, var(--sk1));
 }
 
 .monitor-status-aus {
@@ -1821,17 +1821,32 @@ button.gefahr {
   margin: 0.5rem 0 0;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--sk1);
+  color: var(--alarm-farbe, var(--sk1));
+}
+
+/*
+ * Zwei Alarmfarben wie am corpuls³: rot (hoch) und gelb (mittel). Die Priorität
+ * setzt --alarm-farbe, alle Alarmregeln greifen darauf zu - so bleibt die Logik
+ * an einer Stelle.
+ */
+.monitor-alarm-hoch,
+.patient-karte-alarm-hoch {
+  --alarm-farbe: var(--sk1);
+}
+
+.monitor-alarm-mittel,
+.patient-karte-alarm-mittel {
+  --alarm-farbe: var(--sk2);
 }
 
 .monitor-alarm {
-  border-color: color-mix(in srgb, var(--sk1) 65%, transparent);
+  border-color: color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 65%, transparent);
   animation: monitor-puls 1s ease-in-out infinite;
 }
 
 /* Kachelweite Alarmmarkierung und Board-Marke. */
 .patient-karte-alarm {
-  border-color: color-mix(in srgb, var(--sk1) 70%, transparent);
+  border-color: color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 70%, transparent);
   animation: monitor-puls 1s ease-in-out infinite;
 }
 
@@ -1842,18 +1857,18 @@ button.gefahr {
   letter-spacing: 0.05em;
   padding: 0.08rem 0.4rem;
   border-radius: 999px;
-  color: var(--sk1);
-  border: 1px solid color-mix(in srgb, var(--sk1) 60%, transparent);
-  background: color-mix(in srgb, var(--sk1) 12%, transparent);
+  color: var(--alarm-farbe, var(--sk1));
+  border: 1px solid color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 60%, transparent);
+  background: color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 12%, transparent);
 }
 
 @keyframes monitor-puls {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--sk1) 40%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 40%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--sk1) 18%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--alarm-farbe, var(--sk1)) 18%, transparent);
   }
 }
 

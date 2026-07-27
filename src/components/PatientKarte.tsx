@@ -1,5 +1,5 @@
 import { MASSNAHMEN, fehlendeVoraussetzung } from '../domain/massnahmen';
-import { istMonitorImAlarm } from '../domain/monitor';
+import { monitorPrioritaet } from '../domain/monitor';
 import { radialispulsTastbar } from '../domain/triage';
 import { useSimulation } from '../state/useSimulation';
 import { SichtungsBadge } from './SichtungsBadge';
@@ -48,13 +48,13 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
   const verstorben = patient.status === 'verstorben';
   const kategorie = verstorben ? 'EX' : patient.gesichtetAls;
   const gesperrt = verstorben || patient.status === 'transportiert';
-  const imAlarm = istMonitorImAlarm(patient);
+  const alarmStufe = monitorPrioritaet(patient);
   const klassen = [
     'patient-karte',
     verstorben ? 'patient-karte-verstorben' : '',
     verstorben ? 'rand-EX' : patient.gesichtetAls ? `rand-${patient.gesichtetAls}` : 'rand-offen',
     patient.sichtungFinal ? 'patient-karte-final' : '',
-    imAlarm ? 'patient-karte-alarm' : '',
+    alarmStufe ? `patient-karte-alarm patient-karte-alarm-${alarmStufe}` : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -78,9 +78,12 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
       <button type="button" className="patient-karte-oeffnen" onClick={() => onAuswahl(patient.id)}>
         <div className="patient-kopf">
           <span className="patient-id">{patient.id}</span>
-          {imAlarm && (
-            <span className="monitor-alarm-marke" title="Monitoralarm">
-              ▲ Alarm
+          {alarmStufe && (
+            <span
+              className={`monitor-alarm-marke monitor-alarm-marke-${alarmStufe}`}
+              title="Monitoralarm"
+            >
+              ▲ {alarmStufe === 'hoch' ? 'Alarm' : 'Warnung'}
             </span>
           )}
           {verstorben ? (

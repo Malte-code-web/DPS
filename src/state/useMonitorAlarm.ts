@@ -1,37 +1,62 @@
 import { useEffect, useRef } from 'react';
+import type { Alarmstufe } from '../domain/monitor';
 
 /**
  * Notenfrequenzen (gleichstufige Stimmung, a' = 440 Hz). Der Alarm ist auf C
  * aufgebaut - anschlagreich genug, um sich durchzusetzen, aber nicht schrill.
  */
 const NOTE = {
+  C5: 523.25,
   E5: 659.26,
   G5: 783.99,
   C6: 1046.5,
 } as const;
 
-/**
- * Ein Puls der Alarmmelodie: Note, Startzeit ab Sequenzbeginn und Dauer (in s).
- *
- * @anker ui.alarmmelodie corpuls³-naher Monitorton nach IEC 60601-1-8
- *
- * Angelehnt an den Melodiealarm nach IEC 60601-1-8, an dem sich Rettungsdienst-
- * Monitore wie der corpuls³ orientieren: ein Bündel aus fünf Pulsen (drei -
- * kurze Lücke - zwei), das sich wiederholt. Bewusst nachgebaut, kein Originalton
- * - ein Sample dürfte hier weder liegen noch klingen. Die Pulse sind harmonisch
- * angereichert (Grundton plus zwei Obertöne), damit es nach Monitor klingt und
- * nicht nach Rechteckpiepser.
- */
-const ALARM_MELODIE: { note: number; start: number; dauer: number }[] = [
-  { note: NOTE.C6, start: 0.0, dauer: 0.15 },
-  { note: NOTE.G5, start: 0.22, dauer: 0.15 },
-  { note: NOTE.E5, start: 0.44, dauer: 0.15 },
-  { note: NOTE.C6, start: 0.8, dauer: 0.15 },
-  { note: NOTE.G5, start: 1.02, dauer: 0.2 },
-];
+interface Puls {
+  note: number;
+  start: number;
+  dauer: number;
+}
 
-/** Länge einer Sequenz inkl. Pause bis zur Wiederholung (in ms). */
-const SEQUENZ_MS = 1600;
+interface Muster {
+  melodie: Puls[];
+  sequenzMs: number;
+}
+
+/**
+ * @anker ui.alarmmelodie Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8
+ *
+ * Zwei Muster wie am corpuls³ und nach IEC 60601-1-8, je nach Priorität:
+ *
+ * - **hoch (rot)**: fünf Pulse (drei - kurze Lücke - zwei), höher gestimmt,
+ *   drängend, kurze Wiederholpause. Der klassische "roter Alarm"-Klang.
+ * - **mittel (gelb)**: drei Pulse, tiefer gestimmt, ruhiger, mit deutlich
+ *   längerer Pause dazwischen - da ist etwas, aber nicht sofort lebensbedrohlich.
+ *
+ * Bewusst nachgebaut, kein Originalton - ein Sample dürfte hier weder liegen
+ * noch klingen. Jeder Puls ist harmonisch angereichert (Grundton plus zwei
+ * Obertöne), damit es nach Monitor klingt und nicht nach Rechteckpiepser.
+ */
+const MUSTER: Record<Alarmstufe, Muster> = {
+  hoch: {
+    melodie: [
+      { note: NOTE.C6, start: 0.0, dauer: 0.15 },
+      { note: NOTE.G5, start: 0.22, dauer: 0.15 },
+      { note: NOTE.E5, start: 0.44, dauer: 0.15 },
+      { note: NOTE.C6, start: 0.8, dauer: 0.15 },
+      { note: NOTE.G5, start: 1.02, dauer: 0.2 },
+    ],
+    sequenzMs: 1600,
+  },
+  mittel: {
+    melodie: [
+      { note: NOTE.G5, start: 0.0, dauer: 0.17 },
+      { note: NOTE.E5, start: 0.26, dauer: 0.17 },
+      { note: NOTE.C5, start: 0.52, dauer: 0.22 },
+    ],
+    sequenzMs: 3200,
+  },
+};
 
 /** Relative Lautstärke der Obertöne - gibt dem Ton seinen Monitor-Charakter. */
 const OBERTOENE: { faktor: number; anteil: number }[] = [
@@ -41,18 +66,18 @@ const OBERTOENE: { faktor: number; anteil: number }[] = [
 ];
 
 /**
- * @anker ui.monitoralarm Der Alarmton - nur im selben Abschnitt zu hören
+ * @anker ui.monitoralarm Der Alarmton - gestaffelt und nur im selben Abschnitt
  *
  * Ein Monitor alarmiert überall sichtbar, aber hörbar nur dort, wo jemand
  * steht. Deshalb entscheidet nicht der Alarm selbst über den Ton, sondern die
- * aufrufende Ansicht: Sie übergibt `aktiv` nur dann true, wenn ein alarmierter,
- * überwachter Patient im gerade angezeigten Einsatzabschnitt liegt.
+ * aufrufende Ansicht: Sie übergibt die höchste Alarmstufe, die im gerade
+ * gezeigten Einsatzabschnitt ansteht - oder null, wenn es dort still bleiben soll.
  *
- * Der Ton entsteht im Browser (Web Audio, ohne Audiodatei): die corpuls³-nahe
- * Alarmmelodie (→ `ui.alarmmelodie`) wiederholt sich, solange `aktiv` gilt. Ein
+ * Der Ton entsteht im Browser (Web Audio, ohne Audiodatei): je nach Stufe das
+ * gelbe oder rote Muster (→ `ui.alarmmelodie`), das sich wiederholt. Ein
  * pausierter Einsatz ist still - dann steht die ganze Lage.
  */
-export function useMonitorAlarm(aktiv: boolean): void {
+export function useMonitorAlarm(stufe: Alarmstufe | null): void {
   const kontextRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
   const intervallRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -65,10 +90,11 @@ export function useMonitorAlarm(aktiv: boolean): void {
       }
     };
 
-    if (!aktiv) {
+    if (!stufe) {
       stoppen();
       return;
     }
+    const muster = MUSTER[stufe];
 
     const AudioKontext =
       window.AudioContext ??
@@ -115,7 +141,7 @@ export function useMonitorAlarm(aktiv: boolean): void {
     const spieleSequenz = () => {
       try {
         const start = kontext.currentTime + 0.03;
-        for (const puls of ALARM_MELODIE) {
+        for (const puls of muster.melodie) {
           spielePuls(puls.note, start + puls.start, puls.dauer);
         }
       } catch {
@@ -124,9 +150,9 @@ export function useMonitorAlarm(aktiv: boolean): void {
     };
 
     spieleSequenz();
-    intervallRef.current = setInterval(spieleSequenz, SEQUENZ_MS);
+    intervallRef.current = setInterval(spieleSequenz, muster.sequenzMs);
     return stoppen;
-  }, [aktiv]);
+  }, [stufe]);
 
   // Den Audiokontext beim endgültigen Verlassen schließen.
   useEffect(

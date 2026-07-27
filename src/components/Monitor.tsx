@@ -1,5 +1,10 @@
 import { MASSNAHMEN } from '../domain/massnahmen';
-import { MONITOR_VITALS, monitorAlarme, monitorAngeschlossen } from '../domain/monitor';
+import {
+  MONITOR_VITALS,
+  monitorAlarme,
+  monitorAngeschlossen,
+  monitorPrioritaet,
+} from '../domain/monitor';
 import { VITAL_META, vitalFormat, vitalStufe } from '../lib/format';
 import type { Patient } from '../domain/types';
 
@@ -43,14 +48,21 @@ export function Monitor({ patient, onAnschliessen }: Props) {
   }
 
   const alarme = monitorAlarme(patient);
-  const imAlarm = alarme.length > 0;
+  const prioritaet = monitorPrioritaet(patient);
+  const imAlarm = prioritaet !== null;
 
   return (
-    <section className={`monitor${imAlarm ? ' monitor-alarm' : ''}`} aria-label="Patientenmonitor">
+    <section
+      className={`monitor${prioritaet ? ` monitor-alarm monitor-alarm-${prioritaet}` : ''}`}
+      aria-label="Patientenmonitor"
+    >
       <div className="monitor-kopf">
         <span className="monitor-titel">Monitor</span>
-        <span className={`monitor-status${imAlarm ? ' monitor-status-alarm' : ''}`} role="status">
-          {imAlarm ? 'Alarm' : 'überwacht'}
+        <span
+          className={`monitor-status${prioritaet ? ` monitor-status-alarm monitor-status-${prioritaet}` : ''}`}
+          role="status"
+        >
+          {prioritaet === 'hoch' ? 'Alarm' : prioritaet === 'mittel' ? 'Warnung' : 'überwacht'}
         </span>
       </div>
       <div className="monitor-werte">

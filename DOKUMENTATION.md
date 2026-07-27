@@ -44,7 +44,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Maßnahmen | 53 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung; Atemwegssicherung wirkt erst nach Mundraumkontrolle |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
-| Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert bei Grenzwertverletzung; der Ton ist nur im selben Einsatzabschnitt zu hören |
+| Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
 | Sichtung auf der Anhängekarte | Vier Sichtungszeilen mit I–IV/EX und Uhrzeit; vor jeder Verlegung Pflicht, endgültige Sichtung jederzeit möglich |
 | Debriefing | Kennzahlen, Vergleich gegen die Referenz, Ausweis der Individualmedizin |
@@ -52,7 +52,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-123 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+126 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -243,14 +243,20 @@ NIBP-Manschette - der Blutdruck fortlaufend in der Übersicht
 im Intervall; die Simulation führt einen bekannten Wert ohnehin fortlaufend
 nach, deshalb steht der Blutdruck gleichrangig neben den übrigen.
 
-Sein eigentlicher Zweck ist der **Alarm**: Verlässt einer der Werte seinen
-Grenzbereich - dieselben Grenzen, ab denen die Oberfläche rot färbt -, schlägt
-der Monitor an (→ `monitor.alarme`). Sichtbar ist das überall, auch als Marke
-auf der Board-Kachel. **Hörbar** ist der Alarm dagegen nur, wer im selben
-Einsatzabschnitt steht wie der Patient (→ `ui.monitoralarm`): Der Ton entsteht
-im Browser und pulst, solange ein überwachter, alarmierter Patient im gerade
-gezeigten Abschnitt liegt. Ein pausierter Einsatz bleibt still, ein Verstorbener
-löst keinen Ton mehr aus.
+Sein eigentlicher Zweck ist der **Alarm**, und der ist **gestaffelt** wie am
+corpuls³ und nach IEC 60601-1-8 (→ `monitor.alarme`): Ein nur auffälliger Wert
+meldet sich **gelb (mittlere Priorität)**, ein kritischer **rot (hohe
+Priorität)** - dieselben zwei Grenzen, nach denen die Oberfläche einen Wert
+ohnehin gelb oder rot färbt. Ein einziger kritischer Wert hebt den ganzen
+Monitor auf Rot. Beide Stufen haben ihr eigenes **Tonmuster** (→
+`ui.alarmmelodie`): rot fünf drängende, höhere Pulse in kurzer Folge, gelb drei
+ruhigere, tiefere mit längerer Pause.
+
+Sichtbar ist der Alarm überall, auch als Marke auf der Board-Kachel. **Hörbar**
+ist er dagegen nur, wer im selben Einsatzabschnitt steht wie der Patient (→
+`ui.monitoralarm`): Der Ton entsteht im Browser und pulst mit der höchsten Stufe,
+die im gerade gezeigten Abschnitt ansteht. Ein pausierter Einsatz bleibt still,
+ein Verstorbener löst keinen Ton mehr aus.
 
 Der Monitor ist keine eigene Zustandsgröße am Patienten, sondern ergibt sich
 daraus, ob die Maßnahme durchgeführt wurde. So kann er nicht in Widerspruch zum
@@ -640,7 +646,7 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `monitor.alarme` | [`src/domain/monitor.ts:63`](src/domain/monitor.ts#L63) | Welche Grenzwerte gerade verletzt sind |
+| `monitor.alarme` | [`src/domain/monitor.ts:88`](src/domain/monitor.ts#L88) | Welche Grenzwerte gerade verletzt sind - gelb oder rot |
 | `monitor.modell` | [`src/domain/monitor.ts:4`](src/domain/monitor.ts#L4) | Der Patientenmonitor - kontinuierliche Überwachung mit Alarm |
 
 #### sichtung
@@ -680,11 +686,11 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:63`](src/state/reducer.ts#L63) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:64`](src/state/reducer.ts#L64) | Alles, was der Übende auslösen kann |
 | `state.phase` | [`src/state/reducer.ts:25`](src/state/reducer.ts#L25) | Die Hauptzustände der Anwendung |
-| `state.reducer` | [`src/state/reducer.ts:116`](src/state/reducer.ts#L116) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.reducer` | [`src/state/reducer.ts:117`](src/state/reducer.ts#L117) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:9`](src/state/SimulationProvider.tsx#L9) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:83`](src/state/reducer.ts#L83) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zeit` | [`src/state/reducer.ts:84`](src/state/reducer.ts#L84) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
 | `state.zustand` | [`src/state/reducer.ts:28`](src/state/reducer.ts#L28) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
@@ -694,16 +700,16 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.anhaengekarte` | [`src/index.css:1114`](src/index.css#L1114) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.bereichsseite` | [`src/index.css:1498`](src/index.css#L1498) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:326`](src/index.css#L326) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:2660`](src/index.css#L2660) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:2675`](src/index.css#L2675) | Die angeheftete Leiste so flach wie möglich |
 | `stil.ersteindruck` | [`src/index.css:1551`](src/index.css#L1551) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:2610`](src/index.css#L2610) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:2625`](src/index.css#L2625) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:253`](src/index.css#L253) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1377`](src/index.css#L1377) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:1906`](src/index.css#L1906) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1921`](src/index.css#L1921) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:141`](src/index.css#L141) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:2730`](src/index.css#L2730) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:2745`](src/index.css#L2745) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2861`](src/index.css#L2861) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2876`](src/index.css#L2876) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -736,7 +742,7 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
-| `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:16`](src/state/useMonitorAlarm.ts#L16) | corpuls³-naher Monitorton nach IEC 60601-1-8 |
+| `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
@@ -749,8 +755,8 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:32`](src/components/Massnahmenliste.tsx#L32) | Das einklappbare xABCDE-Akkordeon |
-| `ui.monitor` | [`src/components/Monitor.tsx:13`](src/components/Monitor.tsx#L13) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
-| `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:44`](src/state/useMonitorAlarm.ts#L44) | Der Alarmton - nur im selben Abschnitt zu hören |
+| `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
+| `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:35`](src/components/PatientKarte.tsx#L35) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |

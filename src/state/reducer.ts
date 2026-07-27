@@ -124,9 +124,10 @@ export function simulationReducer(
       return {
         ...state,
         modus: action.modus,
-        // Nur die digitale Übung führt weiter; die übrigen Modi zeigen
-        // vorerst nur, was sie können sollen.
-        phase: action.modus === 'digital' ? 'setup' : 'start',
+        // Digitale Übung und Ein-Person-Modus führen in die Szenarioauswahl; die
+        // übrigen Modi zeigen vorerst nur, was sie können sollen.
+        phase:
+          action.modus === 'digital' || action.modus === 'einzelperson' ? 'setup' : 'start',
       };
 
     case 'uebungsleitungOeffnen':
@@ -149,6 +150,10 @@ export function simulationReducer(
         laufend: true,
         ausgewaehlterAbschnitt: 'schadensstelle',
         patienten: action.szenario.patienten.map(patientAusVorlage),
+        // Bei einem einzelnen Betroffenen (Ein-Person-Modus) geht es direkt in
+        // die Patientenansicht - kein Behandlungsplatz, keine Übersicht dazwischen.
+        ausgewaehlterPatientId:
+          action.szenario.patienten.length === 1 ? action.szenario.patienten[0]!.id : null,
       };
 
     case 'tick': {

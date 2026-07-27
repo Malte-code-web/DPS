@@ -116,7 +116,7 @@ describe('Zeitverlauf', () => {
       6,
     );
     expect(feinerTakt.vitalwerte.systolischerRR).toBeLessThan(
-      patient.vitalwerte.systolischerRR - 25,
+      patient.vitalwerte.systolischerRR - 20,
     );
   });
 

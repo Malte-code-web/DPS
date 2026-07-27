@@ -1,4 +1,4 @@
-import { patientAusVorlage } from './simulation';
+import { VERSCHLECHTERUNG_FAKTOR, patientAusVorlage } from './simulation';
 import { sichtungNachMstart } from './triage';
 import type {
   Koerperregion,
@@ -566,7 +566,7 @@ function verlaufsplan(
       return { zielMinute: ganzzahl(w, 9, 17) };
     case 'SK2':
       // Stirbt rechnerisch weit hinter dem Probelauf - verschlechtert sich also
-      // deutlich, überlebt die 30 Minuten aber sicher.
+      // deutlich, überlebt den Probelauf-Zeitraum aber sicher.
       return { zielMinute: ganzzahl(w, 55, 75) };
     case 'SK3':
       // Ohne Zielminute bleibt der Leitwert unberührt: ein Leichtverletzter
@@ -585,8 +585,12 @@ function baueProblem(muster: Muster, plan: ReturnType<typeof verlaufsplan>, star
   const verlauf: VitalVerlauf = { ...muster.begleit };
   if (plan.zielMinute !== null) {
     const dauer = plan.zielMinute - (plan.startetNachMin ?? 0);
+    // Der globale Tempofaktor (→ `sim.tempo`) drosselt beim Laden alle Raten.
+    // Damit die vorgegebene Zielminute trotzdem exakt getroffen wird, rechnet
+    // der Generator ihn hier heraus.
     verlauf[muster.leitwert] =
-      Math.round(rateFuerZielminute(muster.leitwert, start, dauer) * 100) / 100;
+      Math.round((rateFuerZielminute(muster.leitwert, start, dauer) / VERSCHLECHTERUNG_FAKTOR) * 100) /
+      100;
   }
 
   return {

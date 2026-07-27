@@ -8,6 +8,7 @@ import {
   istBekannt,
 } from '../domain/diagnostik';
 import { SICHTUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
+import { EINZELFAELLE } from '../domain/einzelfaelle';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
@@ -24,6 +25,22 @@ function patient(state: SimulationState, id: string) {
   if (!gefunden) throw new Error(`Patient ${id} fehlt im Szenario`);
   return gefunden;
 }
+
+describe('Ein-Person-Modus', () => {
+  it('wählt bei einem Einzelfall den Patienten direkt aus', () => {
+    const fall = EINZELFAELLE[0]!;
+    const state = simulationReducer(
+      { ...ANFANGSZUSTAND, modus: 'einzelperson' },
+      { typ: 'szenarioStarten', szenario: fall },
+    );
+    expect(state.phase).toBe('einsatz');
+    expect(state.ausgewaehlterPatientId).toBe(fall.patienten[0]!.id);
+  });
+
+  it('lässt bei einer MANV-Lage die Übersicht offen', () => {
+    expect(imEinsatz().ausgewaehlterPatientId).toBeNull();
+  });
+});
 
 /** @anker test.zeitkosten Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst */
 describe('Einsatzzeit als Ressource', () => {

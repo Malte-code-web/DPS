@@ -31,7 +31,7 @@ als Datei weitergeben – oder erzeugen lassen. Dafür gibt es zwei Wege:
   macht eine Lage wiederholbar: gleiche Zahl, gleiche Übung.
 - **Sprachmodell** – für eine frei beschriebene Lage, die der Baukasten nicht
   kennt. Die App beauftragt das Modell direkt, prüft das Ergebnis, spielt jeden
-  Patienten über 30 Minuten durch und schickt alles, was nicht stimmt,
+  Patienten über 40 Minuten durch und schickt alles, was nicht stimmt,
   automatisch zur Nachbesserung zurück. Dafür wird einmalig ein eigener
   API-Schlüssel hinterlegt – er bleibt im Browser des Geräts – und es entstehen
   Kosten je Szenario. Alternativ lässt sich der fertige Auftrag in eine

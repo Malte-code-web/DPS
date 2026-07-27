@@ -34,11 +34,12 @@ nur über den Zustand der Patienten und das Debriefing.
 
 | Bereich | Stand |
 | --- | --- |
-| Trainingsmodi | Auswahl aus drei Modi; die digitale Übung ist ausgebaut, Führungskräfte und Realübung zeigen bisher nur ihre Planung |
+| Trainingsmodi | Auswahl aus vier Modi; digitale Übung und Ein-Person-Modus sind ausgebaut, Führungskräfte und Realübung zeigen bisher nur ihre Planung |
+| Ein-Person-Modus | Übt den Ablauf an genau einem Patienten; vier Einzelfälle mit klarem Schwerpunkt, direkter Einstieg in die Patientenansicht ohne Behandlungsplatz |
 | Übungsleitung | Eigene Szenarien anlegen, bearbeiten, duplizieren, als JSON aus- und einlesen; Prüfung gegen dieselben Regeln wie die mitgelieferten |
 | Baukasten | Erzeugt Szenarien kostenfrei im Browser, ohne Schlüssel und ohne Netz; Verläufe werden aus der Zielminute zurückgerechnet, die Saat macht jede Lage wiederholbar |
 | KI-Unterstützung | Erzeugt Szenarien direkt aus der App: Auftrag ans Modell, an ein JSON-Schema gebunden, Ergebnis geprüft und durchgespielt, Befunde gehen automatisch zur Nachbesserung zurück. Der Auftrag zum Kopieren bleibt als Weg ohne Zugang |
-| Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
+| Probelauf | Jedes Szenario wird über 40 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
@@ -52,7 +53,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-132 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+137 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -139,6 +140,13 @@ gehfähigen SK-III-Patientin im Verlauf ein SK-I-Fall.
 Intern wird mit Gleitkommazahlen gerechnet und erst bei der Anzeige gerundet.
 Das ist kein Detail: mit Rundung nach jedem Tick verschwindet jede Änderung
 (→ `sim.gleitkomma`).
+
+Das Tempo ist eine einzige Stellschraube (→ `sim.tempo`): Ein globaler Faktor
+drosselt alle Verschlechterungsraten beim Laden der Vorlage. Aktuell steht er
+auf 0.8, jeder Patient hat also rund 25 % mehr Zeit, bis derselbe Zustand
+erreicht ist - das nimmt der Übung die Frustration, ohne die Rechenfunktionen
+anzufassen. Der Generator rechnet den Faktor für seine Zielminuten heraus, damit
+vorgegebene Zeiten weiter exakt getroffen werden.
 
 ### Zeit als Ressource
 
@@ -573,7 +581,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_122 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -600,6 +608,12 @@ _120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `diagnostik.katalog` | [`src/domain/diagnostik.ts:11`](src/domain/diagnostik.ts#L11) | Alle Untersuchungen mit Dauer und aufgedecktem Befund |
 | `diagnostik.koerpermarken` | [`src/domain/diagnostik.ts:197`](src/domain/diagnostik.ts#L197) | Was das Körperschema wann zeigt |
 | `diagnostik.zuordnung` | [`src/domain/diagnostik.ts:149`](src/domain/diagnostik.ts#L149) | Welche Untersuchung ein Feld der Befundtafel öffnet |
+
+#### einzelfaelle
+
+| Anker | Datei | Bedeutung |
+| --- | --- | --- |
+| `einzelfaelle.liste` | [`src/domain/einzelfaelle.ts:4`](src/domain/einzelfaelle.ts#L4) | Einzelfälle für den Ein-Person-Modus |
 
 #### format
 
@@ -679,21 +693,22 @@ _120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sim.befunde` | [`src/domain/simulation.ts:146`](src/domain/simulation.ts#L146) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.bewusstlos` | [`src/domain/simulation.ts:222`](src/domain/simulation.ts#L222) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
-| `sim.diagnostik` | [`src/domain/simulation.ts:277`](src/domain/simulation.ts#L277) | Eine Untersuchung deckt genau ihren Befund auf |
-| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:238`](src/domain/simulation.ts#L238) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
+| `sim.befunde` | [`src/domain/simulation.ts:171`](src/domain/simulation.ts#L171) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
+| `sim.bewusstlos` | [`src/domain/simulation.ts:247`](src/domain/simulation.ts#L247) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
+| `sim.diagnostik` | [`src/domain/simulation.ts:302`](src/domain/simulation.ts#L302) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:263`](src/domain/simulation.ts#L263) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
 | `sim.gleitkomma` | [`src/domain/simulation.ts:55`](src/domain/simulation.ts#L55) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:375`](src/domain/simulation.ts#L375) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:211`](src/domain/simulation.ts#L211) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
-| `sim.sichtungOffen` | [`src/domain/simulation.ts:324`](src/domain/simulation.ts#L324) | Steht an dieser Station noch eine Sichtung aus? |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:400`](src/domain/simulation.ts#L400) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:236`](src/domain/simulation.ts#L236) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.sichtungOffen` | [`src/domain/simulation.ts:349`](src/domain/simulation.ts#L349) | Steht an dieser Station noch eine Sichtung aus? |
 | `sim.standardwerte` | [`src/domain/simulation.ts:35`](src/domain/simulation.ts#L35) | Unauffällige Vorgaben für die später ergänzten Werte |
-| `sim.startzustand` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Womit ein Patient in den Einsatz startet |
-| `sim.tick` | [`src/domain/simulation.ts:121`](src/domain/simulation.ts#L121) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
-| `sim.tod` | [`src/domain/simulation.ts:110`](src/domain/simulation.ts#L110) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:346`](src/domain/simulation.ts#L346) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
-| `sim.zeitkosten` | [`src/domain/simulation.ts:172`](src/domain/simulation.ts#L172) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:186`](src/domain/simulation.ts#L186) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.startzustand` | [`src/domain/simulation.ts:90`](src/domain/simulation.ts#L90) | Womit ein Patient in den Einsatz startet |
+| `sim.tempo` | [`src/domain/simulation.ts:70`](src/domain/simulation.ts#L70) | Wie schnell sich der Zustand verschlechtert |
+| `sim.tick` | [`src/domain/simulation.ts:146`](src/domain/simulation.ts#L146) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
+| `sim.tod` | [`src/domain/simulation.ts:135`](src/domain/simulation.ts#L135) | Ab welchen Werten ein Patient verstirbt |
+| `sim.verlegung` | [`src/domain/simulation.ts:371`](src/domain/simulation.ts#L371) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.zeitkosten` | [`src/domain/simulation.ts:197`](src/domain/simulation.ts#L197) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
+| `sim.zeitraum` | [`src/domain/simulation.ts:211`](src/domain/simulation.ts#L211) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### speicher
 
@@ -748,13 +763,13 @@ _120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `test.abschnitte` | [`src/state/reducer.test.ts:186`](src/state/reducer.test.ts#L186) | Der Weg eines Patienten und die erlaubten Verlegungen |
+| `test.abschnitte` | [`src/state/reducer.test.ts:203`](src/state/reducer.test.ts#L203) | Der Weg eines Patienten und die erlaubten Verlegungen |
 | `test.atemweg` | [`src/domain/simulation.test.ts:195`](src/domain/simulation.test.ts#L195) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
 | `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
 | `test.tubus` | [`src/domain/simulation.test.ts:244`](src/domain/simulation.test.ts#L244) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
-| `test.zeitkosten` | [`src/state/reducer.test.ts:28`](src/state/reducer.test.ts#L28) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
+| `test.zeitkosten` | [`src/state/reducer.test.ts:45`](src/state/reducer.test.ts#L45) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:108`](src/domain/simulation.test.ts#L108) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -781,7 +796,7 @@ _120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:35`](src/components/PatientKarte.tsx#L35) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
-| `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |
+| `ui.setup` | [`src/pages/SetupSeite.tsx:6`](src/pages/SetupSeite.tsx#L6) | Szenarioauswahl der digitalen Übung und des Ein-Person-Modus |
 | `ui.sofortmassnahmen` | [`src/components/Sofortmassnahmen.tsx:14`](src/components/Sofortmassnahmen.tsx#L14) | Lebensrettende Griffe, dauerhaft in der Übersicht |
 | `ui.start` | [`src/pages/StartSeite.tsx:5`](src/pages/StartSeite.tsx#L5) | Auswahl des Trainingsmodus und Einstieg in die Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |

@@ -15,17 +15,24 @@ import type { Patient, PatientVorlage, Sichtungskategorie, Szenario, VitalKey } 
  * bei der KI-Erzeugung direkt zurück an das Modell.
  */
 
-/** Zeitraum, über den ein Szenario zur Prüfung durchgespielt wird. */
-export const HORIZONT_MIN = 30;
+/**
+ * Zeitraum, über den ein Szenario zur Prüfung durchgespielt wird. Mit dem
+ * gedrosselten Tempo (→ `sim.tempo`) reicht das Fenster etwas weiter, damit die
+ * langsameren Verläufe darin noch ihren kritischen Punkt erreichen.
+ */
+export const HORIZONT_MIN = 40;
+
+// Die Zeitgrenzen sind an das gedrosselte Tempo (→ `sim.tempo`) angepasst: alle
+// Verläufe dauern rund 25 % länger, also wandern auch diese Schwellen mit.
 
 /** Ab dieser Minute darf ein SK-I-Patient frühestens versterben. */
-const FRUEHESTENS_MIN = 4;
+const FRUEHESTENS_MIN = 5;
 
 /** Bis zu dieser Minute sollte ein unbehandelter SK-I-Patient versterben. */
-const SPAETESTENS_MIN = 25;
+const SPAETESTENS_MIN = 31;
 
 /** So lange muss ein SK-II-Patient unbehandelt mindestens durchhalten. */
-const SK2_MINDESTENS_MIN = 10;
+const SK2_MINDESTENS_MIN = 13;
 
 /**
  * Ein gehfähiger Patient, der sich später verschlechtert, ist die klassische
@@ -33,7 +40,7 @@ const SK2_MINDESTENS_MIN = 10;
  * den ersten Minuten, war er nie ein Leichtverletzter - dann stimmt die
  * Referenzkategorie nicht.
  */
-const SK3_NACHSICHTUNG_MIN = 15;
+const SK3_NACHSICHTUNG_MIN = 19;
 
 export interface PatientDynamik {
   id: string;

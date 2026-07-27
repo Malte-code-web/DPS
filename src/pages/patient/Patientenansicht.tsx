@@ -10,7 +10,6 @@ import { Verlegung } from '../../components/Verlegung';
 import { Bereichsseite } from './Bereichsseite';
 import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
 import { MASSNAHMEN } from '../../domain/massnahmen';
-import { monitorAngeschlossen } from '../../domain/monitor';
 import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
@@ -84,7 +83,12 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
         />
       )}
 
-      {monitorAngeschlossen(patient) && <Monitor patient={patient} />}
+      <Monitor
+        patient={patient}
+        onAnschliessen={() =>
+          dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId: 'monitoring' })
+        }
+      />
 
       <div className="bereichswahl" role="tablist">
         <button

@@ -1,17 +1,47 @@
-import { MONITOR_VITALS, monitorAlarme } from '../domain/monitor';
+import { MASSNAHMEN } from '../domain/massnahmen';
+import { MONITOR_VITALS, monitorAlarme, monitorAngeschlossen } from '../domain/monitor';
 import { VITAL_META, vitalFormat, vitalStufe } from '../lib/format';
 import type { Patient } from '../domain/types';
 
+interface Props {
+  patient: Patient;
+  /** Schließt den Monitor an (führt die Maßnahme durch). */
+  onAnschliessen: () => void;
+}
+
 /**
- * @anker ui.monitor Der angeschlossene Monitor in der Übersicht
+ * @anker ui.monitor Der Monitor in der Übersicht - Knopf zum Anschließen, dann live
  *
- * Solange der Monitor läuft, stehen seine Werte fortlaufend in der Übersicht -
- * ohne dass man sie erhebt. Die Werte färben sich wie überall nach ihrer Stufe;
- * ein kritischer Wert löst zugleich den Alarm aus (→ `monitor.alarme`). Der Ton
- * dazu kommt nur, wer im selben Abschnitt steht (→ `ui.monitoralarm`) - dieses
- * Feld zeigt den Alarm dagegen immer, auch aus der Ferne.
+ * Das Feld steht immer in der Übersicht, damit der Monitor auffindbar ist:
+ * Solange er nicht läuft, trägt es den Knopf zum Anschließen; danach zeigt es
+ * seine Werte fortlaufend - ohne dass man sie erhebt. Die Werte färben sich wie
+ * überall nach ihrer Stufe; ein kritischer Wert löst zugleich den Alarm aus
+ * (→ `monitor.alarme`). Der Ton dazu kommt nur, wer im selben Abschnitt steht
+ * (→ `ui.monitoralarm`) - dieses Feld zeigt den Alarm dagegen immer.
  */
-export function Monitor({ patient }: { patient: Patient }) {
+export function Monitor({ patient, onAnschliessen }: Props) {
+  const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+
+  if (!monitorAngeschlossen(patient)) {
+    return (
+      <section className="monitor monitor-aus" aria-label="Patientenmonitor">
+        <div className="monitor-kopf">
+          <span className="monitor-titel">Monitor</span>
+          <span className="monitor-status monitor-status-aus">nicht angeschlossen</span>
+        </div>
+        <button
+          type="button"
+          className="monitor-anschluss"
+          disabled={gesperrt}
+          onClick={onAnschliessen}
+        >
+          <span>Monitor anschließen</span>
+          <span className="monitor-anschluss-dauer">{MASSNAHMEN.monitoring.dauerSek} s</span>
+        </button>
+      </section>
+    );
+  }
+
   const alarme = monitorAlarme(patient);
   const imAlarm = alarme.length > 0;
 

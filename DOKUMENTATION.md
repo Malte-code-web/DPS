@@ -691,19 +691,19 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1101`](src/index.css#L1101) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1485`](src/index.css#L1485) | Vollbildseite mit stehendem Kopf |
-| `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:2621`](src/index.css#L2621) | Die angeheftete Leiste so flach wie möglich |
-| `stil.ersteindruck` | [`src/index.css:1538`](src/index.css#L1538) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:2571`](src/index.css#L2571) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1364`](src/index.css#L1364) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:1867`](src/index.css#L1867) | Zweispaltiges Raster der Patientenansichten ab 900 px |
-| `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:2691`](src/index.css#L2691) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.anhaengekarte` | [`src/index.css:1114`](src/index.css#L1114) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1498`](src/index.css#L1498) | Vollbildseite mit stehendem Kopf |
+| `stil.editor` | [`src/index.css:326`](src/index.css#L326) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:2660`](src/index.css#L2660) | Die angeheftete Leiste so flach wie möglich |
+| `stil.ersteindruck` | [`src/index.css:1551`](src/index.css#L1551) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:2610`](src/index.css#L2610) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.modi` | [`src/index.css:253`](src/index.css#L253) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1377`](src/index.css#L1377) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.raster` | [`src/index.css:1906`](src/index.css#L1906) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.sk-farbe` | [`src/index.css:141`](src/index.css#L141) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
+| `stil.telefon` | [`src/index.css:2730`](src/index.css#L2730) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2822`](src/index.css#L2822) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2861`](src/index.css#L2861) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -748,10 +748,10 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:32`](src/components/Massnahmenliste.tsx#L32) | Das einklappbare xABCDE-Akkordeon |
-| `ui.monitor` | [`src/components/Monitor.tsx:6`](src/components/Monitor.tsx#L6) | Der angeschlossene Monitor in der Übersicht |
+| `ui.monitor` | [`src/components/Monitor.tsx:13`](src/components/Monitor.tsx#L13) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:4`](src/state/useMonitorAlarm.ts#L4) | Der Alarmton - nur im selben Abschnitt zu hören |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
-| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:31`](src/pages/patient/Patientenansicht.tsx#L31) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
+| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:35`](src/components/PatientKarte.tsx#L35) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:5`](src/pages/SetupSeite.tsx#L5) | Szenarioauswahl der digitalen Übung |

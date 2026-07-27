@@ -16,13 +16,23 @@ import type { Befundschluessel, MassnahmeId, Patient, VitalKey } from './types';
  */
 export const MONITORING_ID: MassnahmeId = 'monitoring';
 
-/** Die Werte, die der Monitor fortlaufend abbildet - EKG-Frequenz, Sättigung, Atmung. */
-export const MONITOR_VITALS: VitalKey[] = ['herzfrequenz', 'spo2', 'atemfrequenz'];
+/**
+ * Die Werte, die der Monitor fortlaufend abbildet: EKG-Frequenz, Sättigung,
+ * Atmung und - über die automatische NIBP-Manschette - der systolische
+ * Blutdruck. Der Blutdruck wird real im Intervall gemessen; die Simulation
+ * führt einen bekannten Wert ohnehin fortlaufend nach, deshalb steht er hier
+ * gleichrangig neben den übrigen.
+ */
+export const MONITOR_VITALS: VitalKey[] = [
+  'herzfrequenz',
+  'spo2',
+  'atemfrequenz',
+  'systolischerRR',
+];
 
 /**
- * Was mit angeschlossenem Monitor als bekannt gilt. Neben den drei Zahlenwerten
- * zeigt der Monitor auch den Rhythmus (EKG). Der Blutdruck fehlt bewusst: die
- * Manschette misst nicht Schlag für Schlag, er bleibt eine eigene Messung.
+ * Was mit angeschlossenem Monitor als bekannt gilt: die vier Zahlenwerte und
+ * der Rhythmus (EKG).
  */
 export const MONITOR_BEFUNDE: Befundschluessel[] = [...MONITOR_VITALS, 'ekg'];
 
@@ -35,6 +45,7 @@ export const MONITOR_GRENZEN: Partial<Record<VitalKey, { min?: number; max?: num
   herzfrequenz: { min: 50, max: 130 },
   spo2: { min: 90 },
   atemfrequenz: { min: 10, max: 29 },
+  systolischerRR: { min: 90, max: 200 },
 };
 
 export interface MonitorAlarm {

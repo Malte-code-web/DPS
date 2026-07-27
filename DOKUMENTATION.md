@@ -44,7 +44,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Maßnahmen | 53 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung; Atemwegssicherung wirkt erst nach Mundraumkontrolle |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
-| Monitor | Angeschlossen zeigt er HF, SpO₂ und Atemfrequenz fortlaufend und alarmiert bei Grenzwertverletzung; der Ton ist nur im selben Einsatzabschnitt zu hören |
+| Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert bei Grenzwertverletzung; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
 | Sichtung auf der Anhängekarte | Vier Sichtungszeilen mit I–IV/EX und Uhrzeit; vor jeder Verlegung Pflicht, endgültige Sichtung jederzeit möglich |
 | Debriefing | Kennzahlen, Vergleich gegen die Referenz, Ausweis der Individualmedizin |
@@ -52,7 +52,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-121 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+123 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -237,9 +237,11 @@ Frage entsteht.
 
 Die Einzeluntersuchung greift einen Wert einmal ab. Der **Monitor** (Maßnahme
 "Monitoring anschließen") bleibt dagegen dran: Solange er läuft, stehen
-Herzfrequenz, Sauerstoffsättigung und Atemfrequenz fortlaufend in der Übersicht
-(→ `monitor.modell`), ohne dass man sie erneut erhebt. Der Blutdruck bleibt
-bewusst außen vor - die Manschette misst nicht Schlag für Schlag.
+Herzfrequenz, Sauerstoffsättigung, Atemfrequenz und - über die automatische
+NIBP-Manschette - der Blutdruck fortlaufend in der Übersicht
+(→ `monitor.modell`), ohne dass man sie erneut erhebt. Real misst die Manschette
+im Intervall; die Simulation führt einen bekannten Wert ohnehin fortlaufend
+nach, deshalb steht der Blutdruck gleichrangig neben den übrigen.
 
 Sein eigentlicher Zweck ist der **Alarm**: Verlässt einer der Werte seinen
 Grenzbereich - dieselben Grenzen, ab denen die Oberfläche rot färbt -, schlägt
@@ -638,7 +640,7 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `monitor.alarme` | [`src/domain/monitor.ts:52`](src/domain/monitor.ts#L52) | Welche Grenzwerte gerade verletzt sind |
+| `monitor.alarme` | [`src/domain/monitor.ts:63`](src/domain/monitor.ts#L63) | Welche Grenzwerte gerade verletzt sind |
 | `monitor.modell` | [`src/domain/monitor.ts:4`](src/domain/monitor.ts#L4) | Der Patientenmonitor - kontinuierliche Überwachung mit Alarm |
 
 #### sichtung
@@ -692,16 +694,16 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.anhaengekarte` | [`src/index.css:1101`](src/index.css#L1101) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.bereichsseite` | [`src/index.css:1485`](src/index.css#L1485) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:313`](src/index.css#L313) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:2615`](src/index.css#L2615) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:2621`](src/index.css#L2621) | Die angeheftete Leiste so flach wie möglich |
 | `stil.ersteindruck` | [`src/index.css:1538`](src/index.css#L1538) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:2565`](src/index.css#L2565) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:2571`](src/index.css#L2571) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.modi` | [`src/index.css:240`](src/index.css#L240) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1364`](src/index.css#L1364) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:1861`](src/index.css#L1861) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.raster` | [`src/index.css:1867`](src/index.css#L1867) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:128`](src/index.css#L128) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:2685`](src/index.css#L2685) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:2691`](src/index.css#L2691) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:2816`](src/index.css#L2816) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:2822`](src/index.css#L2822) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 

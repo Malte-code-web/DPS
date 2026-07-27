@@ -34,10 +34,14 @@ describe('istBekannt mit Monitor', () => {
     expect(istBekannt(patient, 'ekg')).toBe(true);
   });
 
+  it('zeigt auch den Blutdruck über die NIBP-Manschette', () => {
+    expect(istBekannt(frisch(), 'systolischerRR')).toBe(false);
+    expect(istBekannt(mitMonitor(), 'systolischerRR')).toBe(true);
+  });
+
   it('lässt Werte außerhalb des Monitors weiter verborgen', () => {
     const patient = mitMonitor();
-    // Blutdruck (Manschette) und Blutzucker gehören nicht auf den Monitor.
-    expect(istBekannt(patient, 'systolischerRR')).toBe(false);
+    // Blutzucker und Körperbefund gehören nicht auf den Monitor.
     expect(istBekannt(patient, 'blutzucker')).toBe(false);
     expect(istBekannt(patient, 'koerper')).toBe(false);
   });
@@ -58,6 +62,7 @@ describe('monitorAlarme', () => {
       spo2: 98,
       herzfrequenz: 80,
       atemfrequenz: 16,
+      systolischerRR: 120,
     });
     expect(monitorAlarme(stabil)).toEqual([]);
     expect(istMonitorImAlarm(stabil)).toBe(false);
@@ -81,6 +86,15 @@ describe('monitorAlarme', () => {
     expect(monitorAlarme(langsam)).toContainEqual({
       vital: 'herzfrequenz',
       wert: 38,
+      richtung: 'niedrig',
+    });
+  });
+
+  it('schlägt bei zu niedrigem Blutdruck an', () => {
+    const hypoton = mitVitalwerten(mitMonitor(), { systolischerRR: 70 });
+    expect(monitorAlarme(hypoton)).toContainEqual({
+      vital: 'systolischerRR',
+      wert: 70,
       richtung: 'niedrig',
     });
   });

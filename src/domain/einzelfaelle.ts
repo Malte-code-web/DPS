@@ -1,12 +1,13 @@
 import type { Szenario } from './types';
 
 /**
- * @anker einzelfaelle.liste Einzelfälle für den Ein-Person-Modus
+ * @anker einzelfaelle.liste Einzelfälle - Szenarien mit genau einer Person
  *
- * Der Ein-Person-Modus übt den Ablauf an genau einem Patienten: vorsichten,
+ * Fokussierte Fälle für den Ablauf an einem einzigen Patienten: vorsichten,
  * untersuchen, versorgen, verlegen - ohne das Gedränge des MANV. Jeder Fall ist
  * ein Szenario mit einer einzigen Betroffenen und einem klaren Lernschwerpunkt.
- * Die Verschlechterung folgt derselben Mechanik wie im MANV, nur eben in Ruhe.
+ * Sie stehen in der digitalen Übung neben den MANV-Lagen zur Auswahl und lassen
+ * sich, wie jedes Szenario, auch im Alleinspiel starten.
  */
 export const EINZELFAELLE: Szenario[] = [
   {

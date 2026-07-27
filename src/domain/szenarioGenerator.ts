@@ -1,4 +1,4 @@
-import { VERSCHLECHTERUNG_FAKTOR, patientAusVorlage } from './simulation';
+import { patientAusVorlage } from './simulation';
 import { sichtungNachMstart } from './triage';
 import type {
   Koerperregion,
@@ -585,12 +585,8 @@ function baueProblem(muster: Muster, plan: ReturnType<typeof verlaufsplan>, star
   const verlauf: VitalVerlauf = { ...muster.begleit };
   if (plan.zielMinute !== null) {
     const dauer = plan.zielMinute - (plan.startetNachMin ?? 0);
-    // Der globale Tempofaktor (→ `sim.tempo`) drosselt beim Laden alle Raten.
-    // Damit die vorgegebene Zielminute trotzdem exakt getroffen wird, rechnet
-    // der Generator ihn hier heraus.
     verlauf[muster.leitwert] =
-      Math.round((rateFuerZielminute(muster.leitwert, start, dauer) / VERSCHLECHTERUNG_FAKTOR) * 100) /
-      100;
+      Math.round(rateFuerZielminute(muster.leitwert, start, dauer) * 100) / 100;
   }
 
   return {

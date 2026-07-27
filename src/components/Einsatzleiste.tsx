@@ -13,7 +13,14 @@ export function Einsatzleiste({ szenario }: { szenario: Szenario }) {
   return (
     <header className="einsatzleiste">
       <div className="einsatzleiste-links">
-        <h1>{szenario.titel}</h1>
+        <h1>
+          {szenario.titel}
+          {state.alleine && (
+            <span className="allein-marke" title="Alleinspiel: langsamere Verschlechterung">
+              Allein
+            </span>
+          )}
+        </h1>
         <p className="lagemeldung">{szenario.lagemeldung}</p>
       </div>
 

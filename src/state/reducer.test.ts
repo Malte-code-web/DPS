@@ -7,7 +7,7 @@ import {
   VOLLSTAENDIGE_DIAGNOSTIK_SEK,
   istBekannt,
 } from '../domain/diagnostik';
-import { SICHTUNGSDAUER_SEK, sichtungAn } from '../domain/simulation';
+import { SICHTUNGSDAUER_SEK, SOLO_VERSCHLECHTERUNG_FAKTOR, sichtungAn } from '../domain/simulation';
 import { EINZELFAELLE } from '../domain/einzelfaelle';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
@@ -26,13 +26,32 @@ function patient(state: SimulationState, id: string) {
   return gefunden;
 }
 
-describe('Ein-Person-Modus', () => {
-  it('wählt bei einem Einzelfall den Patienten direkt aus', () => {
+describe('Alleinspiel und Einzelfall', () => {
+  const busunfall = SZENARIEN.find((szenario) => szenario.id === 'busunfall-b31')!;
+
+  it('drosselt die Verschlechterung nur im Alleinspiel', () => {
+    const team = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'szenarioStarten',
+      szenario: busunfall,
+    });
+    const solo = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'szenarioStarten',
+      szenario: busunfall,
+      alleine: true,
+    });
+    expect(team.alleine).toBe(false);
+    expect(solo.alleine).toBe(true);
+
+    const teamPat = team.patienten.find((p) => Object.keys(p.probleme[0]?.verlauf ?? {}).length > 0)!;
+    const soloPat = solo.patienten.find((p) => p.id === teamPat.id)!;
+    const [key, teamRate] = Object.entries(teamPat.probleme[0]!.verlauf)[0] as [string, number];
+    const soloRate = (soloPat.probleme[0]!.verlauf as Record<string, number>)[key]!;
+    expect(soloRate).toBeCloseTo(teamRate * SOLO_VERSCHLECHTERUNG_FAKTOR, 5);
+  });
+
+  it('wählt bei einem Einzelfall (eine Person) den Patienten direkt aus', () => {
     const fall = EINZELFAELLE[0]!;
-    const state = simulationReducer(
-      { ...ANFANGSZUSTAND, modus: 'einzelperson' },
-      { typ: 'szenarioStarten', szenario: fall },
-    );
+    const state = simulationReducer(ANFANGSZUSTAND, { typ: 'szenarioStarten', szenario: fall });
     expect(state.phase).toBe('einsatz');
     expect(state.ausgewaehlterPatientId).toBe(fall.patienten[0]!.id);
   });

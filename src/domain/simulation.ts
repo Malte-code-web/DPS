@@ -67,15 +67,16 @@ export function veraendereVitalwerte(basis: Vitalwerte, delta: VitalVerlauf): Vi
 }
 
 /**
- * @anker sim.tempo Wie schnell sich der Zustand verschlechtert
+ * @anker sim.tempo Langsamere Verschlechterung im Alleinspiel
  *
- * Ein globaler Faktor auf alle Verschlechterungsraten - die eine Stellschraube
- * fürs Tempo. 0.8 heißt: alles läuft 20 % langsamer ab, ein Patient hat also
- * rund 25 % mehr Zeit, bis derselbe Zustand erreicht ist. Bewusst am Rand der
- * Simulation (beim Laden der Vorlage), damit die Rechenfunktionen rein bleiben
- * und die Szenariodaten ihre "gemeinten" Raten behalten.
+ * Wer alleine spielt, kann nicht alles gleichzeitig - deshalb läuft die
+ * Verschlechterung dann langsamer. 0.8 heißt rund 25 % mehr Zeit, bis derselbe
+ * Zustand erreicht ist. Der Faktor ist kein globaler Schalter, sondern wird beim
+ * Start je Sitzung an `patientAusVorlage` übergeben; im Teamspiel bleibt es bei
+ * den gemeinten Raten (Faktor 1). So bleiben die Rechenfunktionen und die
+ * Szenariodaten unberührt.
  */
-export const VERSCHLECHTERUNG_FAKTOR = 0.8;
+export const SOLO_VERSCHLECHTERUNG_FAKTOR = 0.8;
 
 function skaliereVerlauf(verlauf: VitalVerlauf, faktor: number): VitalVerlauf {
   const skaliert: VitalVerlauf = {};
@@ -86,17 +87,20 @@ function skaliereVerlauf(verlauf: VitalVerlauf, faktor: number): VitalVerlauf {
 }
 
 /**
- * Erzeugt den Laufzeit-Patienten aus der statischen Szenario-Vorlage.
+ * Erzeugt den Laufzeit-Patienten aus der statischen Szenario-Vorlage. Der
+ * optionale Faktor drosselt die Verschlechterung fürs Alleinspiel (→ `sim.tempo`);
+ * ohne Angabe (Faktor 1) gelten die gemeinten Raten.
  * @anker sim.startzustand Womit ein Patient in den Einsatz startet
  */
-export function patientAusVorlage(vorlage: PatientVorlage): Patient {
+export function patientAusVorlage(vorlage: PatientVorlage, verschlechterungFaktor = 1): Patient {
   return {
     ...vorlage,
-    // Die Verschlechterung wird global gedrosselt (→ `sim.tempo`), damit der
-    // Zustand nicht schneller kippt, als die Übung zu bewältigen ist.
     probleme: vorlage.probleme.map((problem) => ({
       ...problem,
-      verlauf: skaliereVerlauf(problem.verlauf, VERSCHLECHTERUNG_FAKTOR),
+      verlauf:
+        verschlechterungFaktor === 1
+          ? problem.verlauf
+          : skaliereVerlauf(problem.verlauf, verschlechterungFaktor),
     })),
     // Fehlende Zusatzwerte werden aufgefüllt - ältere Vorlagen kennen sie nicht.
     vitalwerte: { ...STANDARD_ZUSATZWERTE, ...vorlage.startVitalwerte },

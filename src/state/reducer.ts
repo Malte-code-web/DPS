@@ -3,6 +3,7 @@ import { DIAGNOSTIK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import {
   SICHTUNGSDAUER_SEK,
+  SOLO_VERSCHLECHTERUNG_FAKTOR,
   fuehreDiagnostikDurch,
   sichtungOffen,
   patientAusVorlage,
@@ -43,6 +44,8 @@ export interface SimulationState {
   ausgewaehlterPatientId: string | null;
   /** Welcher Einsatzabschnitt in der Übersicht angezeigt wird. */
   ausgewaehlterAbschnitt: Einsatzabschnitt;
+  /** Alleinspiel: eine Person, dafür langsamere Verschlechterung (→ `sim.tempo`). */
+  alleine: boolean;
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
@@ -59,6 +62,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   patienten: [],
   ausgewaehlterPatientId: null,
   ausgewaehlterAbschnitt: 'schadensstelle',
+  alleine: false,
 };
 
 /** @anker state.aktionen Alles, was der Übende auslösen kann */
@@ -67,7 +71,7 @@ export type SimulationAction =
   | { typ: 'uebungsleitungOeffnen' }
   | { typ: 'zurueckZumStart' }
   | { typ: 'eigeneSzenarienSetzen'; szenarien: Szenario[] }
-  | { typ: 'szenarioStarten'; szenario: Szenario }
+  | { typ: 'szenarioStarten'; szenario: Szenario; alleine?: boolean }
   | { typ: 'tick'; dtSek: number }
   | { typ: 'pauseUmschalten' }
   | { typ: 'geschwindigkeitSetzen'; wert: number }
@@ -124,10 +128,9 @@ export function simulationReducer(
       return {
         ...state,
         modus: action.modus,
-        // Digitale Übung und Ein-Person-Modus führen in die Szenarioauswahl; die
-        // übrigen Modi zeigen vorerst nur, was sie können sollen.
-        phase:
-          action.modus === 'digital' || action.modus === 'einzelperson' ? 'setup' : 'start',
+        // Nur die digitale Übung führt weiter; die übrigen Modi zeigen
+        // vorerst nur, was sie können sollen.
+        phase: action.modus === 'digital' ? 'setup' : 'start',
       };
 
     case 'uebungsleitungOeffnen':
@@ -139,7 +142,11 @@ export function simulationReducer(
     case 'eigeneSzenarienSetzen':
       return { ...state, eigeneSzenarien: action.szenarien };
 
-    case 'szenarioStarten':
+    case 'szenarioStarten': {
+      const alleine = action.alleine ?? false;
+      // Alleinspiel drosselt die Verschlechterung (→ `sim.tempo`), Teamspiel
+      // läuft mit den gemeinten Raten.
+      const faktor = alleine ? SOLO_VERSCHLECHTERUNG_FAKTOR : 1;
       return {
         ...ANFANGSZUSTAND,
         geschwindigkeit: state.geschwindigkeit,
@@ -148,13 +155,15 @@ export function simulationReducer(
         phase: 'einsatz',
         szenario: action.szenario,
         laufend: true,
+        alleine,
         ausgewaehlterAbschnitt: 'schadensstelle',
-        patienten: action.szenario.patienten.map(patientAusVorlage),
-        // Bei einem einzelnen Betroffenen (Ein-Person-Modus) geht es direkt in
-        // die Patientenansicht - kein Behandlungsplatz, keine Übersicht dazwischen.
+        patienten: action.szenario.patienten.map((vorlage) => patientAusVorlage(vorlage, faktor)),
+        // Ein einzelner Betroffener geht direkt in die Patientenansicht - kein
+        // Behandlungsplatz, keine Übersicht dazwischen.
         ausgewaehlterPatientId:
           action.szenario.patienten.length === 1 ? action.szenario.patienten[0]!.id : null,
       };
+    }
 
     case 'tick': {
       if (!state.laufend || state.phase !== 'einsatz') return state;

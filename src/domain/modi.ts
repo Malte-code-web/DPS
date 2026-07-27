@@ -5,7 +5,7 @@
  * digitale Übung ausgebaut; die übrigen Modi stehen bereits zur Auswahl,
  * damit der Rahmen steht und die Ausbaurichtung sichtbar bleibt.
  */
-export type Trainingsmodus = 'einzelperson' | 'digital' | 'fuehrungskraefte' | 'realuebung';
+export type Trainingsmodus = 'digital' | 'fuehrungskraefte' | 'realuebung';
 
 export type Ausbaustand = 'verfuegbar' | 'in_vorbereitung';
 
@@ -22,23 +22,10 @@ export interface ModusInfo {
 
 export const TRAININGSMODI: ModusInfo[] = [
   {
-    id: 'einzelperson',
-    name: 'Ein-Person-Modus',
-    kurzbeschreibung:
-      'Der Ablauf an genau einem Patienten: vorsichten, untersuchen, versorgen, verlegen - in Ruhe.',
-    zielgruppe: 'Einsteiger und alle, die den Ablauf ohne den Druck des MANV üben wollen',
-    geplant: [
-      'Ein einzelner Fall mit klarem Lernschwerpunkt statt einer vollen Lage',
-      'Dieselbe Zeit- und Verschlechterungsmechanik, nur ohne Gedränge',
-      'Direkter Einstieg in die Patientenansicht, ohne Behandlungsplatz',
-    ],
-    stand: 'verfuegbar',
-  },
-  {
     id: 'digital',
     name: 'Digitale Übung',
     kurzbeschreibung:
-      'Eine vollständige MANV-Lage am Bildschirm: sichten, versorgen, den Behandlungsplatz betreiben.',
+      'Eine vollständige MANV-Lage am Bildschirm: sichten, versorgen, den Behandlungsplatz betreiben - allein oder im Team.',
     zielgruppe: 'Einsatzkräfte im Rettungsdienst und Sanitätsdienst, einzeln oder in Kleingruppen',
     geplant: [
       'Vorsichtung nach mSTaRT an der Schadensstelle',

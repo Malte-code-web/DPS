@@ -29,10 +29,7 @@ function patient(teil: Partial<PatientVorlage>): PatientVorlage {
   };
 }
 
-/**
- * Blutender Patient: 120 mmHg, Rate -9/min. Mit dem Tempofaktor (→ `sim.tempo`,
- * 0.8) fallen effektiv -7,2/min, Tod (30 mmHg) also gegen Minute 13.
- */
+/** Blutender Patient: 120 mmHg fallen mit 9/min - Tod (30 mmHg) nach 10 Minuten. */
 const blutung = patient({
   id: 'P-blutung',
   kritischeBlutung: true,
@@ -53,7 +50,7 @@ const leichtverletzt = patient({ id: 'P-leicht', gehfaehig: true, erwarteteSK: '
 describe('spieleDurch', () => {
   it('lässt einen unbehandelten kritischen Patienten versterben', () => {
     const ergebnis = spieleDurch(blutung);
-    expect(ergebnis.todUnbehandeltMin).toBe(13);
+    expect(ergebnis.todUnbehandeltMin).toBe(10);
     expect(ergebnis.veraendertSich).toBe(true);
   });
 
@@ -82,8 +79,8 @@ describe('spieleDurch', () => {
         },
       ],
     });
-    // 97 % fallen ab Minute 5, mit Tempofaktor effektiv -8 %/min auf 40 % - Minute 13.
-    expect(spieleDurch(spaet).todUnbehandeltMin).toBe(13);
+    // 97 % fallen ab Minute 5 mit 10 %/min auf 40 % - also gegen Minute 11.
+    expect(spieleDurch(spaet).todUnbehandeltMin).toBe(11);
   });
 });
 

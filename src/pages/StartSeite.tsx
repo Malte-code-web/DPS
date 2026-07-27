@@ -71,6 +71,27 @@ export function StartSeite() {
       )}
 
       <section className="szenarioliste">
+        <h2>Gemeinsam üben</h2>
+        <article className="szenario-karte">
+          <h3>Mehrere Geräte, eine Lage</h3>
+          <p className="lagemeldung">
+            Die Übungsleitung eröffnet eine Sitzung, die Spieler treten mit einem Code bei und
+            arbeiten dieselbe MANV-Lage im Team - jeder an seinem Gerät.
+          </p>
+          <div className="szenario-fuss">
+            <span>Übungsleitung + Spieler</span>
+            <button
+              type="button"
+              className="primaer"
+              onClick={() => dispatch({ typ: 'gemeinsamOeffnen' })}
+            >
+              Gemeinsame Übung
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section className="szenarioliste">
         <h2>Übungsleitung</h2>
         <article className="szenario-karte">
           <h3>Szenarien bauen</h3>

@@ -14,6 +14,13 @@ import {
   wendeMassnahmeAn,
 } from '../domain/simulation';
 import type { Trainingsmodus } from '../domain/modi';
+import {
+  KEINE_SITZUNG,
+  erzeugeCode,
+  mitSpieler,
+  ohneSpieler,
+} from '../domain/sitzung';
+import type { Rolle, Sitzungszustand, Spieler } from '../domain/sitzung';
 import type {
   DiagnostikId,
   Einsatzabschnitt,
@@ -24,7 +31,16 @@ import type {
 } from '../domain/types';
 
 /** @anker state.phase Die Hauptzustände der Anwendung */
-export type Phase = 'start' | 'setup' | 'einsatz' | 'debriefing' | 'uebungsleitung';
+export type Phase =
+  | 'start'
+  | 'rolle'
+  | 'anmeldung'
+  | 'beitritt'
+  | 'wartebereich'
+  | 'setup'
+  | 'einsatz'
+  | 'debriefing'
+  | 'uebungsleitung';
 
 /** @anker state.zustand Der gesamte Zustand einer laufenden Übung */
 export interface SimulationState {
@@ -46,6 +62,8 @@ export interface SimulationState {
   ausgewaehlterAbschnitt: Einsatzabschnitt;
   /** Alleinspiel: eine Person, dafür langsamere Verschlechterung (→ `sim.tempo`). */
   alleine: boolean;
+  /** Mehrspieler-Sitzung; inaktiv im Einzelspiel (→ `sitzung.modell`). */
+  sitzung: Sitzungszustand;
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
@@ -63,6 +81,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   ausgewaehlterPatientId: null,
   ausgewaehlterAbschnitt: 'schadensstelle',
   alleine: false,
+  sitzung: KEINE_SITZUNG,
 };
 
 /** @anker state.aktionen Alles, was der Übende auslösen kann */
@@ -82,7 +101,50 @@ export type SimulationAction =
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
-  | { typ: 'zurueckZumSetup' };
+  | { typ: 'zurueckZumSetup' }
+  // --- Mehrspieler (→ `sitzung.modell`) ---
+  | { typ: 'gemeinsamOeffnen' }
+  | { typ: 'rolleWaehlen'; rolle: Rolle }
+  | { typ: 'anmeldungAbschliessen'; name: string; eigeneId: string }
+  | { typ: 'sitzungEroeffnen'; szenario: Szenario }
+  | { typ: 'spielerBeitreten'; code: string; name: string; eigeneId: string }
+  | { typ: 'spielerHinzugefuegt'; spieler: Spieler }
+  | { typ: 'spielerEntfernt'; spielerId: string }
+  | { typ: 'sitzungStarten' }
+  | { typ: 'sitzungVerlassen' }
+  | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss };
+
+/**
+ * @anker state.schnappschuss Der geteilte, host-autoritative Ausschnitt des Zustands
+ *
+ * Der Übungsleiter (Host) führt die Simulation und verteilt genau diese Felder;
+ * die Navigation (welcher Patient, welcher Abschnitt) bleibt bei jedem Client
+ * lokal. So arbeiten mehrere gleichzeitig an derselben Lage, ohne sich die
+ * Ansicht gegenseitig umzuschalten.
+ */
+export interface Schnappschuss {
+  phase: Phase;
+  szenario: Szenario | null;
+  zeitSek: number;
+  laufend: boolean;
+  geschwindigkeit: number;
+  patienten: Patient[];
+  spieler: Spieler[];
+  status: Sitzungszustand['status'];
+}
+
+export function schnappschussAus(state: SimulationState): Schnappschuss {
+  return {
+    phase: state.phase,
+    szenario: state.szenario,
+    zeitSek: state.zeitSek,
+    laufend: state.laufend,
+    geschwindigkeit: state.geschwindigkeit,
+    patienten: state.patienten,
+    spieler: state.sitzung.spieler,
+    status: state.sitzung.status,
+  };
+}
 
 /**
  * @anker state.zeit Kernmechanik: jede Handlung lässt die Uhr für alle laufen
@@ -250,6 +312,120 @@ export function simulationReducer(
         modus: state.modus,
         phase: 'setup',
       };
+
+    // --- Mehrspieler -------------------------------------------------
+    case 'gemeinsamOeffnen':
+      return { ...state, phase: 'rolle', modus: 'digital', sitzung: KEINE_SITZUNG };
+
+    case 'rolleWaehlen':
+      return {
+        ...state,
+        phase: action.rolle === 'uebungsleiter' ? 'anmeldung' : 'beitritt',
+        sitzung: { ...KEINE_SITZUNG, rolle: action.rolle },
+      };
+
+    case 'anmeldungAbschliessen':
+      return {
+        ...state,
+        phase: 'setup',
+        sitzung: {
+          ...state.sitzung,
+          rolle: 'uebungsleiter',
+          eigeneId: action.eigeneId,
+          eigenerName: action.name,
+        },
+      };
+
+    case 'sitzungEroeffnen': {
+      const code = erzeugeCode();
+      const selbst: Spieler = {
+        id: state.sitzung.eigeneId ?? 'leiter',
+        name: state.sitzung.eigenerName ?? 'Übungsleitung',
+        rolle: 'uebungsleiter',
+      };
+      return {
+        ...ANFANGSZUSTAND,
+        eigeneSzenarien: state.eigeneSzenarien,
+        geschwindigkeit: state.geschwindigkeit,
+        modus: 'digital',
+        phase: 'wartebereich',
+        szenario: action.szenario,
+        sitzung: {
+          aktiv: true,
+          rolle: 'uebungsleiter',
+          code,
+          eigeneId: selbst.id,
+          eigenerName: selbst.name,
+          spieler: [selbst],
+          status: 'wartet',
+        },
+      };
+    }
+
+    case 'spielerBeitreten':
+      return {
+        ...ANFANGSZUSTAND,
+        eigeneSzenarien: state.eigeneSzenarien,
+        modus: 'digital',
+        phase: 'wartebereich',
+        sitzung: {
+          aktiv: true,
+          rolle: 'spieler',
+          code: action.code,
+          eigeneId: action.eigeneId,
+          eigenerName: action.name,
+          spieler: [],
+          status: 'wartet',
+        },
+      };
+
+    case 'spielerHinzugefuegt':
+      return {
+        ...state,
+        sitzung: { ...state.sitzung, spieler: mitSpieler(state.sitzung.spieler, action.spieler) },
+      };
+
+    case 'spielerEntfernt':
+      return {
+        ...state,
+        sitzung: { ...state.sitzung, spieler: ohneSpieler(state.sitzung.spieler, action.spielerId) },
+      };
+
+    case 'sitzungStarten':
+      if (!state.szenario) return state;
+      return {
+        ...state,
+        phase: 'einsatz',
+        laufend: true,
+        zeitSek: 0,
+        ausgewaehlterAbschnitt: 'schadensstelle',
+        ausgewaehlterPatientId: null,
+        patienten: state.szenario.patienten.map((vorlage) => patientAusVorlage(vorlage)),
+        sitzung: { ...state.sitzung, status: 'laeuft' },
+      };
+
+    case 'sitzungVerlassen':
+      return {
+        ...ANFANGSZUSTAND,
+        eigeneSzenarien: state.eigeneSzenarien,
+        geschwindigkeit: state.geschwindigkeit,
+      };
+
+    case 'schnappschussAnwenden': {
+      const s = action.schnappschuss;
+      return {
+        ...state,
+        phase: s.phase,
+        szenario: s.szenario,
+        zeitSek: s.zeitSek,
+        laufend: s.laufend,
+        geschwindigkeit: s.geschwindigkeit,
+        patienten: s.patienten,
+        // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
+        // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.
+        sitzung: { ...state.sitzung, spieler: s.spieler, status: s.status },
+      };
+    }
 
     default:
       return state;

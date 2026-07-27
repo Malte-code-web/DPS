@@ -8,6 +8,17 @@ import type { Szenario } from '../domain/types';
 export function SetupSeite() {
   const { state, dispatch } = useSimulation();
   const [alleine, setAlleine] = useState(false);
+  // Als Übungsleitung wird hier das Szenario gewählt und die Sitzung eröffnet
+  // (Wartebereich), statt direkt allein zu starten.
+  const host = state.sitzung.rolle === 'uebungsleiter';
+
+  const starten = (szenario: (typeof SZENARIEN)[number]) => {
+    if (host) {
+      dispatch({ typ: 'sitzungEroeffnen', szenario });
+    } else {
+      dispatch({ typ: 'szenarioStarten', szenario, alleine });
+    }
+  };
 
   const gruppen: { titel: string; szenarien: Szenario[]; leer: string }[] = [
     { titel: 'Mitgelieferte Szenarien', szenarien: SZENARIEN, leer: '' },
@@ -22,34 +33,41 @@ export function SetupSeite() {
   return (
     <main className="setup">
       <section className="setup-kopf">
-        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
-          &larr; Trainingsmodus
+        <button
+          type="button"
+          onClick={() =>
+            dispatch(host ? { typ: 'gemeinsamOeffnen' } : { typ: 'zurueckZumStart' })
+          }
+        >
+          &larr; {host ? 'Rolle' : 'Trainingsmodus'}
         </button>
-        <h1>Digitale Übung</h1>
+        <h1>{host ? 'Szenario für die Sitzung' : 'Digitale Übung'}</h1>
         <p>
-          Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert
-          wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung
-          nach mSTaRT und eine sinnvolle Verteilung der knappen Ressourcen.
+          {host
+            ? 'Wähle die Lage, die alle gemeinsam bearbeiten. Anschließend geht es in den Wartebereich, wo die Spieler beitreten - dort startest du die Übung.'
+            : 'Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung nach mSTaRT und eine sinnvolle Verteilung der knappen Ressourcen.'}
         </p>
       </section>
 
       {/* @anker ui.alleinspiel Vor dem Start wählen, ob man allein spielt */}
-      <section className="alleinspiel">
-        <label className="alleinspiel-schalter">
-          <input
-            type="checkbox"
-            checked={alleine}
-            onChange={(event) => setAlleine(event.target.checked)}
-          />
-          <span>
-            <strong>Alleine spielen</strong>
-            <span className="alleinspiel-hinweis">
-              Für eine einzelne Person: Die Verschlechterung läuft rund 25 % langsamer, weil man
-              nicht alles gleichzeitig schaffen kann. Gilt auch für die volle MANV-Lage.
+      {!host && (
+        <section className="alleinspiel">
+          <label className="alleinspiel-schalter">
+            <input
+              type="checkbox"
+              checked={alleine}
+              onChange={(event) => setAlleine(event.target.checked)}
+            />
+            <span>
+              <strong>Alleine spielen</strong>
+              <span className="alleinspiel-hinweis">
+                Für eine einzelne Person: Die Verschlechterung läuft rund 25 % langsamer, weil man
+                nicht alles gleichzeitig schaffen kann. Gilt auch für die volle MANV-Lage.
+              </span>
             </span>
-          </span>
-        </label>
-      </section>
+          </label>
+        </section>
+      )}
 
       {gruppen.map((gruppe) => (
         <section key={gruppe.titel} className="szenarioliste">
@@ -68,12 +86,8 @@ export function SetupSeite() {
                       ? '1 Betroffene(r)'
                       : `${szenario.patienten.length} Betroffene`}
                   </span>
-                  <button
-                    type="button"
-                    className="primaer"
-                    onClick={() => dispatch({ typ: 'szenarioStarten', szenario, alleine })}
-                  >
-                    {alleine ? 'Allein starten' : 'Einsatz starten'}
+                  <button type="button" className="primaer" onClick={() => starten(szenario)}>
+                    {host ? 'Sitzung eröffnen' : alleine ? 'Allein starten' : 'Einsatz starten'}
                   </button>
                 </div>
               </article>

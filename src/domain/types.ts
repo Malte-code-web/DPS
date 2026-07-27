@@ -129,6 +129,7 @@ export type MassnahmeId =
   | 'mundraumkontrolle'
   | 'atemwege_freimachen'
   | 'absaugen_oral'
+  | 'guedeltubus'
   | 'wendltubus'
   | 'beatmung'
   | 'blutstillung'
@@ -230,6 +231,12 @@ export interface Massnahme {
    * nichts - die Sättigung steigt nur, wenn der Atemweg wirklich verlegt war.
    */
   effektNurBeiProblem?: boolean;
+  /**
+   * Wirkt nur beim bewusstlosen Patienten. Guedel- und Wendl-Tubus lösen beim
+   * wachen Patienten den Würgereiz aus und werden nicht toleriert - sie sichern
+   * den Atemweg dann nicht.
+   */
+  nurBeiBewusstlosigkeit?: boolean;
   /** Nicht mehr in der Auswahl, aber in alten Szenarien noch gültig. */
   veraltet?: boolean;
 }
@@ -290,6 +297,13 @@ export interface Problem {
    * Körperschema sofort, ohne Bodycheck.
    */
   offensichtlich?: boolean;
+  /**
+   * Wird nicht schon durch Hinsehen, sondern erst durch diese Maßnahme
+   * aufgedeckt - der verlegte Atemweg etwa durch die Mundraumkontrolle. Der
+   * Bodycheck deckt zusätzlich alles auf; dieses Feld ist der zweite, gezielte
+   * Weg dorthin.
+   */
+  entdecktDurch?: MassnahmeId;
 }
 
 /**

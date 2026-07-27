@@ -178,17 +178,30 @@ export interface Koerpermarke {
 }
 
 /**
- * @anker diagnostik.koerpermarken Was das Körperschema wann zeigt
+ * @anker diagnostik.entdeckt Wann ein Problem sichtbar wird
  *
  * Offensichtliche Probleme - sichtbare Blutung, Fehlstellung, Verbrennung -
- * erscheinen sofort: Man sieht sie, ohne den Patienten anzufassen. Alles
- * andere erscheint erst nach dem Bodycheck. Versorgt bleibt versorgt sichtbar,
- * damit der Erfolg ablesbar ist.
+ * erscheinen sofort: Man sieht sie, ohne den Patienten anzufassen. Der Bodycheck
+ * deckt alles Übrige auf. Manche Probleme haben zusätzlich einen gezielten Weg:
+ * Der verlegte Atemweg (`entdecktDurch: 'mundraumkontrolle'`) wird schon durch
+ * die Mundraumkontrolle sichtbar, ohne dass es den vollen Bodycheck braucht.
+ */
+export function problemEntdeckt(patient: Patient, problem: Patient['probleme'][number]): boolean {
+  if (problem.offensichtlich) return true;
+  if (istBekannt(patient, 'koerper')) return true;
+  if (problem.entdecktDurch) return patient.durchgefuehrteMassnahmen.includes(problem.entdecktDurch);
+  return false;
+}
+
+/**
+ * @anker diagnostik.koerpermarken Was das Körperschema wann zeigt
+ *
+ * Zeigt jedes entdeckte Problem (→ `diagnostik.entdeckt`) an seiner Körperregion.
+ * Versorgt bleibt versorgt sichtbar, damit der Erfolg ablesbar ist.
  */
 export function koerperMarken(patient: Patient): Koerpermarke[] {
-  const bodycheck = istBekannt(patient, 'koerper');
   return patient.probleme
-    .filter((problem) => problem.koerperregion && (bodycheck || problem.offensichtlich))
+    .filter((problem) => problem.koerperregion && problemEntdeckt(patient, problem))
     .map((problem) => ({
       id: problem.id,
       label: problem.label,

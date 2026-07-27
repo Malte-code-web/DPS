@@ -179,6 +179,9 @@ export const SICHTUNGSDAUER_SEK = 20;
  */
 export const UNTERSUCHUNGSDAUER_SEK = DIAGNOSTIK.bodycheck.dauerSek;
 
+/** Ab dieser GCS und darunter gilt der Patient als bewusstlos (ohne Schutzreflexe). */
+export const BEWUSSTLOS_GCS = 8;
+
 /**
  * @anker sim.zeitraum Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern
  *
@@ -215,13 +218,22 @@ export function wendeMassnahmeAn(
   if (patient.status === 'verstorben') return patient;
 
   const massnahme = MASSNAHMEN[massnahmeId];
-  const geloest = patient.probleme
-    .filter(
-      (problem) =>
-        !patient.behandelteProbleme.includes(problem.id) &&
-        problem.behandeltDurch.includes(massnahmeId),
-    )
-    .map((problem) => problem.id);
+
+  // @anker sim.bewusstlos Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen
+  // Beim wachen Patienten löst der Tubus den Würgereiz aus, sichert den Atemweg
+  // also nicht - er löst dann kein Problem und hat keinen Effekt.
+  const bewusstlos = patient.vitalwerte.gcs <= BEWUSSTLOS_GCS;
+  const wirdToleriert = !massnahme.nurBeiBewusstlosigkeit || bewusstlos;
+
+  const geloest = wirdToleriert
+    ? patient.probleme
+        .filter(
+          (problem) =>
+            !patient.behandelteProbleme.includes(problem.id) &&
+            problem.behandeltDurch.includes(massnahmeId),
+        )
+        .map((problem) => problem.id)
+    : [];
 
   // @anker sim.effektnurbeiproblem Atemwegssicherung wirkt nur bei verlegtem Atemweg
   const effektWirkt =
@@ -251,9 +263,11 @@ export function wendeMassnahmeAn(
   const text =
     geloest.length > 0
       ? `${massnahme.label} - Problem behoben (${geloest.join(', ')}).`
-      : massnahme.effektNurBeiProblem
-        ? `${massnahme.label} - Atemweg war frei, kein Effekt.`
-        : `${massnahme.label} - ohne Effekt auf ein bestehendes Problem.`;
+      : massnahme.nurBeiBewusstlosigkeit && !bewusstlos
+        ? `${massnahme.label} - beim wachen Patienten nicht toleriert (Würgereiz), kein Effekt.`
+        : massnahme.effektNurBeiProblem
+          ? `${massnahme.label} - Atemweg war frei, kein Effekt.`
+          : `${massnahme.label} - ohne Effekt auf ein bestehendes Problem.`;
 
   return protokolliere(naechster, zeitSek, text);
 }

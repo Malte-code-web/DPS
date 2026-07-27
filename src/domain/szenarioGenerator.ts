@@ -185,7 +185,7 @@ const MUSTER: Muster[] = [
     problemBeschreibung: 'Keine Reaktion auf Ansprache, schnarchende Atmung, Blut im Mundraum.',
     pupillen: 'seitendifferent',
     schmerz: 0,
-    behandeltDurch: ['atemwege_freimachen', 'wendltubus', 'intubation'],
+    behandeltDurch: ['atemwege_freimachen', 'guedeltubus', 'wendltubus', 'intubation'],
     leitwert: 'spo2',
     start: 86,
     begleit: { atemfrequenz: -0.3 },

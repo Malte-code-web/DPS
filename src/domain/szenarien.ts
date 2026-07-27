@@ -121,11 +121,11 @@ const busunfall: Szenario = {
       probleme: [
         {
           id: 'atemwegsverlegung',
-          offensichtlich: true,
+          entdecktDurch: 'mundraumkontrolle',
           koerperregion: 'kopf',
           label: 'Verlegter Atemweg',
           beschreibung: 'Schnarchende Atmung, Blut und Erbrochenes im Mundraum, Zunge fällt zurück.',
-          behandeltDurch: ['atemwege_freimachen', 'wendltubus', 'intubation'],
+          behandeltDurch: ['atemwege_freimachen', 'guedeltubus', 'wendltubus', 'intubation'],
           verlauf: { spo2: -4, gcs: -0.3, herzfrequenz: 2 },
         },
       ],

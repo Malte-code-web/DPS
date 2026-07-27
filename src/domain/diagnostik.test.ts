@@ -97,6 +97,27 @@ describe('koerperMarken', () => {
   });
 });
 
+describe('Verlegter Atemweg - entdeckt durch Mundraumkontrolle oder Bodycheck', () => {
+  // B-03 Sabine Krüger: verlegter Atemweg, nicht offensichtlich.
+  const b03 = (): Patient =>
+    patientAusVorlage(SZENARIEN[0]!.patienten.find((p) => p.id === 'B-03')!);
+
+  it('bleibt ohne Untersuchung verborgen', () => {
+    expect(koerperMarken(b03())).toHaveLength(0);
+  });
+
+  it('wird durch die Mundraumkontrolle sichtbar', () => {
+    const patient = wendeMassnahmeAn(b03(), 'mundraumkontrolle', 0);
+    const marken = koerperMarken(patient);
+    expect(marken.some((marke) => marke.region === 'kopf')).toBe(true);
+  });
+
+  it('wird auch durch den Bodycheck sichtbar', () => {
+    const patient = fuehreDiagnostikDurch(b03(), 'bodycheck', 0);
+    expect(koerperMarken(patient).some((marke) => marke.region === 'kopf')).toBe(true);
+  });
+});
+
 describe('istBekannt', () => {
   it('kennt am Anfang keinen einzigen Wert', () => {
     const patient = frisch();

@@ -8,7 +8,7 @@ import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
 import { Verlegung } from '../../components/Verlegung';
 import { Bereichsseite } from './Bereichsseite';
-import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
+import { diagnostikZeitSek, istBekannt, problemEntdeckt } from '../../domain/diagnostik';
 import { MASSNAHMEN } from '../../domain/massnahmen';
 import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
@@ -56,6 +56,9 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   const anSchadensstelle = patient.abschnitt === 'schadensstelle';
   const offeneProbleme = aktiveProbleme(patient, state.zeitSek);
+  // Was der Übende schon sehen darf - offensichtlich, per Bodycheck oder gezielt
+  // aufgedeckt (der verlegte Atemweg durch die Mundraumkontrolle).
+  const entdeckteProbleme = offeneProbleme.filter((problem) => problemEntdeckt(patient, problem));
   const geloesteProbleme = patient.probleme.filter((problem) =>
     patient.behandelteProbleme.includes(problem.id),
   );
@@ -173,28 +176,29 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
 
           <Koerperschema patient={patient} />
 
-          {istBekannt(patient, 'koerper') ? (
-            <>
-              <p className="detail-befund">{patient.untersuchungsbefund}</p>
-              {offeneProbleme.length > 0 && (
-                <ul className="problemliste">
-                  {offeneProbleme.map((problem) => (
-                    <li key={problem.id}>
-                      <strong>
-                        {problem.label}
-                        {problem.koerperregion && (
-                          <span className="problem-region">
-                            {KOERPERREGION_TEXT[problem.koerperregion]}
-                          </span>
-                        )}
-                      </strong>
-                      <span>{problem.beschreibung}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : (
+          {istBekannt(patient, 'koerper') && (
+            <p className="detail-befund">{patient.untersuchungsbefund}</p>
+          )}
+
+          {entdeckteProbleme.length > 0 && (
+            <ul className="problemliste">
+              {entdeckteProbleme.map((problem) => (
+                <li key={problem.id}>
+                  <strong>
+                    {problem.label}
+                    {problem.koerperregion && (
+                      <span className="problem-region">
+                        {KOERPERREGION_TEXT[problem.koerperregion]}
+                      </span>
+                    )}
+                  </strong>
+                  <span>{problem.beschreibung}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!istBekannt(patient, 'koerper') && (
             <button
               type="button"
               className="bodycheck-knopf"

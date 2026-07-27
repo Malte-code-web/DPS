@@ -42,8 +42,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
-| Maßnahmen | 53 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung; Atemwegssicherung wirkt erst nach Mundraumkontrolle |
-| Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit |
+| Maßnahmen | 54 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026: Basismaßnahmen, invasive Maßnahmen und 26 Medikamente mit Indikation und Dosierung; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel- und Wendl-Tubus nur beim Bewusstlosen |
+| Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit; der verlegte Atemweg wird durch Mundraumkontrolle oder Bodycheck entdeckt |
 | Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
 | Sichtung auf der Anhängekarte | Vier Sichtungszeilen mit I–IV/EX und Uhrzeit; vor jeder Verlegung Pflicht, endgültige Sichtung jederzeit möglich |
@@ -52,7 +52,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-126 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
+132 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -261,6 +261,23 @@ ein Verstorbener löst keinen Ton mehr aus.
 Der Monitor ist keine eigene Zustandsgröße am Patienten, sondern ergibt sich
 daraus, ob die Maßnahme durchgeführt wurde. So kann er nicht in Widerspruch zum
 Rest des Zustands geraten.
+
+### Der Atemweg
+
+Der **verlegte Atemweg** ist nicht von außen zu sehen: Er wird erst durch die
+**Mundraumkontrolle** aufgedeckt (`entdecktDurch: 'mundraumkontrolle'`, →
+`diagnostik.entdeckt`) - der volle Bodycheck findet ihn ebenfalls, aber die
+Mundraumkontrolle ist der schnelle, gezielte Weg. Erst wenn er entdeckt (und
+damit vorhanden) ist, hat das **Freimachen der Atemwege** einen Effekt (→
+`sim.effektnurbeiproblem`).
+
+**Guedel- und Wendl-Tubus** werden nur vom **Bewusstlosen** toleriert
+(GCS ≤ 8, → `sim.bewusstlos`): Beim wachen Patienten löst der Tubus den
+Würgereiz aus, sichert den Atemweg also nicht - er bleibt wirkungslos, und das
+Protokoll sagt, warum. Der Handgriff (Freimachen, Absaugen) hat diese
+Einschränkung nicht. Fachlich würde der nasopharyngeale Wendl-Tubus auch beim
+wachen Patienten toleriert; hier ist er der Einfachheit halber wie der Guedel
+an die Bewusstlosigkeit gebunden.
 
 ### Versuchung
 
@@ -556,7 +573,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_120 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -579,8 +596,9 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `diagnostik.bekannt` | [`src/domain/diagnostik.ts:134`](src/domain/diagnostik.ts#L134) | Ist dieser Befund schon erhoben? |
+| `diagnostik.entdeckt` | [`src/domain/diagnostik.ts:181`](src/domain/diagnostik.ts#L181) | Wann ein Problem sichtbar wird |
 | `diagnostik.katalog` | [`src/domain/diagnostik.ts:11`](src/domain/diagnostik.ts#L11) | Alle Untersuchungen mit Dauer und aufgedecktem Befund |
-| `diagnostik.koerpermarken` | [`src/domain/diagnostik.ts:181`](src/domain/diagnostik.ts#L181) | Was das Körperschema wann zeigt |
+| `diagnostik.koerpermarken` | [`src/domain/diagnostik.ts:197`](src/domain/diagnostik.ts#L197) | Was das Körperschema wann zeigt |
 | `diagnostik.zuordnung` | [`src/domain/diagnostik.ts:149`](src/domain/diagnostik.ts#L149) | Welche Untersuchung ein Feld der Befundtafel öffnet |
 
 #### format
@@ -614,25 +632,25 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.schnell` | [`src/domain/massnahmen.ts:720`](src/domain/massnahmen.ts#L720) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
-| `massnahmen.sofort` | [`src/domain/massnahmen.ts:732`](src/domain/massnahmen.ts#L732) | Lebensrettende Griffe der Schadensstelle |
-| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:688`](src/domain/massnahmen.ts#L688) | Was aus der Auswahl verschwindet, aber gültig bleibt |
-| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:754`](src/domain/massnahmen.ts#L754) | Was vor einer Maßnahme erledigt sein muss |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:700`](src/domain/massnahmen.ts#L700) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.schnell` | [`src/domain/massnahmen.ts:736`](src/domain/massnahmen.ts#L736) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
+| `massnahmen.sofort` | [`src/domain/massnahmen.ts:748`](src/domain/massnahmen.ts#L748) | Lebensrettende Griffe der Schadensstelle |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:704`](src/domain/massnahmen.ts#L704) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:770`](src/domain/massnahmen.ts#L770) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:716`](src/domain/massnahmen.ts#L716) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:296`](src/domain/types.ts#L296) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:370`](src/domain/types.ts#L370) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:416`](src/domain/types.ts#L416) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:310`](src/domain/types.ts#L310) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:384`](src/domain/types.ts#L384) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:430`](src/domain/types.ts#L430) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:239`](src/domain/types.ts#L239) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:405`](src/domain/types.ts#L405) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:340`](src/domain/types.ts#L340) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:273`](src/domain/types.ts#L273) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
-| `modell.qualifikation` | [`src/domain/types.ts:190`](src/domain/types.ts#L190) | Basis, Notfallsanitäter nach SAA, Notärztin |
+| `modell.koerperregion` | [`src/domain/types.ts:246`](src/domain/types.ts#L246) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.patient` | [`src/domain/types.ts:419`](src/domain/types.ts#L419) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:354`](src/domain/types.ts#L354) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:280`](src/domain/types.ts#L280) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.qualifikation` | [`src/domain/types.ts:191`](src/domain/types.ts#L191) | Basis, Notfallsanitäter nach SAA, Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -662,19 +680,20 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `sim.befunde` | [`src/domain/simulation.ts:146`](src/domain/simulation.ts#L146) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.diagnostik` | [`src/domain/simulation.ts:263`](src/domain/simulation.ts#L263) | Eine Untersuchung deckt genau ihren Befund auf |
-| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:226`](src/domain/simulation.ts#L226) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
+| `sim.bewusstlos` | [`src/domain/simulation.ts:222`](src/domain/simulation.ts#L222) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
+| `sim.diagnostik` | [`src/domain/simulation.ts:277`](src/domain/simulation.ts#L277) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:238`](src/domain/simulation.ts#L238) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
 | `sim.gleitkomma` | [`src/domain/simulation.ts:55`](src/domain/simulation.ts#L55) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:361`](src/domain/simulation.ts#L361) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:208`](src/domain/simulation.ts#L208) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
-| `sim.sichtungOffen` | [`src/domain/simulation.ts:310`](src/domain/simulation.ts#L310) | Steht an dieser Station noch eine Sichtung aus? |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:375`](src/domain/simulation.ts#L375) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:211`](src/domain/simulation.ts#L211) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.sichtungOffen` | [`src/domain/simulation.ts:324`](src/domain/simulation.ts#L324) | Steht an dieser Station noch eine Sichtung aus? |
 | `sim.standardwerte` | [`src/domain/simulation.ts:35`](src/domain/simulation.ts#L35) | Unauffällige Vorgaben für die später ergänzten Werte |
 | `sim.startzustand` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Womit ein Patient in den Einsatz startet |
 | `sim.tick` | [`src/domain/simulation.ts:121`](src/domain/simulation.ts#L121) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
 | `sim.tod` | [`src/domain/simulation.ts:110`](src/domain/simulation.ts#L110) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:332`](src/domain/simulation.ts#L332) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.verlegung` | [`src/domain/simulation.ts:346`](src/domain/simulation.ts#L346) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
 | `sim.zeitkosten` | [`src/domain/simulation.ts:172`](src/domain/simulation.ts#L172) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:183`](src/domain/simulation.ts#L183) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.zeitraum` | [`src/domain/simulation.ts:186`](src/domain/simulation.ts#L186) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### speicher
 
@@ -734,6 +753,7 @@ _117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
+| `test.tubus` | [`src/domain/simulation.test.ts:244`](src/domain/simulation.test.ts#L244) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:28`](src/state/reducer.test.ts#L28) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:108`](src/domain/simulation.test.ts#L108) | Verschlechterung, Todesfaelle und Latenzzeiten |
 

@@ -240,3 +240,38 @@ describe('Atemwegssicherung', () => {
     expect(versorgt.verlauf.at(-1)?.text).toContain('kein Effekt');
   });
 });
+
+/** @anker test.tubus Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert */
+describe('Tubus nur beim Bewusstlosen', () => {
+  // B-03 Sabine Krüger: verlegter Atemweg, GCS 7 - bewusstlos.
+  const bewusstlos = (): Patient => patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-03')!);
+  const wach = (): Patient => {
+    const patient = bewusstlos();
+    return { ...patient, vitalwerte: { ...patient.vitalwerte, gcs: 13 } };
+  };
+
+  it('kennzeichnet Guedel und Wendl als nur bei Bewusstlosigkeit wirksam', () => {
+    expect(MASSNAHMEN.guedeltubus.nurBeiBewusstlosigkeit).toBe(true);
+    expect(MASSNAHMEN.wendltubus.nurBeiBewusstlosigkeit).toBe(true);
+    // Der Handgriff (Freimachen) hat diese Einschränkung nicht.
+    expect(MASSNAHMEN.atemwege_freimachen.nurBeiBewusstlosigkeit).toBeUndefined();
+  });
+
+  it('sichert beim Bewusstlosen den Atemweg und hebt die Sättigung', () => {
+    const patient = bewusstlos();
+    expect(patient.vitalwerte.gcs).toBeLessThanOrEqual(8);
+    for (const tubus of ['guedeltubus', 'wendltubus'] as const) {
+      const versorgt = wendeMassnahmeAn(patient, tubus, 0);
+      expect(versorgt.behandelteProbleme, tubus).toContain('atemwegsverlegung');
+      expect(versorgt.vitalwerte.spo2, tubus).toBeGreaterThan(patient.vitalwerte.spo2);
+    }
+  });
+
+  it('wird beim wachen Patienten nicht toleriert und bleibt wirkungslos', () => {
+    const patient = wach();
+    const versucht = wendeMassnahmeAn(patient, 'guedeltubus', 0);
+    expect(versucht.behandelteProbleme).not.toContain('atemwegsverlegung');
+    expect(versucht.vitalwerte.spo2).toBe(patient.vitalwerte.spo2);
+    expect(versucht.verlauf.at(-1)?.text).toContain('nicht toleriert');
+  });
+});

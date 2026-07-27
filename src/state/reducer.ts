@@ -52,9 +52,10 @@ export const ANFANGSZUSTAND: SimulationState = {
   eigeneSzenarien: [],
   zeitSek: 0,
   laufend: false,
-  // Jede Handlung kostet zusaetzlich ihre eigene Dauer - der Zeitraffer darf
-  // deshalb moderat bleiben, sonst laeuft die Lage davon.
-  geschwindigkeit: 2,
+  // Startet in Echtzeit. Jede Handlung kostet zusaetzlich ihre eigene Dauer,
+  // deshalb bleibt der Zeitraffer eine bewusste Entscheidung der Uebungsleitung,
+  // nicht die Voreinstellung.
+  geschwindigkeit: 1,
   patienten: [],
   ausgewaehlterPatientId: null,
   ausgewaehlterAbschnitt: 'schadensstelle',

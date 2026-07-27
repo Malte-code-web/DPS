@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Anhaengekarte } from '../../components/Anhaengekarte';
 import { Befundtafel } from '../../components/Befundtafel';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
+import { Monitor } from '../../components/Monitor';
 import { Sofortmassnahmen } from '../../components/Sofortmassnahmen';
 import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
@@ -9,6 +10,7 @@ import { Verlegung } from '../../components/Verlegung';
 import { Bereichsseite } from './Bereichsseite';
 import { diagnostikZeitSek, istBekannt } from '../../domain/diagnostik';
 import { MASSNAHMEN } from '../../domain/massnahmen';
+import { monitorAngeschlossen } from '../../domain/monitor';
 import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
@@ -81,6 +83,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
           }
         />
       )}
+
+      {monitorAngeschlossen(patient) && <Monitor patient={patient} />}
 
       <div className="bereichswahl" role="tablist">
         <button

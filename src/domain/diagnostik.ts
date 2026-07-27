@@ -1,3 +1,4 @@
+import { MONITOR_BEFUNDE, monitorAngeschlossen } from './monitor';
 import type {
   Befundschluessel,
   Diagnostik,
@@ -136,6 +137,9 @@ export function diagnostikDerGruppe(gruppe: Diagnostikgruppe): Diagnostik[] {
  * hier false ergibt, erscheint in der Oberfläche als "nicht erhoben".
  */
 export function istBekannt(patient: Patient, schluessel: Befundschluessel): boolean {
+  // Ein angeschlossener Monitor hält seine Werte dauerhaft sichtbar, ohne dass
+  // man sie einzeln erhebt (→ `monitor.modell`).
+  if (monitorAngeschlossen(patient) && MONITOR_BEFUNDE.includes(schluessel)) return true;
   return patient.durchgefuehrteDiagnostik.some((id) =>
     DIAGNOSTIK[id].zeigt.includes(schluessel),
   );

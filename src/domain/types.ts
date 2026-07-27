@@ -136,6 +136,7 @@ export type MassnahmeId =
   | 'immobilisation'
   | 'waermeerhalt'
   | 'betreuung'
+  | 'monitoring'
   // SAA - invasive Maßnahmen
   | 'zugang_iv'
   | 'zugang_io'

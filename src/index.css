@@ -1687,6 +1687,138 @@ button.gefahr {
   color: var(--ok);
 }
 
+/* --- Patientenmonitor: kontinuierliche Werte, Alarm bei Grenzverletzung --- */
+
+.monitor {
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  background: #0c1017;
+}
+
+.monitor-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.monitor-titel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.monitor-status {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  color: var(--ok);
+}
+
+.monitor-status-alarm {
+  border-color: color-mix(in srgb, var(--sk1) 60%, transparent);
+  color: var(--sk1);
+}
+
+.monitor-werte {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.monitor-wert {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--rand);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+
+.monitor-kurz {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-leise);
+}
+
+.monitor-zahl {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.monitor-zahl small {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--text-leise);
+  margin-left: 0.15rem;
+}
+
+.monitor-wert.vital-auffaellig .monitor-zahl {
+  color: var(--warn);
+}
+
+.monitor-wert.vital-kritisch .monitor-zahl {
+  color: var(--sk1);
+}
+
+.monitor-alarmtext {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sk1);
+}
+
+.monitor-alarm {
+  border-color: color-mix(in srgb, var(--sk1) 65%, transparent);
+  animation: monitor-puls 1s ease-in-out infinite;
+}
+
+/* Kachelweite Alarmmarkierung und Board-Marke. */
+.patient-karte-alarm {
+  border-color: color-mix(in srgb, var(--sk1) 70%, transparent);
+  animation: monitor-puls 1s ease-in-out infinite;
+}
+
+.monitor-alarm-marke {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  color: var(--sk1);
+  border: 1px solid color-mix(in srgb, var(--sk1) 60%, transparent);
+  background: color-mix(in srgb, var(--sk1) 12%, transparent);
+}
+
+@keyframes monitor-puls {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--sk1) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--sk1) 18%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitor-alarm,
+  .patient-karte-alarm {
+    animation: none;
+  }
+}
+
 .patientseite-kopf {
   display: flex;
   align-items: flex-start;

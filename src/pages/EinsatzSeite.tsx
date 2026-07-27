@@ -2,7 +2,9 @@ import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
+import { istMonitorImAlarm } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
+import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { PatientSeite } from './PatientSeite';
 
 /** @anker ui.einsatzseite Abschnittsliste oder Patientenseite */
@@ -12,6 +14,16 @@ export function EinsatzSeite() {
   const ausgewaehlt = state.patienten.find(
     (patient) => patient.id === state.ausgewaehlterPatientId,
   );
+
+  // Der Alarmton ist an den Aufenthaltsort gebunden: nur, wenn ein überwachter,
+  // alarmierter Patient im gerade gezeigten Abschnitt liegt (→ `ui.monitoralarm`).
+  const alarmImBereich =
+    state.laufend &&
+    state.patienten.some(
+      (patient) =>
+        patient.abschnitt === state.ausgewaehlterAbschnitt && istMonitorImAlarm(patient),
+    );
+  useMonitorAlarm(alarmImBereich);
 
   if (!szenario) {
     return (

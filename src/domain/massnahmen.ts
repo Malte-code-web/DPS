@@ -323,6 +323,17 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     indikation: 'Hypotonie ohne Hinweis auf Schädel-Hirn-Trauma.',
     sofortEffekt: { systolischerRR: 6 },
   },
+  monitoring: {
+    id: 'monitoring',
+    label: 'Monitoring anschließen',
+    kategorie: 'C',
+    art: 'basis',
+    qualifikation: 'basis',
+    dauerSek: 45,
+    hinweis:
+      'EKG, SpO₂ und Atemfrequenz laufen danach kontinuierlich mit; der Monitor alarmiert bei jeder Grenzwertverletzung.',
+    indikation: 'Jeder überwachungspflichtige Patient - Standard vor Behandlung und Transport.',
+  },
   defibrillation: {
     id: 'defibrillation',
     label: 'Manuelle Defibrillation',

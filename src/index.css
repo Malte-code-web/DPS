@@ -926,20 +926,85 @@ button.gefahr {
 }
 
 .patient-karte {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   text-align: left;
-  padding: 0.8rem 0.9rem 0.8rem 1.1rem;
-  background: var(--bg-panel);
+  padding: 0.8rem 0.9rem;
+  background-color: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
-  /* Farbstreifen als Innenschatten, damit Hover-Regeln ihn nicht ueberschreiben. */
-  box-shadow: inset 4px 0 0 var(--sk-farbe, var(--rand));
+  /* Dieselbe Einfärbung wie die Anhängekarte: vorläufig nur obere Hälfte. */
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 20%, transparent) 0 50%,
+    transparent 50% 100%
+  );
+}
+
+.patient-karte-final {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--sk-farbe, transparent) 22%, transparent) 0 100%
+  );
+  border-color: color-mix(in srgb, var(--sk-farbe, var(--rand)) 55%, transparent);
+}
+
+/* Farbreiter wie die Laschen der Anhängekarte. */
+.patient-karte-reiter {
+  display: flex;
+  align-items: flex-start;
+  gap: 3px;
+  margin: -0.8rem -0.9rem 0;
+  padding: 0 0.9rem;
+}
+
+/* Vorläufig wächst der aktive Reiter nach unten, endgültig nach oben. */
+.patient-karte-reiter-final {
+  align-items: flex-end;
+}
+
+.patient-karte-reiter-final .reiter-aktiv {
+  border-radius: 3px 3px 0 0;
 }
 
 .patient-karte-verstorben {
   opacity: 0.6;
+}
+
+/* Der eigentliche Öffnen-Knopf trägt die Kachel-Optik ohne eigenen Rahmen. */
+.patient-karte-oeffnen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+
+/* Schnellzugriff auf die Sichtungskategorie, direkt auf der Kachel. */
+.patient-karte-sichtung {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.patient-karte-sichtung .sichtungskasten {
+  flex: 1;
+}
+
+/* Schnellzugriff auf Tourniquet und Mundraumkontrolle, direkt auf der Kachel. */
+.patient-karte-sofort {
+  display: flex;
+  flex-direction: row;
+  gap: 0.3rem;
+}
+
+.patient-karte-sofort .massnahme {
+  flex: 1;
 }
 
 .patient-kopf {
@@ -1071,9 +1136,18 @@ button.gefahr {
 /* Farbreiter wie die Laschen der echten Tasche */
 .anhaengekarte-reiter {
   display: flex;
+  align-items: flex-start;
   gap: 3px;
   margin: -0.7rem -0.8rem 0;
   padding: 0 0.8rem;
+}
+
+/*
+ * Vorläufig: der aktive Reiter wächst nach unten, in die Karte hinein.
+ * Endgültig: er wächst nach oben, deutlich sichtbar aus der Karte heraus.
+ */
+.anhaengekarte-reiter-final {
+  align-items: flex-end;
 }
 
 .reiter {
@@ -1086,6 +1160,10 @@ button.gefahr {
 .reiter-aktiv {
   height: 11px;
   background: var(--sk-farbe);
+}
+
+.anhaengekarte-reiter-final .reiter-aktiv {
+  border-radius: 3px 3px 0 0;
 }
 
 .anhaengekarte-oben {
@@ -2370,8 +2448,13 @@ tbody tr:last-child td {
   }
 
   .patient-karte:hover:not(:disabled) {
-    background: var(--bg-panel-hoch);
+    background-color: var(--bg-panel-hoch);
     border-color: #3a4557;
+  }
+
+  .patient-karte-oeffnen:hover:not(:disabled) {
+    background: none;
+    border-color: transparent;
   }
 
   .patient-karte:hover .patient-oeffnen {

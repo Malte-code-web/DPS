@@ -129,7 +129,7 @@ export type MassnahmeId =
   | 'mundraumkontrolle'
   | 'atemwege_freimachen'
   | 'absaugen_oral'
-  | 'guedeltubus'
+  | 'wendltubus'
   | 'beatmung'
   | 'blutstillung'
   | 'schocklage'

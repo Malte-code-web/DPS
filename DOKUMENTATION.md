@@ -550,7 +550,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_117 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -736,6 +736,7 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
+| `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:16`](src/state/useMonitorAlarm.ts#L16) | corpuls³-naher Monitorton nach IEC 60601-1-8 |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:8`](src/App.tsx#L8) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
@@ -749,7 +750,7 @@ _116 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:32`](src/components/Massnahmenliste.tsx#L32) | Das einklappbare xABCDE-Akkordeon |
 | `ui.monitor` | [`src/components/Monitor.tsx:13`](src/components/Monitor.tsx#L13) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
-| `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:4`](src/state/useMonitorAlarm.ts#L4) | Der Alarmton - nur im selben Abschnitt zu hören |
+| `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:44`](src/state/useMonitorAlarm.ts#L44) | Der Alarmton - nur im selben Abschnitt zu hören |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:35`](src/components/PatientKarte.tsx#L35) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |

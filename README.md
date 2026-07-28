@@ -68,6 +68,45 @@ eingebettetem JavaScript und CSS. Sie läuft per Doppelklick im Browser – ohne
 Server, ohne Node, ohne Internet. Praktisch, um eine Übung auf einem beliebigen
 Rechner oder per USB-Stick bereitzustellen.
 
+## Gemeinsam üben (Mehrspieler)
+
+Mehrere spielen dieselbe Lage: Die **Übungsleitung** eröffnet eine Sitzung, die
+**Spieler** treten mit einem Code bei und warten im Wartebereich, bis die
+Übungsleitung startet. Technisch ist die Übungsleitung die Autorität – ihr
+Browser rechnet die Simulation und verteilt den Zustand; die Spieler senden ihre
+Handlungen dorthin.
+
+**Wichtig – wo das läuft und wo nicht:**
+
+- **Aktueller Stand (lokaler Kanal):** Mehrspieler verbindet nur **mehrere Tabs
+  desselben Browsers auf einem Gerät** (über `BroadcastChannel`). Ideal, um den
+  Ablauf auszuprobieren oder eine Übung an einem Rechner zu leiten.
+- **Nicht im Einzeldatei-Build und nicht in einer Vorschau-Sandbox:** Eine
+  abgeschottete Seite darf keine Verbindungen aufbauen und teilt den lokalen
+  Kanal nicht – dort ist nur **Einzelspiel** möglich.
+- **Echtes Cross-Device** (verschiedene Geräte/Netze) kommt mit der
+  Supabase-Anbindung; siehe [Nächste Schritte](#nächste-schritte).
+
+### Lokal in zwei Tabs ausprobieren
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+```
+
+1. **Tab 1 (Übungsleitung):** *Gemeinsame Übung* → *Als Übungsleitung* →
+   *Anmelden* (Name genügt) → Szenario wählen → *Sitzung eröffnen*. Im
+   Wartebereich steht der **Sitzungscode**.
+2. **Tab 2 (Spieler)** – im **selben Browser** ein zweites Tab auf
+   `http://localhost:5173`: *Gemeinsame Übung* → *Als Spieler beitreten* → Code
+   und Namen eingeben → *Beitreten*. Der Spieler erscheint in Tab 1 in der
+   Teilnehmerliste.
+3. **Tab 1:** *Übung starten*. Beide Tabs zeigen dieselbe Lage; Sichtungen und
+   Maßnahmen aus einem Tab erscheinen im anderen.
+
+Die Uhr läuft auch weiter, wenn das Übungsleitungs-Tab im Hintergrund liegt
+(→ `state.taktgeber`).
+
 ## Dokumentation
 
 [DOKUMENTATION.md](DOKUMENTATION.md) beschreibt den aktuellen Stand, die

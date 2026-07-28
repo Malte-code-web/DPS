@@ -280,6 +280,12 @@ Vorgaben der jeweiligen Landesrettungsdienstgesetze oder der örtlichen Dienstan
 
 ## Nächste Schritte
 
+Die geplanten Bausteine – Mehrspieler, Qualifikation (fachlich und Führung),
+Material (Fahrzeuge und Verbrauchsgüter) – stehen mit Stand, Reihenfolge und
+Abhängigkeiten in der [ROADMAP.md](ROADMAP.md).
+
+Kurzfristig außerdem:
+
 - Sichtungsraum/Behandlungsplatz und Transportkapazitäten als begrenzte Ressource
 - Mehrere Einsatzkräfte mit eigenen Zeitbudgets statt unbegrenzter Maßnahmen
 - Übungsleitermodus: Verläufe live anpassen, Störgrößen einspielen

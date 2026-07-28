@@ -582,7 +582,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_134 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_135 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -735,14 +735,15 @@ _134 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:87`](src/state/reducer.ts#L87) | Alles, was der Übende auslösen kann |
-| `state.phase` | [`src/state/reducer.ts:33`](src/state/reducer.ts#L33) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:26`](src/state/SimulationProvider.tsx#L26) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:183`](src/state/reducer.ts#L183) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:118`](src/state/reducer.ts#L118) | Der geteilte, host-autoritative Ausschnitt des Zustands |
-| `state.uhr` | [`src/state/SimulationProvider.tsx:12`](src/state/SimulationProvider.tsx#L12) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:150`](src/state/reducer.ts#L150) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:45`](src/state/reducer.ts#L45) | Der gesamte Zustand einer laufenden Übung |
+| `state.aktionen` | [`src/state/reducer.ts:86`](src/state/reducer.ts#L86) | Alles, was der Übende auslösen kann |
+| `state.phase` | [`src/state/reducer.ts:32`](src/state/reducer.ts#L32) | Die Hauptzustände der Anwendung |
+| `state.provider` | [`src/state/SimulationProvider.tsx:27`](src/state/SimulationProvider.tsx#L27) | Rollen-bewusster Zustandsverteiler |
+| `state.reducer` | [`src/state/reducer.ts:182`](src/state/reducer.ts#L182) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:117`](src/state/reducer.ts#L117) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
+| `state.uhr` | [`src/state/SimulationProvider.tsx:13`](src/state/SimulationProvider.tsx#L13) | Der Taktgeber der laufenden Simulation |
+| `state.zeit` | [`src/state/reducer.ts:149`](src/state/reducer.ts#L149) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zustand` | [`src/state/reducer.ts:44`](src/state/reducer.ts#L44) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 

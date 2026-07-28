@@ -175,6 +175,48 @@ describe('Host-autoritative Synchronisation', () => {
   });
 });
 
+describe('Nachhol-Takt aus dem Hintergrund', () => {
+  function imEinsatz(): SimulationState {
+    return simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'sitzungEroeffnen', szenario: busunfall },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+  }
+
+  it('ein großer Nachhol-Takt entspricht mehreren aufeinanderfolgenden', () => {
+    const start = imEinsatz();
+
+    // Ein einziger Nachhol-Takt über 120 s (Rückkehr aus dem Hintergrund) ...
+    const gross = simulationReducer(start, { typ: 'tick', dtSek: 120 });
+
+    // ... gegen vier Takte à 30 s. Weil beide intern in 5-s-Schritten rechnen
+    // (→ `sim.zeitraum`) und die Schrittgrenzen sich decken, ist das Ergebnis
+    // identisch: Die Uhr darf im Hintergrund gedrosselt sein, ohne zu driften.
+    let stueckweise = start;
+    for (let i = 0; i < 4; i += 1) {
+      stueckweise = simulationReducer(stueckweise, { typ: 'tick', dtSek: 30 });
+    }
+
+    expect(gross.zeitSek).toBe(stueckweise.zeitSek);
+    for (const p of gross.patienten) {
+      const gegen = stueckweise.patienten.find((q) => q.id === p.id)!;
+      expect(p.vitalwerte).toEqual(gegen.vitalwerte);
+      expect(p.status).toBe(gegen.status);
+    }
+  });
+
+  it('ignoriert Takte ohne oder mit negativer Dauer', () => {
+    const start = imEinsatz();
+    expect(simulationReducer(start, { typ: 'tick', dtSek: 0 })).toBe(start);
+    expect(simulationReducer(start, { typ: 'tick', dtSek: -3 })).toBe(start);
+  });
+});
+
 describe('schnappschussAus enthält nur geteilte Scheiben', () => {
   it('spiegelt Szenario, Zeit, Patienten, Spieler und Status', () => {
     const host = simulationReducer(

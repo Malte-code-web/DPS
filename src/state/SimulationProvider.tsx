@@ -4,6 +4,7 @@ import { erzeugeLokalenTransport } from '../net/lokalerTransport';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
 import { ladeEigeneSzenarien, sichereEigeneSzenarien } from '../lib/speicher';
 import { SimulationContext } from './context';
+import { starteTaktgeber } from './taktgeber';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { Schnappschuss, SimulationAction } from './reducer';
 
@@ -49,11 +50,31 @@ export function SimulationProvider({
 
   // Die Uhr läuft beim Solo-Spieler und beim Host; ein Spieler bekommt die Zeit
   // aus den Schnappschüssen des Hosts.
+  //
+  // Zeitstempel-basiert statt fixem Schritt pro Takt: Jeder Takt rechnet die
+  // tatsächlich vergangene Echtzeit ein. So bleibt die Uhr korrekt, selbst wenn
+  // der Browser den Takt drosselt - und ein hintergrundfester Taktgeber
+  // (→ `state.taktgeber`) hält sie am Laufen, wenn der Host-Tab nicht im
+  // Vordergrund ist. Ein `visibilitychange` holt beim Zurückwechseln sofort auf.
+  const letzterTaktRef = useRef(0);
   useEffect(() => {
     if (!laufend || phase !== 'einsatz' || istSpieler) return;
-    const dtSek = (TAKT_MS / 1000) * geschwindigkeit;
-    const timer = window.setInterval(() => dispatch({ typ: 'tick', dtSek }), TAKT_MS);
-    return () => window.clearInterval(timer);
+    letzterTaktRef.current = performance.now();
+    const takt = () => {
+      const jetzt = performance.now();
+      const dtRealSek = (jetzt - letzterTaktRef.current) / 1000;
+      letzterTaktRef.current = jetzt;
+      if (dtRealSek > 0) dispatch({ typ: 'tick', dtSek: dtRealSek * geschwindigkeit });
+    };
+    const beiSichtbarkeit = () => {
+      if (document.visibilityState === 'visible') takt();
+    };
+    document.addEventListener('visibilitychange', beiSichtbarkeit);
+    const stoppeTakt = starteTaktgeber(TAKT_MS, takt);
+    return () => {
+      stoppeTakt();
+      document.removeEventListener('visibilitychange', beiSichtbarkeit);
+    };
   }, [laufend, geschwindigkeit, phase, istSpieler]);
 
   useEffect(() => {

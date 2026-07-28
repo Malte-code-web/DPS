@@ -8,7 +8,6 @@ import {
   sichtungOffen,
   patientAusVorlage,
   sichtePatient,
-  simuliereSchritt,
   simuliereZeitraum,
   verlegePatient,
   wendeMassnahmeAn,
@@ -229,12 +228,15 @@ export function simulationReducer(
 
     case 'tick': {
       if (!state.laufend || state.phase !== 'einsatz') return state;
-      const zeitSek = state.zeitSek + action.dtSek;
+      if (action.dtSek <= 0) return state;
+      // In kleine Schritte zerlegt (→ `sim.zeitraum`): So bleibt ein großer
+      // Nachhol-Takt korrekt, wenn der Übungsleiter-Tab im Hintergrund war und
+      // die Uhr auf einen Schlag aufholt.
       return {
         ...state,
-        zeitSek,
+        zeitSek: state.zeitSek + action.dtSek,
         patienten: state.patienten.map((patient) =>
-          simuliereSchritt(patient, action.dtSek, zeitSek),
+          simuliereZeitraum(patient, state.zeitSek, action.dtSek),
         ),
       };
     }

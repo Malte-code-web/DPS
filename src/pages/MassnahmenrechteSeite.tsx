@@ -11,16 +11,19 @@ import type { MassnahmeId, Qualifikation } from '../domain/types';
 const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
 
 /**
- * @anker ui.massnahmenrechte Übungsleitung stellt vor der Sitzung ein, wer was darf
+ * @anker ui.massnahmenrechte Grundeinstellung: gleich zu Beginn, wer was darf
  *
- * Zwischen Szenariowahl und Wartebereich: Für jede Maßnahme zwei Schwellen -
- * wer sie durchführen und wer sie delegieren darf (→ `domain.massnahmenrechte`).
- * Jede Änderung wirkt sofort und wird auf diesem Gerät gespeichert, sodass sie
- * bei der nächsten Sitzung vorgeschlagen wird, aber jederzeit änderbar bleibt.
+ * Erster Schritt der Übungsleitung nach der Anmeldung, noch vor der
+ * Szenariowahl - die Rechte gelten unabhängig von der Lage. Für jede Maßnahme
+ * zwei Schwellen (→ `domain.massnahmenrechte`): wer sie durchführen darf (und
+ * damit automatisch auch delegieren kann), und ob zusätzlich eine niedrigere
+ * Stufe delegieren darf, ohne die Maßnahme selbst durchführen zu dürfen. Jede
+ * Änderung wirkt sofort und wird auf diesem Gerät gespeichert, sodass sie bei
+ * der nächsten Sitzung vorgeschlagen wird, aber jederzeit änderbar bleibt.
  */
 export function MassnahmenrechteSeite() {
   const { state, dispatch } = useSimulation();
-  const { szenario, massnahmenrechte } = state;
+  const { massnahmenrechte } = state;
 
   const setzeRecht = (
     id: MassnahmeId,
@@ -36,21 +39,19 @@ export function MassnahmenrechteSeite() {
   return (
     <main className="setup">
       <section className="setup-kopf">
-        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumSetup' })}>
-          &larr; Szenario
+        <button type="button" onClick={() => dispatch({ typ: 'gemeinsamOeffnen' })}>
+          &larr; Rolle
         </button>
         <h1>Maßnahmenrechte</h1>
         <p>
-          Wer darf welche Maßnahme durchführen, wer sie delegieren? Voreingestellt ist der
-          Maßnahmenkatalog (Standardarbeitsanweisungen Rettungsdienst); passe an, was für diese
-          Sitzung anders gelten soll. Die Einstellung wird auf diesem Gerät gespeichert und beim
-          nächsten Mal vorgeschlagen.
+          Grundeinstellung für die Sitzung, unabhängig vom Szenario: Wer darf welche Maßnahme
+          durchführen? Wer sie durchführen darf, darf sie auch immer an eine niedrigere Stufe
+          delegieren. „Delegieren ab" erlaubt zusätzlich einer niedrigeren Stufe, eine Maßnahme
+          freizugeben, ohne sie selbst durchführen zu müssen. Voreingestellt ist der
+          Maßnahmenkatalog (Standardarbeitsanweisungen Rettungsdienst); die Einstellung wird auf
+          diesem Gerät gespeichert und beim nächsten Mal vorgeschlagen, bleibt aber jederzeit
+          änderbar.
         </p>
-        {szenario && (
-          <p className="hinweis">
-            Szenario: <strong>{szenario.titel}</strong>
-          </p>
-        )}
       </section>
 
       <section className="rechte-kopfzeile">
@@ -122,10 +123,9 @@ export function MassnahmenrechteSeite() {
         <button
           type="button"
           className="primaer"
-          disabled={!szenario}
-          onClick={() => dispatch({ typ: 'sitzungEroeffnen' })}
+          onClick={() => dispatch({ typ: 'massnahmenrechteAbgeschlossen' })}
         >
-          Sitzung eröffnen
+          Weiter zur Szenariowahl
         </button>
       </section>
     </main>

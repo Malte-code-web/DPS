@@ -64,20 +64,22 @@ Ausbildung.
   externe, staatlich geregelte Qualifikationen darüber (aus der
   Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg,
   Stand 05/2025).
-  1. **Konfigurierbar statt fest:** Durchführungs- und Delegationsstufe sind
-     zwei unabhängig einstellbare Schwellen je Maßnahme (`MassnahmeRecht`) -
-     der Katalog liefert nur den Ausgangswert. Die Übungsleitung stellt beide
-     vor jeder Sitzung auf einer eigenen Seite ein (zwischen Szenariowahl und
-     Wartebereich); die Einstellung wird auf ihrem Gerät gespeichert und beim
-     nächsten Mal vorgeschlagen, bleibt aber jederzeit änderbar.
+  1. **Konfigurierbar statt fest, als allererster Schritt:** Durchführungs-
+     und Delegationsstufe sind zwei einstellbare Schwellen je Maßnahme
+     (`MassnahmeRecht`) - der Katalog liefert nur den Ausgangswert. Die
+     Übungsleitung stellt beide direkt nach der Anmeldung ein, noch vor der
+     Szenariowahl (die Rechte gelten unabhängig von der Lage); die Einstellung
+     wird auf ihrem Gerät gespeichert und beim nächsten Mal vorgeschlagen,
+     bleibt aber jederzeit änderbar.
   2. **Jede Person stellt ihre eigene Qualifikation selbst ein** im
      Wartebereich (Standard: `basis`) - keine Fremdzuweisung.
   3. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
      Grund ("erfordert NotSan").
-  4. **Delegation:** Wer die Delegationsstufe einer Maßnahme erreicht, gibt sie
-     gezielt für einen Patienten frei (ohne Zeitkosten) - danach kann sie jede
-     behandelnde Person an diesem Patienten durchführen. Durchführen und
-     Delegieren dürfen unterschiedliche Mindeststufen haben.
+  4. **Delegation:** Wer eine Maßnahme selbst durchführen darf, darf sie immer
+     auch an eine niedrigere Stufe delegieren (kein Extra-Schritt nötig). Die
+     Delegationsstufe erweitert das zusätzlich auf Personen ohne eigene
+     Durchführungsberechtigung (z. B. eine Praxisanleitung). Freigabe gilt
+     gezielt für einen Patienten, ohne Zeitkosten.
   5. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
      host-autoritativen Modell, ohne das Netzprotokoll zu erweitern. Die
      konfigurierte Regel ist Teil des Schnappschusses, damit alle Clients

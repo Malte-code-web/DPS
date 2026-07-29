@@ -44,22 +44,30 @@ describe('massnahmeGesperrtWegenQualifikation', () => {
 });
 
 describe('darfDelegieren', () => {
-  // Durchführung und Delegation sind unabhängig einstellbar: hier darf NotSan
-  // die Maßnahme selbst durchführen, aber erst Notarzt darf sie delegieren.
-  const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notarzt' };
-
   it('verweigert außerhalb einer Sitzung (eigene = null)', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notsan' };
     expect(darfDelegieren(recht, null)).toBe(false);
   });
 
-  it('verweigert, wenn die eigene Stufe unter der Delegationsstufe liegt', () => {
-    expect(darfDelegieren(recht, 'basis')).toBe(false);
-    // Selbst wer die Maßnahme durchführen dürfte, darf sie hier noch nicht delegieren.
-    expect(darfDelegieren(recht, 'notsan')).toBe(false);
+  it('wer die Maßnahme selbst durchführen dürfte, darf sie immer auch delegieren - unabhängig von der Delegationsstufe', () => {
+    // Delegationsstufe liegt hier sogar über der Durchführungs-Schwelle - das
+    // darf die Durchführungs-Berechtigung nicht einschränken.
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notarzt' };
+    expect(darfDelegieren(recht, 'notsan')).toBe(true);
+    expect(darfDelegieren(recht, 'notarzt')).toBe(true);
   });
 
-  it('erlaubt ab der Delegationsstufe', () => {
-    expect(darfDelegieren(recht, 'notarzt')).toBe(true);
+  it('verweigert unterhalb beider Schwellen', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notsan' };
+    expect(darfDelegieren(recht, 'basis')).toBe(false);
+  });
+
+  it('erweitert das Delegieren zusätzlich auf eine niedrigere Delegationsstufe, ohne die Maßnahme selbst zu erlauben', () => {
+    // NotArzt-Maßnahme, aber ab NotSan darf schon delegiert werden (z. B. eine
+    // Praxisanleitung ohne eigene Durchführungsberechtigung).
+    const recht: MassnahmeRecht = { qualifikation: 'notarzt', delegationsstufe: 'notsan' };
+    expect(darfDelegieren(recht, 'notsan')).toBe(true);
+    expect(darfDelegieren(recht, 'basis')).toBe(false);
   });
 
   it('deckt sich mit der Durchführungs-Schwelle, wenn beide gleich gesetzt sind', () => {

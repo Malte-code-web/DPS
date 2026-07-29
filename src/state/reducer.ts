@@ -117,9 +117,9 @@ export type SimulationAction =
   | { typ: 'gemeinsamOeffnen' }
   | { typ: 'rolleWaehlen'; rolle: Rolle }
   | { typ: 'anmeldungAbschliessen'; name: string; eigeneId: string }
-  | { typ: 'szenarioFuerSitzungWaehlen'; szenario: Szenario }
   | { typ: 'massnahmenrechteSetzen'; rechte: Massnahmenrechte }
-  | { typ: 'sitzungEroeffnen' }
+  | { typ: 'massnahmenrechteAbgeschlossen' }
+  | { typ: 'sitzungEroeffnen'; szenario: Szenario }
   | { typ: 'spielerBeitreten'; code: string; name: string; eigeneId: string }
   | { typ: 'spielerHinzugefuegt'; spieler: Spieler }
   | { typ: 'spielerEntfernt'; spielerId: string }
@@ -343,8 +343,8 @@ export function simulationReducer(
 
     case 'zurueckZumSetup':
       // sitzung bleibt erhalten: Eine Übungsleitung, die aus dem Debriefing
-      // oder von der Maßnahmenrechte-Seite zurückgeht, bleibt angemeldet und
-      // kann direkt ein neues Szenario wählen, statt sich neu anzumelden.
+      // zurückgeht, bleibt angemeldet und kann direkt ein neues Szenario
+      // wählen, statt sich neu anzumelden.
       return {
         ...ANFANGSZUSTAND,
         geschwindigkeit: state.geschwindigkeit,
@@ -367,9 +367,11 @@ export function simulationReducer(
       };
 
     case 'anmeldungAbschliessen':
+      // Erst die Maßnahmenrechte (Grundeinstellungen, → `ui.massnahmenrechte`) -
+      // die gelten unabhängig vom Szenario und sind der erste Schritt.
       return {
         ...state,
-        phase: 'setup',
+        phase: 'massnahmenrechte',
         sitzung: {
           ...state.sitzung,
           rolle: 'uebungsleiter',
@@ -378,17 +380,13 @@ export function simulationReducer(
         },
       };
 
-    case 'szenarioFuerSitzungWaehlen':
-      // Vor dem eigentlichen Eröffnen stellt die Übungsleitung erst die
-      // Maßnahmenrechte ein (→ `ui.massnahmenrechte`); die Sitzung (Code,
-      // Wartebereich) entsteht erst mit `sitzungEroeffnen`.
-      return { ...state, szenario: action.szenario, phase: 'massnahmenrechte' };
-
     case 'massnahmenrechteSetzen':
       return { ...state, massnahmenrechte: action.rechte };
 
+    case 'massnahmenrechteAbgeschlossen':
+      return { ...state, phase: 'setup' };
+
     case 'sitzungEroeffnen': {
-      if (!state.szenario) return state;
       const code = erzeugeCode();
       const selbst: Spieler = {
         id: state.sitzung.eigeneId ?? 'leiter',
@@ -403,7 +401,7 @@ export function simulationReducer(
         massnahmenrechte: state.massnahmenrechte,
         modus: 'digital',
         phase: 'wartebereich',
-        szenario: state.szenario,
+        szenario: action.szenario,
         sitzung: {
           aktiv: true,
           rolle: 'uebungsleiter',

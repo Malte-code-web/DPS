@@ -14,7 +14,7 @@ export function SetupSeite() {
 
   const starten = (szenario: (typeof SZENARIEN)[number]) => {
     if (host) {
-      dispatch({ typ: 'szenarioFuerSitzungWaehlen', szenario });
+      dispatch({ typ: 'sitzungEroeffnen', szenario });
     } else {
       dispatch({ typ: 'szenarioStarten', szenario, alleine });
     }
@@ -44,7 +44,7 @@ export function SetupSeite() {
         <h1>{host ? 'Szenario für die Sitzung' : 'Digitale Übung'}</h1>
         <p>
           {host
-            ? 'Wähle die Lage, die alle gemeinsam bearbeiten. Als Nächstes stellst du die Maßnahmenrechte ein, dann geht es in den Wartebereich, wo die Spieler beitreten - dort startest du die Übung.'
+            ? 'Wähle die Lage, die alle gemeinsam bearbeiten. Anschließend geht es in den Wartebereich, wo die Spieler beitreten - dort startest du die Übung.'
             : 'Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung nach mSTaRT und eine sinnvolle Verteilung der knappen Ressourcen.'}
         </p>
       </section>
@@ -87,7 +87,7 @@ export function SetupSeite() {
                       : `${szenario.patienten.length} Betroffene`}
                   </span>
                   <button type="button" className="primaer" onClick={() => starten(szenario)}>
-                    {host ? 'Weiter' : alleine ? 'Allein starten' : 'Einsatz starten'}
+                    {host ? 'Sitzung eröffnen' : alleine ? 'Allein starten' : 'Einsatz starten'}
                   </button>
                 </div>
               </article>

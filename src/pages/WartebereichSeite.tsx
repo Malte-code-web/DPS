@@ -2,7 +2,13 @@ import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
 import { useSimulation } from '../state/useSimulation';
 import type { Qualifikation } from '../domain/types';
 
-const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
+const QUALIFIKATIONEN: Qualifikation[] = [
+  'basis',
+  'rettungshelfer',
+  'rettungssanitaeter',
+  'notsan',
+  'notarzt',
+];
 
 /** @anker ui.wartebereich Lobby vor dem Start - Code, Teilnehmende, Startknopf */
 export function WartebereichSeite() {

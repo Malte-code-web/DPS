@@ -58,12 +58,23 @@ URL und anon key (Einrichtung siehe README, Abschnitt „Gemeinsam üben").
 Wer welche Maßnahme durchführen darf, richtet sich nach der fachlichen
 Ausbildung.
 
-- ✅ **Fertig und verifiziert.** Grundlage: Einsatzsanitäter/-in
-  (Malteser-Fachausbildung Sanitätsdienst, 80 UE) entspricht der bestehenden
-  Stufe `basis` des Maßnahmenkatalogs; Notfallsanitäter/Notärztin bleiben
-  externe, staatlich geregelte Qualifikationen darüber (aus der
-  Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg,
-  Stand 05/2025).
+- ✅ **Fertig und verifiziert.** Fünf Ausbildungsstufen statt drei, entlang der
+  ehrenamtlichen und hauptamtlichen Ausbildungskette: `basis`
+  (Sanitätshelfer/-in, Einsatzsanitäter/-in), `rettungshelfer` (medizinisch
+  identischer Umfang wie `basis` - der Unterschied ist einsatztaktisch: Fahren
+  unter Sonder-/Wegerechten, Funk, Klinikpraktikum -, deshalb ohne eigene
+  Maßnahmen im Katalog), `rettungssanitaeter` (u. a. Larynxtubus/-maske
+  sicher beherrscht, erweiterte Fahrzeugrettung, regional auch Sauerstoff/
+  Aktivkohle), `notsan` (Notfallsanitäter/-in nach § 2a NotSanG, unverändert)
+  und `notarzt` (unverändert). Grundlage: Ausbildungsbroschüre Malteser
+  Bildungszentrum Baden-Württemberg, Stand 05/2025.
+  - Larynxmaske von `notsan` auf `rettungssanitaeter` abgesenkt (RS
+    beherrscht laut Broschüre sicher alternative Atemwegshilfen).
+  - Drei neue Maßnahmen ergänzt, die es vorher nicht gab: **Reanimation (HLW)
+    mit AED** (`basis` - Teil der SAN/ES-Grundausbildung), **Spineboard-/
+    KED-Rettung aus dem Fahrzeug** (`rettungssanitaeter` - erweiterte
+    Rettungstechnik) und **Medizinische Kohle (Aktivkohle) p.o.**
+    (`rettungssanitaeter` - regional unterschiedlich freigegeben).
   1. **Konfigurierbar statt fest, als allererster Schritt:** Durchführungs-
      stufe und Delegationsziel je Maßnahme (`MassnahmeRecht`) - der Katalog
      liefert nur den Ausgangswert. Die Übungsleitung stellt beide direkt nach

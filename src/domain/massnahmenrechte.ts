@@ -13,7 +13,13 @@ import type { MassnahmeId, Qualifikation } from './types';
  */
 export type Massnahmenrechte = Record<MassnahmeId, MassnahmeRecht>;
 
-const GUELTIGE_QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
+const GUELTIGE_QUALIFIKATIONEN: Qualifikation[] = [
+  'basis',
+  'rettungshelfer',
+  'rettungssanitaeter',
+  'notsan',
+  'notarzt',
+];
 
 function istGueltigeQualifikation(wert: unknown): wert is Qualifikation {
   return GUELTIGE_QUALIFIKATIONEN.includes(wert as Qualifikation);

@@ -16,6 +16,11 @@ import type { Massnahme, MassnahmeId, MassnahmenKategorie, Qualifikation } from 
  *
  * Die Zuordnung zu xABCDE folgt dem Zielproblem: Tranexamsäure steht bei x,
  * weil sie zur kritischen Blutung gehört, nicht bei C, wo sie gespritzt wird.
+ *
+ * Die Maßnahmen unterhalb der NotSan-Stufe (`reanimation`, `fahrzeugrettung`,
+ * `aktivkohle`, sowie die auf `rettungssanitaeter` abgesenkte `larynxmaske`)
+ * stammen aus der Ausbildungsbroschüre Malteser Bildungszentrum
+ * Baden-Württemberg (Stand 05/2025) - siehe `modell.qualifikation`.
  */
 
 /** Zugänge, über die ein i.v.-Medikament laufen kann. */
@@ -150,7 +155,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     label: 'Larynxmaske (extraglottischer Atemweg)',
     kategorie: 'A',
     art: 'invasiv',
-    qualifikation: 'notsan',
+    qualifikation: 'rettungssanitaeter',
     dauerSek: 90,
     hinweis: 'Größtmögliche Maske, Cuff faltenfrei entlüftet.',
     indikation: 'Herz-Kreislauf-Stillstand; Ateminsuffizienz mit Bewusstlosigkeit und fehlenden Schutzreflexen.',
@@ -349,6 +354,17 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     hinweis:
       'EKG, SpO₂ und Atemfrequenz laufen danach kontinuierlich mit; der Monitor alarmiert bei jeder Grenzwertverletzung.',
     indikation: 'Jeder überwachungspflichtige Patient - Standard vor Behandlung und Transport.',
+  },
+  reanimation: {
+    id: 'reanimation',
+    label: 'Reanimation (HLW) mit AED',
+    kategorie: 'C',
+    art: 'basis',
+    qualifikation: 'basis',
+    dauerSek: 120,
+    hinweis: '30:2, Helferwechsel alle zwei Minuten; AED anschließen, sobald verfügbar, und den Anweisungen folgen.',
+    indikation: 'Kreislaufstillstand: keine Reaktion, keine oder keine normale Atmung.',
+    sofortEffekt: { herzfrequenz: 8, spo2: 3 },
   },
   defibrillation: {
     id: 'defibrillation',
@@ -583,6 +599,18 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     dosierung: '0,1 mg fraktioniert alle 2 min; Kinder 0,01 mg/kg KG',
     sofortEffekt: { atemfrequenz: 6, gcs: 4, spo2: 5 },
   },
+  aktivkohle: {
+    id: 'aktivkohle',
+    label: 'Medizinische Kohle (Aktivkohle) p.o.',
+    kategorie: 'D',
+    art: 'medikament',
+    qualifikation: 'rettungssanitaeter',
+    dauerSek: 60,
+    hinweis:
+      'Regional unterschiedlich freigegeben - teils bereits für Rettungssanitäter/-innen, sonst Rücksprache über die SAA-Leitstelle.',
+    indikation: 'Orale Vergiftung innerhalb einer Stunde nach Einnahme, wacher Patient mit intakten Schutzreflexen.',
+    dosierung: '1 g/kg KG p.o., max. 50 g',
+  },
   thiamin: {
     id: 'thiamin',
     label: 'Thiamin i.v.',
@@ -631,6 +659,17 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     hinweis: 'Vakuummatratze oder Schienung.',
     indikation: 'Fraktur, Verdacht auf Wirbelsäulenverletzung.',
     sofortEffekt: { schmerz: -2 },
+  },
+  fahrzeugrettung: {
+    id: 'fahrzeugrettung',
+    label: 'Spineboard-/KED-Rettung aus dem Fahrzeug',
+    kategorie: 'E',
+    art: 'basis',
+    qualifikation: 'rettungssanitaeter',
+    dauerSek: 240,
+    hinweis:
+      'KED-Rettungskorsett bei sitzender Person, Spineboard bei liegender Rettung - achsengerecht und mit ausreichend Helfern.',
+    indikation: 'Eingeklemmte oder sitzende Person im verunfallten Fahrzeug, Verdacht auf Wirbelsäulenverletzung.',
   },
   achsengerechte_immobilisation: {
     id: 'achsengerechte_immobilisation',
@@ -728,6 +767,8 @@ export const KATEGORIE_LABEL: Record<MassnahmenKategorie, string> = {
 
 export const QUALIFIKATION_LABEL: Record<Qualifikation, string> = {
   basis: '',
+  rettungshelfer: 'RH',
+  rettungssanitaeter: 'RS',
   notsan: 'NotSan',
   notarzt: 'Notärztin',
 };
@@ -738,7 +779,9 @@ export const QUALIFIKATION_LABEL: Record<Qualifikation, string> = {
  * Ausnahme-Kennzeichnung an einer Maßnahme steht und bei `basis` leer bleibt.
  */
 export const QUALIFIKATION_VOLLNAME: Record<Qualifikation, string> = {
-  basis: 'Einsatzsanitäter/-in (Basis)',
+  basis: 'Sanitätshelfer/-in / Einsatzsanitäter/-in (Basis)',
+  rettungshelfer: 'Rettungshelfer/-in',
+  rettungssanitaeter: 'Rettungssanitäter/-in',
   notsan: 'Notfallsanitäter/-in',
   notarzt: 'Notärztin/Notarzt',
 };

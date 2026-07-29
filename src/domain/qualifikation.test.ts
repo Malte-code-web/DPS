@@ -20,6 +20,15 @@ describe('erfuelltQualifikation', () => {
     expect(erfuelltQualifikation('basis', 'notarzt')).toBe(false);
     expect(erfuelltQualifikation('notsan', 'notarzt')).toBe(false);
   });
+
+  it('ordnet die fünf Stufen Basis < Rettungshelfer < Rettungssanitäter < NotSan < NotArzt', () => {
+    expect(erfuelltQualifikation('rettungshelfer', 'basis')).toBe(true);
+    expect(erfuelltQualifikation('basis', 'rettungshelfer')).toBe(false);
+    expect(erfuelltQualifikation('rettungssanitaeter', 'rettungshelfer')).toBe(true);
+    expect(erfuelltQualifikation('rettungshelfer', 'rettungssanitaeter')).toBe(false);
+    expect(erfuelltQualifikation('notsan', 'rettungssanitaeter')).toBe(true);
+    expect(erfuelltQualifikation('rettungssanitaeter', 'notsan')).toBe(false);
+  });
 });
 
 describe('massnahmeGesperrtWegenQualifikation', () => {

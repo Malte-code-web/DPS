@@ -138,6 +138,8 @@ export type MassnahmeId =
   | 'waermeerhalt'
   | 'betreuung'
   | 'monitoring'
+  | 'reanimation'
+  | 'fahrzeugrettung'
   // SAA - invasive Maßnahmen
   | 'zugang_iv'
   | 'zugang_io'
@@ -156,6 +158,7 @@ export type MassnahmeId =
   | 'gabe_intranasal'
   // SAA - Medikamente
   | 'sauerstoffgabe'
+  | 'aktivkohle'
   | 'ass'
   | 'amiodaron'
   | 'atropin'
@@ -188,13 +191,21 @@ export type MassnahmeId =
 
 /**
  * Wer eine Maßnahme im Regeldienst eigenverantwortlich durchführen darf.
- * @anker modell.qualifikation Basis, Notfallsanitäter nach SAA, Notärztin
+ * @anker modell.qualifikation Fünf Ausbildungsstufen von Basis bis Notärztin
  *
- * Im MANV ist das keine Formalie: Notärztinnen sind die knappste Ressource
- * überhaupt. Eine Maßnahme, die nur sie durchführen dürfen, bindet die eine
- * Kraft, die an mehreren Stellen gleichzeitig gebraucht wird.
+ * Fünf Stufen entlang der ehrenamtlichen und hauptamtlichen Ausbildungskette:
+ * `basis` (Sanitätshelfer/-in, Einsatzsanitäter/-in), `rettungshelfer`
+ * (medizinisch identischer Umfang wie `basis`, zusätzlich Fahren unter
+ * Sonder-/Wegerechten und vertiefte Einsatztaktik - deshalb ohne eigene
+ * Maßnahmen im Katalog), `rettungssanitaeter` (u. a. Larynxtubus/-maske
+ * sicher beherrscht, erweiterte Rettungstechnik aus Fahrzeugen, regional auch
+ * Sauerstoff/Aktivkohle), `notsan` (Notfallsanitäter/-in nach § 2a NotSanG)
+ * und `notarzt`. Im MANV ist das keine Formalie: Notärztinnen sind die
+ * knappste Ressource überhaupt. Eine Maßnahme, die nur sie durchführen
+ * dürfen, bindet die eine Kraft, die an mehreren Stellen gleichzeitig
+ * gebraucht wird.
  */
-export type Qualifikation = 'basis' | 'notsan' | 'notarzt';
+export type Qualifikation = 'basis' | 'rettungshelfer' | 'rettungssanitaeter' | 'notsan' | 'notarzt';
 
 /** Handgriff, invasiver Eingriff oder Medikament. */
 export type Massnahmenart = 'basis' | 'invasiv' | 'medikament';

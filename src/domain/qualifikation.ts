@@ -3,13 +3,23 @@ import type { Qualifikation } from './types';
 /**
  * @anker domain.qualifikation Rangfolge und Prüfung der fachlichen Qualifikation
  *
- * Einsatzsanitäter/-in (Malteser-Fachausbildung Sanitätsdienst) entspricht der
- * Stufe `basis`; Notfallsanitäter/Notärztin sind externe, staatlich geregelte
- * Qualifikationen darüber. Die Prüfung gilt nur innerhalb einer
- * Mehrspieler-Sitzung (→ `state.sitzung`) - im Einzel-/Teamspiel ohne Sitzung
- * bleibt jede Maßnahme frei wählbar, wie bisher.
+ * Fünf Stufen (→ `modell.qualifikation`): Sanitätshelfer/Einsatzsanitäter
+ * (`basis`) und Rettungshelfer (`rettungshelfer`, medizinisch gleich, aber
+ * einsatztaktisch vertieft) bilden die ehrenamtliche Grundausbildung;
+ * Rettungssanitäter (`rettungssanitaeter`) liegt klar darüber und klar unter
+ * Notfallsanitäter (`notsan`, nach § 2a NotSanG); Notärztin/Notarzt
+ * (`notarzt`) bleibt die knappste, oberste Stufe. Die Prüfung gilt nur
+ * innerhalb einer Mehrspieler-Sitzung (→ `state.sitzung`) - im
+ * Einzel-/Teamspiel ohne Sitzung bleibt jede Maßnahme frei wählbar, wie
+ * bisher.
  */
-const RANG: Record<Qualifikation, number> = { basis: 0, notsan: 1, notarzt: 2 };
+const RANG: Record<Qualifikation, number> = {
+  basis: 0,
+  rettungshelfer: 1,
+  rettungssanitaeter: 2,
+  notsan: 3,
+  notarzt: 4,
+};
 
 export function erfuelltQualifikation(hat: Qualifikation, braucht: Qualifikation): boolean {
   return RANG[hat] >= RANG[braucht];

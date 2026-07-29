@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MASSNAHMEN_LISTE } from './massnahmen';
+import { MASSNAHMEN, MASSNAHMEN_LISTE } from './massnahmen';
 import { standardMassnahmenrechte, vervollstaendigeMassnahmenrechte } from './massnahmenrechte';
 
 describe('standardMassnahmenrechte', () => {
@@ -11,6 +11,16 @@ describe('standardMassnahmenrechte', () => {
         delegationsziel: 'basis',
       });
     }
+  });
+
+  it('ordnet die Rettungssanitäter-Stufe den dafür ergänzten/verfeinerten Maßnahmen zu', () => {
+    expect(MASSNAHMEN.larynxmaske.qualifikation).toBe('rettungssanitaeter');
+    expect(MASSNAHMEN.fahrzeugrettung.qualifikation).toBe('rettungssanitaeter');
+    expect(MASSNAHMEN.aktivkohle.qualifikation).toBe('rettungssanitaeter');
+  });
+
+  it('ordnet die Reanimation (HLW/AED) der Basis-Stufe zu', () => {
+    expect(MASSNAHMEN.reanimation.qualifikation).toBe('basis');
   });
 });
 

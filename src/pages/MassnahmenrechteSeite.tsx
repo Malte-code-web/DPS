@@ -8,7 +8,13 @@ import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { useSimulation } from '../state/useSimulation';
 import type { MassnahmeId, Qualifikation } from '../domain/types';
 
-const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
+const QUALIFIKATIONEN: Qualifikation[] = [
+  'basis',
+  'rettungshelfer',
+  'rettungssanitaeter',
+  'notsan',
+  'notarzt',
+];
 
 /** Sentinel für die "nicht delegierbar"-Option - `<select>` kennt kein `null`. */
 const NICHT_DELEGIERBAR = 'keine';

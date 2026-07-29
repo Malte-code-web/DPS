@@ -615,7 +615,7 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
-| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:19`](src/domain/qualifikation.ts#L19) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
+| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:29`](src/domain/qualifikation.ts#L29) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
 
 #### einzelfaelle
@@ -655,25 +655,25 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.schnell` | [`src/domain/massnahmen.ts:747`](src/domain/massnahmen.ts#L747) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
-| `massnahmen.sofort` | [`src/domain/massnahmen.ts:759`](src/domain/massnahmen.ts#L759) | Lebensrettende Griffe der Schadensstelle |
-| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:704`](src/domain/massnahmen.ts#L704) | Was aus der Auswahl verschwindet, aber gültig bleibt |
-| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:781`](src/domain/massnahmen.ts#L781) | Was vor einer Maßnahme erledigt sein muss |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:716`](src/domain/massnahmen.ts#L716) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.schnell` | [`src/domain/massnahmen.ts:790`](src/domain/massnahmen.ts#L790) | Auswahl für die Ausgangssichtung (bis 60 Sekunden) |
+| `massnahmen.sofort` | [`src/domain/massnahmen.ts:802`](src/domain/massnahmen.ts#L802) | Lebensrettende Griffe der Schadensstelle |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:743`](src/domain/massnahmen.ts#L743) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:824`](src/domain/massnahmen.ts#L824) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:755`](src/domain/massnahmen.ts#L755) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:310`](src/domain/types.ts#L310) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:384`](src/domain/types.ts#L384) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:430`](src/domain/types.ts#L430) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:321`](src/domain/types.ts#L321) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:395`](src/domain/types.ts#L395) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:441`](src/domain/types.ts#L441) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:246`](src/domain/types.ts#L246) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:419`](src/domain/types.ts#L419) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:354`](src/domain/types.ts#L354) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:280`](src/domain/types.ts#L280) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
-| `modell.qualifikation` | [`src/domain/types.ts:191`](src/domain/types.ts#L191) | Basis, Notfallsanitäter nach SAA, Notärztin |
+| `modell.koerperregion` | [`src/domain/types.ts:257`](src/domain/types.ts#L257) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.patient` | [`src/domain/types.ts:430`](src/domain/types.ts#L430) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:365`](src/domain/types.ts#L365) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:291`](src/domain/types.ts#L291) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.qualifikation` | [`src/domain/types.ts:194`](src/domain/types.ts#L194) | Fünf Ausbildungsstufen von Basis bis Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -825,7 +825,7 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:35`](src/components/Massnahmenliste.tsx#L35) | Das einklappbare xABCDE-Akkordeon |
-| `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:17`](src/pages/MassnahmenrechteSeite.tsx#L17) | Grundeinstellung: gleich zu Beginn, wer was darf |
+| `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
@@ -840,7 +840,7 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:7`](src/components/Verlegung.tsx#L7) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:7`](src/pages/WartebereichSeite.tsx#L7) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
+| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:13`](src/pages/WartebereichSeite.tsx#L13) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 
 #### vorlagen
 

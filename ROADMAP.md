@@ -39,9 +39,9 @@ treten über einen Code bei und warten im Wartebereich bis zum Start.
   Supabase-Realtime-Kanäle je Sitzungscode, hinter derselben
   Transport-Schnittstelle – dieselbe Nachrichtenform wie Stufe 1, nur über echte
   Geräte statt Tabs. Fällt ohne `.env` automatisch auf den lokalen Kanal zurück,
-  keine Datenbank-Tabelle nötig. **Code fertig, getestet** (Auswahl-Logik,
-  Fallback ohne Zugangsdaten, unveränderter Build); **Live-Prüfung über echte
-  Geräte steht aus** – dafür Supabase-Zugangsdaten in `README.md` eintragen.
+  keine Datenbank-Tabelle nötig. **Verifiziert:** Relay-Test gegen ein echtes
+  Supabase-Projekt sowie ein voller Ablauf über zwei echte Geräte im selben
+  WLAN (PC eröffnet, Handy tritt bei, erscheint in der Teilnehmerliste).
 - 🟡 **Stufe 3 – Übungsleiter-Konten.** Anmeldung mit E-Mail und Passwort
   (Supabase Auth); nur angemeldete Übungsleitungen eröffnen Sitzungen.
 
@@ -143,8 +143,8 @@ Weiter denkbar, sobald die Bausteine 1–4 stehen:
 
 Jeder Schritt ist eigenständig nutzbar:
 
-1. **Mehrspieler fertig** (Stufe 2 Live-Prüfung, dann Stufe 3) – Fundament, an
-   dem Qualifikation und Führung hängen.
+1. **Mehrspieler fertig** (Stufe 3 folgt) – Fundament, an dem Qualifikation und
+   Führung hängen. Stufe 1 und 2 sind verifiziert im Einsatz.
 2. **Qualifikation + Führung** – schneller Gewinn, Datengrundlage teils vorhanden.
 3. **Material/Logistik** – erst Verbrauchsgüter, dann Fahrzeuge/Transport.
 
@@ -164,8 +164,8 @@ Nicht „geht nicht", sondern „kostet":
 
 ## Was von außen gebraucht wird
 
-- **Supabase-Projekt** (kostenlos, EU-Region): URL + anon key – für Baustein 1
-  (Stufe 2 Live-Prüfung, Stufe 3).
+- **Supabase-Projekt** (kostenlos, EU-Region) – eingerichtet und in Betrieb
+  seit Stufe 2. Für Stufe 3 (Übungsleiter-Konten) reicht dasselbe Projekt.
 - **Reale Qualifikationsstufen** und ihre Befugnisse – für Baustein 2.
 - **Führungsrollen** und ihre Entscheidungsrechte – für Baustein 3.
 - **Material- und Fahrzeuglisten** – für Baustein 4.

@@ -64,15 +64,24 @@ Ausbildung.
   externe, staatlich geregelte Qualifikationen darüber (aus der
   Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg,
   Stand 05/2025).
-  1. Die Übungsleitung vergibt jedem Teilnehmenden im Wartebereich eine Stufe
-     (`basis` / `notsan` / `notarzt`; Standard: `basis`).
-  2. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
+  1. **Konfigurierbar statt fest:** Durchführungs- und Delegationsstufe sind
+     zwei unabhängig einstellbare Schwellen je Maßnahme (`MassnahmeRecht`) -
+     der Katalog liefert nur den Ausgangswert. Die Übungsleitung stellt beide
+     vor jeder Sitzung auf einer eigenen Seite ein (zwischen Szenariowahl und
+     Wartebereich); die Einstellung wird auf ihrem Gerät gespeichert und beim
+     nächsten Mal vorgeschlagen, bleibt aber jederzeit änderbar.
+  2. **Jede Person stellt ihre eigene Qualifikation selbst ein** im
+     Wartebereich (Standard: `basis`) - keine Fremdzuweisung.
+  3. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
      Grund ("erfordert NotSan").
-  3. **Delegation:** Eine dafür qualifizierte Person gibt eine Maßnahme gezielt
-     für einen Patienten frei (ohne Zeitkosten) - danach kann sie jede
-     behandelnde Person an diesem Patienten durchführen.
-  4. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
-     host-autoritativen Modell, ohne das Netzprotokoll zu erweitern.
+  4. **Delegation:** Wer die Delegationsstufe einer Maßnahme erreicht, gibt sie
+     gezielt für einen Patienten frei (ohne Zeitkosten) - danach kann sie jede
+     behandelnde Person an diesem Patienten durchführen. Durchführen und
+     Delegieren dürfen unterschiedliche Mindeststufen haben.
+  5. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
+     host-autoritativen Modell, ohne das Netzprotokoll zu erweitern. Die
+     konfigurierte Regel ist Teil des Schnappschusses, damit alle Clients
+     dieselbe Sperre durchsetzen.
 
 **Abhängigkeit:** Baustein 1 (Spieler-Identität). **Nicht Teil dieses
 Bausteins:** Gruppenführer/-in aus derselben Ausbildungsreihe - das ist

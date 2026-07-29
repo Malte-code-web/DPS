@@ -1,4 +1,6 @@
+import { vervollstaendigeMassnahmenrechte } from '../domain/massnahmenrechte';
 import { pruefeSzenario } from '../domain/szenarioPruefung';
+import type { Massnahmenrechte } from '../domain/massnahmenrechte';
 import type { Szenario } from '../domain/types';
 
 /**
@@ -29,6 +31,35 @@ export function sichereEigeneSzenarien(szenarien: Szenario[]): boolean {
     return true;
   } catch {
     // Privater Modus oder voller Speicher - der Aufrufer meldet es.
+    return false;
+  }
+}
+
+/**
+ * @anker speicher.massnahmenrechte Zuletzt eingestellte Qualifikations- und
+ * Delegationsschwellen je Maßnahme auf dem Gerät der Übungsleitung sichern
+ *
+ * Dieselbe Idee wie bei eigenen Szenarien: lokal, ein Schlüssel, eine
+ * Fassungsnummer. Der zuletzt eingestellte Stand wird bei der nächsten
+ * Sitzung vorgeschlagen (→ `ui.massnahmenrechte`), bleibt aber jederzeit
+ * änderbar - nichts wird für eine Sitzung festgeschrieben.
+ */
+const RECHTE_SCHLUESSEL = 'dps.massnahmenrechte.v1';
+
+export function ladeMassnahmenrechte(): Massnahmenrechte {
+  try {
+    const roh = localStorage.getItem(RECHTE_SCHLUESSEL);
+    return vervollstaendigeMassnahmenrechte(roh ? JSON.parse(roh) : null);
+  } catch {
+    return vervollstaendigeMassnahmenrechte(null);
+  }
+}
+
+export function sichereMassnahmenrechte(rechte: Massnahmenrechte): boolean {
+  try {
+    localStorage.setItem(RECHTE_SCHLUESSEL, JSON.stringify(rechte));
+    return true;
+  } catch {
     return false;
   }
 }

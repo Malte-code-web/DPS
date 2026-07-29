@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { erzeugeSitzungstransport } from '../net/transportAuswahl';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
-import { ladeEigeneSzenarien, sichereEigeneSzenarien } from '../lib/speicher';
+import {
+  ladeEigeneSzenarien,
+  ladeMassnahmenrechte,
+  sichereEigeneSzenarien,
+  sichereMassnahmenrechte,
+} from '../lib/speicher';
 import { SimulationContext } from './context';
 import { starteTaktgeber } from './taktgeber';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
@@ -42,6 +47,7 @@ export function SimulationProvider({
   const [state, dispatch] = useReducer(simulationReducer, ANFANGSZUSTAND, (basis) => ({
     ...basis,
     eigeneSzenarien: ladeEigeneSzenarien(),
+    massnahmenrechte: ladeMassnahmenrechte(),
   }));
   const { laufend, geschwindigkeit, phase, sitzung } = state;
   const transportRef = useRef<Sitzungstransport | null>(null);
@@ -80,6 +86,14 @@ export function SimulationProvider({
   useEffect(() => {
     sichereEigeneSzenarien(state.eigeneSzenarien);
   }, [state.eigeneSzenarien]);
+
+  // Nur die eigene (Übungsleitungs- oder Solo-)Einstellung sichern - ein
+  // Spieler bekommt die Rechte per Schnappschuss vom Host und soll damit nicht
+  // seine eigene, lokale Vorbelegung überschreiben.
+  useEffect(() => {
+    if (istSpieler) return;
+    sichereMassnahmenrechte(state.massnahmenrechte);
+  }, [state.massnahmenrechte, istSpieler]);
 
   // Transport-Lebenszyklus: verbinden, sobald eine Sitzung aktiv ist.
   useEffect(() => {
@@ -124,7 +138,7 @@ export function SimulationProvider({
 
   // Nur die geteilten Scheiben bilden den Schnappschuss - lokale Navigation
   // (Patientenwahl, Abschnitt) fließt bewusst nicht ein und löst kein Senden aus.
-  const { patienten, zeitSek, szenario } = state;
+  const { patienten, zeitSek, szenario, massnahmenrechte } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
   const schnappschuss = useMemo<Schnappschuss>(
@@ -137,8 +151,19 @@ export function SimulationProvider({
       patienten,
       spieler: spielerliste,
       status,
+      massnahmenrechte,
     }),
-    [phase, szenario, zeitSek, laufend, geschwindigkeit, patienten, spielerliste, status],
+    [
+      phase,
+      szenario,
+      zeitSek,
+      laufend,
+      geschwindigkeit,
+      patienten,
+      spielerliste,
+      status,
+      massnahmenrechte,
+    ],
   );
 
   // Der Host verteilt den geteilten Zustand bei jeder Änderung.

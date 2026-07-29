@@ -8,7 +8,8 @@ import {
   massnahmenDerKategorie,
   voraussetzungKurz,
 } from '../domain/massnahmen';
-import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
 import type {
   Massnahme,
@@ -70,22 +71,24 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
     });
 
   const zeile = (massnahme: Massnahme) => {
+    // Katalog-Stufe als Rückfall, falls eine Maßnahme ausnahmsweise fehlt
+    // (z. B. veraltete Szenariodaten) - im Regelfall deckt
+    // standardMassnahmenrechte() jede Katalog-Maßnahme ab.
+    const recht: MassnahmeRecht =
+      state.massnahmenrechte[massnahme.id] ??
+      ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
     const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
     const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
     const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
     const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
-      massnahme.qualifikation,
+      recht,
       eigeneQualifikation,
       delegiert,
     );
-    // Wer die Maßnahme selbst dürfte, kann sie für diesen Patienten freigeben
-    // - unabhängig von einer bereits bestehenden Delegation.
-    const selbstBefugt =
-      state.sitzung.aktiv &&
-      !massnahmeGesperrtWegenQualifikation(massnahme.qualifikation, eigeneQualifikation, false);
     const zeigeDelegieren =
-      selbstBefugt &&
-      massnahme.qualifikation !== 'basis' &&
+      state.sitzung.aktiv &&
+      darfDelegieren(recht, eigeneQualifikation) &&
+      recht.qualifikation !== 'basis' &&
       !delegiert &&
       !bereitsDurchgefuehrt &&
       fehlt === null;
@@ -104,9 +107,9 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
         >
           <span className="massnahme-label">
             {massnahme.label}
-            {massnahme.qualifikation !== 'basis' && (
-              <span className={`qualifikation qualifikation-${massnahme.qualifikation}`}>
-                {QUALIFIKATION_LABEL[massnahme.qualifikation]}
+            {recht.qualifikation !== 'basis' && (
+              <span className={`qualifikation qualifikation-${recht.qualifikation}`}>
+                {QUALIFIKATION_LABEL[recht.qualifikation]}
                 {delegiert && ' · delegiert'}
               </span>
             )}
@@ -119,7 +122,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
                   // Voraussetzung genau fehlt, steht im SAA-Detail.
                   voraussetzungKurz(fehlt)
                 : qualifikationFehlt
-                  ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                  ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
                   : `${massnahme.dauerSek} s`}
           </span>
         </button>

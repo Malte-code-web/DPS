@@ -582,7 +582,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_139 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -614,6 +614,8 @@ _139 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsstufen |
+| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:19`](src/domain/qualifikation.ts#L19) | Wer eine Maßnahme durchführen und wer sie delegieren darf |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
 
 #### einzelfaelle
@@ -738,40 +740,42 @@ _139 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `speicher.szenarien` | [`src/lib/speicher.ts:5`](src/lib/speicher.ts#L5) | Eigene Szenarien im Browser sichern |
+| `speicher.massnahmenrechte` | [`src/lib/speicher.ts:39`](src/lib/speicher.ts#L39) | Zuletzt eingestellte Qualifikations- und |
+| `speicher.szenarien` | [`src/lib/speicher.ts:7`](src/lib/speicher.ts#L7) | Eigene Szenarien im Browser sichern |
 
 #### state
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:87`](src/state/reducer.ts#L87) | Alles, was der Übende auslösen kann |
-| `state.phase` | [`src/state/reducer.ts:33`](src/state/reducer.ts#L33) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:27`](src/state/SimulationProvider.tsx#L27) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:185`](src/state/reducer.ts#L185) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:120`](src/state/reducer.ts#L120) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.aktionen` | [`src/state/reducer.ts:97`](src/state/reducer.ts#L97) | Alles, was der Übende auslösen kann |
+| `state.phase` | [`src/state/reducer.ts:35`](src/state/reducer.ts#L35) | Die Hauptzustände der Anwendung |
+| `state.provider` | [`src/state/SimulationProvider.tsx:32`](src/state/SimulationProvider.tsx#L32) | Rollen-bewusster Zustandsverteiler |
+| `state.reducer` | [`src/state/reducer.ts:200`](src/state/reducer.ts#L200) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:132`](src/state/reducer.ts#L132) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
-| `state.uhr` | [`src/state/SimulationProvider.tsx:13`](src/state/SimulationProvider.tsx#L13) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:152`](src/state/reducer.ts#L152) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:45`](src/state/reducer.ts#L45) | Der gesamte Zustand einer laufenden Übung |
+| `state.uhr` | [`src/state/SimulationProvider.tsx:18`](src/state/SimulationProvider.tsx#L18) | Der Taktgeber der laufenden Simulation |
+| `state.zeit` | [`src/state/reducer.ts:167`](src/state/reducer.ts#L167) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zustand` | [`src/state/reducer.ts:48`](src/state/reducer.ts#L48) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1354`](src/index.css#L1354) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1738`](src/index.css#L1738) | Vollbildseite mit stehendem Kopf |
-| `stil.editor` | [`src/index.css:566`](src/index.css#L566) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:2934`](src/index.css#L2934) | Die angeheftete Leiste so flach wie möglich |
-| `stil.ersteindruck` | [`src/index.css:1791`](src/index.css#L1791) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:2884`](src/index.css#L2884) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.mehrspieler` | [`src/index.css:302`](src/index.css#L302) | Rollenwahl, Anmeldung, Beitritt und Wartebereich |
-| `stil.modi` | [`src/index.css:493`](src/index.css#L493) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1617`](src/index.css#L1617) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:2161`](src/index.css#L2161) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.anhaengekarte` | [`src/index.css:1422`](src/index.css#L1422) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1806`](src/index.css#L1806) | Vollbildseite mit stehendem Kopf |
+| `stil.editor` | [`src/index.css:634`](src/index.css#L634) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:3002`](src/index.css#L3002) | Die angeheftete Leiste so flach wie möglich |
+| `stil.ersteindruck` | [`src/index.css:1859`](src/index.css#L1859) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:2952`](src/index.css#L2952) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.massnahmenrechte` | [`src/index.css:291`](src/index.css#L291) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
+| `stil.mehrspieler` | [`src/index.css:370`](src/index.css#L370) | Rollenwahl, Anmeldung, Beitritt und Wartebereich |
+| `stil.modi` | [`src/index.css:561`](src/index.css#L561) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1685`](src/index.css#L1685) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.raster` | [`src/index.css:2229`](src/index.css#L2229) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:141`](src/index.css#L141) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3004`](src/index.css#L3004) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3072`](src/index.css#L3072) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3135`](src/index.css#L3135) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3203`](src/index.css#L3203) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -809,7 +813,7 @@ _139 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.alleinspiel` | [`src/pages/SetupSeite.tsx:52`](src/pages/SetupSeite.tsx#L52) | Vor dem Start wählen, ob man allein spielt */} |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.anmeldung` | [`src/pages/AnmeldungSeite.tsx:5`](src/pages/AnmeldungSeite.tsx#L5) | Übungsleiter-Anmeldung (Login folgt mit dem Server) |
-| `ui.app` | [`src/App.tsx:12`](src/App.tsx#L12) | Weiche zwischen den Hauptzustaenden der Anwendung |
+| `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.beitritt` | [`src/pages/BeitrittSeite.tsx:5`](src/pages/BeitrittSeite.tsx#L5) | Spieler tritt mit Code und Name bei |
@@ -820,7 +824,8 @@ _139 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:34`](src/components/Massnahmenliste.tsx#L34) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:35`](src/components/Massnahmenliste.tsx#L35) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:14`](src/pages/MassnahmenrechteSeite.tsx#L14) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |

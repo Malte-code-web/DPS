@@ -37,48 +37,52 @@ export function WartebereichSeite() {
         )}
 
         <h2>Teilnehmende ({sitzung.spieler.length})</h2>
-        {host && sitzung.spieler.length > 0 && (
+        {sitzung.spieler.length > 0 && (
           <p className="hinweis">
-            Vergib die fachliche Qualifikation jeder Person - Maßnahmen darüber sind im Einsatz
-            gesperrt, bis eine höherqualifizierte Person sie für den Patienten freigibt.
+            Stelle deine eigene fachliche Qualifikation ein - sichtbar für alle. Maßnahmen darüber
+            sind im Einsatz gesperrt, bis jemand mit ausreichender Qualifikation sie für den
+            Patienten freigibt.
           </p>
         )}
         {sitzung.spieler.length === 0 ? (
           <p className="hinweis">Noch niemand beigetreten.</p>
         ) : (
           <ul className="spielerliste">
-            {sitzung.spieler.map((spieler) => (
-              <li key={spieler.id} className={`spieler spieler-${spieler.rolle}`}>
-                <span className="spieler-name">{spieler.name}</span>
-                <span className="spieler-rolle">
-                  {spieler.rolle === 'uebungsleiter' ? 'Übungsleitung' : 'Spieler'}
-                </span>
-                {host ? (
-                  <select
-                    className="spieler-qualifikation-wahl"
-                    aria-label={`Qualifikation von ${spieler.name}`}
-                    value={spieler.qualifikation}
-                    onChange={(event) =>
-                      dispatch({
-                        typ: 'spielerQualifikationSetzen',
-                        spielerId: spieler.id,
-                        qualifikation: event.target.value as Qualifikation,
-                      })
-                    }
-                  >
-                    {QUALIFIKATIONEN.map((qualifikation) => (
-                      <option key={qualifikation} value={qualifikation}>
-                        {QUALIFIKATION_VOLLNAME[qualifikation]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="spieler-qualifikation">
-                    {QUALIFIKATION_VOLLNAME[spieler.qualifikation]}
+            {sitzung.spieler.map((spieler) => {
+              const eigeneZeile = spieler.id === sitzung.eigeneId;
+              return (
+                <li key={spieler.id} className={`spieler spieler-${spieler.rolle}`}>
+                  <span className="spieler-name">{spieler.name}</span>
+                  <span className="spieler-rolle">
+                    {spieler.rolle === 'uebungsleiter' ? 'Übungsleitung' : 'Spieler'}
                   </span>
-                )}
-              </li>
-            ))}
+                  {eigeneZeile ? (
+                    <select
+                      className="spieler-qualifikation-wahl"
+                      aria-label="Deine Qualifikation"
+                      value={spieler.qualifikation}
+                      onChange={(event) =>
+                        dispatch({
+                          typ: 'spielerQualifikationSetzen',
+                          spielerId: spieler.id,
+                          qualifikation: event.target.value as Qualifikation,
+                        })
+                      }
+                    >
+                      {QUALIFIKATIONEN.map((qualifikation) => (
+                        <option key={qualifikation} value={qualifikation}>
+                          {QUALIFIKATION_VOLLNAME[qualifikation]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="spieler-qualifikation">
+                      {QUALIFIKATION_VOLLNAME[spieler.qualifikation]}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
 

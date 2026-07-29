@@ -38,11 +38,13 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
       <h2 className="sofort-titel">Sofortmaßnahmen</h2>
       <div className="sofort-liste">
         {SOFORTMASSNAHMEN.map((massnahme) => {
+          const recht = state.massnahmenrechte[massnahme.id] ??
+            ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
           const erledigt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
           const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
           const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
-            massnahme.qualifikation,
+            recht,
             eigeneQualifikation,
             delegiert,
           );
@@ -64,7 +66,7 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
                   : fehlt
                     ? voraussetzungKurz(fehlt)
                     : qualifikationFehlt
-                      ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                      ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
                       : `${massnahme.dauerSek} s`}
               </span>
             </button>

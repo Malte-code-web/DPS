@@ -2,6 +2,7 @@ import { AnmeldungSeite } from './pages/AnmeldungSeite';
 import { BeitrittSeite } from './pages/BeitrittSeite';
 import { DebriefingSeite } from './pages/DebriefingSeite';
 import { EinsatzSeite } from './pages/EinsatzSeite';
+import { MassnahmenrechteSeite } from './pages/MassnahmenrechteSeite';
 import { RolleSeite } from './pages/RolleSeite';
 import { SetupSeite } from './pages/SetupSeite';
 import { StartSeite } from './pages/StartSeite';
@@ -20,6 +21,8 @@ export function App() {
       return <AnmeldungSeite />;
     case 'beitritt':
       return <BeitrittSeite />;
+    case 'massnahmenrechte':
+      return <MassnahmenrechteSeite />;
     case 'wartebereich':
       return <WartebereichSeite />;
     case 'setup':

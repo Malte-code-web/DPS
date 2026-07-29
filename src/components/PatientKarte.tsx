@@ -142,11 +142,13 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
       <div className="patient-karte-sofort">
         {SOFORT_IDS.map((id) => {
           const massnahme = MASSNAHMEN[id];
+          const recht = state.massnahmenrechte[id] ??
+            ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
           const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
           const delegiert = patient.delegierteMassnahmen.includes(id);
           const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
-            massnahme.qualifikation,
+            recht,
             eigeneQualifikation,
             delegiert,
           );
@@ -168,7 +170,7 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
                 {bereitsDurchgefuehrt
                   ? 'durchgeführt'
                   : qualifikationFehlt
-                    ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                    ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
                     : `${massnahme.dauerSek} s`}
               </span>
             </button>

@@ -1,6 +1,7 @@
 import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
 import { DIAGNOSTIK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
+import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import {
   SICHTUNGSDAUER_SEK,
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -13,6 +14,7 @@ import {
   wendeMassnahmeAn,
 } from '../domain/simulation';
 import type { Trainingsmodus } from '../domain/modi';
+import type { Massnahmenrechte } from '../domain/massnahmenrechte';
 import {
   KEINE_SITZUNG,
   erzeugeCode,
@@ -36,6 +38,7 @@ export type Phase =
   | 'rolle'
   | 'anmeldung'
   | 'beitritt'
+  | 'massnahmenrechte'
   | 'wartebereich'
   | 'setup'
   | 'einsatz'
@@ -64,6 +67,12 @@ export interface SimulationState {
   alleine: boolean;
   /** Mehrspieler-Sitzung; inaktiv im Einzelspiel (→ `sitzung.modell`). */
   sitzung: Sitzungszustand;
+  /**
+   * Durchführungs- und Delegationsschwelle je Maßnahme, von der Übungsleitung
+   * vor der Sitzung eingestellt (→ `domain.massnahmenrechte`). Unabhängig von
+   * `sitzung` gepflegt - erst innerhalb einer Sitzung wirkt die Sperre.
+   */
+  massnahmenrechte: Massnahmenrechte;
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
@@ -82,6 +91,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   ausgewaehlterAbschnitt: 'schadensstelle',
   alleine: false,
   sitzung: KEINE_SITZUNG,
+  massnahmenrechte: standardMassnahmenrechte(),
 };
 
 /** @anker state.aktionen Alles, was der Übende auslösen kann */
@@ -107,7 +117,9 @@ export type SimulationAction =
   | { typ: 'gemeinsamOeffnen' }
   | { typ: 'rolleWaehlen'; rolle: Rolle }
   | { typ: 'anmeldungAbschliessen'; name: string; eigeneId: string }
-  | { typ: 'sitzungEroeffnen'; szenario: Szenario }
+  | { typ: 'szenarioFuerSitzungWaehlen'; szenario: Szenario }
+  | { typ: 'massnahmenrechteSetzen'; rechte: Massnahmenrechte }
+  | { typ: 'sitzungEroeffnen' }
   | { typ: 'spielerBeitreten'; code: string; name: string; eigeneId: string }
   | { typ: 'spielerHinzugefuegt'; spieler: Spieler }
   | { typ: 'spielerEntfernt'; spielerId: string }
@@ -133,6 +145,8 @@ export interface Schnappschuss {
   patienten: Patient[];
   spieler: Spieler[];
   status: Sitzungszustand['status'];
+  /** Damit alle Clients dieselben Sperren durchsetzen, nicht nur der Host. */
+  massnahmenrechte: Massnahmenrechte;
 }
 
 export function schnappschussAus(state: SimulationState): Schnappschuss {
@@ -145,6 +159,7 @@ export function schnappschussAus(state: SimulationState): Schnappschuss {
     patienten: state.patienten,
     spieler: state.sitzung.spieler,
     status: state.sitzung.status,
+    massnahmenrechte: state.massnahmenrechte,
   };
 }
 
@@ -201,7 +216,12 @@ export function simulationReducer(
       return { ...state, phase: 'uebungsleitung' };
 
     case 'zurueckZumStart':
-      return { ...ANFANGSZUSTAND, geschwindigkeit: state.geschwindigkeit, eigeneSzenarien: state.eigeneSzenarien };
+      return {
+        ...ANFANGSZUSTAND,
+        geschwindigkeit: state.geschwindigkeit,
+        eigeneSzenarien: state.eigeneSzenarien,
+        massnahmenrechte: state.massnahmenrechte,
+      };
 
     case 'eigeneSzenarienSetzen':
       return { ...state, eigeneSzenarien: action.szenarien };
@@ -215,6 +235,7 @@ export function simulationReducer(
         ...ANFANGSZUSTAND,
         geschwindigkeit: state.geschwindigkeit,
         eigeneSzenarien: state.eigeneSzenarien,
+        massnahmenrechte: state.massnahmenrechte,
         modus: state.modus ?? 'digital',
         phase: 'einsatz',
         szenario: action.szenario,
@@ -321,11 +342,16 @@ export function simulationReducer(
       return { ...state, phase: 'debriefing', laufend: false, ausgewaehlterPatientId: null };
 
     case 'zurueckZumSetup':
+      // sitzung bleibt erhalten: Eine Übungsleitung, die aus dem Debriefing
+      // oder von der Maßnahmenrechte-Seite zurückgeht, bleibt angemeldet und
+      // kann direkt ein neues Szenario wählen, statt sich neu anzumelden.
       return {
         ...ANFANGSZUSTAND,
         geschwindigkeit: state.geschwindigkeit,
         eigeneSzenarien: state.eigeneSzenarien,
+        massnahmenrechte: state.massnahmenrechte,
         modus: state.modus,
+        sitzung: state.sitzung,
         phase: 'setup',
       };
 
@@ -352,7 +378,17 @@ export function simulationReducer(
         },
       };
 
+    case 'szenarioFuerSitzungWaehlen':
+      // Vor dem eigentlichen Eröffnen stellt die Übungsleitung erst die
+      // Maßnahmenrechte ein (→ `ui.massnahmenrechte`); die Sitzung (Code,
+      // Wartebereich) entsteht erst mit `sitzungEroeffnen`.
+      return { ...state, szenario: action.szenario, phase: 'massnahmenrechte' };
+
+    case 'massnahmenrechteSetzen':
+      return { ...state, massnahmenrechte: action.rechte };
+
     case 'sitzungEroeffnen': {
+      if (!state.szenario) return state;
       const code = erzeugeCode();
       const selbst: Spieler = {
         id: state.sitzung.eigeneId ?? 'leiter',
@@ -364,9 +400,10 @@ export function simulationReducer(
         ...ANFANGSZUSTAND,
         eigeneSzenarien: state.eigeneSzenarien,
         geschwindigkeit: state.geschwindigkeit,
+        massnahmenrechte: state.massnahmenrechte,
         modus: 'digital',
         phase: 'wartebereich',
-        szenario: action.szenario,
+        szenario: state.szenario,
         sitzung: {
           aktiv: true,
           rolle: 'uebungsleiter',
@@ -383,6 +420,7 @@ export function simulationReducer(
       return {
         ...ANFANGSZUSTAND,
         eigeneSzenarien: state.eigeneSzenarien,
+        massnahmenrechte: state.massnahmenrechte,
         modus: 'digital',
         phase: 'wartebereich',
         sitzung: {
@@ -439,6 +477,7 @@ export function simulationReducer(
         ...ANFANGSZUSTAND,
         eigeneSzenarien: state.eigeneSzenarien,
         geschwindigkeit: state.geschwindigkeit,
+        massnahmenrechte: state.massnahmenrechte,
       };
 
     case 'schnappschussAnwenden': {
@@ -451,6 +490,7 @@ export function simulationReducer(
         laufend: s.laufend,
         geschwindigkeit: s.geschwindigkeit,
         patienten: s.patienten,
+        massnahmenrechte: s.massnahmenrechte,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.
         sitzung: { ...state.sitzung, spieler: s.spieler, status: s.status },

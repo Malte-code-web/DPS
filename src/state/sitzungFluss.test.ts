@@ -34,12 +34,26 @@ describe('Lobby-Fluss der Übungsleitung', () => {
     expect(state.sitzung.eigeneId).toBe('leiter-1');
   });
 
+  it('geht nach der Szenariowahl erst in die Maßnahmenrechte, nicht direkt in den Wartebereich', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+    );
+    expect(state.phase).toBe('massnahmenrechte');
+    expect(state.szenario?.id).toBe(busunfall.id);
+    // Die Sitzung ist noch nicht eröffnet - kein Code, keine Teilnehmerliste.
+    expect(state.sitzung.aktiv).toBe(false);
+  });
+
   it('eröffnet eine Sitzung mit Code und Übungsleiter im Wartebereich', () => {
     const state = spiele(
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'sitzungEroeffnen' },
     );
     expect(state.phase).toBe('wartebereich');
     expect(state.sitzung.aktiv).toBe(true);
@@ -50,6 +64,66 @@ describe('Lobby-Fluss der Übungsleitung', () => {
     expect(state.sitzung.spieler).toHaveLength(1);
     expect(state.sitzung.spieler[0]).toMatchObject({ id: 'leiter-1', rolle: 'uebungsleiter' });
   });
+
+  it('öffnet ohne gewähltes Szenario keine Sitzung (Guard)', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+    );
+    const nachher = simulationReducer(state, { typ: 'sitzungEroeffnen' });
+    expect(nachher).toBe(state);
+  });
+});
+
+describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
+  it('startet mit dem Katalog-Standard', () => {
+    expect(ANFANGSZUSTAND.massnahmenrechte.tourniquet).toEqual({
+      qualifikation: 'notsan',
+      delegationsstufe: 'notsan',
+    });
+  });
+
+  it('übernimmt eine Anpassung der Übungsleitung', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      {
+        typ: 'massnahmenrechteSetzen',
+        rechte: {
+          ...ANFANGSZUSTAND.massnahmenrechte,
+          tourniquet: { qualifikation: 'basis', delegationsstufe: 'notarzt' },
+        },
+      },
+    );
+    expect(state.massnahmenrechte.tourniquet).toEqual({
+      qualifikation: 'basis',
+      delegationsstufe: 'notarzt',
+    });
+    // Andere Maßnahmen bleiben beim Katalog-Standard.
+    expect(state.massnahmenrechte.blutstillung).toEqual(ANFANGSZUSTAND.massnahmenrechte.blutstillung);
+  });
+
+  it('bleibt über die Sitzungseröffnung hinweg erhalten', () => {
+    const angepasst = {
+      ...ANFANGSZUSTAND.massnahmenrechte,
+      tourniquet: { qualifikation: 'basis' as const, delegationsstufe: 'basis' as const },
+    };
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'massnahmenrechteSetzen', rechte: angepasst },
+      { typ: 'sitzungEroeffnen' },
+    );
+    expect(state.massnahmenrechte.tourniquet).toEqual({
+      qualifikation: 'basis',
+      delegationsstufe: 'basis',
+    });
+  });
 });
 
 describe('Teilnehmerverwaltung im Wartebereich', () => {
@@ -58,7 +132,8 @@ describe('Teilnehmerverwaltung im Wartebereich', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'sitzungEroeffnen' },
     );
   }
 
@@ -114,7 +189,8 @@ describe('Host-autoritative Synchronisation', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'sitzungEroeffnen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -140,12 +216,17 @@ describe('Host-autoritative Synchronisation', () => {
     const host = imEinsatz();
     const schnappschuss = schnappschussAus(host);
 
-    // Ein Spieler-Client: eigene Auswahl und eigene Identität gesetzt.
+    // Ein Spieler-Client: eigene Auswahl, eigene Identität - und eine eigene,
+    // lokal geladene Vorbelegung der Maßnahmenrechte, die vom Host abweicht.
     const spielerClient: SimulationState = {
       ...ANFANGSZUSTAND,
       phase: 'wartebereich',
       ausgewaehlterPatientId: 'lokal-gewaehlt',
       ausgewaehlterAbschnitt: 'eingangssichtung',
+      massnahmenrechte: {
+        ...ANFANGSZUSTAND.massnahmenrechte,
+        tourniquet: { qualifikation: 'notarzt', delegationsstufe: 'notarzt' },
+      },
       sitzung: {
         aktiv: true,
         rolle: 'spieler',
@@ -172,6 +253,9 @@ describe('Host-autoritative Synchronisation', () => {
     expect(nachher.sitzung.rolle).toBe('spieler');
     expect(nachher.sitzung.eigeneId).toBe('s-9');
     expect(nachher.sitzung.eigenerName).toBe('Anna');
+    // Die Maßnahmenrechte des Hosts überschreiben die eigene, lokale
+    // Vorbelegung - alle Clients setzen dieselben Sperren durch.
+    expect(nachher.massnahmenrechte).toEqual(host.massnahmenrechte);
   });
 });
 
@@ -182,7 +266,8 @@ describe('Nachhol-Takt aus dem Hintergrund', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'sitzungEroeffnen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -224,7 +309,8 @@ describe('schnappschussAus enthält nur geteilte Scheiben', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'sitzungEroeffnen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -236,6 +322,9 @@ describe('schnappschussAus enthält nur geteilte Scheiben', () => {
     });
     expect(schnappschuss.szenario?.id).toBe(busunfall.id);
     expect(schnappschuss.spieler).toEqual(host.sitzung.spieler);
+    // Maßnahmenrechte gehören dazu - sonst würden Clients unterschiedliche
+    // Sperren durchsetzen (→ `domain.massnahmenrechte`).
+    expect(schnappschuss.massnahmenrechte).toEqual(host.massnahmenrechte);
     // Navigation ist bewusst nicht Teil des geteilten Schnappschusses.
     expect(schnappschuss).not.toHaveProperty('ausgewaehlterPatientId');
   });
@@ -247,7 +336,8 @@ describe('Fachliche Qualifikation im Mehrspieler', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'sitzungEroeffnen' },
     );
     return simulationReducer(host, {
       typ: 'spielerHinzugefuegt',
@@ -289,7 +379,8 @@ describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'sitzungEroeffnen' },
       ),
       { typ: 'sitzungStarten' },
     );

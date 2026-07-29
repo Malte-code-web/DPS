@@ -1,4 +1,8 @@
+import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
 import { useSimulation } from '../state/useSimulation';
+import type { Qualifikation } from '../domain/types';
+
+const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
 
 /** @anker ui.wartebereich Lobby vor dem Start - Code, Teilnehmende, Startknopf */
 export function WartebereichSeite() {
@@ -33,6 +37,12 @@ export function WartebereichSeite() {
         )}
 
         <h2>Teilnehmende ({sitzung.spieler.length})</h2>
+        {host && sitzung.spieler.length > 0 && (
+          <p className="hinweis">
+            Vergib die fachliche Qualifikation jeder Person - Maßnahmen darüber sind im Einsatz
+            gesperrt, bis eine höherqualifizierte Person sie für den Patienten freigibt.
+          </p>
+        )}
         {sitzung.spieler.length === 0 ? (
           <p className="hinweis">Noch niemand beigetreten.</p>
         ) : (
@@ -43,6 +53,30 @@ export function WartebereichSeite() {
                 <span className="spieler-rolle">
                   {spieler.rolle === 'uebungsleiter' ? 'Übungsleitung' : 'Spieler'}
                 </span>
+                {host ? (
+                  <select
+                    className="spieler-qualifikation-wahl"
+                    aria-label={`Qualifikation von ${spieler.name}`}
+                    value={spieler.qualifikation}
+                    onChange={(event) =>
+                      dispatch({
+                        typ: 'spielerQualifikationSetzen',
+                        spielerId: spieler.id,
+                        qualifikation: event.target.value as Qualifikation,
+                      })
+                    }
+                  >
+                    {QUALIFIKATIONEN.map((qualifikation) => (
+                      <option key={qualifikation} value={qualifikation}>
+                        {QUALIFIKATION_VOLLNAME[qualifikation]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="spieler-qualifikation">
+                    {QUALIFIKATION_VOLLNAME[spieler.qualifikation]}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

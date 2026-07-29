@@ -42,15 +42,15 @@ describe('Spieler-Ids', () => {
 });
 
 describe('Spielerliste', () => {
-  const a: Spieler = { id: 'a', name: 'Anna', rolle: 'spieler' };
-  const b: Spieler = { id: 'b', name: 'Ben', rolle: 'spieler' };
+  const a: Spieler = { id: 'a', name: 'Anna', rolle: 'spieler', qualifikation: 'basis' };
+  const b: Spieler = { id: 'b', name: 'Ben', rolle: 'spieler', qualifikation: 'basis' };
 
   it('fügt einen Spieler hinzu', () => {
     expect(mitSpieler([a], b)).toEqual([a, b]);
   });
 
   it('aktualisiert einen bestehenden Spieler statt zu doppeln', () => {
-    const aNeu: Spieler = { id: 'a', name: 'Anna M.', rolle: 'spieler' };
+    const aNeu: Spieler = { id: 'a', name: 'Anna M.', rolle: 'spieler', qualifikation: 'basis' };
     const liste = mitSpieler([a, b], aNeu);
     expect(liste).toHaveLength(2);
     expect(liste.find((s) => s.id === 'a')?.name).toBe('Anna M.');

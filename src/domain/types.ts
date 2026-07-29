@@ -440,6 +440,11 @@ export interface Patient extends PatientVorlage {
   /** IDs bereits gelöster Probleme. */
   behandelteProbleme: string[];
   durchgefuehrteMassnahmen: MassnahmeId[];
+  /**
+   * Maßnahmen, die für diesen Patienten von einer höherqualifizierten Person
+   * freigegeben wurden - hebt die Qualifikationssperre auf (→ `domain.qualifikation`).
+   */
+  delegierteMassnahmen: MassnahmeId[];
   /** Welche Untersuchungen durchgeführt wurden - steuert, was sichtbar ist. */
   durchgefuehrteDiagnostik: DiagnostikId[];
   /** Abkürzung für "Bodycheck erfolgt". */

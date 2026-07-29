@@ -25,6 +25,7 @@ import type {
   Einsatzabschnitt,
   MassnahmeId,
   Patient,
+  Qualifikation,
   Sichtungskategorie,
   Szenario,
 } from '../domain/types';
@@ -97,6 +98,7 @@ export type SimulationAction =
   | { typ: 'diagnostikDurchfuehren'; patientId: string; diagnostikId: DiagnostikId }
   | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie; final?: boolean }
   | { typ: 'massnahmeDurchfuehren'; patientId: string; massnahmeId: MassnahmeId }
+  | { typ: 'massnahmeDelegieren'; patientId: string; massnahmeId: MassnahmeId }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
@@ -109,6 +111,7 @@ export type SimulationAction =
   | { typ: 'spielerBeitreten'; code: string; name: string; eigeneId: string }
   | { typ: 'spielerHinzugefuegt'; spieler: Spieler }
   | { typ: 'spielerEntfernt'; spielerId: string }
+  | { typ: 'spielerQualifikationSetzen'; spielerId: string; qualifikation: Qualifikation }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss };
@@ -284,6 +287,17 @@ export function simulationReducer(
         MASSNAHMEN[action.massnahmeId].dauerSek,
       );
 
+    case 'massnahmeDelegieren':
+      // Freigabe durch Rücksprache - kostet keine Einsatzzeit (→ `domain.qualifikation`).
+      return mitPatient(state, action.patientId, (patient) =>
+        patient.delegierteMassnahmen.includes(action.massnahmeId)
+          ? patient
+          : {
+              ...patient,
+              delegierteMassnahmen: [...patient.delegierteMassnahmen, action.massnahmeId],
+            },
+      );
+
     case 'patientVerlegen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return state;
@@ -344,6 +358,7 @@ export function simulationReducer(
         id: state.sitzung.eigeneId ?? 'leiter',
         name: state.sitzung.eigenerName ?? 'Übungsleitung',
         rolle: 'uebungsleiter',
+        qualifikation: 'basis',
       };
       return {
         ...ANFANGSZUSTAND,
@@ -391,6 +406,19 @@ export function simulationReducer(
       return {
         ...state,
         sitzung: { ...state.sitzung, spieler: ohneSpieler(state.sitzung.spieler, action.spielerId) },
+      };
+
+    case 'spielerQualifikationSetzen':
+      return {
+        ...state,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? { ...spieler, qualifikation: action.qualifikation }
+              : spieler,
+          ),
+        },
       };
 
     case 'sitzungStarten':

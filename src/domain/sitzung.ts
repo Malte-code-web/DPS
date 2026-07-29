@@ -1,3 +1,5 @@
+import type { Qualifikation } from './types';
+
 /**
  * @anker sitzung.modell Rollen, Spieler und Code einer gemeinsamen Sitzung
  *
@@ -14,6 +16,12 @@ export interface Spieler {
   id: string;
   name: string;
   rolle: Rolle;
+  /**
+   * Fachliche Qualifikation, von der Übungsleitung im Wartebereich vergeben
+   * (→ `domain.qualifikation`). Startet auf `basis` (Einsatzsanitäter-Niveau)
+   * und lässt sich dort vor dem Start anheben.
+   */
+  qualifikation: Qualifikation;
 }
 
 /** Der lokale Sitzungszustand eines Clients (teils geteilt, teils nur hier). */

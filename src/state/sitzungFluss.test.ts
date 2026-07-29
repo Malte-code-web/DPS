@@ -66,14 +66,14 @@ describe('Teilnehmerverwaltung im Wartebereich', () => {
     let state = eroeffnet();
     state = simulationReducer(state, {
       typ: 'spielerHinzugefuegt',
-      spieler: { id: 's-1', name: 'Anna', rolle: 'spieler' },
+      spieler: { id: 's-1', name: 'Anna', rolle: 'spieler', qualifikation: 'basis' },
     });
     expect(state.sitzung.spieler).toHaveLength(2);
 
     // Doppelte Anmeldung derselben Id ersetzt statt zu doppeln.
     state = simulationReducer(state, {
       typ: 'spielerHinzugefuegt',
-      spieler: { id: 's-1', name: 'Anna B.', rolle: 'spieler' },
+      spieler: { id: 's-1', name: 'Anna B.', rolle: 'spieler', qualifikation: 'basis' },
     });
     expect(state.sitzung.spieler).toHaveLength(2);
 
@@ -238,5 +238,105 @@ describe('schnappschussAus enthält nur geteilte Scheiben', () => {
     expect(schnappschuss.spieler).toEqual(host.sitzung.spieler);
     // Navigation ist bewusst nicht Teil des geteilten Schnappschusses.
     expect(schnappschuss).not.toHaveProperty('ausgewaehlterPatientId');
+  });
+});
+
+describe('Fachliche Qualifikation im Mehrspieler', () => {
+  function eroeffnetMitSpieler(): SimulationState {
+    const host = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'sitzungEroeffnen', szenario: busunfall },
+    );
+    return simulationReducer(host, {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 's-1', name: 'Anna', rolle: 'spieler', qualifikation: 'basis' },
+    });
+  }
+
+  it('startet neue Teilnehmende auf der Stufe basis', () => {
+    const state = eroeffnetMitSpieler();
+    expect(state.sitzung.spieler.find((s) => s.id === 's-1')?.qualifikation).toBe('basis');
+    expect(state.sitzung.spieler.find((s) => s.id === 'leiter-1')?.qualifikation).toBe('basis');
+  });
+
+  it('hebt die Qualifikation eines Spielers an, ohne die anderen zu ändern', () => {
+    const state = simulationReducer(eroeffnetMitSpieler(), {
+      typ: 'spielerQualifikationSetzen',
+      spielerId: 's-1',
+      qualifikation: 'notarzt',
+    });
+    expect(state.sitzung.spieler.find((s) => s.id === 's-1')?.qualifikation).toBe('notarzt');
+    expect(state.sitzung.spieler.find((s) => s.id === 'leiter-1')?.qualifikation).toBe('basis');
+  });
+
+  it('ignoriert eine unbekannte Spieler-Id', () => {
+    const vorher = eroeffnetMitSpieler();
+    const nachher = simulationReducer(vorher, {
+      typ: 'spielerQualifikationSetzen',
+      spielerId: 'unbekannt',
+      qualifikation: 'notarzt',
+    });
+    expect(nachher.sitzung.spieler).toEqual(vorher.sitzung.spieler);
+  });
+});
+
+describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
+  function imEinsatz(): SimulationState {
+    return simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'sitzungEroeffnen', szenario: busunfall },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+  }
+
+  it('trägt eine Maßnahme als delegiert für genau diesen Patienten ein', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const nachher = simulationReducer(state, {
+      typ: 'massnahmeDelegieren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    const patient = nachher.patienten.find((p) => p.id === patientId)!;
+    expect(patient.delegierteMassnahmen).toEqual(['tourniquet']);
+    // Andere Patienten bleiben unberührt.
+    for (const anderer of nachher.patienten.filter((p) => p.id !== patientId)) {
+      expect(anderer.delegierteMassnahmen).toEqual([]);
+    }
+  });
+
+  it('trägt dieselbe Maßnahme nicht doppelt ein', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const einmal = simulationReducer(state, {
+      typ: 'massnahmeDelegieren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    const zweimal = simulationReducer(einmal, {
+      typ: 'massnahmeDelegieren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    expect(zweimal.patienten.find((p) => p.id === patientId)?.delegierteMassnahmen).toEqual([
+      'tourniquet',
+    ]);
+  });
+
+  it('kostet keine Einsatzzeit', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const nachher = simulationReducer(state, {
+      typ: 'massnahmeDelegieren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    expect(nachher.zeitSek).toBe(state.zeitSek);
   });
 });

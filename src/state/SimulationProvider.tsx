@@ -104,7 +104,12 @@ export function SimulationProvider({
     if (rolle === 'spieler' && sitzung.eigeneId && sitzung.eigenerName) {
       transport.senden({
         typ: 'beitritt',
-        spieler: { id: sitzung.eigeneId, name: sitzung.eigenerName, rolle: 'spieler' },
+        spieler: {
+          id: sitzung.eigeneId,
+          name: sitzung.eigenerName,
+          rolle: 'spieler',
+          qualifikation: 'basis',
+        },
       });
     }
 

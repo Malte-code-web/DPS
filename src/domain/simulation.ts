@@ -112,6 +112,7 @@ export function patientAusVorlage(vorlage: PatientVorlage, verschlechterungFakto
     sichtungFinal: false,
     behandelteProbleme: [],
     durchgefuehrteMassnahmen: [],
+    delegierteMassnahmen: [],
     durchgefuehrteDiagnostik: [],
     untersucht: false,
     verlauf: [],

@@ -8,6 +8,8 @@ import {
   massnahmenDerKategorie,
   voraussetzungKurz,
 } from '../domain/massnahmen';
+import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import { useSimulation } from '../state/useSimulation';
 import type {
   Massnahme,
   MassnahmeId,
@@ -46,9 +48,15 @@ interface Props {
  * bewusst zugeklappt: Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
  */
 export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arten }: Props) {
+  const { state, dispatch } = useSimulation();
   const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
+  // (→ `domain.qualifikation`); im Einzel-/Teamspiel bleibt alles frei wählbar.
+  const eigeneQualifikation = state.sitzung.aktiv
+    ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
+    : null;
 
   const umschalten = (kategorie: MassnahmenKategorie) =>
     setOffen((bisher) => {
@@ -64,6 +72,23 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
   const zeile = (massnahme: Massnahme) => {
     const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
     const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
+    const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
+    const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
+      massnahme.qualifikation,
+      eigeneQualifikation,
+      delegiert,
+    );
+    // Wer die Maßnahme selbst dürfte, kann sie für diesen Patienten freigeben
+    // - unabhängig von einer bereits bestehenden Delegation.
+    const selbstBefugt =
+      state.sitzung.aktiv &&
+      !massnahmeGesperrtWegenQualifikation(massnahme.qualifikation, eigeneQualifikation, false);
+    const zeigeDelegieren =
+      selbstBefugt &&
+      massnahme.qualifikation !== 'basis' &&
+      !delegiert &&
+      !bereitsDurchgefuehrt &&
+      fehlt === null;
     const detailOffen = detail === massnahme.id;
     const hatDetails = Boolean(massnahme.indikation ?? massnahme.dosierung);
 
@@ -74,7 +99,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
           className={`massnahme massnahme-${massnahme.art}${
             bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
           }`}
-          disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null}
+          disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt}
           onClick={() => onMassnahme(massnahme.id)}
         >
           <span className="massnahme-label">
@@ -82,6 +107,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
             {massnahme.qualifikation !== 'basis' && (
               <span className={`qualifikation qualifikation-${massnahme.qualifikation}`}>
                 {QUALIFIKATION_LABEL[massnahme.qualifikation]}
+                {delegiert && ' · delegiert'}
               </span>
             )}
           </span>
@@ -92,9 +118,24 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
                 ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
                   // Voraussetzung genau fehlt, steht im SAA-Detail.
                   voraussetzungKurz(fehlt)
-                : `${massnahme.dauerSek} s`}
+                : qualifikationFehlt
+                  ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                  : `${massnahme.dauerSek} s`}
           </span>
         </button>
+
+        {zeigeDelegieren && (
+          <button
+            type="button"
+            className="massnahme-delegieren"
+            title={`${massnahme.label} für diesen Patienten freigeben`}
+            onClick={() =>
+              dispatch({ typ: 'massnahmeDelegieren', patientId: patient.id, massnahmeId: massnahme.id })
+            }
+          >
+            Freigeben
+          </button>
+        )}
 
         {hatDetails && (
           <button

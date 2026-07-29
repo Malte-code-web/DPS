@@ -1,8 +1,11 @@
 import {
+  QUALIFIKATION_LABEL,
   SOFORTMASSNAHMEN,
   fehlendeVoraussetzung,
   voraussetzungKurz,
 } from '../domain/massnahmen';
+import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import { useSimulation } from '../state/useSimulation';
 import type { MassnahmeId, Patient } from '../domain/types';
 
 interface Props {
@@ -24,7 +27,11 @@ interface Props {
  * (→ `sim.effektnurbeiproblem`).
  */
 export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
+  const { state } = useSimulation();
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  const eigeneQualifikation = state.sitzung.aktiv
+    ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
+    : null;
 
   return (
     <section className="sofortmassnahmen" aria-label="Lebensrettende Sofortmaßnahmen">
@@ -33,6 +40,12 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
         {SOFORTMASSNAHMEN.map((massnahme) => {
           const erledigt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
+          const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
+          const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
+            massnahme.qualifikation,
+            eigeneQualifikation,
+            delegiert,
+          );
 
           return (
             <button
@@ -41,12 +54,18 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
               className={`sofort-knopf massnahme-${massnahme.art}${
                 erledigt ? ' massnahme-erledigt' : ''
               }`}
-              disabled={gesperrt || erledigt || fehlt !== null}
+              disabled={gesperrt || erledigt || fehlt !== null || qualifikationFehlt}
               onClick={() => onMassnahme(massnahme.id)}
             >
               <span className="sofort-label">{massnahme.label}</span>
               <span className="sofort-marke">
-                {erledigt ? 'erledigt' : fehlt ? voraussetzungKurz(fehlt) : `${massnahme.dauerSek} s`}
+                {erledigt
+                  ? 'erledigt'
+                  : fehlt
+                    ? voraussetzungKurz(fehlt)
+                    : qualifikationFehlt
+                      ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                      : `${massnahme.dauerSek} s`}
               </span>
             </button>
           );

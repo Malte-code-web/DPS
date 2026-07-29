@@ -733,6 +733,17 @@ export const QUALIFIKATION_LABEL: Record<Qualifikation, string> = {
 };
 
 /**
+ * Ausgeschriebene Bezeichnung für die Qualifikationswahl im Wartebereich
+ * (→ `domain.qualifikation`) - anders als `QUALIFIKATION_LABEL`, das als kurze
+ * Ausnahme-Kennzeichnung an einer Maßnahme steht und bei `basis` leer bleibt.
+ */
+export const QUALIFIKATION_VOLLNAME: Record<Qualifikation, string> = {
+  basis: 'Einsatzsanitäter/-in (Basis)',
+  notsan: 'Notfallsanitäter/-in',
+  notarzt: 'Notärztin/Notarzt',
+};
+
+/**
  * @anker massnahmen.schnell Auswahl für die Ausgangssichtung (bis 60 Sekunden)
  *
  * Maßnahmen, die sich auch kurz vor dem Abtransport noch durchführen lassen:

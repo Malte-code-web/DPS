@@ -1,5 +1,6 @@
-import { MASSNAHMEN, fehlendeVoraussetzung } from '../domain/massnahmen';
+import { MASSNAHMEN, QUALIFIKATION_LABEL, fehlendeVoraussetzung } from '../domain/massnahmen';
 import { monitorPrioritaet } from '../domain/monitor';
+import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import { radialispulsTastbar } from '../domain/triage';
 import { useSimulation } from '../state/useSimulation';
 import { SichtungsBadge } from './SichtungsBadge';
@@ -44,7 +45,10 @@ interface Props {
  * Sichtungskategorie der aktuellen Station.
  */
 export function PatientKarte({ patient, onAuswahl }: Props) {
-  const { dispatch } = useSimulation();
+  const { state, dispatch } = useSimulation();
+  const eigeneQualifikation = state.sitzung.aktiv
+    ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
+    : null;
   const verstorben = patient.status === 'verstorben';
   const kategorie = verstorben ? 'EX' : patient.gesichtetAls;
   const gesperrt = verstorben || patient.status === 'transportiert';
@@ -140,6 +144,12 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
           const massnahme = MASSNAHMEN[id];
           const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
+          const delegiert = patient.delegierteMassnahmen.includes(id);
+          const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
+            massnahme.qualifikation,
+            eigeneQualifikation,
+            delegiert,
+          );
 
           return (
             <button
@@ -148,14 +158,18 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
               className={`massnahme massnahme-${massnahme.art}${
                 bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
               }`}
-              disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null}
+              disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt}
               onClick={() =>
                 dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId: id })
               }
             >
               <span className="massnahme-label">{massnahme.label}</span>
               <span className="massnahme-dauer">
-                {bereitsDurchgefuehrt ? 'durchgeführt' : `${massnahme.dauerSek} s`}
+                {bereitsDurchgefuehrt
+                  ? 'durchgeführt'
+                  : qualifikationFehlt
+                    ? `erfordert ${QUALIFIKATION_LABEL[massnahme.qualifikation]}`
+                    : `${massnahme.dauerSek} s`}
               </span>
             </button>
           );

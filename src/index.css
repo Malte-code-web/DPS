@@ -414,13 +414,28 @@ select {
 
 .spielerliste .spieler {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   padding: 0.6rem 0.9rem;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
+}
+
+/* Auf schmalen Bildschirmen wandert die Qualifikationswahl in eine eigene
+   Zeile, statt den Rand zu sprengen. */
+.spieler-qualifikation-wahl,
+.spieler-qualifikation {
+  flex-basis: 100%;
+}
+
+@media (min-width: 480px) {
+  .spieler-qualifikation-wahl,
+  .spieler-qualifikation {
+    flex-basis: auto;
+  }
 }
 
 .spieler-name {
@@ -440,6 +455,21 @@ select {
 
 .spieler-uebungsleiter .spieler-rolle {
   color: var(--akzent);
+}
+
+.spieler-qualifikation-wahl {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.spieler-qualifikation {
+  font-size: 0.82rem;
+  color: var(--text-leise);
+  white-space: nowrap;
 }
 
 .warte-hinweis {
@@ -2324,6 +2354,25 @@ button.gefahr {
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text-leise);
+}
+
+/* Freigabe einer über der eigenen Qualifikation liegenden Maßnahme für den
+   Patienten - erscheint nur, wer sie selbst dürfte (→ `domain.qualifikation`). */
+.massnahme-delegieren {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-bottom: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--akzent) 45%, transparent);
+  border-radius: 999px;
+}
+
+.massnahme-delegieren:hover {
+  background: color-mix(in srgb, var(--akzent) 20%, transparent);
 }
 
 .saa-detail {

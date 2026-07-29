@@ -3,7 +3,7 @@ import type { MassnahmeRecht } from './qualifikation';
 import type { MassnahmeId, Qualifikation } from './types';
 
 /**
- * @anker domain.massnahmenrechte Je Sitzung einstellbare Durchführungs- und Delegationsstufen
+ * @anker domain.massnahmenrechte Je Sitzung einstellbare Durchführungs- und Delegationsziele
  *
  * Der Maßnahmenkatalog (→ `massnahmen.katalog`) trägt weiterhin eine
  * Katalog-Qualifikation je Maßnahme - das ist der Ausgangswert. Die
@@ -15,13 +15,22 @@ export type Massnahmenrechte = Record<MassnahmeId, MassnahmeRecht>;
 
 const GUELTIGE_QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
 
-/** Ausgangswert: Durchführung und Delegation beide auf der Katalog-Stufe. */
+function istGueltigeQualifikation(wert: unknown): wert is Qualifikation {
+  return GUELTIGE_QUALIFIKATIONEN.includes(wert as Qualifikation);
+}
+
+/**
+ * Ausgangswert: Durchführung auf der Katalog-Stufe, Delegationsziel `basis` -
+ * einmal freigegeben, darf zunächst jede Stufe die Maßnahme übernehmen. Die
+ * Übungsleitung kann das Ziel anheben oder die Maßnahme ganz undelegierbar
+ * machen (→ `MassnahmeRecht.delegationsziel`).
+ */
 export function standardMassnahmenrechte(): Massnahmenrechte {
   const rechte = {} as Massnahmenrechte;
   for (const massnahme of MASSNAHMEN_LISTE) {
     rechte[massnahme.id] = {
       qualifikation: massnahme.qualifikation,
-      delegationsstufe: massnahme.qualifikation,
+      delegationsziel: 'basis',
     };
   }
   return rechte;
@@ -41,12 +50,13 @@ export function vervollstaendigeMassnahmenrechte(gespeichert: unknown): Massnahm
     const eintrag = quelle[id];
     if (!eintrag) continue;
     ergebnis[id] = {
-      qualifikation: GUELTIGE_QUALIFIKATIONEN.includes(eintrag.qualifikation as Qualifikation)
-        ? (eintrag.qualifikation as Qualifikation)
+      qualifikation: istGueltigeQualifikation(eintrag.qualifikation)
+        ? eintrag.qualifikation
         : standard[id].qualifikation,
-      delegationsstufe: GUELTIGE_QUALIFIKATIONEN.includes(eintrag.delegationsstufe as Qualifikation)
-        ? (eintrag.delegationsstufe as Qualifikation)
-        : standard[id].delegationsstufe,
+      delegationsziel:
+        eintrag.delegationsziel === null || istGueltigeQualifikation(eintrag.delegationsziel)
+          ? eintrag.delegationsziel!
+          : standard[id].delegationsziel,
     };
   }
   return ergebnis;

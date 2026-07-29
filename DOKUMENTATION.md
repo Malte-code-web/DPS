@@ -614,8 +614,8 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsstufen |
-| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:19`](src/domain/qualifikation.ts#L19) | Wer eine Maßnahme durchführen und wer sie delegieren darf |
+| `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
+| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:19`](src/domain/qualifikation.ts#L19) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
 
 #### einzelfaelle
@@ -825,7 +825,7 @@ _144 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:35`](src/components/Massnahmenliste.tsx#L35) | Das einklappbare xABCDE-Akkordeon |
-| `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:14`](src/pages/MassnahmenrechteSeite.tsx#L14) | Grundeinstellung: gleich zu Beginn, wer was darf |
+| `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:17`](src/pages/MassnahmenrechteSeite.tsx#L17) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |

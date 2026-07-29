@@ -76,7 +76,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
     // standardMassnahmenrechte() jede Katalog-Maßnahme ab.
     const recht: MassnahmeRecht =
       state.massnahmenrechte[massnahme.id] ??
-      ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
+      ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
     const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
     const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
     const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);

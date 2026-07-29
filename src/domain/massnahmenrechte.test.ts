@@ -3,12 +3,12 @@ import { MASSNAHMEN_LISTE } from './massnahmen';
 import { standardMassnahmenrechte, vervollstaendigeMassnahmenrechte } from './massnahmenrechte';
 
 describe('standardMassnahmenrechte', () => {
-  it('deckt jede Maßnahme des Katalogs ab, beide Felder auf der Katalog-Stufe', () => {
+  it('deckt jede Maßnahme des Katalogs ab: Durchführung auf Katalog-Stufe, delegierbar an alle', () => {
     const rechte = standardMassnahmenrechte();
     for (const massnahme of MASSNAHMEN_LISTE) {
       expect(rechte[massnahme.id]).toEqual({
         qualifikation: massnahme.qualifikation,
-        delegationsstufe: massnahme.qualifikation,
+        delegationsziel: 'basis',
       });
     }
   });
@@ -24,23 +24,31 @@ describe('vervollstaendigeMassnahmenrechte', () => {
   it('übernimmt eine gültige Anpassung', () => {
     const irgendeine = MASSNAHMEN_LISTE[0]!.id;
     const rechte = vervollstaendigeMassnahmenrechte({
-      [irgendeine]: { qualifikation: 'notarzt', delegationsstufe: 'notarzt' },
+      [irgendeine]: { qualifikation: 'notarzt', delegationsziel: 'notsan' },
     });
-    expect(rechte[irgendeine]).toEqual({ qualifikation: 'notarzt', delegationsstufe: 'notarzt' });
+    expect(rechte[irgendeine]).toEqual({ qualifikation: 'notarzt', delegationsziel: 'notsan' });
+  });
+
+  it('übernimmt "nicht delegierbar" (delegationsziel = null)', () => {
+    const irgendeine = MASSNAHMEN_LISTE[0]!.id;
+    const rechte = vervollstaendigeMassnahmenrechte({
+      [irgendeine]: { qualifikation: 'notarzt', delegationsziel: null },
+    });
+    expect(rechte[irgendeine]).toEqual({ qualifikation: 'notarzt', delegationsziel: null });
   });
 
   it('fällt bei ungültigen Werten auf den Katalog-Standard zurück statt sie zu übernehmen', () => {
     const irgendeine = MASSNAHMEN_LISTE[0]!.id;
     const standard = standardMassnahmenrechte();
     const rechte = vervollstaendigeMassnahmenrechte({
-      [irgendeine]: { qualifikation: 'oberarzt', delegationsstufe: 42 },
+      [irgendeine]: { qualifikation: 'oberarzt', delegationsziel: 42 },
     });
     expect(rechte[irgendeine]).toEqual(standard[irgendeine]);
   });
 
   it('ignoriert Einträge zu Maßnahmen, die es nicht mehr gibt', () => {
     const rechte = vervollstaendigeMassnahmenrechte({
-      'nicht-mehr-vorhanden': { qualifikation: 'notarzt', delegationsstufe: 'notarzt' },
+      'nicht-mehr-vorhanden': { qualifikation: 'notarzt', delegationsziel: 'notsan' },
     });
     expect(rechte).toEqual(standardMassnahmenrechte());
   });

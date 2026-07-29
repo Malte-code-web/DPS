@@ -39,7 +39,7 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
       <div className="sofort-liste">
         {SOFORTMASSNAHMEN.map((massnahme) => {
           const recht = state.massnahmenrechte[massnahme.id] ??
-            ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
+            ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
           const erledigt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
           const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);

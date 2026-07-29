@@ -16,48 +16,53 @@ export function erfuelltQualifikation(hat: Qualifikation, braucht: Qualifikation
 }
 
 /**
- * @anker domain.massnahmerecht Wer eine Maßnahme durchführen und wer sie delegieren darf
+ * @anker domain.massnahmerecht Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann
  *
- * Zwei vollständig unabhängig einstellbare Schwellen je Maßnahme
- * (→ `domain.massnahmenrechte`) - keine Kopplung, kein automatischer
- * Freifahrtschein: Wer `qualifikation` erreicht, darf durchführen; wer
- * `delegationsstufe` erreicht, darf delegieren. Beides ist bewusst getrennt
- * einzustellen, damit die Übungsleitung für jede Maßnahme explizit
- * entscheidet, ob Durchführende auch delegieren dürfen (dafür `delegationsstufe`
- * auf `qualifikation` setzen - der Ausgangswert) oder ob eine andere Stufe
- * delegieren soll, ohne dass Durchführende es automatisch dürften. Die
- * Übungsleitung stellt beides vor dem Start ein; ohne Anpassung startet jede
- * Maßnahme mit ihrer Katalog-Stufe für beides (→ `domain.massnahmenrechte`,
- * `standardMassnahmenrechte`).
+ * `qualifikation` legt fest, wer die Maßnahme selbst durchführen darf - und
+ * genau diese Personen sind es auch, die delegieren dürfen (keine eigene,
+ * unabhängige "wer darf delegieren"-Schwelle). Was einstellbar ist, ist das
+ * *Ziel* der Delegation: `delegationsziel` benennt die Stufe, an die
+ * delegiert werden darf - alle mit mindestens dieser Stufe dürfen die
+ * Maßnahme danach für den freigegebenen Patienten durchführen, auch ohne
+ * selbst `qualifikation` zu erreichen. `delegationsziel: null` heißt: diese
+ * Maßnahme ist gar nicht delegierbar, unabhängig davon, wer sie durchführen
+ * dürfte. Die Übungsleitung stellt beides vor dem Start ein; ohne Anpassung
+ * startet jede Maßnahme mit ihrer Katalog-Stufe und ist an alle delegierbar
+ * (→ `domain.massnahmenrechte`, `standardMassnahmenrechte`).
  */
 export interface MassnahmeRecht {
   /** Mindeststufe, um die Maßnahme selbst durchzuführen. */
   qualifikation: Qualifikation;
-  /** Mindeststufe, um die Maßnahme für einen Patienten zu delegieren - unabhängig von `qualifikation`. */
-  delegationsstufe: Qualifikation;
+  /** Stufe, an die delegiert werden darf - `null` heißt: nicht delegierbar. */
+  delegationsziel: Qualifikation | null;
 }
 
 /**
  * Ob eine Maßnahme für die eigene Qualifikation gesperrt ist. `eigene` ist
- * `null` außerhalb einer Sitzung (keine Einschränkung). `delegiert` hebt die
- * Sperre für diesen einen Patienten auf - jemand mit ausreichender
- * Delegationsstufe hat die Maßnahme freigegeben (→ `massnahmeDelegieren`).
+ * `null` außerhalb einer Sitzung (keine Einschränkung). `delegiert` heißt:
+ * eine durchführungsberechtigte Person hat die Maßnahme für diesen Patienten
+ * freigegeben (→ `massnahmeDelegieren`) - die Sperre fällt dann nur für alle,
+ * die mindestens das eingestellte Delegationsziel erreichen.
  */
 export function massnahmeGesperrtWegenQualifikation(
   recht: MassnahmeRecht,
   eigene: Qualifikation | null,
   delegiert: boolean,
 ): boolean {
-  if (eigene === null || delegiert) return false;
-  return !erfuelltQualifikation(eigene, recht.qualifikation);
+  if (eigene === null) return false;
+  if (erfuelltQualifikation(eigene, recht.qualifikation)) return false;
+  if (delegiert && recht.delegationsziel !== null) {
+    return !erfuelltQualifikation(eigene, recht.delegationsziel);
+  }
+  return true;
 }
 
 /**
- * Ob die eigene Qualifikation ausreicht, um diese Maßnahme zu delegieren -
- * allein anhand der eigens eingestellten Delegationsstufe, unabhängig davon,
- * ob die eigene Stufe auch zum Durchführen reichen würde.
+ * Ob die eigene Qualifikation ausreicht, um diese Maßnahme zu delegieren: nur
+ * wer sie selbst durchführen dürfte, kann sie delegieren - und nur, wenn sie
+ * überhaupt delegierbar ist (`delegationsziel` nicht `null`).
  */
 export function darfDelegieren(recht: MassnahmeRecht, eigene: Qualifikation | null): boolean {
-  if (eigene === null) return false;
-  return erfuelltQualifikation(eigene, recht.delegationsstufe);
+  if (eigene === null || recht.delegationsziel === null) return false;
+  return erfuelltQualifikation(eigene, recht.qualifikation);
 }

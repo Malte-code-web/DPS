@@ -69,10 +69,10 @@ describe('Lobby-Fluss der Übungsleitung', () => {
 });
 
 describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
-  it('startet mit dem Katalog-Standard', () => {
+  it('startet mit dem Katalog-Standard, delegierbar an alle (basis)', () => {
     expect(ANFANGSZUSTAND.massnahmenrechte.tourniquet).toEqual({
       qualifikation: 'notsan',
-      delegationsstufe: 'notsan',
+      delegationsziel: 'basis',
     });
   });
 
@@ -85,13 +85,13 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
         typ: 'massnahmenrechteSetzen',
         rechte: {
           ...ANFANGSZUSTAND.massnahmenrechte,
-          tourniquet: { qualifikation: 'basis', delegationsstufe: 'notarzt' },
+          tourniquet: { qualifikation: 'basis', delegationsziel: null },
         },
       },
     );
     expect(state.massnahmenrechte.tourniquet).toEqual({
       qualifikation: 'basis',
-      delegationsstufe: 'notarzt',
+      delegationsziel: null,
     });
     // Andere Maßnahmen bleiben beim Katalog-Standard.
     expect(state.massnahmenrechte.blutstillung).toEqual(ANFANGSZUSTAND.massnahmenrechte.blutstillung);
@@ -100,7 +100,7 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
   it('bleibt über die Szenariowahl und die Sitzungseröffnung hinweg erhalten', () => {
     const angepasst = {
       ...ANFANGSZUSTAND.massnahmenrechte,
-      tourniquet: { qualifikation: 'basis' as const, delegationsstufe: 'basis' as const },
+      tourniquet: { qualifikation: 'basis' as const, delegationsziel: 'notarzt' as const },
     };
     const state = spiele(
       { typ: 'gemeinsamOeffnen' },
@@ -112,7 +112,7 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
     );
     expect(state.massnahmenrechte.tourniquet).toEqual({
       qualifikation: 'basis',
-      delegationsstufe: 'basis',
+      delegationsziel: 'notarzt',
     });
   });
 });
@@ -216,7 +216,7 @@ describe('Host-autoritative Synchronisation', () => {
       ausgewaehlterAbschnitt: 'eingangssichtung',
       massnahmenrechte: {
         ...ANFANGSZUSTAND.massnahmenrechte,
-        tourniquet: { qualifikation: 'notarzt', delegationsstufe: 'notarzt' },
+        tourniquet: { qualifikation: 'notarzt', delegationsziel: null },
       },
       sitzung: {
         aktiv: true,

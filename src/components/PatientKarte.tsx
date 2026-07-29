@@ -143,7 +143,7 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
         {SOFORT_IDS.map((id) => {
           const massnahme = MASSNAHMEN[id];
           const recht = state.massnahmenrechte[id] ??
-            ({ qualifikation: massnahme.qualifikation, delegationsstufe: massnahme.qualifikation } as const);
+            ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
           const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
           const delegiert = patient.delegierteMassnahmen.includes(id);

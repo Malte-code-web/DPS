@@ -10,31 +10,44 @@ import type { MassnahmeId, Qualifikation } from '../domain/types';
 
 const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
 
+/** Sentinel für die "nicht delegierbar"-Option - `<select>` kennt kein `null`. */
+const NICHT_DELEGIERBAR = 'keine';
+
 /**
  * @anker ui.massnahmenrechte Grundeinstellung: gleich zu Beginn, wer was darf
  *
  * Erster Schritt der Übungsleitung nach der Anmeldung, noch vor der
  * Szenariowahl - die Rechte gelten unabhängig von der Lage. Für jede Maßnahme
- * zwei vollständig unabhängige Schwellen (→ `domain.massnahmenrechte`): wer sie
- * durchführen darf, und wer sie delegieren darf - keine automatische Kopplung.
- * Sollen Durchführende auch delegieren dürfen, stellt die Übungsleitung
- * "Delegieren ab" bewusst auf dieselbe Stufe (der Ausgangswert); jede andere
- * Kombination ist genauso möglich. Jede Änderung wirkt sofort und wird auf
- * diesem Gerät gespeichert, sodass sie bei der nächsten Sitzung vorgeschlagen
- * wird, aber jederzeit änderbar bleibt.
+ * (→ `domain.massnahmenrechte`): wer sie durchführen darf ("Durchführen ab") -
+ * genau diese Personen dürfen sie auch delegieren - und an welche Stufe
+ * delegiert werden darf ("Delegieren an"), einschließlich "nicht delegierbar".
+ * Jede Änderung wirkt sofort und wird auf diesem Gerät gespeichert, sodass sie
+ * bei der nächsten Sitzung vorgeschlagen wird, aber jederzeit änderbar bleibt.
  */
 export function MassnahmenrechteSeite() {
   const { state, dispatch } = useSimulation();
   const { massnahmenrechte } = state;
 
-  const setzeRecht = (
-    id: MassnahmeId,
-    feld: 'qualifikation' | 'delegationsstufe',
-    wert: Qualifikation,
-  ) => {
+  const setzeQualifikation = (id: MassnahmeId, wert: Qualifikation) => {
     dispatch({
       typ: 'massnahmenrechteSetzen',
-      rechte: { ...massnahmenrechte, [id]: { ...massnahmenrechte[id]!, [feld]: wert } },
+      rechte: {
+        ...massnahmenrechte,
+        [id]: { ...massnahmenrechte[id]!, qualifikation: wert },
+      },
+    });
+  };
+
+  const setzeDelegationsziel = (id: MassnahmeId, wert: string) => {
+    dispatch({
+      typ: 'massnahmenrechteSetzen',
+      rechte: {
+        ...massnahmenrechte,
+        [id]: {
+          ...massnahmenrechte[id]!,
+          delegationsziel: wert === NICHT_DELEGIERBAR ? null : (wert as Qualifikation),
+        },
+      },
     });
   };
 
@@ -46,10 +59,11 @@ export function MassnahmenrechteSeite() {
         </button>
         <h1>Maßnahmenrechte</h1>
         <p>
-          Grundeinstellung für die Sitzung, unabhängig vom Szenario: Wer darf welche Maßnahme
-          durchführen, wer sie delegieren? Beides ist unabhängig voneinander einzustellen - sollen
-          Durchführende auch delegieren dürfen, „Delegieren ab" bewusst auf dieselbe Stufe setzen
-          (voreingestellt); jede andere Kombination ist ebenso möglich. Voreingestellt ist der
+          Grundeinstellung für die Sitzung, unabhängig vom Szenario: Wer eine Maßnahme durchführen
+          darf ("Durchführen ab"), darf sie auch delegieren - an die hier gewählte Stufe
+          ("Delegieren an"). Wer diese Stufe erreicht, darf die Maßnahme danach für den
+          freigegebenen Patienten durchführen, auch ohne selbst durchführungsberechtigt zu sein.
+          "Nicht delegierbar" schließt das für diese Maßnahme ganz aus. Voreingestellt ist der
           Maßnahmenkatalog (Standardarbeitsanweisungen Rettungsdienst); die Einstellung wird auf
           diesem Gerät gespeichert und beim nächsten Mal vorgeschlagen, bleibt aber jederzeit
           änderbar.
@@ -84,7 +98,7 @@ export function MassnahmenrechteSeite() {
                       <select
                         value={recht.qualifikation}
                         onChange={(event) =>
-                          setzeRecht(massnahme.id, 'qualifikation', event.target.value as Qualifikation)
+                          setzeQualifikation(massnahme.id, event.target.value as Qualifikation)
                         }
                       >
                         {QUALIFIKATIONEN.map((q) => (
@@ -95,22 +109,17 @@ export function MassnahmenrechteSeite() {
                       </select>
                     </label>
                     <label className="recht-feld">
-                      Delegieren ab
+                      Delegieren an
                       <select
-                        value={recht.delegationsstufe}
-                        onChange={(event) =>
-                          setzeRecht(
-                            massnahme.id,
-                            'delegationsstufe',
-                            event.target.value as Qualifikation,
-                          )
-                        }
+                        value={recht.delegationsziel ?? NICHT_DELEGIERBAR}
+                        onChange={(event) => setzeDelegationsziel(massnahme.id, event.target.value)}
                       >
                         {QUALIFIKATIONEN.map((q) => (
                           <option key={q} value={q}>
                             {QUALIFIKATION_VOLLNAME[q]}
                           </option>
                         ))}
+                        <option value={NICHT_DELEGIERBAR}>Nicht delegierbar</option>
                       </select>
                     </label>
                   </li>

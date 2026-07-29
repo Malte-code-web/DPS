@@ -65,23 +65,26 @@ Ausbildung.
   Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg,
   Stand 05/2025).
   1. **Konfigurierbar statt fest, als allererster Schritt:** Durchführungs-
-     und Delegationsstufe sind zwei einstellbare Schwellen je Maßnahme
-     (`MassnahmeRecht`) - der Katalog liefert nur den Ausgangswert. Die
-     Übungsleitung stellt beide direkt nach der Anmeldung ein, noch vor der
-     Szenariowahl (die Rechte gelten unabhängig von der Lage); die Einstellung
-     wird auf ihrem Gerät gespeichert und beim nächsten Mal vorgeschlagen,
-     bleibt aber jederzeit änderbar.
+     stufe und Delegationsziel je Maßnahme (`MassnahmeRecht`) - der Katalog
+     liefert nur den Ausgangswert. Die Übungsleitung stellt beide direkt nach
+     der Anmeldung ein, noch vor der Szenariowahl (die Rechte gelten
+     unabhängig von der Lage); die Einstellung wird auf ihrem Gerät
+     gespeichert und beim nächsten Mal vorgeschlagen, bleibt aber jederzeit
+     änderbar.
   2. **Jede Person stellt ihre eigene Qualifikation selbst ein** im
      Wartebereich (Standard: `basis`) - keine Fremdzuweisung.
   3. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
      Grund ("erfordert NotSan").
-  4. **Delegation:** eigene, unabhängig einstellbare Stufe je Maßnahme - keine
-     automatische Kopplung an die Durchführungs-Stufe. Sollen Durchführende
-     auch delegieren dürfen, stellt die Übungsleitung "Delegieren ab" bewusst
-     auf dieselbe Stufe (Ausgangswert); ebenso lässt sich eine ganz andere
-     Stufe delegieren lassen, ohne dass sie die Maßnahme selbst durchführen
-     dürfte (z. B. eine Praxisanleitung). Freigabe gilt gezielt für einen
-     Patienten, ohne Zeitkosten.
+  4. **Delegation:** Wer eine Maßnahme durchführen darf, darf sie auch
+     delegieren - eine eigene Schwelle "wer darf delegieren" gibt es bewusst
+     nicht. Konfigurierbar ist stattdessen das Ziel: "Delegieren an" legt
+     fest, welche Stufe die Freigabe empfängt (z. B. Durchführen ab NotArzt,
+     Delegieren an NotSan - dann darf ein/e NotSan die Maßnahme nach Freigabe
+     für den Patienten ausführen, ohne selbst durchführungsberechtigt zu
+     sein). "Nicht delegierbar" schließt die Freigabe für eine Maßnahme ganz
+     aus - dann gibt es auch für qualifizierte Durchführende keinen
+     Freigeben-Knopf. Freigabe gilt gezielt für einen Patienten, ohne
+     Zeitkosten.
   5. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
      host-autoritativen Modell, ohne das Netzprotokoll zu erweitern. Die
      konfigurierte Regel ist Teil des Schnappschusses, damit alle Clients

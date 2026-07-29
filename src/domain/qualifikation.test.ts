@@ -23,56 +23,50 @@ describe('erfuelltQualifikation', () => {
 });
 
 describe('massnahmeGesperrtWegenQualifikation', () => {
-  const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notarzt' };
-
   it('sperrt nichts außerhalb einer Sitzung (eigene = null)', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
     expect(massnahmeGesperrtWegenQualifikation(recht, null, false)).toBe(false);
   });
 
-  it('sperrt, wenn die eigene Stufe die Durchführungs-Schwelle nicht erreicht', () => {
+  it('sperrt, wenn die eigene Stufe die Durchführungs-Schwelle nicht erreicht und nicht delegiert ist', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
     expect(massnahmeGesperrtWegenQualifikation(recht, 'basis', false)).toBe(true);
   });
 
   it('lässt zu, sobald die Durchführungs-Schwelle erreicht ist', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
     expect(massnahmeGesperrtWegenQualifikation(recht, 'notsan', false)).toBe(false);
     expect(massnahmeGesperrtWegenQualifikation(recht, 'notarzt', false)).toBe(false);
   });
 
-  it('hebt die Sperre durch Delegation auf - unabhängig von der eigenen Stufe', () => {
-    expect(massnahmeGesperrtWegenQualifikation(recht, 'basis', true)).toBe(false);
+  it('hebt die Sperre durch Delegation auf, sobald die eigene Stufe das Delegationsziel erreicht', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notarzt', delegationsziel: 'notsan' };
+    expect(massnahmeGesperrtWegenQualifikation(recht, 'notsan', true)).toBe(false);
+    // Unterhalb des Delegationsziels bleibt es gesperrt, auch wenn delegiert wurde.
+    expect(massnahmeGesperrtWegenQualifikation(recht, 'basis', true)).toBe(true);
+  });
+
+  it('bleibt gesperrt, wenn die Maßnahme nicht delegierbar ist (delegationsziel = null)', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notarzt', delegationsziel: null };
+    expect(massnahmeGesperrtWegenQualifikation(recht, 'basis', true)).toBe(true);
   });
 });
 
 describe('darfDelegieren', () => {
   it('verweigert außerhalb einer Sitzung (eigene = null)', () => {
-    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notsan' };
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
     expect(darfDelegieren(recht, null)).toBe(false);
   });
 
-  it('richtet sich allein nach der Delegationsstufe, keine automatische Kopplung an die Durchführungs-Schwelle', () => {
-    // Delegationsstufe liegt hier über der Durchführungs-Schwelle: Wer die
-    // Maßnahme durchführen dürfte, darf sie deswegen noch nicht delegieren -
-    // das muss die Übungsleitung explizit gleich einstellen, kein Automatismus.
-    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notarzt' };
-    expect(darfDelegieren(recht, 'notsan')).toBe(false);
-    expect(darfDelegieren(recht, 'notarzt')).toBe(true);
+  it('verweigert, wenn die Maßnahme nicht delegierbar ist', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: null };
+    expect(darfDelegieren(recht, 'notarzt')).toBe(false);
   });
 
-  it('verweigert unterhalb der Delegationsstufe', () => {
-    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notsan' };
+  it('nur wer die Maßnahme selbst durchführen dürfte, darf delegieren', () => {
+    const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
     expect(darfDelegieren(recht, 'basis')).toBe(false);
-  });
-
-  it('erlaubt eine niedrigere Delegationsstufe als die Durchführungs-Schwelle, ohne die Maßnahme selbst zu erlauben', () => {
-    // NotArzt-Maßnahme, aber ab NotSan darf schon delegiert werden (z. B. eine
-    // Praxisanleitung ohne eigene Durchführungsberechtigung).
-    const recht: MassnahmeRecht = { qualifikation: 'notarzt', delegationsstufe: 'notsan' };
     expect(darfDelegieren(recht, 'notsan')).toBe(true);
-    expect(darfDelegieren(recht, 'basis')).toBe(false);
-  });
-
-  it('erlaubt, wenn die Übungsleitung beide Schwellen bewusst gleich gesetzt hat', () => {
-    const gleich: MassnahmeRecht = { qualifikation: 'basis', delegationsstufe: 'basis' };
-    expect(darfDelegieren(gleich, 'basis')).toBe(true);
+    expect(darfDelegieren(recht, 'notarzt')).toBe(true);
   });
 });

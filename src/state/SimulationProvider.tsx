@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { erzeugeLokalenTransport } from '../net/lokalerTransport';
+import { erzeugeSitzungstransport } from '../net/transportAuswahl';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
 import { ladeEigeneSzenarien, sichereEigeneSzenarien } from '../lib/speicher';
 import { SimulationContext } from './context';
@@ -34,7 +34,7 @@ function istLokaleAktion(action: SimulationAction): boolean {
  */
 export function SimulationProvider({
   children,
-  transportFabrik = erzeugeLokalenTransport,
+  transportFabrik = erzeugeSitzungstransport,
 }: {
   children: ReactNode;
   transportFabrik?: TransportFabrik;

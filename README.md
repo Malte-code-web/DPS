@@ -78,16 +78,17 @@ Handlungen dorthin.
 
 **Wichtig – wo das läuft und wo nicht:**
 
-- **Aktueller Stand (lokaler Kanal):** Mehrspieler verbindet nur **mehrere Tabs
-  desselben Browsers auf einem Gerät** (über `BroadcastChannel`). Ideal, um den
-  Ablauf auszuprobieren oder eine Übung an einem Rechner zu leiten.
+- **Ohne Supabase-Zugangsdaten (Standard):** Mehrspieler verbindet nur
+  **mehrere Tabs desselben Browsers auf einem Gerät** (über
+  `BroadcastChannel`). Ideal, um den Ablauf auszuprobieren oder eine Übung an
+  einem Rechner zu leiten.
+- **Mit Supabase-Zugangsdaten (siehe unten):** echtes **Cross-Device** –
+  verschiedene Geräte und Netze spielen zusammen.
 - **Nicht im Einzeldatei-Build und nicht in einer Vorschau-Sandbox:** Eine
-  abgeschottete Seite darf keine Verbindungen aufbauen und teilt den lokalen
-  Kanal nicht – dort ist nur **Einzelspiel** möglich.
-- **Echtes Cross-Device** (verschiedene Geräte/Netze) kommt mit der
-  Supabase-Anbindung; siehe [Nächste Schritte](#nächste-schritte).
+  abgeschottete Seite darf keine Verbindungen aufbauen – dort ist nur
+  **Einzelspiel** möglich, unabhängig von Supabase-Zugangsdaten.
 
-### Lokal in zwei Tabs ausprobieren
+### Lokal in zwei Tabs ausprobieren (ohne Supabase)
 
 ```bash
 npm install
@@ -106,6 +107,28 @@ npm run dev      # http://localhost:5173
 
 Die Uhr läuft auch weiter, wenn das Übungsleitungs-Tab im Hintergrund liegt
 (→ `state.taktgeber`).
+
+### Echtes Cross-Device über Supabase einrichten
+
+1. Kostenloses Projekt auf [supabase.com](https://supabase.com) anlegen –
+   **EU-Region** wählen (DSGVO).
+2. Im Projekt-Dashboard unter *Project Settings → API*: **Project URL** und den
+   **`anon`/`publishable` Key** kopieren. Der Key ist zur Verwendung im Browser
+   gedacht und kein Geheimnis; es wird keine Datenbank-Tabelle oder
+   SQL-Einrichtung benötigt – der Transport nutzt reine
+   Supabase-Realtime-Kanäle je Sitzungscode.
+3. `.env.example` im Projektordner nach `.env` kopieren und beide Werte
+   eintragen:
+   ```
+   VITE_SUPABASE_URL=https://dein-projekt.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
+   ```
+   `.env` bleibt lokal (steht in `.gitignore`) – bei einem echten Deployment
+   trägt man dieselben zwei Werte stattdessen als Umgebungsvariablen beim
+   Hosting-Anbieter ein.
+4. `npm run dev` neu starten. Ab jetzt läuft *Gemeinsame Übung* automatisch über
+   Supabase – auf verschiedenen Geräten, ohne Codeänderung. Ohne `.env` bleibt
+   die App unverändert nutzbar (lokaler Kanal, siehe oben).
 
 ## Dokumentation
 

@@ -582,7 +582,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_135 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_138 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -686,8 +686,11 @@ _135 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `net.auswahl` | [`src/net/transportAuswahl.ts:7`](src/net/transportAuswahl.ts#L7) | Supabase, wenn konfiguriert - sonst der lokale Kanal |
 | `net.lokal` | [`src/net/lokalerTransport.ts:5`](src/net/lokalerTransport.ts#L5) | Sitzungstransport über BroadcastChannel (ein Gerät) |
 | `net.protokoll` | [`src/net/protokoll.ts:5`](src/net/protokoll.ts#L5) | Nachrichten zwischen Übungsleiter (Host) und Spielern |
+| `net.supabase` | [`src/net/supabaseTransport.ts:6`](src/net/supabaseTransport.ts#L6) | Sitzungstransport über Supabase Realtime (Cross-Device) |
+| `net.supabaseClient` | [`src/net/supabaseClient.ts:5`](src/net/supabaseClient.ts#L5) | Zugriff auf das Supabase-Projekt der Übungsleitung |
 | `net.transport` | [`src/net/sitzungstransport.ts:4`](src/net/sitzungstransport.ts#L4) | Austauschbarer Kanal für eine Sitzung |
 
 #### sichtung

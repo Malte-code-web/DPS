@@ -34,15 +34,19 @@ treten über einen Code bei und warten im Wartebereich bis zum Start.
 - ✅ **Stufe 1 – Fundament + lokaler Kanal.** Rollen (Übungsleitung/Spieler),
   Wartebereich, host-autoritativer Zustand, Transport-Schnittstelle mit
   `BroadcastChannel`-Umsetzung (mehrere Tabs eines Browsers), hintergrundfeste
-  Uhr. Lokal über zwei Tabs spielbar, ohne Server.
-- 🔜 **Stufe 2 – Supabase Realtime.** Echtes Cross-Device über einen
-  Server-Kanal hinter derselben Transport-Schnittstelle. Verschiedene Geräte und
-  Netze spielen zusammen.
+  Uhr. Lokal über zwei Tabs spielbar, ohne Server. **Verifiziert.**
+- ✅ **Stufe 2 – Supabase Realtime.** Echtes Cross-Device über
+  Supabase-Realtime-Kanäle je Sitzungscode, hinter derselben
+  Transport-Schnittstelle – dieselbe Nachrichtenform wie Stufe 1, nur über echte
+  Geräte statt Tabs. Fällt ohne `.env` automatisch auf den lokalen Kanal zurück,
+  keine Datenbank-Tabelle nötig. **Code fertig, getestet** (Auswahl-Logik,
+  Fallback ohne Zugangsdaten, unveränderter Build); **Live-Prüfung über echte
+  Geräte steht aus** – dafür Supabase-Zugangsdaten in `README.md` eintragen.
 - 🟡 **Stufe 3 – Übungsleiter-Konten.** Anmeldung mit E-Mail und Passwort
   (Supabase Auth); nur angemeldete Übungsleitungen eröffnen Sitzungen.
 
 **Braucht von außen:** ein kostenloses Supabase-Projekt (EU-Region, DSGVO) –
-URL und anon key.
+URL und anon key (Einrichtung siehe README, Abschnitt „Gemeinsam üben").
 
 > Mehrspieler ist das Fundament: Qualifikation und Führung wirken erst richtig,
 > wenn mehrere Personen mit verschiedenen Rollen zusammenspielen.
@@ -126,6 +130,12 @@ Weiter denkbar, sobald die Bausteine 1–4 stehen:
 - 💤 **Erweitertes Debriefing:** nicht nur Sichtungskategorien, sondern auch
   Ressourceneinsatz und Führungsentscheidungen.
 - 💤 **Persistenz/Export** der Ergebnisse (PDF/CSV).
+- 💤 **Serverseitiger Takt.** Löst die Bindung „Übungsleitungs-Tab muss offen
+  bleiben" auf – entweder ein dauerhaft laufender Rechendienst (braucht echtes
+  Server-Hosting, nicht nur Supabase) oder ein zeitstempel-basiertes Nachrechnen
+  auf Abruf statt Dauer-Takt (baut auf der bestehenden Technik für die
+  hintergrundfeste Uhr auf, → `state.taktgeber`). Nur nötig, falls sich das in
+  der Praxis als echte Einschränkung zeigt.
 
 ---
 
@@ -133,8 +143,8 @@ Weiter denkbar, sobald die Bausteine 1–4 stehen:
 
 Jeder Schritt ist eigenständig nutzbar:
 
-1. **Mehrspieler fertig** (Stufe 2/3) – Fundament, an dem Qualifikation und
-   Führung hängen.
+1. **Mehrspieler fertig** (Stufe 2 Live-Prüfung, dann Stufe 3) – Fundament, an
+   dem Qualifikation und Führung hängen.
 2. **Qualifikation + Führung** – schneller Gewinn, Datengrundlage teils vorhanden.
 3. **Material/Logistik** – erst Verbrauchsgüter, dann Fahrzeuge/Transport.
 
@@ -144,8 +154,10 @@ Nicht „geht nicht", sondern „kostet":
 
 - **Aufwand.** Jeder Baustein ist ein eigenes Stück Arbeit; die Reihenfolge hält
   das Ganze beherrschbar.
-- **Cross-Device** braucht den Server-Kanal (Supabase) – der lokale Zwei-Tab-Weg
-  ist nur der erste Schritt.
+- **Cross-Device** braucht die Supabase-Zugangsdaten von dir (Stufe 2 ist
+  code-seitig fertig) – und weiterhin einen offenen Übungsleitungs-Tab
+  während der Übung (host-autoritatives Modell, siehe „Horizont": ein
+  serverseitiger Takt wäre der Ausbau, um das aufzuheben).
 - **Fachliche Richtigkeit & Balancing** ist die eigentliche Kunst: Regeln sind
   schnell gebaut, aber realistische Zeiten, Verbräuche und Verläufe müssen
   fachlich stimmen. Dafür ist Input aus echten Konzepten entscheidend.
@@ -153,7 +165,7 @@ Nicht „geht nicht", sondern „kostet":
 ## Was von außen gebraucht wird
 
 - **Supabase-Projekt** (kostenlos, EU-Region): URL + anon key – für Baustein 1
-  (Stufe 2/3).
+  (Stufe 2 Live-Prüfung, Stufe 3).
 - **Reale Qualifikationsstufen** und ihre Befugnisse – für Baustein 2.
 - **Führungsrollen** und ihre Entscheidungsrechte – für Baustein 3.
 - **Material- und Fahrzeuglisten** – für Baustein 4.

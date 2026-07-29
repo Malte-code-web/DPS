@@ -58,21 +58,25 @@ URL und anon key (Einrichtung siehe README, Abschnitt „Gemeinsam üben").
 Wer welche Maßnahme durchführen darf, richtet sich nach der fachlichen
 Ausbildung.
 
-- **Ausgangslage:** Jede Maßnahme trägt **heute schon** ihre nötige Stufe
-  (`qualifikation`: aktuell `basis` / `notsan` / `notarzt`). Die Regel steckt in
-  den Daten, wird aber noch nicht durchgesetzt.
-- 🟡 **Geplant:**
-  1. Stufen auf die reale Ausbildung verfeinern (z. B. SanH → RettSan → NotSan →
-     NotArzt).
-  2. Jeder Spieler bekommt beim Beitritt eine Qualifikation (die Übungsleitung
-     vergibt sie im Wartebereich).
-  3. Maßnahmen über der eigenen Stufe sind gesperrt.
-  4. **Delegation:** Höherqualifizierte können einzelne Maßnahmen freigeben.
+- ✅ **Fertig und verifiziert.** Grundlage: Einsatzsanitäter/-in
+  (Malteser-Fachausbildung Sanitätsdienst, 80 UE) entspricht der bestehenden
+  Stufe `basis` des Maßnahmenkatalogs; Notfallsanitäter/Notärztin bleiben
+  externe, staatlich geregelte Qualifikationen darüber (aus der
+  Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg,
+  Stand 05/2025).
+  1. Die Übungsleitung vergibt jedem Teilnehmenden im Wartebereich eine Stufe
+     (`basis` / `notsan` / `notarzt`; Standard: `basis`).
+  2. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
+     Grund ("erfordert NotSan").
+  3. **Delegation:** Eine dafür qualifizierte Person gibt eine Maßnahme gezielt
+     für einen Patienten frei (ohne Zeitkosten) - danach kann sie jede
+     behandelnde Person an diesem Patienten durchführen.
+  4. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
+     host-autoritativen Modell, ohne das Netzprotokoll zu erweitern.
 
-**Abhängigkeit:** Baustein 1 (Spieler-Identität). **Aufwand:** überschaubar, da
-die Datengrundlage steht.
-
-**Braucht von außen:** die realen Qualifikationsstufen und ihre Befugnisse.
+**Abhängigkeit:** Baustein 1 (Spieler-Identität). **Nicht Teil dieses
+Bausteins:** Gruppenführer/-in aus derselben Ausbildungsreihe - das ist
+Baustein 3 (Führung).
 
 ---
 
@@ -145,7 +149,7 @@ Jeder Schritt ist eigenständig nutzbar:
 
 1. **Mehrspieler fertig** (Stufe 3 folgt) – Fundament, an dem Qualifikation und
    Führung hängen. Stufe 1 und 2 sind verifiziert im Einsatz.
-2. **Qualifikation + Führung** – schneller Gewinn, Datengrundlage teils vorhanden.
+2. **Qualifikation** ✅ fertig · **Führung** offen – als Nächstes dran.
 3. **Material/Logistik** – erst Verbrauchsgüter, dann Fahrzeuge/Transport.
 
 ## Ehrliche Grenzen
@@ -166,6 +170,5 @@ Nicht „geht nicht", sondern „kostet":
 
 - **Supabase-Projekt** (kostenlos, EU-Region) – eingerichtet und in Betrieb
   seit Stufe 2. Für Stufe 3 (Übungsleiter-Konten) reicht dasselbe Projekt.
-- **Reale Qualifikationsstufen** und ihre Befugnisse – für Baustein 2.
 - **Führungsrollen** und ihre Entscheidungsrechte – für Baustein 3.
 - **Material- und Fahrzeuglisten** – für Baustein 4.

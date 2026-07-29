@@ -18,29 +18,30 @@ export function erfuelltQualifikation(hat: Qualifikation, braucht: Qualifikation
 /**
  * @anker domain.massnahmerecht Wer eine Maßnahme durchführen und wer sie delegieren darf
  *
- * Zwei einstellbare Schwellen je Maßnahme (→ `domain.massnahmenrechte`). Wer
- * `qualifikation` erreicht, darf die Maßnahme selbst durchführen - und kann sie
- * immer auch an eine niedrigere Stufe delegieren, das ist nicht extra
- * einstellbar. `delegationsstufe` erweitert das Delegieren zusätzlich auf
- * Personen, die die Maßnahme selbst nicht durchführen dürften (z. B. eine
- * Praxisanleitung, die NotSan-Maßnahmen freigeben, aber nicht selbst
- * durchführen darf) - sie ist deshalb sinnvoll nur unterhalb von
- * `qualifikation` gesetzt. Die Übungsleitung stellt beides vor dem Start ein;
- * ohne Anpassung startet jede Maßnahme mit ihrer Katalog-Stufe für beides
- * (→ `domain.massnahmenrechte`, `standardMassnahmenrechte`).
+ * Zwei vollständig unabhängig einstellbare Schwellen je Maßnahme
+ * (→ `domain.massnahmenrechte`) - keine Kopplung, kein automatischer
+ * Freifahrtschein: Wer `qualifikation` erreicht, darf durchführen; wer
+ * `delegationsstufe` erreicht, darf delegieren. Beides ist bewusst getrennt
+ * einzustellen, damit die Übungsleitung für jede Maßnahme explizit
+ * entscheidet, ob Durchführende auch delegieren dürfen (dafür `delegationsstufe`
+ * auf `qualifikation` setzen - der Ausgangswert) oder ob eine andere Stufe
+ * delegieren soll, ohne dass Durchführende es automatisch dürften. Die
+ * Übungsleitung stellt beides vor dem Start ein; ohne Anpassung startet jede
+ * Maßnahme mit ihrer Katalog-Stufe für beides (→ `domain.massnahmenrechte`,
+ * `standardMassnahmenrechte`).
  */
 export interface MassnahmeRecht {
-  /** Mindeststufe, um die Maßnahme selbst durchzuführen - und sie zu delegieren. */
+  /** Mindeststufe, um die Maßnahme selbst durchzuführen. */
   qualifikation: Qualifikation;
-  /** Zusätzliche, niedrigere Mindeststufe, die allein zum Delegieren berechtigt. */
+  /** Mindeststufe, um die Maßnahme für einen Patienten zu delegieren - unabhängig von `qualifikation`. */
   delegationsstufe: Qualifikation;
 }
 
 /**
  * Ob eine Maßnahme für die eigene Qualifikation gesperrt ist. `eigene` ist
  * `null` außerhalb einer Sitzung (keine Einschränkung). `delegiert` hebt die
- * Sperre für diesen einen Patienten auf - jemand Berechtigtes hat die
- * Maßnahme freigegeben (→ `massnahmeDelegieren`).
+ * Sperre für diesen einen Patienten auf - jemand mit ausreichender
+ * Delegationsstufe hat die Maßnahme freigegeben (→ `massnahmeDelegieren`).
  */
 export function massnahmeGesperrtWegenQualifikation(
   recht: MassnahmeRecht,
@@ -52,14 +53,11 @@ export function massnahmeGesperrtWegenQualifikation(
 }
 
 /**
- * Ob die eigene Qualifikation ausreicht, um diese Maßnahme zu delegieren: wer
- * sie selbst durchführen dürfte, darf sie immer auch delegieren; zusätzlich
- * berechtigt die eigens einstellbare Delegationsstufe.
+ * Ob die eigene Qualifikation ausreicht, um diese Maßnahme zu delegieren -
+ * allein anhand der eigens eingestellten Delegationsstufe, unabhängig davon,
+ * ob die eigene Stufe auch zum Durchführen reichen würde.
  */
 export function darfDelegieren(recht: MassnahmeRecht, eigene: Qualifikation | null): boolean {
   if (eigene === null) return false;
-  return (
-    erfuelltQualifikation(eigene, recht.qualifikation) ||
-    erfuelltQualifikation(eigene, recht.delegationsstufe)
-  );
+  return erfuelltQualifikation(eigene, recht.delegationsstufe);
 }

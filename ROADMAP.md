@@ -75,11 +75,13 @@ Ausbildung.
      Wartebereich (Standard: `basis`) - keine Fremdzuweisung.
   3. Maßnahmen über der eigenen Stufe sind im Einsatz gesperrt und zeigen den
      Grund ("erfordert NotSan").
-  4. **Delegation:** Wer eine Maßnahme selbst durchführen darf, darf sie immer
-     auch an eine niedrigere Stufe delegieren (kein Extra-Schritt nötig). Die
-     Delegationsstufe erweitert das zusätzlich auf Personen ohne eigene
-     Durchführungsberechtigung (z. B. eine Praxisanleitung). Freigabe gilt
-     gezielt für einen Patienten, ohne Zeitkosten.
+  4. **Delegation:** eigene, unabhängig einstellbare Stufe je Maßnahme - keine
+     automatische Kopplung an die Durchführungs-Stufe. Sollen Durchführende
+     auch delegieren dürfen, stellt die Übungsleitung "Delegieren ab" bewusst
+     auf dieselbe Stufe (Ausgangswert); ebenso lässt sich eine ganz andere
+     Stufe delegieren lassen, ohne dass sie die Maßnahme selbst durchführen
+     dürfte (z. B. eine Praxisanleitung). Freigabe gilt gezielt für einen
+     Patienten, ohne Zeitkosten.
   5. Enforcement bewusst nur clientseitig (kooperatives Übungstool) - passt zum
      host-autoritativen Modell, ohne das Netzprotokoll zu erweitern. Die
      konfigurierte Regel ist Teil des Schnappschusses, damit alle Clients

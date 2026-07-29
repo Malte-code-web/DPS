@@ -49,20 +49,21 @@ describe('darfDelegieren', () => {
     expect(darfDelegieren(recht, null)).toBe(false);
   });
 
-  it('wer die Maßnahme selbst durchführen dürfte, darf sie immer auch delegieren - unabhängig von der Delegationsstufe', () => {
-    // Delegationsstufe liegt hier sogar über der Durchführungs-Schwelle - das
-    // darf die Durchführungs-Berechtigung nicht einschränken.
+  it('richtet sich allein nach der Delegationsstufe, keine automatische Kopplung an die Durchführungs-Schwelle', () => {
+    // Delegationsstufe liegt hier über der Durchführungs-Schwelle: Wer die
+    // Maßnahme durchführen dürfte, darf sie deswegen noch nicht delegieren -
+    // das muss die Übungsleitung explizit gleich einstellen, kein Automatismus.
     const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notarzt' };
-    expect(darfDelegieren(recht, 'notsan')).toBe(true);
+    expect(darfDelegieren(recht, 'notsan')).toBe(false);
     expect(darfDelegieren(recht, 'notarzt')).toBe(true);
   });
 
-  it('verweigert unterhalb beider Schwellen', () => {
+  it('verweigert unterhalb der Delegationsstufe', () => {
     const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsstufe: 'notsan' };
     expect(darfDelegieren(recht, 'basis')).toBe(false);
   });
 
-  it('erweitert das Delegieren zusätzlich auf eine niedrigere Delegationsstufe, ohne die Maßnahme selbst zu erlauben', () => {
+  it('erlaubt eine niedrigere Delegationsstufe als die Durchführungs-Schwelle, ohne die Maßnahme selbst zu erlauben', () => {
     // NotArzt-Maßnahme, aber ab NotSan darf schon delegiert werden (z. B. eine
     // Praxisanleitung ohne eigene Durchführungsberechtigung).
     const recht: MassnahmeRecht = { qualifikation: 'notarzt', delegationsstufe: 'notsan' };
@@ -70,7 +71,7 @@ describe('darfDelegieren', () => {
     expect(darfDelegieren(recht, 'basis')).toBe(false);
   });
 
-  it('deckt sich mit der Durchführungs-Schwelle, wenn beide gleich gesetzt sind', () => {
+  it('erlaubt, wenn die Übungsleitung beide Schwellen bewusst gleich gesetzt hat', () => {
     const gleich: MassnahmeRecht = { qualifikation: 'basis', delegationsstufe: 'basis' };
     expect(darfDelegieren(gleich, 'basis')).toBe(true);
   });

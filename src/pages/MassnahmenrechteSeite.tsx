@@ -15,11 +15,13 @@ const QUALIFIKATIONEN: Qualifikation[] = ['basis', 'notsan', 'notarzt'];
  *
  * Erster Schritt der Übungsleitung nach der Anmeldung, noch vor der
  * Szenariowahl - die Rechte gelten unabhängig von der Lage. Für jede Maßnahme
- * zwei Schwellen (→ `domain.massnahmenrechte`): wer sie durchführen darf (und
- * damit automatisch auch delegieren kann), und ob zusätzlich eine niedrigere
- * Stufe delegieren darf, ohne die Maßnahme selbst durchführen zu dürfen. Jede
- * Änderung wirkt sofort und wird auf diesem Gerät gespeichert, sodass sie bei
- * der nächsten Sitzung vorgeschlagen wird, aber jederzeit änderbar bleibt.
+ * zwei vollständig unabhängige Schwellen (→ `domain.massnahmenrechte`): wer sie
+ * durchführen darf, und wer sie delegieren darf - keine automatische Kopplung.
+ * Sollen Durchführende auch delegieren dürfen, stellt die Übungsleitung
+ * "Delegieren ab" bewusst auf dieselbe Stufe (der Ausgangswert); jede andere
+ * Kombination ist genauso möglich. Jede Änderung wirkt sofort und wird auf
+ * diesem Gerät gespeichert, sodass sie bei der nächsten Sitzung vorgeschlagen
+ * wird, aber jederzeit änderbar bleibt.
  */
 export function MassnahmenrechteSeite() {
   const { state, dispatch } = useSimulation();
@@ -45,9 +47,9 @@ export function MassnahmenrechteSeite() {
         <h1>Maßnahmenrechte</h1>
         <p>
           Grundeinstellung für die Sitzung, unabhängig vom Szenario: Wer darf welche Maßnahme
-          durchführen? Wer sie durchführen darf, darf sie auch immer an eine niedrigere Stufe
-          delegieren. „Delegieren ab" erlaubt zusätzlich einer niedrigeren Stufe, eine Maßnahme
-          freizugeben, ohne sie selbst durchführen zu müssen. Voreingestellt ist der
+          durchführen, wer sie delegieren? Beides ist unabhängig voneinander einzustellen - sollen
+          Durchführende auch delegieren dürfen, „Delegieren ab" bewusst auf dieselbe Stufe setzen
+          (voreingestellt); jede andere Kombination ist ebenso möglich. Voreingestellt ist der
           Maßnahmenkatalog (Standardarbeitsanweisungen Rettungsdienst); die Einstellung wird auf
           diesem Gerät gespeichert und beim nächsten Mal vorgeschlagen, bleibt aber jederzeit
           änderbar.

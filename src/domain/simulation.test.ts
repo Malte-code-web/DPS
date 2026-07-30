@@ -319,3 +319,72 @@ describe('Tubus nur beim Bewusstlosen', () => {
     expect(versucht.verlauf.at(-1)?.text).toContain('nicht toleriert');
   });
 });
+
+describe('Gewichtsbezogene Dosierung (Analgesie)', () => {
+  // Ein Patient mit klar bekanntem Gewicht - ein an behandeltDurch: ['morphin']
+  // gekoppeltes Problem, damit auch das Lösen/Nicht-Lösen geprüft werden kann.
+  function patientMitSchmerz(): Patient {
+    const vorlage: PatientVorlage = {
+      ...ALLE_VORLAGEN[0]!,
+      id: 'DOSIS-TEST',
+      alter: 40,
+      geschlecht: 'd',
+      gewicht: 80,
+      // schmerz nicht bei 0 starten - sonst deckelt GRENZEN.schmerz.min die
+      // Wirkung unsichtbar auf 0 statt sie negativ (also spürbar) zu zeigen.
+      startVitalwerte: { ...ALLE_VORLAGEN[0]!.startVitalwerte, schmerz: 8 },
+      probleme: [
+        {
+          id: 'schmerz-problem',
+          label: 'Starker Schmerz',
+          beschreibung: 'Äußert starke Schmerzen.',
+          behandeltDurch: ['morphin'],
+          verlauf: { schmerz: 1 },
+        },
+      ],
+    };
+    return patientAusVorlage(vorlage);
+  }
+
+  it('bleibt ohne Dosisangabe unverändert wie bisher (kein Regressionsrisiko)', () => {
+    const patient = patientMitSchmerz();
+    const versorgt = wendeMassnahmeAn(patient, 'morphin', 0);
+    expect(versorgt.behandelteProbleme).toContain('schmerz-problem');
+    expect(versorgt.vitalwerte.schmerz).toBeLessThan(patient.vitalwerte.schmerz);
+  });
+
+  it('bleibt bei zu niedriger Dosis wirkungslos und löst das Problem nicht', () => {
+    const patient = patientMitSchmerz();
+    const versucht = wendeMassnahmeAn(patient, 'morphin', 0, 1); // 1 mg / 80 kg = 0,0125 mg/kg
+    expect(versucht.behandelteProbleme).not.toContain('schmerz-problem');
+    expect(versucht.vitalwerte).toEqual(patient.vitalwerte);
+    expect(versucht.verlauf.at(-1)?.text).toContain('zu niedrig');
+  });
+
+  it('wirkt bei therapeutischer Dosis wie die Katalog-Wirkung und löst das Problem', () => {
+    const patient = patientMitSchmerz();
+    const versorgt = wendeMassnahmeAn(patient, 'morphin', 0, 6); // 6 mg / 80 kg = 0,075 mg/kg (Ziel)
+    expect(versorgt.behandelteProbleme).toContain('schmerz-problem');
+    expect(versorgt.vitalwerte.schmerz).toBe(patient.vitalwerte.schmerz + MASSNAHMEN.morphin.sofortEffekt!.schmerz!);
+  });
+
+  it('verschlechtert zusätzlich zur Wirkung bei Überdosierung (Atemdepression)', () => {
+    const patient = patientMitSchmerz();
+    const versorgt = wendeMassnahmeAn(patient, 'morphin', 0, 20); // 0,25 mg/kg, über 0,15 Schwelle
+    expect(versorgt.behandelteProbleme).toContain('schmerz-problem');
+    expect(versorgt.vitalwerte.atemfrequenz).toBeLessThan(patient.vitalwerte.atemfrequenz);
+    expect(versorgt.verlauf.at(-1)?.text).toContain('überdosiert');
+  });
+
+  it('kostet trotz Fehldosierung dieselbe Einsatzzeit - die Konsequenz ist die Wirkung, nicht die Dauer', () => {
+    // wendeMassnahmeAn selbst rechnet keine Zeit (das macht der Reducer),
+    // aber durchgefuehrteMassnahmen und der Zeitstempel-Protokolleintrag
+    // müssen bei jeder Dosisstufe gleichermaßen gesetzt werden.
+    const patient = patientMitSchmerz();
+    for (const dosis of [1, 6, 20]) {
+      const versucht = wendeMassnahmeAn(patient, 'morphin', 42, dosis);
+      expect(versucht.durchgefuehrteMassnahmen).toContain('morphin');
+      expect(versucht.verlauf.at(-1)?.zeitSek).toBe(42);
+    }
+  });
+});

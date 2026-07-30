@@ -1,5 +1,6 @@
 import { abschnittInfo, sichtungsstelleIn } from './abschnitte';
 import { DIAGNOSTIK } from './diagnostik';
+import { DOSISREFERENZ, gewichtVon, wirkungBeiDosis } from './dosierung';
 import { MASSNAHMEN } from './massnahmen';
 import type {
   DiagnostikId,
@@ -247,6 +248,7 @@ export function wendeMassnahmeAn(
   patient: Patient,
   massnahmeId: MassnahmeId,
   zeitSek: number,
+  dosisMg?: number,
 ): Patient {
   if (patient.status === 'verstorben') return patient;
 
@@ -258,24 +260,37 @@ export function wendeMassnahmeAn(
   const bewusstlos = patient.vitalwerte.gcs <= BEWUSSTLOS_GCS;
   const wirdToleriert = !massnahme.nurBeiBewusstlosigkeit || bewusstlos;
 
-  const geloest = wirdToleriert
-    ? patient.probleme
-        .filter(
-          (problem) =>
-            !patient.behandelteProbleme.includes(problem.id) &&
-            problem.behandeltDurch.includes(massnahmeId),
-        )
-        .map((problem) => problem.id)
-    : [];
+  // @anker sim.dosierung Gewichtsbezogene Dosierung ersetzt die feste Wirkung
+  // Nur bei den Analgetika mit Dosisreferenz (→ `domain.dosierung`) und nur,
+  // wenn eine Dosis gewählt wurde - jede andere Maßnahme verhält sich
+  // unverändert wie zuvor.
+  const gewichtKg = gewichtVon(patient);
+  const dosisErgebnis =
+    dosisMg !== undefined && DOSISREFERENZ[massnahmeId]
+      ? wirkungBeiDosis(massnahmeId, massnahme.sofortEffekt, dosisMg, gewichtKg)
+      : null;
+
+  const geloest =
+    wirdToleriert && (dosisErgebnis === null || dosisErgebnis.loestProblem)
+      ? patient.probleme
+          .filter(
+            (problem) =>
+              !patient.behandelteProbleme.includes(problem.id) &&
+              problem.behandeltDurch.includes(massnahmeId),
+          )
+          .map((problem) => problem.id)
+      : [];
+
+  const angewendeterEffekt = dosisErgebnis ? (dosisErgebnis.effekt ?? undefined) : massnahme.sofortEffekt;
 
   // @anker sim.effektnurbeiproblem Atemwegssicherung wirkt nur bei verlegtem Atemweg
   const effektWirkt =
-    massnahme.sofortEffekt && (!massnahme.effektNurBeiProblem || geloest.length > 0);
+    angewendeterEffekt && (!massnahme.effektNurBeiProblem || geloest.length > 0);
 
   let naechster: Patient = {
     ...patient,
     vitalwerte: effektWirkt
-      ? veraendereVitalwerte(patient.vitalwerte, massnahme.sofortEffekt!)
+      ? veraendereVitalwerte(patient.vitalwerte, angewendeterEffekt!)
       : patient.vitalwerte,
     behandelteProbleme: [...patient.behandelteProbleme, ...geloest],
     durchgefuehrteMassnahmen: [...patient.durchgefuehrteMassnahmen, massnahmeId],
@@ -293,8 +308,9 @@ export function wendeMassnahmeAn(
     }
   }
 
-  const text =
-    geloest.length > 0
+  const text = dosisErgebnis
+    ? dosisText(massnahme.label, dosisErgebnis.stufe, dosisMg!, gewichtKg, geloest)
+    : geloest.length > 0
       ? `${massnahme.label} - Problem behoben (${geloest.join(', ')}).`
       : massnahme.nurBeiBewusstlosigkeit && !bewusstlos
         ? `${massnahme.label} - beim wachen Patienten nicht toleriert (Würgereiz), kein Effekt.`
@@ -303,6 +319,29 @@ export function wendeMassnahmeAn(
           : `${massnahme.label} - ohne Effekt auf ein bestehendes Problem.`;
 
   return protokolliere(naechster, zeitSek, text);
+}
+
+/** Verlaufstext für eine dosisabhängige Gabe - benennt die Dosis und die Einordnung. */
+function dosisText(
+  label: string,
+  stufe: 'unterdosiert' | 'therapeutisch' | 'ueberdosiert',
+  dosisMg: number,
+  gewichtKg: number,
+  geloest: string[],
+): string {
+  const mgProKg = dosisMg / gewichtKg;
+  const dosisAngabe = `${dosisMg} mg, ${mgProKg.toFixed(3)} mg/kg`;
+  if (stufe === 'unterdosiert') {
+    return `${label} - Dosis zu niedrig (${dosisAngabe}) für eine Wirkung.`;
+  }
+  if (stufe === 'ueberdosiert') {
+    return geloest.length > 0
+      ? `${label} - überdosiert (${dosisAngabe}), Problem behoben (${geloest.join(', ')}), zusätzliche Nebenwirkung.`
+      : `${label} - überdosiert (${dosisAngabe}).`;
+  }
+  return geloest.length > 0
+    ? `${label} - Problem behoben (${geloest.join(', ')}).`
+    : `${label} - ohne Effekt auf ein bestehendes Problem.`;
 }
 
 /**

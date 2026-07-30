@@ -395,6 +395,12 @@ export interface PatientVorlage {
   name: string;
   alter: number;
   geschlecht: 'w' | 'm' | 'd';
+  /**
+   * Körpergewicht in kg - Grundlage der gewichtsbezogenen Dosierung
+   * (→ `dosierung.gewicht`). Fehlt es, schätzt `gewichtVon()` es aus Alter
+   * und Geschlecht.
+   */
+  gewicht?: number;
   /** Was die Einsatzkraft auf den ersten Blick sieht. */
   kurzbefund: string;
   /** Detailbefund nach körperlicher Untersuchung (Bodycheck). */

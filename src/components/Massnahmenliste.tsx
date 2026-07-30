@@ -8,9 +8,11 @@ import {
   massnahmenDerKategorie,
   voraussetzungKurz,
 } from '../domain/massnahmen';
+import { ANALGETIKA } from '../domain/dosierung';
 import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
+import { Analgesieauswahl } from './Analgesieauswahl';
 import type {
   Massnahme,
   MassnahmeId,
@@ -21,7 +23,7 @@ import type {
 
 interface Props {
   patient: Patient;
-  onMassnahme: (massnahmeId: MassnahmeId) => void;
+  onMassnahme: (massnahmeId: MassnahmeId, dosisMg?: number) => void;
   /** Gruppen, die beim Öffnen der Seite bereits ausgeklappt sind. */
   standardOffen?: MassnahmenKategorie[];
   /**
@@ -187,14 +189,21 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
   return (
     <div className="massnahmen">
       {KATEGORIEN.map((kategorie) => {
-        const gruppe = massnahmenDerKategorie(kategorie).filter(
+        // Die sechs Analgetika stehen nicht einzeln in der Liste, sondern
+        // hinter der Analgesie-Sammelauswahl (→ `ui.analgesieauswahl`).
+        const gruppeVoll = massnahmenDerKategorie(kategorie).filter(
           (massnahme) => !arten || arten.includes(massnahme.art),
         );
+        const gruppe = gruppeVoll.filter((massnahme) => !ANALGETIKA.includes(massnahme.id));
+        // Sammelauswahl nur zeigen, wo Medikamente überhaupt gelistet werden -
+        // sonst erschiene sie doppelt (einmal je Reiter mit D-Kategorie).
+        const zeigeAnalgesie =
+          kategorie === 'D' && (!arten || arten.includes('medikament'));
         // Reiter, in dem eine Gruppe leer bleibt (z. B. keine Medikamente in
         // der Kategorie), gar nicht erst als Kopf zeigen.
-        if (gruppe.length === 0) return null;
+        if (gruppe.length === 0 && !zeigeAnalgesie) return null;
         const istOffen = offen.has(kategorie);
-        const erledigt = gruppe.filter((massnahme) =>
+        const erledigt = gruppeVoll.filter((massnahme) =>
           patient.durchgefuehrteMassnahmen.includes(massnahme.id),
         ).length;
 
@@ -210,7 +219,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
               <span className="gruppe-titel">{KATEGORIE_LABEL[kategorie]}</span>
               {erledigt > 0 && (
                 <span className="gruppe-erledigt">
-                  {erledigt}/{gruppe.length}
+                  {erledigt}/{gruppeVoll.length}
                 </span>
               )}
               <span className="gruppe-pfeil" aria-hidden="true">
@@ -218,7 +227,14 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
               </span>
             </button>
 
-            {istOffen && <div className="gruppe-inhalt">{gruppe.map(zeile)}</div>}
+            {istOffen && (
+              <div className="gruppe-inhalt">
+                {zeigeAnalgesie && (
+                  <Analgesieauswahl patient={patient} onMassnahme={onMassnahme} />
+                )}
+                {gruppe.map(zeile)}
+              </div>
+            )}
           </div>
         );
       })}

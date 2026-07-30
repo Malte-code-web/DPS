@@ -1,3 +1,4 @@
+import { geschaetztesGewicht } from './dosierung';
 import { patientAusVorlage } from './simulation';
 import { sichtungNachMstart } from './triage';
 import type {
@@ -618,11 +619,19 @@ function bauePatient(
   } while (vergebeneNamen.has(name));
   vergebeneNamen.add(name);
 
+  const alter = ganzzahl(w, 16, 78);
+  const geschlecht = weiblich ? 'w' : 'm';
+  // ±10 % Streuung um die Schätzformel (→ `domain.gewicht`) - sonst wögen
+  // alle generierten Patienten gleichen Alters/Geschlechts exakt gleich viel.
+  const basisgewicht = geschaetztesGewicht(alter, geschlecht);
+  const gewicht = Math.round(basisgewicht * (0.9 + w() * 0.2));
+
   const vorlage: PatientVorlage = {
     id: `P-${String(nummer).padStart(2, '0')}`,
     name,
-    alter: ganzzahl(w, 16, 78),
-    geschlecht: weiblich ? 'w' : 'm',
+    alter,
+    geschlecht,
+    gewicht,
     kurzbefund: muster.kurzbefund,
     untersuchungsbefund: muster.untersuchungsbefund,
     ...flags,

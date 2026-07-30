@@ -1,3 +1,4 @@
+import { geschaetztesGewicht } from '../../domain/dosierung';
 import { KATEGORIEN, KATEGORIE_LABEL, massnahmenDerKategorie } from '../../domain/massnahmen';
 import { startwert } from '../../domain/simulation';
 import { mstartAbweichung } from '../../domain/szenarioPruefung';
@@ -81,6 +82,19 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
             <option value="m">männlich</option>
             <option value="d">divers</option>
           </select>
+        </label>
+        <label>
+          Gewicht (kg)
+          <input
+            type="number"
+            min={1}
+            max={300}
+            placeholder={String(geschaetztesGewicht(patient.alter, patient.geschlecht))}
+            value={patient.gewicht ?? ''}
+            onChange={(e) =>
+              setze('gewicht', e.target.value === '' ? undefined : Number(e.target.value))
+            }
+          />
         </label>
       </div>
 

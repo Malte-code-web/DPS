@@ -1,3 +1,4 @@
+import { geschaetztesGewicht } from '../domain/dosierung';
 import type { PatientVorlage, Problem, Szenario } from '../domain/types';
 
 /**
@@ -24,6 +25,7 @@ export function leererPatient(nummer: number): PatientVorlage {
     name: 'Unbekannt',
     alter: 40,
     geschlecht: 'd',
+    gewicht: geschaetztesGewicht(40, 'd'),
     kurzbefund: 'Was man auf den ersten Blick sieht.',
     untersuchungsbefund: 'Was die körperliche Untersuchung ergibt.',
     gehfaehig: false,

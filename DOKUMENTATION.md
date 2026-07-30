@@ -47,6 +47,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
 | Maßnahmen | 84 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 36 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
+| Analgesie-Sammelauswahl | Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen hinter einem Button „Analgesie" statt einzeln in der Liste; nach Wahl des Mittels lässt sich die Dosis in mg festlegen (vorbelegt mit der Zieldosis für das Patientengewicht). Zu niedrig dosiert bleibt wirkungslos, zu hoch dosiert löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus (bei Nalbuphin/Paracetamol bewusst keine - Ceiling-Effekt bzw. verzögerte Hepatotoxizität) |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit; der verlegte Atemweg wird durch Mundraumkontrolle oder Bodycheck entdeckt |
 | Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
@@ -56,8 +57,9 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-209 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
-Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor und Baukasten.
+232 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor, Baukasten und
+gewichtsbezogene Dosierung.
 
 ### Bewusst noch nicht gebaut
 
@@ -597,7 +599,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -629,6 +631,9 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `domain.analgetika` | [`src/domain/dosierung.ts:102`](src/domain/dosierung.ts#L102) | Die sechs Mittel der Analgesie-Sammelauswahl |
+| `domain.dosierung` | [`src/domain/dosierung.ts:4`](src/domain/dosierung.ts#L4) | Gewichtsbezogene Dosierung: zu wenig wirkt nicht, zu viel schadet |
+| `domain.gewicht` | [`src/domain/dosierung.ts:119`](src/domain/dosierung.ts#L119) | Körpergewicht - hinterlegt oder geschätzt |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
 | `domain.massnahmerecht` | [`src/domain/qualifikation.ts:29`](src/domain/qualifikation.ts#L29) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
@@ -649,9 +654,9 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:16`](src/domain/szenarioGenerator.ts#L16) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
-| `generator.muster` | [`src/domain/szenarioGenerator.ts:73`](src/domain/szenarioGenerator.ts#L73) | Der Vorrat an Verletzungsmustern - hier erweitern |
-| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:469`](src/domain/szenarioGenerator.ts#L469) | Aus der gewünschten Todesminute wird die Verlaufsrate |
+| `generator.baukasten` | [`src/domain/szenarioGenerator.ts:17`](src/domain/szenarioGenerator.ts#L17) | Szenarien ohne Modell, ohne Schlüssel, ohne Netz |
+| `generator.muster` | [`src/domain/szenarioGenerator.ts:74`](src/domain/szenarioGenerator.ts#L74) | Der Vorrat an Verletzungsmustern - hier erweitern |
+| `generator.zielminute` | [`src/domain/szenarioGenerator.ts:470`](src/domain/szenarioGenerator.ts#L470) | Aus der gewünschten Todesminute wird die Verlaufsrate |
 
 #### ki
 
@@ -680,11 +685,11 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:347`](src/domain/types.ts#L347) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:421`](src/domain/types.ts#L421) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:467`](src/domain/types.ts#L467) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.diagnostik` | [`src/domain/types.ts:427`](src/domain/types.ts#L427) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:473`](src/domain/types.ts#L473) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:283`](src/domain/types.ts#L283) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:456`](src/domain/types.ts#L456) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patient` | [`src/domain/types.ts:462`](src/domain/types.ts#L462) | Alles, was sich an einem Patienten im Einsatz ändert |
 | `modell.patientvorlage` | [`src/domain/types.ts:391`](src/domain/types.ts#L391) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:317`](src/domain/types.ts#L317) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:220`](src/domain/types.ts#L220) | Fünf Ausbildungsstufen von Basis bis Notärztin |
@@ -727,22 +732,23 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sim.befunde` | [`src/domain/simulation.ts:179`](src/domain/simulation.ts#L179) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.bewusstlos` | [`src/domain/simulation.ts:255`](src/domain/simulation.ts#L255) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
-| `sim.diagnostik` | [`src/domain/simulation.ts:310`](src/domain/simulation.ts#L310) | Eine Untersuchung deckt genau ihren Befund auf |
-| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:271`](src/domain/simulation.ts#L271) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
-| `sim.gleitkomma` | [`src/domain/simulation.ts:55`](src/domain/simulation.ts#L55) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:408`](src/domain/simulation.ts#L408) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:244`](src/domain/simulation.ts#L244) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
-| `sim.sichtungOffen` | [`src/domain/simulation.ts:357`](src/domain/simulation.ts#L357) | Steht an dieser Station noch eine Sichtung aus? |
-| `sim.standardwerte` | [`src/domain/simulation.ts:35`](src/domain/simulation.ts#L35) | Unauffällige Vorgaben für die später ergänzten Werte |
-| `sim.startzustand` | [`src/domain/simulation.ts:93`](src/domain/simulation.ts#L93) | Womit ein Patient in den Einsatz startet |
-| `sim.tempo` | [`src/domain/simulation.ts:70`](src/domain/simulation.ts#L70) | Langsamere Verschlechterung im Alleinspiel |
-| `sim.tick` | [`src/domain/simulation.ts:154`](src/domain/simulation.ts#L154) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
-| `sim.tod` | [`src/domain/simulation.ts:132`](src/domain/simulation.ts#L132) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:379`](src/domain/simulation.ts#L379) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
-| `sim.zeitkosten` | [`src/domain/simulation.ts:205`](src/domain/simulation.ts#L205) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:219`](src/domain/simulation.ts#L219) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.befunde` | [`src/domain/simulation.ts:180`](src/domain/simulation.ts#L180) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
+| `sim.bewusstlos` | [`src/domain/simulation.ts:257`](src/domain/simulation.ts#L257) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
+| `sim.diagnostik` | [`src/domain/simulation.ts:349`](src/domain/simulation.ts#L349) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.dosierung` | [`src/domain/simulation.ts:263`](src/domain/simulation.ts#L263) | Gewichtsbezogene Dosierung ersetzt die feste Wirkung |
+| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:286`](src/domain/simulation.ts#L286) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
+| `sim.gleitkomma` | [`src/domain/simulation.ts:56`](src/domain/simulation.ts#L56) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:447`](src/domain/simulation.ts#L447) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:245`](src/domain/simulation.ts#L245) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.sichtungOffen` | [`src/domain/simulation.ts:396`](src/domain/simulation.ts#L396) | Steht an dieser Station noch eine Sichtung aus? |
+| `sim.standardwerte` | [`src/domain/simulation.ts:36`](src/domain/simulation.ts#L36) | Unauffällige Vorgaben für die später ergänzten Werte |
+| `sim.startzustand` | [`src/domain/simulation.ts:94`](src/domain/simulation.ts#L94) | Womit ein Patient in den Einsatz startet |
+| `sim.tempo` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Langsamere Verschlechterung im Alleinspiel |
+| `sim.tick` | [`src/domain/simulation.ts:155`](src/domain/simulation.ts#L155) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
+| `sim.tod` | [`src/domain/simulation.ts:133`](src/domain/simulation.ts#L133) | Ab welchen Werten ein Patient verstirbt |
+| `sim.verlegung` | [`src/domain/simulation.ts:418`](src/domain/simulation.ts#L418) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.zeitkosten` | [`src/domain/simulation.ts:206`](src/domain/simulation.ts#L206) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
+| `sim.zeitraum` | [`src/domain/simulation.ts:220`](src/domain/simulation.ts#L220) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### sitzung
 
@@ -764,11 +770,11 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `state.aktionen` | [`src/state/reducer.ts:104`](src/state/reducer.ts#L104) | Alles, was der Übende auslösen kann |
 | `state.phase` | [`src/state/reducer.ts:35`](src/state/reducer.ts#L35) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:32`](src/state/SimulationProvider.tsx#L32) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:216`](src/state/reducer.ts#L216) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:140`](src/state/reducer.ts#L140) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:222`](src/state/reducer.ts#L222) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:146`](src/state/reducer.ts#L146) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:18`](src/state/SimulationProvider.tsx#L18) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:183`](src/state/reducer.ts#L183) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zeit` | [`src/state/reducer.ts:189`](src/state/reducer.ts#L189) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
 | `state.zustand` | [`src/state/reducer.ts:48`](src/state/reducer.ts#L48) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
@@ -778,18 +784,18 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.anhaengekarte` | [`src/index.css:1443`](src/index.css#L1443) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.bereichsseite` | [`src/index.css:1827`](src/index.css#L1827) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:641`](src/index.css#L641) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3023`](src/index.css#L3023) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:3102`](src/index.css#L3102) | Die angeheftete Leiste so flach wie möglich |
 | `stil.ersteindruck` | [`src/index.css:1880`](src/index.css#L1880) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:2973`](src/index.css#L2973) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3052`](src/index.css#L3052) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:298`](src/index.css#L298) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:377`](src/index.css#L377) | Rollenwahl, Anmeldung, Beitritt und Wartebereich |
 | `stil.modi` | [`src/index.css:568`](src/index.css#L568) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1706`](src/index.css#L1706) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.raster` | [`src/index.css:2250`](src/index.css#L2250) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:148`](src/index.css#L148) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3093`](src/index.css#L3093) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3172`](src/index.css#L3172) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3224`](src/index.css#L3224) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3303`](src/index.css#L3303) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -825,6 +831,7 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.alleinspiel` | [`src/pages/SetupSeite.tsx:52`](src/pages/SetupSeite.tsx#L52) | Vor dem Start wählen, ob man allein spielt */} |
+| `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:20`](src/components/Analgesieauswahl.tsx#L20) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.anmeldung` | [`src/pages/AnmeldungSeite.tsx:5`](src/pages/AnmeldungSeite.tsx#L5) | Übungsleiter-Anmeldung (Login folgt mit dem Server) |
 | `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
@@ -838,11 +845,11 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:35`](src/components/Massnahmenliste.tsx#L35) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:37`](src/components/Massnahmenliste.tsx#L37) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
-| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:33`](src/pages/uebungsleitung/PatientEditor.tsx#L33) | Formular für einen Szenario-Patienten samt Problemen |
+| `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:34`](src/pages/uebungsleitung/PatientEditor.tsx#L34) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:41`](src/components/PatientKarte.tsx#L41) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
@@ -860,7 +867,7 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `vorlagen.neu` | [`src/lib/vorlagen.ts:4`](src/lib/vorlagen.ts#L4) | Startpunkte für neue Szenarien, Patienten und Probleme |
+| `vorlagen.neu` | [`src/lib/vorlagen.ts:5`](src/lib/vorlagen.ts#L5) | Startpunkte für neue Szenarien, Patienten und Probleme |
 
 <!-- ANKER:END -->
 
@@ -884,7 +891,7 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           209 Tests
+npm run test           232 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

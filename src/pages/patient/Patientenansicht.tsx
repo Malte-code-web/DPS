@@ -239,8 +239,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
           <Massnahmenliste
             patient={patient}
             arten={MASSNAHMEN_ARTEN}
-            onMassnahme={(massnahmeId) =>
-              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+            onMassnahme={(massnahmeId, dosisMg) =>
+              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId, dosisMg })
             }
           />
           {erledigteMassnahmen > 0 && (
@@ -266,8 +266,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
           <Massnahmenliste
             patient={patient}
             arten={MEDIKAMENT_ARTEN}
-            onMassnahme={(massnahmeId) =>
-              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+            onMassnahme={(massnahmeId, dosisMg) =>
+              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId, dosisMg })
             }
           />
         </Bereichsseite>

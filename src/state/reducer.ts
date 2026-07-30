@@ -114,7 +114,13 @@ export type SimulationAction =
   | { typ: 'patientWaehlen'; patientId: string | null }
   | { typ: 'diagnostikDurchfuehren'; patientId: string; diagnostikId: DiagnostikId }
   | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie; final?: boolean }
-  | { typ: 'massnahmeDurchfuehren'; patientId: string; massnahmeId: MassnahmeId }
+  | {
+      typ: 'massnahmeDurchfuehren';
+      patientId: string;
+      massnahmeId: MassnahmeId;
+      /** Nur bei Maßnahmen mit Dosisreferenz relevant (→ `domain.dosierung`). */
+      dosisMg?: number;
+    }
   | { typ: 'massnahmeDelegieren'; patientId: string; massnahmeId: MassnahmeId }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
@@ -319,7 +325,7 @@ export function simulationReducer(
     case 'massnahmeDurchfuehren':
       return zeitVergehen(
         mitPatient(state, action.patientId, (patient) =>
-          wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek),
+          wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
         ),
         MASSNAHMEN[action.massnahmeId].dauerSek,
       );

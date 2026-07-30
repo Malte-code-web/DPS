@@ -38,9 +38,10 @@ als Datei weitergeben – oder erzeugen lassen. Dafür gibt es zwei Wege:
   beliebige KI kopieren und das Ergebnis als JSON importieren.
 
 Der Maßnahmenkatalog folgt den **Standardarbeitsanweisungen und Behandlungspfaden
-Rettungsdienst des Kreises Steinfurt (Januar 2026)**: 51 Maßnahmen mit Indikation,
-Dosierung und der Frage, wer sie durchführen darf. Ein i.v.-Medikament ist
-gesperrt, bis ein Zugang liegt – und der kostet erst einmal 90 Sekunden.
+Rettungsdienst des Kreises Steinfurt (Januar 2026)**, ergänzt um Maßnahmen aus der
+Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg: 58 Maßnahmen mit
+Indikation, Dosierung und der Frage, wer sie durchführen darf. Ein i.v.-Medikament
+ist gesperrt, bis ein Zugang liegt – und der kostet erst einmal 90 Sekunden.
 Zeitdauern und Sofortwirkungen sind didaktisch gesetzt und **keine medizinischen
 Aussagen**.
 
@@ -76,6 +77,14 @@ Mehrere spielen dieselbe Lage: Die **Übungsleitung** eröffnet eine Sitzung, di
 Browser rechnet die Simulation und verteilt den Zustand; die Spieler senden ihre
 Handlungen dorthin.
 
+Direkt nach der Anmeldung, noch vor der Szenariowahl, stellt die Übungsleitung
+die **Maßnahmenrechte** ein: fünf Qualifikationsstufen (Sanitätshelfer/-in bis
+Notärztin/Notarzt), je Maßnahme eine Mindeststufe zum Durchführen und ein
+Delegationsziel – oder „nicht delegierbar“. Jede Person wählt danach im
+Wartebereich ihre eigene Qualifikation; Maßnahmen darüber sind im Einsatz
+gesperrt, bis jemand mit ausreichender Qualifikation sie für den Patienten
+freigibt.
+
 **Wichtig – wo das läuft und wo nicht:**
 
 - **Ohne Supabase-Zugangsdaten (Standard):** Mehrspieler verbindet nur
@@ -96,7 +105,8 @@ npm run dev      # http://localhost:5173
 ```
 
 1. **Tab 1 (Übungsleitung):** *Gemeinsame Übung* → *Als Übungsleitung* →
-   *Anmelden* (Name genügt) → Szenario wählen → *Sitzung eröffnen*. Im
+   *Anmelden* (Name genügt) → Maßnahmenrechte prüfen und ggf. anpassen →
+   *Weiter zur Szenariowahl* → Szenario wählen → *Sitzung eröffnen*. Im
    Wartebereich steht der **Sitzungscode**.
 2. **Tab 2 (Spieler)** – im **selben Browser** ein zweites Tab auf
    `http://localhost:5173`: *Gemeinsame Übung* → *Als Spieler beitreten* → Code
@@ -146,15 +156,24 @@ src/
     triage.ts        mSTaRT-Algorithmus inkl. nachvollziehbarer Entscheidungskette
     simulation.ts    Zeitverlauf: Verschlechterung, Maßnahmenwirkung, Todeskriterien
     massnahmen.ts    Maßnahmenkatalog nach xABCDE-Schema
+    qualifikation.ts, massnahmenrechte.ts  Fünf Qualifikationsstufen, Durchführungs-
+                     und Delegationsrechte je Maßnahme
+    sitzung.ts       Rollen, Spieler und Code einer Mehrspieler-Sitzung
     szenarien.ts     Übungsszenarien mit Patientenvorlagen
+    szenarioGenerator.ts, szenarioPruefung.ts  KI-gestützte Erzeugung und Prüfung
+                     eigener/importierter Szenarien
     abschnitte.ts    Einsatzabschnitte und die erlaubten Wege dazwischen
     modi.ts          Trainingsmodi und ihr Ausbaustand
-    szenarioPruefung.ts  Prüfung eigener und importierter Szenarien
-  state/         useReducer-Store, Simulationsuhr, React-Context
-  components/    Darstellung (Patientenkarten, Vitalmonitor, Maßnahmenkatalog)
+  state/         useReducer-Store, rollen-bewusster Provider (Solo/Host/Spieler),
+                 Simulationsuhr, React-Context
+  net/           Transport-Abstraktion für Mehrspieler: lokal (BroadcastChannel)
+                 und Supabase Realtime (Cross-Device) hinter derselben Schnittstelle
+  components/    Darstellung (Patientenkarten, Monitor, Maßnahmenkatalog)
   pages/         Start → Setup → Einsatz → Patientenseite → Debriefing
                  pages/uebungsleitung/ der Szenario-Editor
-  lib/           Formatierung und Auswertung
+                 Mehrspieler-Lobby: Rolle → Anmeldung/Beitritt → Maßnahmenrechte
+                 → Wartebereich
+  lib/           Formatierung, Auswertung, Persistenz, KI-Anbindung
 ```
 
 ### Einsatzabschnitte
@@ -303,9 +322,11 @@ Vorgaben der jeweiligen Landesrettungsdienstgesetze oder der örtlichen Dienstan
 
 ## Nächste Schritte
 
-Die geplanten Bausteine – Mehrspieler, Qualifikation (fachlich und Führung),
-Material (Fahrzeuge und Verbrauchsgüter) – stehen mit Stand, Reihenfolge und
-Abhängigkeiten in der [ROADMAP.md](ROADMAP.md).
+Mehrspieler (lokal und über Supabase Realtime) und Qualifikation (fachlich) sind
+fertig und verifiziert; Übungsleiter-Konten und Führung (Baustein 3) sowie
+Material (Fahrzeuge und Verbrauchsgüter, Baustein 4) sind die nächsten
+Bausteine. Stand, Reihenfolge und Abhängigkeiten stehen in der
+[ROADMAP.md](ROADMAP.md).
 
 Kurzfristig außerdem:
 

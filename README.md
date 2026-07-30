@@ -39,8 +39,10 @@ als Datei weitergeben – oder erzeugen lassen. Dafür gibt es zwei Wege:
 
 Der Maßnahmenkatalog folgt den **Standardarbeitsanweisungen und Behandlungspfaden
 Rettungsdienst des Kreises Steinfurt (Januar 2026)**, ergänzt um Maßnahmen aus der
-Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg: 58 Maßnahmen mit
-Indikation, Dosierung und der Frage, wer sie durchführen darf. Ein i.v.-Medikament
+Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg sowie abgeglichen
+gegen die SAA/BPR der ÄLRD (6 Länder 2025), die DBRD-Musteralgorithmen 2026, die
+AWMF-S3-Leitlinie Polytrauma und ERC/RCUK 2025: 84 Maßnahmen mit Indikation,
+Dosierung, Kontraindikationen und der Frage, wer sie durchführen darf. Ein i.v.-Medikament
 ist gesperrt, bis ein Zugang liegt – und der kostet erst einmal 90 Sekunden.
 Zeitdauern und Sofortwirkungen sind didaktisch gesetzt und **keine medizinischen
 Aussagen**.

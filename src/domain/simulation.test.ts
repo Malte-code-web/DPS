@@ -65,14 +65,31 @@ describe('Szenariodaten', () => {
     expect(WAEHLBARE_MASSNAHMEN.some((m) => m.id === 'analgesie')).toBe(false);
   });
 
-  it('verlangt für jedes i.v.-Medikament einen Zugang', () => {
-    const ivMedikamente = WAEHLBARE_MASSNAHMEN.filter(
-      (m) => m.art === 'medikament' && m.label.includes('i.v.'),
+  it('verlangt für jedes rein i.v. gegebene Medikament einen Zugang', () => {
+    // Nur Medikamente ohne alternativen Weg. Ein Schrägstrich im Label ("i.v. /
+    // nasal", "i.v. / rektal", "i.v. / i.m.") heißt: Es geht auch ohne Zugang -
+    // diese dürfen deshalb bewusst nicht dahinter gesperrt sein.
+    const nurIntravenoes = WAEHLBARE_MASSNAHMEN.filter(
+      (m) => m.art === 'medikament' && m.label.includes('i.v.') && !m.label.includes('/'),
     );
-    expect(ivMedikamente.length).toBeGreaterThan(8);
-    for (const medikament of ivMedikamente) {
+    expect(nurIntravenoes.length).toBeGreaterThan(8);
+    for (const medikament of nurIntravenoes) {
       expect(medikament.benoetigtEinesVon, medikament.id).toEqual(['zugang_iv', 'zugang_io']);
     }
+  });
+
+  it('lässt Medikamente mit zugangsfreiem Weg nicht am Zugang scheitern', () => {
+    // Der häufigste Fehler im Katalog: Ein Medikament, das laut eigener
+    // Dosierung auch nasal, i.m., rektal oder oral geht, hängt trotzdem am
+    // i.v.-Zugang - und der zugangsfreie Weg ist im Spiel unerreichbar.
+    for (const id of ['nalbuphin', 'fentanyl', 'esketamin', 'prednisolon', 'glucagon'] as const) {
+      expect(MASSNAHMEN[id].benoetigtEinesVon, id).toBeUndefined();
+    }
+    // Epinephrin ist bewusst getrennt: i.v./i.o. für die Reanimation, i.m. für
+    // die Anaphylaxie. Sonst ließe eine gemeinsame Voraussetzung fälschlich
+    // Reanimationsadrenalin i.m. zu.
+    expect(MASSNAHMEN.epinephrin.benoetigtEinesVon).toEqual(['zugang_iv', 'zugang_io']);
+    expect(MASSNAHMEN.epinephrin_im.benoetigtEinesVon).toEqual(['injektion_im']);
   });
 
   it('meldet die fehlende Voraussetzung erst, wenn kein Zugang liegt', () => {
@@ -81,10 +98,16 @@ describe('Szenariodaten', () => {
     expect(fehlendeVoraussetzung(MASSNAHMEN.blutstillung, [])).toBeNull();
   });
 
-  it('kennt genau eine ärztliche Maßnahme jenseits der SAA', () => {
-    // Im MANV die knappste Ressource - das muss sichtbar bleiben.
+  it('hält die ärztlichen Maßnahmen jenseits der SAA klein und benannt', () => {
+    // Im MANV die knappste Ressource - das muss sichtbar bleiben. Wächst diese
+    // Liste, ist das eine bewusste Entscheidung und keine Nebenwirkung.
     const aerztlich = WAEHLBARE_MASSNAHMEN.filter((m) => m.qualifikation === 'notarzt');
-    expect(aerztlich.map((m) => m.id)).toEqual(['intubation']);
+    expect(aerztlich.map((m) => m.id).sort()).toEqual([
+      'intubation',
+      'koniotomie',
+      'levetiracetam',
+      'thoraxdrainage',
+    ]);
   });
 
   it('führt die blutstillenden Maßnahmen unter x', () => {
@@ -250,14 +273,25 @@ describe('Tubus nur beim Bewusstlosen', () => {
     return { ...patient, vitalwerte: { ...patient.vitalwerte, gcs: 13 } };
   };
 
-  it('kennzeichnet Guedel, Wendl und Larynxmaske als nur bei Bewusstlosigkeit wirksam', () => {
+  it('kennzeichnet Guedel-Tubus und Larynxmaske als nur bei Bewusstlosigkeit wirksam', () => {
     expect(MASSNAHMEN.guedeltubus.nurBeiBewusstlosigkeit).toBe(true);
-    expect(MASSNAHMEN.wendltubus.nurBeiBewusstlosigkeit).toBe(true);
     // Die eigene Indikation nennt "mit Bewusstlosigkeit und fehlenden Schutzreflexen" -
     // ohne das Flag würde die Simulation sie auch beim wachen Patienten wirken lassen.
     expect(MASSNAHMEN.larynxmaske.nurBeiBewusstlosigkeit).toBe(true);
     // Der Handgriff (Freimachen) hat diese Einschränkung nicht.
     expect(MASSNAHMEN.atemwege_freimachen.nurBeiBewusstlosigkeit).toBeUndefined();
+  });
+
+  it('lässt den Wendl-Tubus bewusst auch beim wachen Patienten wirken', () => {
+    // Der Nasopharyngealtubus ist gerade das Mittel für erhaltene Schutzreflexe:
+    // Er wird auch bei Würgereiz toleriert und steht im eskalierenden
+    // Atemwegsmanagement deshalb VOR dem Guedel-Tubus. Ein
+    // nurBeiBewusstlosigkeit-Flag wäre hier fachlich verkehrt herum.
+    expect(MASSNAHMEN.wendltubus.nurBeiBewusstlosigkeit).toBeUndefined();
+    const wach = { ...patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-03')!) };
+    wach.vitalwerte = { ...wach.vitalwerte, gcs: 13 };
+    const versorgt = wendeMassnahmeAn(wach, 'wendltubus', 0);
+    expect(versorgt.behandelteProbleme).toContain('atemwegsverlegung');
   });
 
   it('sichert beim Bewusstlosen den Atemweg und hebt die Sättigung', () => {

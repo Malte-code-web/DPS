@@ -46,7 +46,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
-| Maßnahmen | 58 Maßnahmen nach xABCDE auf Grundlage der SAA/BPR Kreis Steinfurt 2026, ergänzt um Maßnahmen aus der Malteser-Ausbildungsbroschüre: Basismaßnahmen, invasive Maßnahmen und 28 Medikamente mit Indikation und Dosierung; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-/Wendl-Tubus und Larynxmaske nur beim Bewusstlosen |
+| Maßnahmen | 84 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 36 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit; der verlegte Atemweg wird durch Mundraumkontrolle oder Bodycheck entdeckt |
 | Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
@@ -56,7 +56,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-207 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+209 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
 Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor und Baukasten.
 
 ### Bewusst noch nicht gebaut
@@ -198,7 +198,7 @@ ohne Sitzung bleibt jede Maßnahme frei wählbar wie bisher - die Sperre gilt nu
 innerhalb einer Mehrspieler-Sitzung.
 
 **Voraussetzung** (→ `massnahmen.voraussetzung`): Ein i.v.-Medikament ohne
-Zugang gibt es nicht. Die 18 i.v.-Medikamente sind gesperrt, bis ein i.v.- oder
+Zugang gibt es nicht. Die 18 rein i.v. gegebenen Medikamente sind gesperrt, bis ein i.v.- oder
 i.o.-Zugang liegt - und der kostet erst einmal 90 bzw. 120 Sekunden. Damit wird
 sichtbar, was "schnell mal etwas geben" wirklich kostet:
 
@@ -670,24 +670,24 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.sofort` | [`src/domain/massnahmen.ts:792`](src/domain/massnahmen.ts#L792) | Lebensrettende Griffe der Schadensstelle |
-| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:745`](src/domain/massnahmen.ts#L745) | Was aus der Auswahl verschwindet, aber gültig bleibt |
-| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:814`](src/domain/massnahmen.ts#L814) | Was vor einer Maßnahme erledigt sein muss |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:757`](src/domain/massnahmen.ts#L757) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.sofort` | [`src/domain/massnahmen.ts:1205`](src/domain/massnahmen.ts#L1205) | Lebensrettende Griffe der Schadensstelle |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:1158`](src/domain/massnahmen.ts#L1158) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:1227`](src/domain/massnahmen.ts#L1227) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:1170`](src/domain/massnahmen.ts#L1170) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:321`](src/domain/types.ts#L321) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:395`](src/domain/types.ts#L395) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:441`](src/domain/types.ts#L441) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:347`](src/domain/types.ts#L347) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:421`](src/domain/types.ts#L421) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:467`](src/domain/types.ts#L467) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:257`](src/domain/types.ts#L257) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:430`](src/domain/types.ts#L430) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:365`](src/domain/types.ts#L365) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:291`](src/domain/types.ts#L291) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
-| `modell.qualifikation` | [`src/domain/types.ts:194`](src/domain/types.ts#L194) | Fünf Ausbildungsstufen von Basis bis Notärztin |
+| `modell.koerperregion` | [`src/domain/types.ts:283`](src/domain/types.ts#L283) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.patient` | [`src/domain/types.ts:456`](src/domain/types.ts#L456) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:391`](src/domain/types.ts#L391) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:317`](src/domain/types.ts#L317) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.qualifikation` | [`src/domain/types.ts:220`](src/domain/types.ts#L220) | Fünf Ausbildungsstufen von Basis bis Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -810,13 +810,13 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `test.abschnitte` | [`src/state/reducer.test.ts:222`](src/state/reducer.test.ts#L222) | Der Weg eines Patienten und die erlaubten Verlegungen |
-| `test.atemweg` | [`src/domain/simulation.test.ts:195`](src/domain/simulation.test.ts#L195) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
+| `test.atemweg` | [`src/domain/simulation.test.ts:218`](src/domain/simulation.test.ts#L218) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
 | `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
-| `test.tubus` | [`src/domain/simulation.test.ts:244`](src/domain/simulation.test.ts#L244) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
+| `test.tubus` | [`src/domain/simulation.test.ts:267`](src/domain/simulation.test.ts#L267) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:64`](src/state/reducer.test.ts#L64) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
-| `test.zeitverlauf` | [`src/domain/simulation.test.ts:108`](src/domain/simulation.test.ts#L108) | Verschlechterung, Todesfaelle und Latenzzeiten |
+| `test.zeitverlauf` | [`src/domain/simulation.test.ts:131`](src/domain/simulation.test.ts#L131) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
 
@@ -884,7 +884,7 @@ _143 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           207 Tests
+npm run test           209 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -899,7 +899,9 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | Was | Woher |
 | --- | --- |
 | Maßnahmen, Indikationen, Dosierungen, Qualifikationszuordnung | [SAA und BPR Kreis Steinfurt, Version Januar 2026](https://www.kreis-steinfurt.de/kv_steinfurt/Ressourcen/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/SAA%20BPR%20Kreis%20Steinfurt%202026.pdf), ÄLRD Kreis Steinfurt |
-| Fünf Qualifikationsstufen, drei ergänzte Maßnahmen (Reanimation/AED, Fahrzeugrettung, Aktivkohle) | Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg, Stand 05/2025 |
+| Fünf Qualifikationsstufen und die Maßnahmen unterhalb der NotSan-Stufe | Ausbildungsbroschüre Malteser Bildungszentrum Baden-Württemberg, Stand 05/2025 |
+| Abgleich des gesamten Katalogs, Kontraindikationen, Kinderdosen, zugangsfreie Applikationswege | [SAA und BPR 2025 der ÄLRD in BW, BB, MV, NRW, SN, ST](https://www.aelrd-nrw.de/wp-content/uploads/2025/08/SAA_BPR_2025.pdf) (Stand 30.04.2025); [DBRD-Musteralgorithmen 2026](https://www.dbrd.de/images/algorithmen/DBRD_Musteralgorithmen_2026.pdf); [AWMF S3 Polytrauma 187-023](https://register.awmf.org/de/leitlinien/detail/187-023); ERC/RCUK 2025; Pyramidenprozess Anlage 3 |
+| Sichtungskategorien und Eigenschutz vor der Vorsichtung | Bundesärztekammer, Sichtungskategorien; BBK, 6. Sichtungs-Konsensus-Konferenz |
 | Sichtungskategorien SK I-IV | Bundeseinheitliche Systematik |
 | mSTaRT-Algorithmus und Grenzwerte | Fachliteratur, umgesetzt in `triage.ts` |
 

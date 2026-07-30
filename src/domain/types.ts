@@ -139,7 +139,20 @@ export type MassnahmeId =
   | 'betreuung'
   | 'monitoring'
   | 'reanimation'
+  | 'aed'
+  | 'valsalva'
   | 'fahrzeugrettung'
+  | 'esmarch'
+  | 'hws_immobilisation'
+  | 'fremdkoerper_entfernung'
+  | 'glucose_oral'
+  | 'lagerung_neuro'
+  | 'oberkoerperhochlagerung'
+  | 'stabile_seitenlage'
+  | 'wundversorgung'
+  | 'verbrennungsversorgung'
+  | 'amputatversorgung'
+  | 'gefahrenbeurteilung'
   // SAA - invasive Maßnahmen
   | 'zugang_iv'
   | 'zugang_io'
@@ -156,9 +169,19 @@ export type MassnahmeId =
   | 'absaugen_endobronchial'
   | 'injektion_im'
   | 'gabe_intranasal'
+  | 'wundtamponade'
+  | 'kapnografie'
+  | 'mcpr'
   // SAA - Medikamente
   | 'sauerstoffgabe'
+  | 'epinephrin_inhalativ'
+  | 'epinephrin_im'
   | 'aktivkohle'
+  | 'nalbuphin'
+  | 'fentanyl'
+  | 'ibuprofen'
+  | 'glucagon'
+  | 'diazepam_rektal'
   | 'ass'
   | 'amiodaron'
   | 'atropin'
@@ -184,8 +207,11 @@ export type MassnahmeId =
   | 'tranexamsaeure'
   | 'urapidil'
   | 'volumengabe'
-  // Ärztliche Maßnahme, nicht von der SAA gedeckt
+  // Ärztliche Maßnahmen, nicht von der SAA gedeckt
   | 'intubation'
+  | 'koniotomie'
+  | 'levetiracetam'
+  | 'thoraxdrainage'
   // Sammelbegriff aus der ersten Fassung - siehe massnahmen.veraltet
   | 'analgesie';
 

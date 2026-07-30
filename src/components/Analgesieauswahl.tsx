@@ -5,10 +5,11 @@ import {
   fehlendeVoraussetzung,
   voraussetzungKurz,
 } from '../domain/massnahmen';
-import { ANALGETIKA, empfohleneDosisMg, gewichtVon } from '../domain/dosierung';
+import { ANALGETIKA, gewichtVon } from '../domain/dosierung';
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
+import { Dosiseingabe } from './Dosiseingabe';
 import type { Massnahme, MassnahmeId, Patient } from '../domain/types';
 
 interface Props {
@@ -30,7 +31,6 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
   const { state } = useSimulation();
   const [offen, setOffen] = useState(false);
   const [gewaehlt, setGewaehlt] = useState<MassnahmeId | null>(null);
-  const [dosis, setDosis] = useState('');
 
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
@@ -46,17 +46,8 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
     state.massnahmenrechte[massnahme.id] ??
     ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
 
-  const waehle = (id: MassnahmeId) => {
-    setGewaehlt(id);
-    setDosis(String(empfohleneDosisMg(id, gewichtKg)));
-  };
-
-  const dosisNum = Number(dosis.replace(',', '.'));
-  const dosisGueltig = Number.isFinite(dosisNum) && dosisNum > 0;
-
-  const verabreichen = () => {
-    if (!gewaehlt || !dosisGueltig) return;
-    onMassnahme(gewaehlt, dosisNum);
+  const verabreichen = (massnahmeId: MassnahmeId, dosisMg: number) => {
+    onMassnahme(massnahmeId, dosisMg);
     setGewaehlt(null);
     setOffen(false);
   };
@@ -95,7 +86,7 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
                   type="button"
                   className={`massnahme massnahme-medikament${istGewaehlt ? ' massnahme-aktiv' : ''}`}
                   disabled={gesperrtHier}
-                  onClick={() => waehle(massnahme.id)}
+                  onClick={() => setGewaehlt(massnahme.id)}
                 >
                   <span className="massnahme-label">
                     {massnahme.label}
@@ -117,32 +108,11 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
                 </button>
 
                 {istGewaehlt && (
-                  <div className="analgesie-dosis">
-                    <label>
-                      Dosis in mg
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="0.5"
-                        value={dosis}
-                        onChange={(event) => setDosis(event.target.value)}
-                      />
-                    </label>
-                    <span className="analgesie-dosis-hinweis">
-                      {dosisGueltig
-                        ? `${(dosisNum / gewichtKg).toFixed(3)} mg/kg bei ${gewichtKg} kg Körpergewicht`
-                        : `Gewicht: ${gewichtKg} kg`}
-                    </span>
-                    <button
-                      type="button"
-                      className="analgesie-verabreichen"
-                      disabled={!dosisGueltig}
-                      onClick={verabreichen}
-                    >
-                      Verabreichen
-                    </button>
-                  </div>
+                  <Dosiseingabe
+                    massnahmeId={massnahme.id}
+                    gewichtKg={gewichtKg}
+                    onVerabreichen={(dosisMg) => verabreichen(massnahme.id, dosisMg)}
+                  />
                 )}
               </div>
             );

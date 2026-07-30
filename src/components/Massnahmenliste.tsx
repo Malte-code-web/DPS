@@ -8,11 +8,12 @@ import {
   massnahmenDerKategorie,
   voraussetzungKurz,
 } from '../domain/massnahmen';
-import { ANALGETIKA } from '../domain/dosierung';
+import { ANALGETIKA, gewichtVon, hatDosisreferenz } from '../domain/dosierung';
 import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
 import { Analgesieauswahl } from './Analgesieauswahl';
+import { Dosiseingabe } from './Dosiseingabe';
 import type {
   Massnahme,
   MassnahmeId,
@@ -54,12 +55,14 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
   const { state, dispatch } = useSimulation();
   const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
+  const [dosisOffen, setDosisOffen] = useState<MassnahmeId | null>(null);
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
   // (→ `domain.qualifikation`); im Einzel-/Teamspiel bleibt alles frei wählbar.
   const eigeneQualifikation = state.sitzung.aktiv
     ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
     : null;
+  const gewichtKg = gewichtVon(patient);
 
   const umschalten = (kategorie: MassnahmenKategorie) =>
     setOffen((bisher) => {
@@ -96,6 +99,11 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
       fehlt === null;
     const detailOffen = detail === massnahme.id;
     const hatDetails = Boolean(massnahme.indikation ?? massnahme.dosierung);
+    // Maßnahmen mit eigener Dosisreferenz (→ `domain.dosierung`) öffnen beim
+    // Klick erst die Dosis-Eingabe, statt sofort auszuführen - derselbe
+    // Mechanismus wie in der Analgesie-Sammelauswahl (→ `ui.analgesieauswahl`).
+    const hatDosis = hatDosisreferenz(massnahme.id);
+    const dosisPanelOffen = dosisOffen === massnahme.id;
 
     return (
       <div key={massnahme.id} className="massnahme-zeile">
@@ -105,7 +113,10 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
             bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
           }`}
           disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt}
-          onClick={() => onMassnahme(massnahme.id)}
+          aria-expanded={hatDosis ? dosisPanelOffen : undefined}
+          onClick={() =>
+            hatDosis ? setDosisOffen(dosisPanelOffen ? null : massnahme.id) : onMassnahme(massnahme.id)
+          }
         >
           <span className="massnahme-label">
             {massnahme.label}
@@ -181,6 +192,17 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
               <dd>{massnahme.hinweis}</dd>
             </div>
           </dl>
+        )}
+
+        {dosisPanelOffen && (
+          <Dosiseingabe
+            massnahmeId={massnahme.id}
+            gewichtKg={gewichtKg}
+            onVerabreichen={(dosisMg) => {
+              onMassnahme(massnahme.id, dosisMg);
+              setDosisOffen(null);
+            }}
+          />
         )}
       </div>
     );

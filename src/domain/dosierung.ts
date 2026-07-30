@@ -11,7 +11,8 @@ import type { MassnahmeId, PatientVorlage, VitalVerlauf } from './types';
  * siehe die Kommentare je Eintrag).
  *
  * Referenzwerte sind recherchiert (SAA/BPR 2025, FDA-Fachinfo, Toxikologie-
- * Literatur), aber wie `dauerSek` und `sofortEffekt` im übrigen Katalog eine
+ * Literatur, gegengelesen gegen die Bestückung RTW Kreis Steinfurt Stand
+ * 01.02.2025), aber wie `dauerSek` und `sofortEffekt` im übrigen Katalog eine
  * Stellschraube der Übung, keine medizinische Dosierungsempfehlung - siehe die
  * Vereinfachungen in DOKUMENTATION.md. Wo die Literatur keinen scharfen
  * Grenzwert liefert (Opioide werden klinisch titriert, nicht nach starrem
@@ -96,7 +97,160 @@ export const DOSISREFERENZ: Partial<Record<MassnahmeId, Dosisreferenz>> = {
     maxEinzeldosisMg: 600,
     toxischerEffekt: { gcs: -2, atemfrequenz: -2, systolischerRR: -8 },
   },
+
+  // --- Weitere dosisabhängige Medikamente (→ Kreis-Steinfurt-Bestückung) ---
+  // Recherchiert wie oben, aber ohne eigene Sammelauswahl - jede Zeile
+  // bekommt ihre Dosis-Eingabe einzeln (→ `ui.dosiseingabe`).
+  epinephrin: {
+    // SAA nennt für die instabile Bradykardie 5-µg-Boli, für Kinder generell
+    // 0,01 mg/kg - beides trifft sich bei ca. 0,01 mg/kg als Zielwert (1 mg
+    // beim ca. 80-100 kg schweren Erwachsenen liegt in derselben Größenordnung).
+    // Überdosierung: rasche hypertensive Krise mit Tachyarrhythmie statt der
+    // erwünschten dosierten Kreislaufunterstützung (Rn/Ren 2023 Fallbericht;
+    // ISMP-Fehlerberichte zu Verwechslungen der Reanimations- mit der
+    // Bradykardie-Dosis).
+    minMgProKg: 0.003,
+    zielMgProKg: 0.01,
+    maxMgProKg: 0.02,
+    toxischerEffekt: { systolischerRR: 35, herzfrequenz: 35, gcs: -2 },
+  },
+  amiodaron: {
+    // SAA: 300 mg nach dem 3., 150 mg nach dem 5. Schock; Kinder 5 mg/kg. Beim
+    // durchschnittlich schweren Erwachsenen deckt sich das mit ca. 4 mg/kg.
+    // Überdosierung/zu schnelle Gabe: Hypotonie und Bradykardie dominieren
+    // (Infusionsgeschwindigkeit ist der Haupttreiber, nicht allein die Menge -
+    // PMC4867816, PMC9199562) - kein eigener sofortEffekt im Katalog, die
+    // Überdosierung bringt trotzdem einen Schadeffekt.
+    minMgProKg: 1,
+    zielMgProKg: 4,
+    maxMgProKg: 6,
+    maxEinzeldosisMg: 300,
+    toxischerEffekt: { systolischerRR: -25, herzfrequenz: -20 },
+  },
+  lidocain: {
+    // SAA-Zieldosis (100 mg bzw. 1 mg/kg) deckt sich mit dem Literaturwert für
+    // den Beginn systemischer Lokalanästhetika-Toxizität (LAST) von ca.
+    // 4,5 mg/kg bei Infiltration - für die i.v.-Bolusgabe hier vorsichtiger
+    // auf 3 mg/kg angesetzt. LAST beginnt neurologisch (Kribbeln, Unruhe,
+    // Krampfneigung) und geht bei mehr Dosis in kardiale Depression über -
+    // im Spiel als GCS- und Kreislaufabfall zusammengefasst (EMCrit IBCC LAST).
+    minMgProKg: 0.3,
+    zielMgProKg: 1,
+    maxMgProKg: 3,
+    maxEinzeldosisMg: 100,
+    toxischerEffekt: { gcs: -3, herzfrequenz: -15, systolischerRR: -15 },
+  },
+  atropin: {
+    // SAA gibt eine feste Erwachsenendosis (0,5 mg, Wiederholung bis max. 3 mg)
+    // ohne Gewichtsbezug - hier für die Spielmechanik auf den Steinfurt-
+    // Referenzerwachsenen (78 kg) umgerechnet. Das SAA-eigene Limit von 3 mg
+    // liegt bewusst unterhalb der Literaturschwelle für das anticholinerge
+    // Syndrom (ca. 5-10 mg) - wer die Wiederholungsgrenze der SAA überschreitet,
+    // bekommt im Spiel schon die beginnende Symptomatik (Tachykardie, Unruhe/
+    // Verwirrtheit), nicht erst das volle Vollbild.
+    minMgProKg: 0.002,
+    zielMgProKg: 0.0064,
+    maxMgProKg: 0.035,
+    maxEinzeldosisMg: 3,
+    toxischerEffekt: { herzfrequenz: 25, gcs: -2 },
+  },
+  metoprolol: {
+    // SAA: feste Erwachsenendosis (2 mg, Wiederholung bis max. 5 mg), auch
+    // hier auf 78 kg umgerechnet. Überdosierung: die gefürchtete Trias aus
+    // Bradykardie, Hypotonie und Bewusstseinstrübung durch Low-Output
+    // (Medscape Beta-Blocker Toxicity; LITFL).
+    minMgProKg: 0.01,
+    zielMgProKg: 0.026,
+    maxMgProKg: 0.06,
+    maxEinzeldosisMg: 5,
+    toxischerEffekt: { herzfrequenz: -25, systolischerRR: -25, gcs: -2 },
+  },
+  midazolam: {
+    // SAA-Zielwert für den Krampfanfall (0,1 mg/kg) ist die einzige echte
+    // mg/kg-Angabe im Katalog - die übrigen Routen (Analgosedierung) sind
+    // fixe Kleinstdosen. Perioperative Induktionsdosen bis 0,3-0,4 mg/kg
+    // (FDA-Fachinfo) markieren die Überdosierungsschwelle. Atemdepression bis
+    // zum Atemstillstand ist die dominante Gefahr, besonders in Kombination
+    // mit Opioiden.
+    minMgProKg: 0.03,
+    zielMgProKg: 0.1,
+    maxMgProKg: 0.3,
+    maxEinzeldosisMg: 20,
+    toxischerEffekt: { atemfrequenz: -6, gcs: -4, spo2: -4 },
+  },
+  diazepam_rektal: {
+    // SAA gibt zwei Gewichtsbänder (5 mg bis 15 kg, 10 mg ab 15 kg) statt
+    // eines mg/kg-Werts - der Zielwert hier ist der Mittelwert dieser Bänder.
+    // Gleiches Wirkprofil wie Midazolam (Benzodiazepin), rektal etwas
+    // verzögerter, deshalb dieselbe Atemdepression, nur eine Stufe milder.
+    minMgProKg: 0.15,
+    zielMgProKg: 0.4,
+    maxMgProKg: 0.8,
+    maxEinzeldosisMg: 10,
+    toxischerEffekt: { atemfrequenz: -5, gcs: -3, spo2: -3 },
+  },
+  naloxon: {
+    // Naloxon selbst ist pharmakologisch bemerkenswert ungiftig - das
+    // eigentliche "Überdosierungs"-Risiko ist die präzipitierte Entzugsreaktion
+    // bei Opioidabhängigkeit: Sympathikus-Sturm mit Tachykardie, Hypertonie und
+    // Unruhe statt Organtoxizität (PMC11089786) - ein lehrreicher Kontrast zu
+    // den übrigen Medikamenten dieser Liste. SAA-Zielwert (0,01 mg/kg Kinder,
+    // fraktioniert 0,1 mg beim Erwachsenen) als mg/kg-Basis übernommen.
+    minMgProKg: 0.002,
+    zielMgProKg: 0.01,
+    maxMgProKg: 0.03,
+    toxischerEffekt: { herzfrequenz: 20, systolischerRR: 15, schmerz: 3 },
+  },
+  nitrat: {
+    // SAA kennt nur den Hub (0,4 mg, eine Wiederholung) ohne Gewichtsbezug -
+    // hier auf den Referenzerwachsenen (78 kg) umgerechnet. Die gefürchtete
+    // Überdosierungsreaktion ist nicht die erwartbare Reflextachykardie,
+    // sondern paradox oft Hypotonie MIT Bradykardie (Bezold-Jarisch-Reflex,
+    // AHA Circulation 54:624) - deshalb hier bewusst keine Herzfrequenz-
+    // Erhöhung, sondern eine Senkung.
+    minMgProKg: 0.002,
+    zielMgProKg: 0.005,
+    maxMgProKg: 0.01,
+    maxEinzeldosisMg: 0.8,
+    toxischerEffekt: { systolischerRR: -35, herzfrequenz: -15 },
+  },
+  urapidil: {
+    // SAA: 5 mg, Wiederholung bis max. 25 mg, ohne Gewichtsbezug - auf den
+    // Referenzerwachsenen (78 kg) umgerechnet. Anders als bei klassischen
+    // Alpha-Blockern bleibt die Reflextachykardie aus (zentrale 5-HT1A-
+    // Wirkkomponente) - bei Überdosierung fällt der Druck stärker, ohne dass
+    // die Herzfrequenz gegensteuert, ein lehrreicher Kontrast zu Nitrat oben.
+    minMgProKg: 0.02,
+    zielMgProKg: 0.064,
+    maxMgProKg: 0.32,
+    maxEinzeldosisMg: 25,
+    toxischerEffekt: { systolischerRR: -35 },
+  },
+  furosemid: {
+    // SAA: 20 mg, eine Wiederholung nach 15 min, ohne Gewichtsbezug - auf den
+    // Referenzerwachsenen (78 kg) umgerechnet. Überdosierung wirkt über
+    // Volumenmangel: Hypotonie mit kompensatorischer Tachykardie und
+    // verlängerter Rekapillarisierung, keine Organtoxizität im Spielzeitfenster
+    // (Furosemid-Fachinfo Overdosage).
+    minMgProKg: 0.1,
+    zielMgProKg: 0.26,
+    maxMgProKg: 0.5,
+    maxEinzeldosisMg: 40,
+    toxischerEffekt: { systolischerRR: -15, herzfrequenz: 15, rekapzeit: 0.5 },
+  },
 };
+
+/**
+ * @anker domain.dosierbar Alle Medikamente mit eigener Dosis-Eingabe
+ *
+ * Vereinigt die Analgesie-Sammelauswahl (→ `ANALGETIKA`) mit den übrigen
+ * Katalog-Medikamenten, die eine eigene Dosisreferenz haben. Steuert, welche
+ * Maßnahmenzeile in `Massnahmenliste` statt eines direkten Klicks die
+ * Dosis-Eingabe öffnet (→ `ui.dosiseingabe`).
+ */
+export function hatDosisreferenz(massnahmeId: MassnahmeId): boolean {
+  return massnahmeId in DOSISREFERENZ;
+}
 
 /**
  * @anker domain.analgetika Die sechs Mittel der Analgesie-Sammelauswahl

@@ -2497,7 +2497,7 @@ button.gefahr {
   background: color-mix(in srgb, var(--akzent) 10%, transparent);
 }
 
-.analgesie-dosis {
+.dosis-eingabe {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2507,7 +2507,7 @@ button.gefahr {
   background: var(--bg-panel);
 }
 
-.analgesie-dosis label {
+.dosis-eingabe label {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -2515,20 +2515,20 @@ button.gefahr {
   color: var(--text-leise);
 }
 
-.analgesie-dosis input {
+.dosis-eingabe input {
   width: 5.5rem;
   padding: 0.3rem 0.5rem;
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
-.analgesie-dosis-hinweis {
+.dosis-eingabe-hinweis {
   font-size: 0.72rem;
   color: var(--text-leise);
   font-variant-numeric: tabular-nums;
 }
 
-.analgesie-verabreichen {
+.dosis-verabreichen {
   margin-left: auto;
   padding: 0.35rem 0.8rem;
   font-size: 0.8rem;
@@ -2539,8 +2539,15 @@ button.gefahr {
   border-radius: 999px;
 }
 
-.analgesie-verabreichen:disabled {
+.dosis-verabreichen:disabled {
   opacity: 0.5;
+}
+
+/* Einzelne Dosis-Eingabe direkt in der Maßnahmenliste (nicht in der
+   Analgesie-Sammelauswahl) - dieselbe Optik, ohne den gestrichelten Rahmen
+   der Mittel-Auswahl. */
+.massnahme-zeile > .dosis-eingabe {
+  margin-top: 0.35rem;
 }
 
 .saa-detail {

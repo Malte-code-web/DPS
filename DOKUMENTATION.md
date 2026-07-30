@@ -47,7 +47,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
 | Maßnahmen | 84 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 36 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
-| Analgesie-Sammelauswahl | Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen hinter einem Button „Analgesie" statt einzeln in der Liste; nach Wahl des Mittels lässt sich die Dosis in mg festlegen (vorbelegt mit der Zieldosis für das Patientengewicht). Zu niedrig dosiert bleibt wirkungslos, zu hoch dosiert löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus (bei Nalbuphin/Paracetamol bewusst keine - Ceiling-Effekt bzw. verzögerte Hepatotoxizität) |
+| Gewichtsbezogene Dosierung | 17 Medikamente rechnen die Dosis in mg gegen das Patientengewicht: zu niedrig bleibt wirkungslos, zu hoch löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus. Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen dafür hinter einem Sammel-Button „Analgesie" statt einzeln in der Liste; die übrigen elf (Epinephrin, Amiodaron, Lidocain, Atropin, Metoprolol, Midazolam, Diazepam-Rectiole, Naloxon, Nitrat, Urapidil, Furosemid) öffnen die Dosis-Eingabe direkt an ihrer Katalogzeile. Referenzwerte recherchiert (SAA/BPR Kreis Steinfurt, Toxikologie-Literatur); bewusste didaktische Kontraste je Mittel (Nalbuphin: Ceiling-Effekt statt Toxizität; Paracetamol: verzögerte statt akute Hepatotoxizität; Naloxon: präzipitierte Entzugsreaktion statt Organtoxizität; Urapidil: keine Reflextachykardie; Nitrat: paradoxe Bradykardie statt Reflextachykardie) |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit; der verlegte Atemweg wird durch Mundraumkontrolle oder Bodycheck entdeckt |
 | Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
@@ -57,7 +57,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-232 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+239 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
 Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor, Baukasten und
 gewichtsbezogene Dosierung.
 
@@ -80,6 +80,16 @@ gewichtsbezogene Dosierung.
 - **Führung**: Eine zweite Qualifikationsebene neben der fachlichen (wer darf
   disponieren, Kräfte einteilen) ist als eigener Baustein vorgesehen, aber
   noch nicht gebaut (→ ROADMAP.md, Baustein 3).
+- **Notfallnarkose**: Als langfristiges Ziel vorgesehen, analog zur Analgesie-
+  Sammelauswahl (→ `ui.analgesieauswahl`) - ein Sammel-Button für die RSI-
+  Medikamente mit derselben gewichtsbezogenen Dosierung. Noch nicht begonnen.
+  Die Bestückungsliste RTW Kreis Steinfurt (Stand 01.02.2025) führt die dafür
+  nötigen Wirkstoffgruppen bereits real mit: **Induktion** Thiopental
+  500 mg + Propofol 1 % 50 ml, **Relaxierung** Rocuronium 100 mg/5 ml
+  (beide im Kühlfach neben Epinephrin), **Analgesie/Ko-Induktion** Esketamin
+  und Midazolam (bereits im Katalog) - keiner dieser drei Wirkstoffe
+  (Thiopental, Propofol, Rocuronium) ist bisher als eigene Maßnahme im
+  Katalog hinterlegt.
 
 ### Bekannte Vereinfachungen
 
@@ -599,7 +609,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -631,9 +641,10 @@ _148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `domain.analgetika` | [`src/domain/dosierung.ts:102`](src/domain/dosierung.ts#L102) | Die sechs Mittel der Analgesie-Sammelauswahl |
+| `domain.analgetika` | [`src/domain/dosierung.ts:256`](src/domain/dosierung.ts#L256) | Die sechs Mittel der Analgesie-Sammelauswahl |
+| `domain.dosierbar` | [`src/domain/dosierung.ts:244`](src/domain/dosierung.ts#L244) | Alle Medikamente mit eigener Dosis-Eingabe |
 | `domain.dosierung` | [`src/domain/dosierung.ts:4`](src/domain/dosierung.ts#L4) | Gewichtsbezogene Dosierung: zu wenig wirkt nicht, zu viel schadet |
-| `domain.gewicht` | [`src/domain/dosierung.ts:119`](src/domain/dosierung.ts#L119) | Körpergewicht - hinterlegt oder geschätzt |
+| `domain.gewicht` | [`src/domain/dosierung.ts:273`](src/domain/dosierung.ts#L273) | Körpergewicht - hinterlegt oder geschätzt |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
 | `domain.massnahmerecht` | [`src/domain/qualifikation.ts:29`](src/domain/qualifikation.ts#L29) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
@@ -784,18 +795,18 @@ _148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.anhaengekarte` | [`src/index.css:1443`](src/index.css#L1443) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.bereichsseite` | [`src/index.css:1827`](src/index.css#L1827) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:641`](src/index.css#L641) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3102`](src/index.css#L3102) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:3109`](src/index.css#L3109) | Die angeheftete Leiste so flach wie möglich |
 | `stil.ersteindruck` | [`src/index.css:1880`](src/index.css#L1880) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:3052`](src/index.css#L3052) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3059`](src/index.css#L3059) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:298`](src/index.css#L298) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:377`](src/index.css#L377) | Rollenwahl, Anmeldung, Beitritt und Wartebereich |
 | `stil.modi` | [`src/index.css:568`](src/index.css#L568) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1706`](src/index.css#L1706) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.raster` | [`src/index.css:2250`](src/index.css#L2250) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:148`](src/index.css#L148) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3172`](src/index.css#L3172) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3179`](src/index.css#L3179) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3303`](src/index.css#L3303) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3310`](src/index.css#L3310) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -831,7 +842,7 @@ _148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.alleinspiel` | [`src/pages/SetupSeite.tsx:52`](src/pages/SetupSeite.tsx#L52) | Vor dem Start wählen, ob man allein spielt */} |
-| `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:20`](src/components/Analgesieauswahl.tsx#L20) | Ein Sammel-Button statt sechs Einzelknöpfe |
+| `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:21`](src/components/Analgesieauswahl.tsx#L21) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.anmeldung` | [`src/pages/AnmeldungSeite.tsx:5`](src/pages/AnmeldungSeite.tsx#L5) | Übungsleiter-Anmeldung (Login folgt mit dem Server) |
 | `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
@@ -840,12 +851,13 @@ _148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.beitritt` | [`src/pages/BeitrittSeite.tsx:5`](src/pages/BeitrittSeite.tsx#L5) | Spieler tritt mit Code und Name bei |
 | `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
+| `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:10`](src/pages/EinsatzSeite.tsx#L10) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:37`](src/components/Massnahmenliste.tsx#L37) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:38`](src/components/Massnahmenliste.tsx#L38) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
@@ -891,7 +903,7 @@ _148 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           232 Tests
+npm run test           239 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -911,6 +923,8 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | Sichtungskategorien und Eigenschutz vor der Vorsichtung | Bundesärztekammer, Sichtungskategorien; BBK, 6. Sichtungs-Konsensus-Konferenz |
 | Sichtungskategorien SK I-IV | Bundeseinheitliche Systematik |
 | mSTaRT-Algorithmus und Grenzwerte | Fachliteratur, umgesetzt in `triage.ts` |
+| Tatsächliche Bestückung (welche Medikamente in welcher Konzentration wirklich mitgeführt werden) | [Bestückung RTW Kreis Steinfurt, Stand 01.02.2025](https://www.kreis-steinfurt.de/kv_steinfurt/Kreisverwaltung/%C3%84mter/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/Rettungsmittel/RTW%20Best%C3%BCckungsliste%20Februar%202025%20(Ausbau%20WAS)%20Kreis%20Steinfurt.pdf), ÄLRD Kreis Steinfurt |
+| Überdosierungsschwellen und -wirkung der elf Medikamente jenseits der Analgesie (→ `domain.dosierung`) | LAST/Lidocain-Toxizität (EMCrit IBCC, Medscape); Amiodaron-IV-Toxizität (PMC4867816, PMC9199562); Anticholinerges Syndrom/Atropin (StatPearls NBK534798); Betablocker-Toxizität (Medscape 813342, LITFL); Midazolam-Fachinfo (FDA); Naloxon-Sicherheitsprofil/präzipitierter Entzug (PMC11089786); Nitroglycerin-Bezold-Jarisch-Reflex (AHA Circulation 54:624); Urapidil-Pharmakologie (ScienceDirect); Furosemid-Fachinfo Overdosage (Pfizer); Epinephrin-Fehldosierungsfälle (AME Case Reports, PMC6954811) |
 
 **Was NICHT aus der Quelle stammt:** die Zeitdauern (`dauerSek`) und die
 Sofortwirkungen (`sofortEffekt`) der Maßnahmen. Beides sind didaktische

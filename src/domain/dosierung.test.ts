@@ -6,6 +6,7 @@ import {
   empfohleneDosisMg,
   geschaetztesGewicht,
   gewichtVon,
+  hatDosisreferenz,
   wirkungBeiDosis,
 } from './dosierung';
 import { MASSNAHMEN } from './massnahmen';
@@ -137,5 +138,71 @@ describe('wirkungBeiDosis', () => {
     expect(ergebnis.stufe).toBe('therapeutisch');
     expect(ergebnis.effekt).toEqual(basis);
     expect(ergebnis.loestProblem).toBe(true);
+  });
+});
+
+describe('hatDosisreferenz', () => {
+  it('erkennt sowohl die Analgetika als auch die übrigen dosisabhängigen Medikamente', () => {
+    expect(hatDosisreferenz('morphin')).toBe(true);
+    expect(hatDosisreferenz('amiodaron')).toBe(true);
+    expect(hatDosisreferenz('urapidil')).toBe(true);
+  });
+
+  it('verneint für Maßnahmen ohne Dosisreferenz', () => {
+    expect(hatDosisreferenz('tourniquet')).toBe(false);
+  });
+});
+
+describe('Dosisreferenzen jenseits der Analgesie', () => {
+  it('deckt jede fest zugesagte Maßnahme mit einer Referenz ab', () => {
+    const erwartet = [
+      'epinephrin',
+      'amiodaron',
+      'lidocain',
+      'atropin',
+      'metoprolol',
+      'midazolam',
+      'diazepam_rektal',
+      'naloxon',
+      'nitrat',
+      'urapidil',
+      'furosemid',
+    ] as const;
+    for (const id of erwartet) {
+      expect(DOSISREFERENZ[id], id).toBeDefined();
+      expect(MASSNAHMEN[id], id).toBeDefined();
+    }
+  });
+
+  it('addiert bei Amiodaron-Überdosierung einen Schadeffekt, obwohl der Katalog keinen sofortEffekt kennt', () => {
+    // Amiodaron hat im Katalog absichtlich keinen sofortEffekt (reanimationsnahe
+    // Wirkung, kein direkter Vitalwert-Sprung) - die Überdosierung wirkt trotzdem.
+    expect(MASSNAHMEN.amiodaron.sofortEffekt).toBeUndefined();
+    const ergebnis = wirkungBeiDosis('amiodaron', undefined, 1000, 80); // 12,5 mg/kg, weit über 6
+    expect(ergebnis.stufe).toBe('ueberdosiert');
+    expect(ergebnis.effekt!.systolischerRR!).toBeLessThan(0);
+    expect(ergebnis.effekt!.herzfrequenz!).toBeLessThan(0);
+  });
+
+  it('modelliert Naloxon-Überdosierung als präzipitierte Entzugsreaktion, nicht als Organtoxizität', () => {
+    // Sympathikus-Aktivierung (HF/RR steigen) statt der sonst üblichen Depression.
+    const ergebnis = wirkungBeiDosis('naloxon', MASSNAHMEN.naloxon.sofortEffekt, 5, 80); // 0,0625 mg/kg > 0,03
+    expect(ergebnis.stufe).toBe('ueberdosiert');
+    expect(ergebnis.effekt!.herzfrequenz!).toBeGreaterThan(0);
+    expect(ergebnis.effekt!.systolischerRR!).toBeGreaterThan(0);
+  });
+
+  it('lässt Urapidil bei Überdosierung ohne Reflextachykardie (zentraler Wirkmechanismus)', () => {
+    const ergebnis = wirkungBeiDosis('urapidil', MASSNAHMEN.urapidil.sofortEffekt, 40, 80); // 0,5 mg/kg > 0,32
+    expect(ergebnis.stufe).toBe('ueberdosiert');
+    expect(ergebnis.effekt!.systolischerRR!).toBeLessThan(0);
+    expect(ergebnis.effekt!.herzfrequenz).toBeUndefined();
+  });
+
+  it('lässt Nitrat bei Überdosierung paradox mit Bradykardie statt Reflextachykardie reagieren', () => {
+    const ergebnis = wirkungBeiDosis('nitrat', MASSNAHMEN.nitrat.sofortEffekt, 2, 80); // 0,025 mg/kg > 0,01
+    expect(ergebnis.stufe).toBe('ueberdosiert');
+    expect(ergebnis.effekt!.systolischerRR!).toBeLessThan(0);
+    expect(ergebnis.effekt!.herzfrequenz!).toBeLessThan(0);
   });
 });

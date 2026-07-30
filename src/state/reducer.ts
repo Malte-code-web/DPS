@@ -73,6 +73,12 @@ export interface SimulationState {
    * `sitzung` gepflegt - erst innerhalb einer Sitzung wirkt die Sperre.
    */
   massnahmenrechte: Massnahmenrechte;
+  /**
+   * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
+   * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
+   * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
+   */
+  schnappschussFolge: number;
 }
 
 export const ANFANGSZUSTAND: SimulationState = {
@@ -92,6 +98,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   alleine: false,
   sitzung: KEINE_SITZUNG,
   massnahmenrechte: standardMassnahmenrechte(),
+  schnappschussFolge: 0,
 };
 
 /** @anker state.aktionen Alles, was der Übende auslösen kann */
@@ -126,7 +133,8 @@ export type SimulationAction =
   | { typ: 'spielerQualifikationSetzen'; spielerId: string; qualifikation: Qualifikation }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
-  | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss };
+  | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
+  | { typ: 'verbindungsfehlerSetzen'; meldung: string | null };
 
 /**
  * @anker state.schnappschuss Der geteilte, host-autoritative Ausschnitt des Zustands
@@ -147,15 +155,23 @@ export interface Schnappschuss {
   status: Sitzungszustand['status'];
   /** Damit alle Clients dieselben Sperren durchsetzen, nicht nur der Host. */
   massnahmenrechte: Massnahmenrechte;
+  /**
+   * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
+   * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
+   * (Provider) zählt sie separat je Sitzung; der Vorgabewert genügt für einen
+   * einzelnen, isoliert angewendeten Schnappschuss (z. B. in Tests).
+   */
+  folge: number;
 }
 
-export function schnappschussAus(state: SimulationState): Schnappschuss {
+export function schnappschussAus(state: SimulationState, folge = 1): Schnappschuss {
   return {
     phase: state.phase,
     szenario: state.szenario,
     zeitSek: state.zeitSek,
     laufend: state.laufend,
     geschwindigkeit: state.geschwindigkeit,
+    folge,
     patienten: state.patienten,
     spieler: state.sitzung.spieler,
     status: state.sitzung.status,
@@ -410,6 +426,7 @@ export function simulationReducer(
           eigenerName: selbst.name,
           spieler: [selbst],
           status: 'wartet',
+          verbindungsfehler: null,
         },
       };
     }
@@ -418,6 +435,7 @@ export function simulationReducer(
       return {
         ...ANFANGSZUSTAND,
         eigeneSzenarien: state.eigeneSzenarien,
+        geschwindigkeit: state.geschwindigkeit,
         massnahmenrechte: state.massnahmenrechte,
         modus: 'digital',
         phase: 'wartebereich',
@@ -429,6 +447,7 @@ export function simulationReducer(
           eigenerName: action.name,
           spieler: [],
           status: 'wartet',
+          verbindungsfehler: null,
         },
       };
 
@@ -457,6 +476,9 @@ export function simulationReducer(
         },
       };
 
+    case 'verbindungsfehlerSetzen':
+      return { ...state, sitzung: { ...state.sitzung, verbindungsfehler: action.meldung } };
+
     case 'sitzungStarten':
       if (!state.szenario) return state;
       return {
@@ -480,6 +502,10 @@ export function simulationReducer(
 
     case 'schnappschussAnwenden': {
       const s = action.schnappschuss;
+      // Netzwerk garantiert keine Zustellreihenfolge: Ein verspätet
+      // eintreffender älterer Schnappschuss darf einen bereits angewendeten
+      // neueren nicht zurückdrehen (→ `state.schnappschuss`).
+      if (s.folge <= state.schnappschussFolge) return state;
       return {
         ...state,
         phase: s.phase,
@@ -489,13 +515,19 @@ export function simulationReducer(
         geschwindigkeit: s.geschwindigkeit,
         patienten: s.patienten,
         massnahmenrechte: s.massnahmenrechte,
+        schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.
         sitzung: { ...state.sitzung, spieler: s.spieler, status: s.status },
       };
     }
 
-    default:
-      return state;
+    default: {
+      // Zwingt jede neue Aktion zu einem eigenen `case`: Ohne diese Zeile
+      // würde ein vergessener Fall stillschweigend zu `state` - ein Klick
+      // ohne jede Wirkung, nicht mal ein Konsolenfehler zum Aufspüren.
+      const nichtBehandelt: never = action;
+      return nichtBehandelt;
+    }
   }
 }

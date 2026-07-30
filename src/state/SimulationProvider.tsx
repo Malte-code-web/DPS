@@ -99,19 +99,28 @@ export function SimulationProvider({
   useEffect(() => {
     if (!sitzung.aktiv || !sitzung.code || !sitzung.rolle) return;
     const rolle = sitzung.rolle;
-    const transport = transportFabrik(sitzung.code, (nachricht) => {
-      if (rolle === 'uebungsleiter') {
-        if (nachricht.typ === 'beitritt') {
-          dispatch({ typ: 'spielerHinzugefuegt', spieler: nachricht.spieler });
-        } else if (nachricht.typ === 'verlassen') {
-          dispatch({ typ: 'spielerEntfernt', spielerId: nachricht.spielerId });
-        } else if (nachricht.typ === 'aktion') {
-          dispatch(nachricht.aktion);
+    const transport = transportFabrik(
+      sitzung.code,
+      (nachricht) => {
+        if (rolle === 'uebungsleiter') {
+          if (nachricht.typ === 'beitritt') {
+            dispatch({ typ: 'spielerHinzugefuegt', spieler: nachricht.spieler });
+          } else if (nachricht.typ === 'verlassen') {
+            dispatch({ typ: 'spielerEntfernt', spielerId: nachricht.spielerId });
+          } else if (nachricht.typ === 'aktion') {
+            dispatch(nachricht.aktion);
+          }
+        } else if (nachricht.typ === 'schnappschuss') {
+          dispatch({ typ: 'schnappschussAnwenden', schnappschuss: nachricht.schnappschuss });
         }
-      } else if (nachricht.typ === 'schnappschuss') {
-        dispatch({ typ: 'schnappschussAnwenden', schnappschuss: nachricht.schnappschuss });
-      }
-    });
+      },
+      (status, meldung) => {
+        dispatch({
+          typ: 'verbindungsfehlerSetzen',
+          meldung: status === 'fehler' ? (meldung ?? 'Verbindung fehlgeschlagen.') : null,
+        });
+      },
+    );
     transportRef.current = transport;
 
     // Der Spieler meldet sich beim Host an; der Host wartet auf Anmeldungen.
@@ -141,7 +150,9 @@ export function SimulationProvider({
   const { patienten, zeitSek, szenario, massnahmenrechte } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
-  const schnappschuss = useMemo<Schnappschuss>(
+  // `folge` gehört nicht zum reinen Zustand (→ `state.schnappschuss`) - sie
+  // entsteht erst beim Versand, siehe den Effekt weiter unten.
+  const schnappschuss = useMemo<Omit<Schnappschuss, 'folge'>>(
     () => ({
       phase,
       szenario,
@@ -166,10 +177,18 @@ export function SimulationProvider({
     ],
   );
 
-  // Der Host verteilt den geteilten Zustand bei jeder Änderung.
+  // Der Host verteilt den geteilten Zustand bei jeder Änderung, mit einer
+  // fortlaufenden Laufnummer - damit ein Spieler eine verspätet über das Netz
+  // eintreffende ältere Nachricht erkennen und verwerfen kann
+  // (→ `state.schnappschuss`, `schnappschussAnwenden`).
+  const folgeRef = useRef(0);
   useEffect(() => {
     if (!istHost) return;
-    transportRef.current?.senden({ typ: 'schnappschuss', schnappschuss });
+    folgeRef.current += 1;
+    transportRef.current?.senden({
+      typ: 'schnappschuss',
+      schnappschuss: { ...schnappschuss, folge: folgeRef.current },
+    });
   }, [istHost, schnappschuss]);
 
   // Ein Spieler schickt Sim-Aktionen an den Host, statt sie selbst anzuwenden.

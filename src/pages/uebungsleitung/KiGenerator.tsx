@@ -160,6 +160,12 @@ export function KiGenerator({ onEntwurf, onMeldung }: KiGeneratorProps) {
               onChange={(e) => aendereZugang({ schluessel: e.target.value })}
             />
           </label>
+          {zugang.adresse.trim().length > 0 && zugang.schluessel.trim().length > 0 && (
+            <p className="hinweis hinweis-knapp">
+              Adresse UND Schlüssel eingetragen: Es wird nur an die Adresse gesendet, der Schlüssel
+              bleibt ungenutzt. Zum direkten Zugang ohne eigenen Dienst bitte die Adresse leeren.
+            </p>
+          )}
           <div className="editor-zeile">
             <label>
               Modell

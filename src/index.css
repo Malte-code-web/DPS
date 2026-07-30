@@ -129,6 +129,13 @@ select {
   font-size: 0.88rem;
 }
 
+.hinweis-fehler {
+  color: var(--sk1);
+  font-weight: 600;
+  border-left: 3px solid var(--sk1);
+  padding-left: 0.6rem;
+}
+
 .lagemeldung {
   color: var(--text-leise);
   font-size: 0.88rem;
@@ -1169,6 +1176,20 @@ button.gefahr {
   background: color-mix(in srgb, var(--akzent) 16%, var(--bg-panel-hoch));
   border-color: color-mix(in srgb, var(--akzent) 55%, transparent);
   border-left-color: var(--sk-farbe, var(--akzent));
+}
+
+/* Textuelle Markierung neben der Farbe - Empfehlung darf nicht allein an
+   Farbe hängen (Barrierefreiheit, → ui.verlegung). */
+.verlegung-empfohlen-marke {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--akzent);
+  border: 1px solid color-mix(in srgb, var(--akzent) 55%, transparent);
 }
 
 .verlegung-dauer {

@@ -11,12 +11,15 @@ import type { TransportFabrik } from './sitzungstransport';
  */
 const PRAEFIX = 'dps-sitzung-';
 
-export const erzeugeLokalenTransport: TransportFabrik = (code, onNachricht) => {
+export const erzeugeLokalenTransport: TransportFabrik = (code, onNachricht, onStatus) => {
   const kanal = new BroadcastChannel(PRAEFIX + code);
   const beiNachricht = (ereignis: MessageEvent) => {
     onNachricht(ereignis.data as SitzungsNachricht);
   };
   kanal.addEventListener('message', beiNachricht);
+  // BroadcastChannel verbindet synchron ohne Handshake - sobald die
+  // Konstruktion nicht geworfen hat, steht der Kanal.
+  onStatus?.('verbunden');
 
   return {
     senden(nachricht) {

@@ -41,9 +41,15 @@ export interface KiLauf {
 }
 
 function erzeugeClient(zugang: KiZugang): Anthropic {
+  const adresse = zugang.adresse.trim();
   return new Anthropic({
-    apiKey: zugang.schluessel.trim() || 'im-dienst-hinterlegt',
-    ...(zugang.adresse.trim() ? { baseURL: zugang.adresse.trim() } : {}),
+    // Zeigt "Adresse" auf einen eigenen Dienst, hält der den Schlüssel
+    // serverseitig (→ kiZugang.ts) - der eigene Schlüssel geht dann NICHT mit,
+    // selbst wenn das Feld noch gefüllt ist (z. B. nach dem Umstieg von
+    // direktem Anthropic-Zugang auf einen eigenen Proxy). Sonst würde ein
+    // vergessener Schlüssel an eine beliebige Adresse gesendet.
+    apiKey: adresse ? 'im-dienst-hinterlegt' : zugang.schluessel.trim() || 'im-dienst-hinterlegt',
+    ...(adresse ? { baseURL: adresse } : {}),
     // Der Aufruf kommt aus dem Browser der Übungsleitung - siehe kiZugang.ts.
     dangerouslyAllowBrowser: true,
     maxRetries: 2,

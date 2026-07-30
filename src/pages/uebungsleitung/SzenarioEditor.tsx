@@ -156,7 +156,7 @@ export function SzenarioEditor({ szenario, onAendern, onSichern, onVerwerfen }: 
           {szenario.patienten.map((patient, index) => {
             const offen = offenerPatient === patient.id;
             return (
-              <div key={index} className={`gruppe${offen ? ' gruppe-offen' : ''}`}>
+              <div key={patient.id} className={`gruppe${offen ? ' gruppe-offen' : ''}`}>
                 <button
                   type="button"
                   className="gruppe-kopf"

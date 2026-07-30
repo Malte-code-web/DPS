@@ -99,11 +99,12 @@ export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
     `Ja - ${anzeige(v.atemfrequenz)}/min`,
   );
 
-  if (!radialispulsTastbar(v) || v.rekapzeit > GRENZWERTE.rekapzeitKritisch) {
+  const pulsTastbar = radialispulsTastbar(v);
+  if (!pulsTastbar || v.rekapzeit > GRENZWERTE.rekapzeitKritisch) {
     return ergebnis(
       'SK1',
       'Radialispuls tastbar und Rekapzeit <= 2 s?',
-      !radialispulsTastbar(v)
+      !pulsTastbar
         ? `Nein - RR syst. ${anzeige(v.systolischerRR)} mmHg, kein Radialispuls`
         : `Nein - Rekapzeit ${v.rekapzeit.toFixed(1)} s`,
     );

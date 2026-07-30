@@ -36,6 +36,13 @@ export function WartebereichSeite() {
           <span className="warte-code-wert">{sitzung.code}</span>
         </div>
 
+        {sitzung.verbindungsfehler && (
+          <p className="hinweis hinweis-fehler" role="alert">
+            Verbindung gestört: {sitzung.verbindungsfehler} Prüfe die Internetverbindung - die Seite
+            versucht es weiter im Hintergrund.
+          </p>
+        )}
+
         {host && szenario && (
           <p className="hinweis">
             Szenario: <strong>{szenario.titel}</strong> · {szenario.patienten.length} Betroffene

@@ -128,16 +128,19 @@ export function aktiveProbleme(patient: Patient, zeitSek: number): Problem[] {
   );
 }
 
-/** Offene, aber noch nicht wirksame Probleme (z. B. verzögerter Spannungspneu). */
-export function latenteProbleme(patient: Patient, zeitSek: number): Problem[] {
-  return patient.probleme.filter(
-    (problem) =>
-      !patient.behandelteProbleme.includes(problem.id) &&
-      zeitSek / 60 < (problem.startetNachMin ?? 0),
-  );
-}
-
-/** @anker sim.tod Ab welchen Werten ein Patient verstirbt */
+/**
+ * @anker sim.tod Ab welchen Werten ein Patient verstirbt
+ *
+ * Tod ist in diesem Modell endgültig: `wendeMassnahmeAn` verweigert jede
+ * weitere Maßnahme, sobald `status === 'verstorben'`. Das trifft bewusst auch
+ * die Maßnahmen, deren Indikation selbst ein Kreislaufstillstand ist
+ * (`reanimation`, `defibrillation`, `kardioversion`, `epinephrin` als
+ * Reanimationsmedikament) - ein Stillstand ist damit in der Übung nicht
+ * reversibel, nur vermeidbar. Eine reversible Zwischenstufe (erst nach
+ * erfolgloser Reanimation über eine Zeitspanne verstorben) wäre medizinisch
+ * treffender, ist aber bislang nicht modelliert - siehe die Vereinfachungen
+ * in DOKUMENTATION.md.
+ */
 function istVerstorben(v: Vitalwerte): boolean {
   return v.spo2 <= 40 || v.systolischerRR <= 30 || v.herzfrequenz >= 220 || v.herzfrequenz <= 20;
 }

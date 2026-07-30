@@ -226,6 +226,7 @@ describe('Host-autoritative Synchronisation', () => {
         eigenerName: 'Anna',
         spieler: [],
         status: 'wartet',
+        verbindungsfehler: null,
       },
     };
 
@@ -247,6 +248,56 @@ describe('Host-autoritative Synchronisation', () => {
     // Die Maßnahmenrechte des Hosts überschreiben die eigene, lokale
     // Vorbelegung - alle Clients setzen dieselben Sperren durch.
     expect(nachher.massnahmenrechte).toEqual(host.massnahmenrechte);
+  });
+
+  it('verwirft einen verspätet eintreffenden, älteren Schnappschuss', () => {
+    const host = imEinsatz();
+    const frueh = schnappschussAus(host, 5);
+    const spaet = schnappschussAus(simulationReducer(host, { typ: 'tick', dtSek: 30 }), 6);
+
+    const spielerClient: SimulationState = {
+      ...ANFANGSZUSTAND,
+      sitzung: {
+        aktiv: true,
+        rolle: 'spieler',
+        code: 'K7QP2',
+        eigeneId: 's-9',
+        eigenerName: 'Anna',
+        spieler: [],
+        status: 'wartet',
+        verbindungsfehler: null,
+      },
+    };
+
+    // Der neuere Schnappschuss (Netzwerk hat ihn zuerst zugestellt) wird angewendet ...
+    const nachSpaet = simulationReducer(spielerClient, { typ: 'schnappschussAnwenden', schnappschuss: spaet });
+    expect(nachSpaet.zeitSek).toBe(spaet.zeitSek);
+
+    // ... ein danach eintreffender, aber inhaltlich älterer Schnappschuss darf die Uhr nicht zurückdrehen.
+    const nachFrueh = simulationReducer(nachSpaet, { typ: 'schnappschussAnwenden', schnappschuss: frueh });
+    expect(nachFrueh).toBe(nachSpaet);
+    expect(nachFrueh.zeitSek).toBe(spaet.zeitSek);
+  });
+
+  it('verwirft eine doppelt zugestellte Kopie desselben Schnappschusses', () => {
+    const host = imEinsatz();
+    const schnappschuss = schnappschussAus(host, 3);
+    const spielerClient: SimulationState = {
+      ...ANFANGSZUSTAND,
+      sitzung: {
+        aktiv: true,
+        rolle: 'spieler',
+        code: 'K7QP2',
+        eigeneId: 's-9',
+        eigenerName: 'Anna',
+        spieler: [],
+        status: 'wartet',
+        verbindungsfehler: null,
+      },
+    };
+    const einmal = simulationReducer(spielerClient, { typ: 'schnappschussAnwenden', schnappschuss });
+    const zweimal = simulationReducer(einmal, { typ: 'schnappschussAnwenden', schnappschuss });
+    expect(zweimal).toBe(einmal);
   });
 });
 
@@ -420,5 +471,21 @@ describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
       massnahmeId: 'tourniquet',
     });
     expect(nachher.zeitSek).toBe(state.zeitSek);
+  });
+});
+
+describe('Verbindungsfehler des Transports', () => {
+  it('trägt eine Fehlermeldung in die Sitzung ein und löscht sie bei Wiederverbindung', () => {
+    const nachFehler = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'verbindungsfehlerSetzen',
+      meldung: 'Verbindung fehlgeschlagen.',
+    });
+    expect(nachFehler.sitzung.verbindungsfehler).toBe('Verbindung fehlgeschlagen.');
+
+    const nachErholung = simulationReducer(nachFehler, {
+      typ: 'verbindungsfehlerSetzen',
+      meldung: null,
+    });
+    expect(nachErholung.sitzung.verbindungsfehler).toBeNull();
   });
 });

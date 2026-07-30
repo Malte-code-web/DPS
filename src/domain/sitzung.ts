@@ -36,6 +36,12 @@ export interface Sitzungszustand {
   /** Alle Teilnehmenden - vom Übungsleiter gepflegt und verteilt. */
   spieler: Spieler[];
   status: Sitzungsstatus;
+  /**
+   * Verbindungsfehler des Transports (z. B. Supabase nicht erreichbar,
+   * Kanal abgelehnt) - `null`, solange keiner vorliegt. Rein lokal, nicht
+   * Teil des Schnappschusses (→ `net.transport`).
+   */
+  verbindungsfehler: string | null;
 }
 
 export const KEINE_SITZUNG: Sitzungszustand = {
@@ -46,6 +52,7 @@ export const KEINE_SITZUNG: Sitzungszustand = {
   eigenerName: null,
   spieler: [],
   status: 'wartet',
+  verbindungsfehler: null,
 };
 
 // Ohne leicht verwechselbare Zeichen (0/O, 1/I) - der Code wird vorgelesen.

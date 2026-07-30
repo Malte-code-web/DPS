@@ -1,4 +1,9 @@
-import { MASSNAHMEN, QUALIFIKATION_LABEL, fehlendeVoraussetzung } from '../domain/massnahmen';
+import {
+  MASSNAHMEN,
+  QUALIFIKATION_LABEL,
+  fehlendeVoraussetzung,
+  voraussetzungKurz,
+} from '../domain/massnahmen';
 import { monitorPrioritaet } from '../domain/monitor';
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import { radialispulsTastbar } from '../domain/triage';
@@ -169,9 +174,11 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
               <span className="massnahme-dauer">
                 {bereitsDurchgefuehrt
                   ? 'durchgeführt'
-                  : qualifikationFehlt
-                    ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                    : `${massnahme.dauerSek} s`}
+                  : fehlt
+                    ? voraussetzungKurz(fehlt)
+                    : qualifikationFehlt
+                      ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                      : `${massnahme.dauerSek} s`}
               </span>
             </button>
           );

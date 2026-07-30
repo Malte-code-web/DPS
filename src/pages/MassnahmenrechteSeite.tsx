@@ -95,7 +95,12 @@ export function MassnahmenrechteSeite() {
             </h2>
             <ul className="rechte-liste">
               {gruppe.map((massnahme) => {
-                const recht = massnahmenrechte[massnahme.id]!;
+                // Fallback wie in Massnahmenliste/PatientKarte/Sofortmassnahmen: eine
+                // Katalog-Maßnahme ohne Eintrag (z. B. veraltete gespeicherte Daten)
+                // degradiert auf ihre Katalog-Stufe statt die Seite abstürzen zu lassen.
+                const recht =
+                  massnahmenrechte[massnahme.id] ??
+                  ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
                 return (
                   <li key={massnahme.id} className="recht-zeile">
                     <span className="recht-label">{massnahme.label}</span>

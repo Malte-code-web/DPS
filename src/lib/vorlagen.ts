@@ -47,7 +47,9 @@ export function leeresProblem(nummer: number): Problem {
   return {
     id: `problem-${nummer}`,
     label: 'Neues Problem',
-    beschreibung: 'Was zu tun ist.',
+    // Ein Befund, keine Anweisung (→ kiPrompt.ts, Regel 8) - dieselbe
+    // Beobachtungs-Perspektive wie kurzbefund/untersuchungsbefund oben.
+    beschreibung: 'Was die Einsatzkraft vorfindet.',
     behandeltDurch: ['sauerstoffgabe'],
     verlauf: { spo2: -1 },
   };
@@ -57,6 +59,19 @@ export function leeresProblem(nummer: number): Problem {
 export function naechstePatientenNummer(szenario: Szenario): number {
   const nummern = szenario.patienten
     .map((patient) => Number.parseInt(patient.id.replace(/\D/g, ''), 10))
+    .filter((nummer) => Number.isFinite(nummer));
+  return nummern.length === 0 ? 1 : Math.max(...nummern) + 1;
+}
+
+/**
+ * Nächste freie Problem-ID innerhalb eines Patienten - wie
+ * `naechstePatientenNummer`, sonst kollidiert eine neue ID mit einer
+ * verbliebenen, wenn zwischendurch ein Problem gelöscht wurde (`length + 1`
+ * träfe dann erneut eine bestehende Nummer).
+ */
+export function naechsteProblemNummer(probleme: Problem[]): number {
+  const nummern = probleme
+    .map((problem) => Number.parseInt(problem.id.replace(/\D/g, ''), 10))
     .filter((nummer) => Number.isFinite(nummer));
   return nummern.length === 0 ? 1 : Math.max(...nummern) + 1;
 }

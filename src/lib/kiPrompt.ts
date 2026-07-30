@@ -49,7 +49,8 @@ function massnahmenliste(): string {
 export function regeltext(): string {
   return `1. "verlauf" beschreibt die Veränderung pro Minute, solange das Problem
    unbehandelt ist. Negative Werte verschlechtern. Erlaubte Schlüssel:
-   atemfrequenz, herzfrequenz, systolischerRR, spo2, gcs, rekapzeit.
+   atemfrequenz, herzfrequenz, systolischerRR, spo2, gcs, rekapzeit, blutzucker,
+   temperatur, schmerz. Ungenutzte Schlüssel auf null setzen, nicht weglassen.
 2. "startetNachMin" lässt ein Problem verzögert einsetzen (z. B. Spannungspneu).
 3. "behandeltDurch" darf nur diese Maßnahmen-IDs enthalten:
 ${massnahmenliste()}

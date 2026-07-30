@@ -152,6 +152,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     id: 'larynxmaske',
     benoetigtEinesVon: ['mundraumkontrolle'],
     effektNurBeiProblem: true,
+    nurBeiBewusstlosigkeit: true,
     label: 'Larynxmaske (extraglottischer Atemweg)',
     kategorie: 'A',
     art: 'invasiv',
@@ -670,6 +671,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     hinweis:
       'KED-Rettungskorsett bei sitzender Person, Spineboard bei liegender Rettung - achsengerecht und mit ausreichend Helfern.',
     indikation: 'Eingeklemmte oder sitzende Person im verunfallten Fahrzeug, Verdacht auf Wirbelsäulenverletzung.',
+    sofortEffekt: { schmerz: -1 },
   },
   achsengerechte_immobilisation: {
     id: 'achsengerechte_immobilisation',
@@ -785,18 +787,6 @@ export const QUALIFIKATION_VOLLNAME: Record<Qualifikation, string> = {
   notsan: 'Notfallsanitäter/-in',
   notarzt: 'Notärztin/Notarzt',
 };
-
-/**
- * @anker massnahmen.schnell Auswahl für die Ausgangssichtung (bis 60 Sekunden)
- *
- * Maßnahmen, die sich auch kurz vor dem Abtransport noch durchführen lassen:
- * kurz UND ohne Eingriff oder Medikament. Seit der Katalog die vollständige
- * SAA abbildet, reicht die Zeitgrenze allein nicht mehr - ein Zugang ist in
- * 90 Sekunden gelegt, gehört an der Ausgangssichtung aber nicht mehr hin.
- */
-export const SCHNELLE_MASSNAHMEN: Massnahme[] = WAEHLBARE_MASSNAHMEN.filter(
-  (massnahme) => massnahme.dauerSek <= 60 && massnahme.qualifikation === 'basis',
-);
 
 /**
  * @anker massnahmen.sofort Lebensrettende Griffe der Schadensstelle

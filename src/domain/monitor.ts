@@ -37,7 +37,6 @@ export const MONITOR_VITALS: VitalKey[] = [
 export const MONITOR_BEFUNDE: Befundschluessel[] = [...MONITOR_VITALS, 'ekg'];
 
 /**
-/**
  * Zwei Alarmstufen wie am corpuls³ und nach IEC 60601-1-8: "gelb" (mittel) für
  * einen auffälligen Wert, "rot" (hoch) für einen kritischen. Sie sind bewusst
  * deckungsgleich mit der Farbgebung der Anzeige (`norm`/`kritisch` in

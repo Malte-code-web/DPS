@@ -38,9 +38,17 @@ export function Verlegung({ patient }: { patient: Patient }) {
               ziel.kategorie ? ` rand-${ziel.kategorie}` : ''
             }`}
             disabled={verstorben || wartetAufSichtung}
+            aria-label={passend ? `${ziel.name} - empfohlen` : ziel.name}
             onClick={() => dispatch({ typ: 'patientVerlegen', patientId: patient.id, ziel: ziel.id })}
           >
-            <span className="verlegung-ziel">{ziel.name}</span>
+            <span className="verlegung-ziel">
+              {ziel.name}
+              {passend && (
+                <span className="verlegung-empfohlen-marke" aria-hidden="true">
+                  empfohlen
+                </span>
+              )}
+            </span>
             <span className="verlegung-dauer">{VERLEGUNGSDAUER_SEK} s</span>
           </button>
         );

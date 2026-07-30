@@ -250,9 +250,12 @@ describe('Tubus nur beim Bewusstlosen', () => {
     return { ...patient, vitalwerte: { ...patient.vitalwerte, gcs: 13 } };
   };
 
-  it('kennzeichnet Guedel und Wendl als nur bei Bewusstlosigkeit wirksam', () => {
+  it('kennzeichnet Guedel, Wendl und Larynxmaske als nur bei Bewusstlosigkeit wirksam', () => {
     expect(MASSNAHMEN.guedeltubus.nurBeiBewusstlosigkeit).toBe(true);
     expect(MASSNAHMEN.wendltubus.nurBeiBewusstlosigkeit).toBe(true);
+    // Die eigene Indikation nennt "mit Bewusstlosigkeit und fehlenden Schutzreflexen" -
+    // ohne das Flag würde die Simulation sie auch beim wachen Patienten wirken lassen.
+    expect(MASSNAHMEN.larynxmaske.nurBeiBewusstlosigkeit).toBe(true);
     // Der Handgriff (Freimachen) hat diese Einschränkung nicht.
     expect(MASSNAHMEN.atemwege_freimachen.nurBeiBewusstlosigkeit).toBeUndefined();
   });
@@ -271,6 +274,13 @@ describe('Tubus nur beim Bewusstlosen', () => {
     const patient = wach();
     const versucht = wendeMassnahmeAn(patient, 'guedeltubus', 0);
     expect(versucht.behandelteProbleme).not.toContain('atemwegsverlegung');
+    expect(versucht.vitalwerte.spo2).toBe(patient.vitalwerte.spo2);
+    expect(versucht.verlauf.at(-1)?.text).toContain('nicht toleriert');
+  });
+
+  it('lässt auch die Larynxmaske beim wachen Patienten unwirksam bleiben', () => {
+    const patient = wach();
+    const versucht = wendeMassnahmeAn(patient, 'larynxmaske', 0);
     expect(versucht.vitalwerte.spo2).toBe(patient.vitalwerte.spo2);
     expect(versucht.verlauf.at(-1)?.text).toContain('nicht toleriert');
   });

@@ -3,7 +3,7 @@ import { startwert } from '../../domain/simulation';
 import { mstartAbweichung } from '../../domain/szenarioPruefung';
 import { KOERPERREGION_TEXT, PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../../domain/types';
 import { VITAL_META, VITAL_REIHENFOLGE } from '../../lib/format';
-import { leeresProblem } from '../../lib/vorlagen';
+import { leeresProblem, naechsteProblemNummer } from '../../lib/vorlagen';
 import type {
   Koerperregion,
   MassnahmeId,
@@ -202,7 +202,7 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
       )}
       {patient.probleme.map((problem, index) => (
         <ProblemEditor
-          key={index}
+          key={problem.id}
           problem={problem}
           onAendern={(neu) => setzeProblem(index, neu)}
           onEntfernen={() =>
@@ -220,7 +220,7 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
           onClick={() =>
             onAendern({
               ...patient,
-              probleme: [...patient.probleme, leeresProblem(patient.probleme.length + 1)],
+              probleme: [...patient.probleme, leeresProblem(naechsteProblemNummer(patient.probleme))],
             })
           }
         >

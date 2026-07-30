@@ -81,6 +81,11 @@ export function useMonitorAlarm(stufe: Alarmstufe | null): void {
   const kontextRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
   const intervallRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Bereits geplante, aber noch nicht verklungene Oszillatoren - beim Wechsel
+  // der Alarmstufe (z. B. anderer Abschnitt, neue Eskalation) sonst hörbar
+  // zwei Melodien gleichzeitig, weil `spieleSequenz` bis zu `sequenzMs` im
+  // Voraus plant (→ Fund bei der Codeprüfung: Cleanup stoppte nur den Timer).
+  const aktiveOszillatorenRef = useRef<OscillatorNode[]>([]);
 
   useEffect(() => {
     const stoppen = () => {
@@ -88,6 +93,14 @@ export function useMonitorAlarm(stufe: Alarmstufe | null): void {
         clearInterval(intervallRef.current);
         intervallRef.current = null;
       }
+      for (const oszillator of aktiveOszillatorenRef.current) {
+        try {
+          oszillator.stop();
+        } catch {
+          /* bereits verklungen */
+        }
+      }
+      aktiveOszillatorenRef.current = [];
     };
 
     if (!stufe) {

@@ -35,6 +35,7 @@ export const EINZELFAELLE: Szenario[] = [
           spo2: 97,
           gcs: 15,
           rekapzeit: 2.5,
+          schmerz: 7,
         },
         probleme: [
           {
@@ -119,6 +120,7 @@ export const EINZELFAELLE: Szenario[] = [
           spo2: 94,
           gcs: 15,
           rekapzeit: 2.5,
+          schmerz: 6,
         },
         probleme: [
           {
@@ -127,7 +129,7 @@ export const EINZELFAELLE: Szenario[] = [
             label: 'Spannungspneumothorax',
             beschreibung: 'Zunehmende Atemnot, einseitig abgeschwächtes Atemgeräusch, gestaute Halsvenen.',
             behandeltDurch: ['thoraxentlastung'],
-            verlauf: { spo2: -6, systolischerRR: -4, herzfrequenz: 3 },
+            verlauf: { spo2: -6, systolischerRR: -4, herzfrequenz: 3, schmerz: 0.15 },
             startetNachMin: 3,
           },
         ],
@@ -161,6 +163,7 @@ export const EINZELFAELLE: Szenario[] = [
           spo2: 96,
           gcs: 14,
           rekapzeit: 3,
+          schmerz: 7,
         },
         probleme: [
           {
@@ -169,7 +172,7 @@ export const EINZELFAELLE: Szenario[] = [
             label: 'Intraabdominelle Blutung',
             beschreibung: 'Präklinisch nicht zu stillen - Volumen verzögert, entscheidend ist der Transport.',
             behandeltDurch: ['volumengabe'],
-            verlauf: { systolischerRR: -5, herzfrequenz: 3 },
+            verlauf: { systolischerRR: -5, herzfrequenz: 3, schmerz: 0.2 },
             startetNachMin: 1,
           },
         ],

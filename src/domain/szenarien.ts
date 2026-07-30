@@ -39,6 +39,7 @@ const busunfall: Szenario = {
         spo2: 96,
         gcs: 14,
         rekapzeit: 2.5,
+        schmerz: 8,
       },
       probleme: [
         {
@@ -79,6 +80,7 @@ const busunfall: Szenario = {
         spo2: 90,
         gcs: 15,
         rekapzeit: 2,
+        schmerz: 6,
       },
       probleme: [
         {
@@ -156,6 +158,7 @@ const busunfall: Szenario = {
         spo2: 93,
         gcs: 14,
         rekapzeit: 3,
+        schmerz: 7,
       },
       probleme: [
         {
@@ -165,7 +168,7 @@ const busunfall: Szenario = {
           label: 'Instabile Beckenfraktur',
           beschreibung: 'Becken federt bei vorsichtigem Druck, Hämatom in der Leiste, blasse Haut.',
           behandeltDurch: ['beckenschlinge'],
-          verlauf: { systolischerRR: -4, herzfrequenz: 4, rekapzeit: 0.1 },
+          verlauf: { systolischerRR: -4, herzfrequenz: 4, rekapzeit: 0.1, schmerz: 0.05 },
         },
         {
           id: 'volumenmangel',
@@ -198,6 +201,7 @@ const busunfall: Szenario = {
         spo2: 98,
         gcs: 15,
         rekapzeit: 1.5,
+        schmerz: 7,
       },
       probleme: [
         {
@@ -207,7 +211,7 @@ const busunfall: Szenario = {
           label: 'Starke Schmerzen',
           beschreibung: 'Fehlstellung des linken Unterarms, hält ihn schonend, jede Bewegung sehr schmerzhaft.',
           behandeltDurch: ['paracetamol', 'immobilisation'],
-          verlauf: { herzfrequenz: 1, atemfrequenz: 0.4 },
+          verlauf: { herzfrequenz: 1, atemfrequenz: 0.4, schmerz: 0.15 },
         },
       ],
       erwarteteSK: 'SK3',
@@ -265,6 +269,7 @@ const busunfall: Szenario = {
         spo2: 94,
         gcs: 15,
         rekapzeit: 2,
+        schmerz: 6,
       },
       probleme: [
         {
@@ -298,6 +303,7 @@ const busunfall: Szenario = {
         spo2: 97,
         gcs: 12,
         rekapzeit: 1.5,
+        schmerz: 3,
       },
       probleme: [
         {
@@ -370,6 +376,7 @@ const busunfall: Szenario = {
         spo2: 97,
         gcs: 15,
         rekapzeit: 1.8,
+        schmerz: 3,
       },
       probleme: [
         {
@@ -380,7 +387,7 @@ const busunfall: Szenario = {
             'Bauchdecke zunehmend gespannt, Druckschmerz nimmt zu, Patientin wird stiller.',
           behandeltDurch: ['volumengabe'],
           startetNachMin: 2,
-          verlauf: { systolischerRR: -5, herzfrequenz: 6, rekapzeit: 0.12, gcs: -0.15 },
+          verlauf: { systolischerRR: -5, herzfrequenz: 6, rekapzeit: 0.12, gcs: -0.15, schmerz: 0.2 },
         },
       ],
       erwarteteSK: 'SK3',
@@ -451,6 +458,7 @@ const wohnungsbrand: Szenario = {
         spo2: 95,
         gcs: 15,
         rekapzeit: 1.5,
+        schmerz: 4,
       },
       probleme: [
         {
@@ -483,6 +491,7 @@ const wohnungsbrand: Szenario = {
         spo2: 96,
         gcs: 15,
         rekapzeit: 2,
+        schmerz: 9,
       },
       probleme: [
         {
@@ -501,7 +510,7 @@ const wohnungsbrand: Szenario = {
           label: 'Stärkste Schmerzen',
           beschreibung: 'Stärkste Schmerzen, presst die Arme an den Körper, kaum zu beruhigen.',
           behandeltDurch: ['esketamin', 'morphin'],
-          verlauf: { herzfrequenz: 1, atemfrequenz: 0.5 },
+          verlauf: { herzfrequenz: 1, atemfrequenz: 0.5, schmerz: 0.2 },
         },
       ],
       erwarteteSK: 'SK2',
@@ -525,6 +534,7 @@ const wohnungsbrand: Szenario = {
         spo2: 97,
         gcs: 15,
         rekapzeit: 1.8,
+        schmerz: 6,
       },
       probleme: [
         {
@@ -534,7 +544,7 @@ const wohnungsbrand: Szenario = {
           label: 'Verdacht auf Wirbelsäulenverletzung',
           beschreibung: 'Klagt über Kribbeln in beiden Beinen, Druckschmerz über der Brustwirbelsäule.',
           behandeltDurch: ['immobilisation'],
-          verlauf: { herzfrequenz: 1.5, atemfrequenz: 0.3 },
+          verlauf: { herzfrequenz: 1.5, atemfrequenz: 0.3, schmerz: 0.1 },
         },
       ],
       erwarteteSK: 'SK2',
@@ -590,6 +600,7 @@ const wohnungsbrand: Szenario = {
         spo2: 91,
         gcs: 15,
         rekapzeit: 2.5,
+        schmerz: 6,
       },
       probleme: [
         {
@@ -599,7 +610,7 @@ const wohnungsbrand: Szenario = {
           label: 'Akutes Koronarsyndrom',
           beschreibung: 'Klagt über Druck hinter dem Brustbein mit Ausstrahlung in den linken Arm, kaltschweißig.',
           behandeltDurch: ['sauerstoffgabe', 'morphin'],
-          verlauf: { systolischerRR: -3, herzfrequenz: 2, spo2: -1, gcs: -0.1 },
+          verlauf: { systolischerRR: -3, herzfrequenz: 2, spo2: -1, gcs: -0.1, schmerz: 0.15 },
         },
       ],
       erwarteteSK: 'SK1',

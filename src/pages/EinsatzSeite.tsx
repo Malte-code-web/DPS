@@ -4,6 +4,7 @@ import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
+import { formatStaerke, staerkemeldung } from '../domain/fuehrung';
 import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
@@ -88,9 +89,11 @@ export function EinsatzSeite() {
                       .map((id) => state.sitzung.spieler.find((s) => s.id === id)?.name)
                       .filter(Boolean)
                       .join(', ');
+                    const staerke = staerkemeldung(fahrzeug.besatzung, state.sitzung.spieler);
                     return (
                       <article key={fahrzeug.id} className="fahrzeugkarte">
                         <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
+                        <p className="fahrzeug-staerke">Stärke {formatStaerke(staerke)}</p>
                         <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
                         <FahrzeugVerlegung fahrzeug={fahrzeug} />
                       </article>

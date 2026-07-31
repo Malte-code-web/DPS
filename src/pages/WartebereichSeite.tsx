@@ -1,5 +1,11 @@
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
-import { FUEHRUNGSROLLE_LABEL, FUEHRUNGSROLLEN, darfFahrzeugeDisponieren } from '../domain/fuehrung';
+import {
+  FUEHRUNGSROLLE_LABEL,
+  FUEHRUNGSROLLEN,
+  darfFahrzeugeDisponieren,
+  formatStaerke,
+  staerkemeldung,
+} from '../domain/fuehrung';
 import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
 import { useSimulation } from '../state/useSimulation';
 import type { Fuehrungsrolle, Qualifikation } from '../domain/types';
@@ -12,6 +18,8 @@ const QUALIFIKATIONEN: Qualifikation[] = [
   'notarzt',
 ];
 
+const LEERER_PLATZ = '';
+
 /** @anker ui.wartebereich Lobby vor dem Start - Code, Teilnehmende, Startknopf */
 export function WartebereichSeite() {
   const { state, dispatch } = useSimulation();
@@ -19,14 +27,23 @@ export function WartebereichSeite() {
   const host = sitzung.rolle === 'uebungsleiter';
   const eigeneFuehrungsrolle = sitzung.spieler.find((s) => s.id === sitzung.eigeneId)?.fuehrungsrolle;
   const darfDisponieren = darfFahrzeugeDisponieren(sitzung.aktiv, sitzung.rolle, eigeneFuehrungsrolle);
+  const gesamtStaerke = staerkemeldung(fahrzeuge.flatMap((fahrzeug) => fahrzeug.besatzung), sitzung.spieler);
+  const gesamtSoll = fahrzeuge.reduce(
+    (summe, fahrzeug) => summe + FAHRZEUGTYP_INFO[fahrzeug.typ].sollbesatzung,
+    0,
+  );
 
-  const umschalten = (fahrzeugId: string, spielerId: string) => {
+  const platzSetzen = (fahrzeugId: string, platz: number, spielerId: string) => {
     const fahrzeug = fahrzeuge.find((f) => f.id === fahrzeugId);
     if (!fahrzeug) return;
-    const besatzung = fahrzeug.besatzung.includes(spielerId)
-      ? fahrzeug.besatzung.filter((id) => id !== spielerId)
-      : [...fahrzeug.besatzung, spielerId];
-    dispatch({ typ: 'fahrzeugBesatzungGesetzt', fahrzeugId, besatzung });
+    // Positionell (Index = Platz) statt kompaktiert, damit das Leeren eines
+    // Platzes die übrigen Plätze nicht verschiebt (→ `modell.fahrzeug`).
+    const plaetze = Array.from(
+      { length: FAHRZEUGTYP_INFO[fahrzeug.typ].sollbesatzung },
+      (_, index) => fahrzeug.besatzung[index] ?? LEERER_PLATZ,
+    );
+    plaetze[platz] = spielerId;
+    dispatch({ typ: 'fahrzeugBesatzungGesetzt', fahrzeugId, besatzung: plaetze });
   };
 
   return (
@@ -142,6 +159,9 @@ export function WartebereichSeite() {
         {fahrzeuge.length > 0 && (
           <>
             <h2>Fahrzeuge &amp; Besatzung ({fahrzeuge.length})</h2>
+            <p className="hinweis fahrzeug-staerke-gesamt">
+              Stärkemeldung gesamt: <strong>{formatStaerke(gesamtStaerke)}</strong> (Soll {gesamtSoll})
+            </p>
             {!darfDisponieren && (
               <p className="hinweis">
                 Besatzung zuweisen dürfen die Übungsleitung oder eine Person mit Führungsrolle ab
@@ -150,25 +170,52 @@ export function WartebereichSeite() {
             )}
             <ul className="fahrzeugliste">
               {fahrzeuge.map((fahrzeug) => {
+                const sollbesatzung = FAHRZEUGTYP_INFO[fahrzeug.typ].sollbesatzung;
+                const staerke = staerkemeldung(fahrzeug.besatzung, sitzung.spieler);
                 const besatzungNamen = fahrzeug.besatzung
                   .map((id) => sitzung.spieler.find((s) => s.id === id)?.name)
                   .filter(Boolean)
                   .join(', ');
                 return (
                   <li key={fahrzeug.id} className="fahrzeug-besatzung-zeile">
-                    <span className="fahrzeug-typ">{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</span>
+                    <div className="fahrzeug-besatzung-kopf">
+                      <span className="fahrzeug-typ">{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</span>
+                      <span
+                        className={
+                          staerke.gesamt < sollbesatzung
+                            ? 'fahrzeug-staerke fahrzeug-staerke-unvollstaendig'
+                            : 'fahrzeug-staerke'
+                        }
+                      >
+                        Stärke {formatStaerke(staerke)} (Soll {sollbesatzung})
+                      </span>
+                    </div>
                     {darfDisponieren ? (
-                      <div className="besatzung-auswahl">
-                        {sitzung.spieler.map((spieler) => (
-                          <label key={spieler.id} className="besatzung-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={fahrzeug.besatzung.includes(spieler.id)}
-                              onChange={() => umschalten(fahrzeug.id, spieler.id)}
-                            />
-                            {spieler.name}
-                          </label>
-                        ))}
+                      <div className="besatzung-plaetze">
+                        {Array.from({ length: sollbesatzung }, (_, platz) => {
+                          const besetztMit = fahrzeug.besatzung[platz] ?? LEERER_PLATZ;
+                          return (
+                            <select
+                              key={platz}
+                              className="besatzung-platz-wahl"
+                              aria-label={`Besatzung Platz ${platz + 1} von ${FAHRZEUGTYP_INFO[fahrzeug.typ].label}`}
+                              value={besetztMit}
+                              onChange={(event) => platzSetzen(fahrzeug.id, platz, event.target.value)}
+                            >
+                              <option value={LEERER_PLATZ}>– frei –</option>
+                              {sitzung.spieler
+                                .filter(
+                                  (spieler) =>
+                                    spieler.id === besetztMit || !fahrzeug.besatzung.includes(spieler.id),
+                                )
+                                .map((spieler) => (
+                                  <option key={spieler.id} value={spieler.id}>
+                                    {spieler.name}
+                                  </option>
+                                ))}
+                            </select>
+                          );
+                        })}
                       </div>
                     ) : (
                       <span className="fahrzeug-besatzung-namen">

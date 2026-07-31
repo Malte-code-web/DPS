@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { FUEHRUNGSROLLEN, FUEHRUNGSROLLE_LABEL, darfFahrzeugeDisponieren, erfuelltFuehrung } from './fuehrung';
+import {
+  FUEHRUNGSROLLEN,
+  FUEHRUNGSROLLE_LABEL,
+  darfFahrzeugeDisponieren,
+  erfuelltFuehrung,
+  formatStaerke,
+  staerkemeldung,
+} from './fuehrung';
+import type { Spieler } from './sitzung';
+
+function spieler(id: string, fuehrungsrolle: Spieler['fuehrungsrolle']): Spieler {
+  return { id, name: id, rolle: 'spieler', qualifikation: 'basis', fuehrungsrolle };
+}
 
 describe('erfuelltFuehrung', () => {
   it('ordnet die Stufen TrFü < GrFü < ZgFü', () => {
@@ -48,5 +60,46 @@ describe('darfFahrzeugeDisponieren', () => {
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'zugfuehrer')).toBe(true);
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'orgl_rd')).toBe(true);
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'lna')).toBe(true);
+  });
+});
+
+describe('staerkemeldung / formatStaerke', () => {
+  const alleSpieler = [
+    spieler('anna', 'zugfuehrer'),
+    spieler('bert', 'gruppenfuehrer'),
+    spieler('chris', 'truppfuehrer'),
+    spieler('dana', 'keine'),
+    spieler('erik', undefined),
+    spieler('flo', 'lna'),
+  ];
+
+  it('ordnet Zugführer/OrgL RD/LNA als Führungskraft ein', () => {
+    const staerke = staerkemeldung(['anna', 'flo'], alleSpieler);
+    expect(staerke).toEqual({ fuehrungskraefte: 2, unterfuehrer: 0, mannschaft: 0, gesamt: 2 });
+  });
+
+  it('ordnet Trupp-/Gruppenführer als Unterführer ein', () => {
+    const staerke = staerkemeldung(['bert', 'chris'], alleSpieler);
+    expect(staerke).toEqual({ fuehrungskraefte: 0, unterfuehrer: 2, mannschaft: 0, gesamt: 2 });
+  });
+
+  it('ordnet Personen ohne Führungsrolle als Mannschaft ein, auch ohne gesetztes Feld', () => {
+    const staerke = staerkemeldung(['dana', 'erik'], alleSpieler);
+    expect(staerke).toEqual({ fuehrungskraefte: 0, unterfuehrer: 0, mannschaft: 2, gesamt: 2 });
+  });
+
+  it('mischt alle drei Stufen in einer Besatzung', () => {
+    const staerke = staerkemeldung(['anna', 'bert', 'dana', 'erik'], alleSpieler);
+    expect(staerke).toEqual({ fuehrungskraefte: 1, unterfuehrer: 1, mannschaft: 2, gesamt: 4 });
+    expect(formatStaerke(staerke)).toBe('1/1/2/4');
+  });
+
+  it('liefert 0/0/0/0 für eine leere Besatzung', () => {
+    expect(formatStaerke(staerkemeldung([], alleSpieler))).toBe('0/0/0/0');
+  });
+
+  it('ignoriert leere Platzhalter ("") aus der positionellen Platzliste', () => {
+    const staerke = staerkemeldung(['anna', '', 'dana', ''], alleSpieler);
+    expect(staerke).toEqual({ fuehrungskraefte: 1, unterfuehrer: 0, mannschaft: 1, gesamt: 2 });
   });
 });

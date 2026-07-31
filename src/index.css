@@ -3184,18 +3184,42 @@ tbody tr:last-child td {
   font-weight: 600;
 }
 
-.besatzung-auswahl {
+.fahrzeug-besatzung-kopf {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem 1rem;
   flex-basis: 100%;
 }
 
-.besatzung-checkbox {
+.fahrzeug-staerke {
+  font-size: 0.78rem;
+  color: var(--text-leise);
+}
+
+.fahrzeug-staerke-unvollstaendig {
+  color: var(--akzent);
+}
+
+.fahrzeug-staerke-gesamt {
+  margin-top: -0.3rem;
+}
+
+.besatzung-plaetze {
   display: flex;
-  align-items: center;
-  gap: 0.3rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  flex-basis: 100%;
+}
+
+.besatzung-platz-wahl {
+  font: inherit;
   font-size: 0.82rem;
+  color: var(--text);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
 }
 
 .fahrzeug-besatzung-namen {

@@ -9,6 +9,12 @@ describe('FAHRZEUGTYP_INFO', () => {
       expect(FAHRZEUGTYP_INFO[typ].info, typ).toBeTruthy();
     }
   });
+
+  it('nennt für jeden FahrzeugTyp eine positive Sollbesatzung', () => {
+    for (const typ of FAHRZEUGTYPEN) {
+      expect(FAHRZEUGTYP_INFO[typ].sollbesatzung, typ).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('fahrzeugAusVorlage', () => {

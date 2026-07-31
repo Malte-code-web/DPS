@@ -435,7 +435,13 @@ export interface FahrzeugVorlage {
  */
 export interface Fahrzeug extends FahrzeugVorlage {
   abschnitt: Einsatzabschnitt;
-  /** Spieler-IDs der zugewiesenen Besatzung (→ `sitzung.modell`). */
+  /**
+   * Spieler-IDs der zugewiesenen Besatzung (→ `sitzung.modell`), positionell
+   * nach Besatzungsplatz (Index = Platznummer aus der Dropdown-Zuweisung im
+   * Wartebereich) - ein leerer Platz steht als `''` in der Liste, damit ein
+   * einzelner Platz sich leeren lässt, ohne die übrigen zu verschieben.
+   * Zählungen (→ `domain.staerkemeldung`) und Anzeige filtern leere Einträge.
+   */
   besatzung: string[];
 }
 

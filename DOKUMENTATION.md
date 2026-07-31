@@ -61,7 +61,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-308 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+309 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
 Qualifikation/Delegation, Führungsrollen und Stärkemeldung, Fahrzeuge/MANV-Stufen,
 Fahrzeug-Bestückung und Materialverbrauch, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor, Baukasten, gewichtsbezogene Dosierung und die Team-Voraussetzung der
@@ -926,7 +926,7 @@ _165 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           308 Tests
+npm run test           309 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -951,7 +951,7 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | Notfallnarkose (RSI): Medikamentenauswahl, Dosierung, Team | Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND, Notfall+Rettungsmedizin); Rocuronium-RSI-Dosis und Sicherheitsspanne (Notfall+Rettungsmedizin 2016, gasnarkose.at); Bestückung RTW Kreis Steinfurt Stand 01.02.2025 (Propofol, Thiopental, Rocuronium) |
 | Fahrzeugbestand je MANV-Stufe (MANV-10 bis MANV-50plus) | Vorplanung für die Bewältigung großer (medizinischer) Schadenslagen im Kreis Steinfurt (MANV-Konzept), Stand 05.12.2019, Abschnitt 3 „Verfügbare Ressourcen" und 5.1-5.5 „Alarmierungsstufen" |
 | Sollbesatzung je Fahrzeugtyp (→ `domain.fahrzeuge`) | GW-Rett: Freiwillige Feuerwehr Hörstel, Gerätewagen Rettungsdienst GW-RettD (Besatzung „1:2", derselbe Fahrzeugtyp/Standort wie im MANV-Konzept); GW-San/GW-Log: Wikipedia „Gerätewagen Sanität" und GW-L-KatS-Typenblatt (Doppelkabine für eine Staffel, 6 Plätze); AB-MANV: DIN 14505 / Wikipedia „Wechselladerfahrzeug" (Standardbesatzung des Wechselladerfahrzeugs, Führer/-in + Maschinist/-in); ELW 2: Wikipedia „Einsatzleitwagen" (Führungsgruppe, mindestens sechs Besatzungsmitglieder) |
-| Fahrzeug-Bestückung und Materialverbrauch (→ `domain.material`) | RTW und NEF: „Bestückung RTW/NEF Kreis Steinfurt", je Stand 01.02.2025 (ÄLRD - vollständig ausgewertet), zzgl. „Bestückung Rucksacksysteme RTW/NEF" (der gemeinsame Notfallrucksack, die Sauerstoff-/Beatmungstasche und die Kindertasche, auf die beide Hauptlisten verweisen) und „Packliste MANV/MANE-Tasche RTW/NEF", Stand 01.04.2023 (die mitgeführte MANV-Zusatztasche); GW-San: BBK-Begleitheft „GW San: Mercedes Benz Sprinter 519 CDI DOKA 4x4" (Bund-Ausführung NRW, Bundesamt für Bevölkerungsschutz und Katastrophenhilfe - vollständig ausgewertet); AB-MANV: „Packliste AB ManV Kreis Steinfurt" (vollständig ausgewertet); KTW/GW-Rett rechnerisch aus diesen Quellen hergeleitet, klar als Schätzung gekennzeichnet |
+| Fahrzeug-Bestückung und Materialverbrauch (→ `domain.material`) | RTW und NEF: „Bestückung RTW/NEF Kreis Steinfurt", je Stand 01.02.2025 (ÄLRD - vollständig ausgewertet), zzgl. „Bestückung Rucksacksysteme RTW/NEF" (der gemeinsame Notfallrucksack, die Sauerstoff-/Beatmungstasche und die Kindertasche, auf die beide Hauptlisten verweisen), „Packliste MANV/MANE-Tasche RTW/NEF", Stand 01.04.2023 (die mitgeführte MANV-Zusatztasche), und „Bestückung Desasterbag Kreis Steinfurt", Stand 01.02.2025 (ein vierter, nur vom NEF mitgeführter Notfallrucksack mit erweiterter invasiver Ausstattung); GW-San: BBK-Begleitheft „GW San: Mercedes Benz Sprinter 519 CDI DOKA 4x4" (Bund-Ausführung NRW, Bundesamt für Bevölkerungsschutz und Katastrophenhilfe - vollständig ausgewertet); AB-MANV: „Packliste AB ManV Kreis Steinfurt" (vollständig ausgewertet); KTW/GW-Rett rechnerisch aus diesen Quellen hergeleitet, klar als Schätzung gekennzeichnet |
 
 **Was NICHT aus der Quelle stammt:** die Zeitdauern (`dauerSek`) und die
 Sofortwirkungen (`sofortEffekt`) der Maßnahmen. Beides sind didaktische

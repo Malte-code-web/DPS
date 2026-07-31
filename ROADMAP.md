@@ -143,9 +143,10 @@ Listen und Konzepten.
 - ✅ **Verbrauchsgüter** (58 Materialtypen: Tourniquet, Sauerstoff, Zugänge,
   Atemwegshilfen, Immobilisation, Medikamente …): als Bestand je Fahrzeug
   modelliert (`Fahrzeug.material`), datengetrieben aus realen Bestückungs-
-  listen (RTW/NEF Kreis Steinfurt inkl. gemeinsamem Rucksacksystem und
-  MANV-Tasche, BBK-Begleitheft GW-San, Packliste AB-MANV Kreis Steinfurt -
-  vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet). 60 Maßnahmen
+  listen (RTW/NEF Kreis Steinfurt inkl. gemeinsamem Rucksacksystem,
+  MANV-Tasche und - nur NEF - Desasterbag, BBK-Begleitheft GW-San, Packliste
+  AB-MANV Kreis Steinfurt - vollständig ausgewertet; KTW/GW-Rett daraus
+  hergeleitet). 60 Maßnahmen
   ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben
   Einsatzabschnitt; ist dort nichts mehr da, sperrt die Maßnahme. Ohne
   Fahrzeuge im Spiel (Solo) unbegrenzt wie bisher.

@@ -9,13 +9,15 @@ import type { Einsatzabschnitt, Fahrzeug, FahrzeugTyp, MassnahmeId, MaterialTyp 
  * Notfallrucksack, die Sauerstoff-/Beatmungstasche und die Kindertasche, auf
  * die beide Hauptlisten unter „siehe separate Checkliste" verweisen);
  * „Packliste MANV/MANE-Tasche RTW" und „...-Tasche NEF", Stand 01.04.2023
- * (die ebenfalls mitgeführte MANV-Zusatztasche); „Packliste AB ManV Kreis
- * Steinfurt" (`AB_MANV_BESTAND`); BBK-Begleitheft „GW San: Mercedes Benz
- * Sprinter 519 CDI DOKA 4x4" (Bund-Ausführung NRW, `GW_SAN_BESTAND`). KTW und
- * GW-Rett haben keine gleichwertig detaillierte Quelle - sie werden aus den
- * echten Zahlen hergeleitet (`skaliere`/`nurTypen`) und sind unten je Block
- * klar als Schätzung gekennzeichnet. ELW 2 und GW-Log führen kein
- * Patientenmaterial.
+ * (die ebenfalls mitgeführte MANV-Zusatztasche); „Bestückung Desasterbag
+ * Kreis Steinfurt", Stand 01.02.2025 (ein vierter, nur vom NEF mitgeführter
+ * Notfallrucksack mit erweiterter invasiver Ausstattung, `DESASTERBAG_BEITRAG`);
+ * „Packliste AB ManV Kreis Steinfurt" (`AB_MANV_BESTAND`); BBK-Begleitheft
+ * „GW San: Mercedes Benz Sprinter 519 CDI DOKA 4x4" (Bund-Ausführung NRW,
+ * `GW_SAN_BESTAND`). KTW und GW-Rett haben keine gleichwertig detaillierte
+ * Quelle - sie werden aus den echten Zahlen hergeleitet
+ * (`skaliere`/`nurTypen`) und sind unten je Block klar als Schätzung
+ * gekennzeichnet. ELW 2 und GW-Log führen kein Patientenmaterial.
  *
  * Ein Fahrzeug materialisiert seinen Bestand beim Öffnen der Sitzung
  * (`materialAusVorlage`, analog zu `fahrzeugAusVorlage`) und verbraucht ihn
@@ -159,26 +161,49 @@ const RTW_BESTAND: Partial<Record<MaterialTyp, number>> = addiere(
 // Schlanker als RTW: kein Transport, kein Propofol/Tranexamsäure/EZ-IO/
 // Koniotomieset/Vakuummatratze/KED in der Hauptliste - dafür Fentanyl,
 // Morphin und Levetiracetam, die RTW nicht führt.
+//
+// Zusätzlich führt nur das NEF (nicht der RTW) den "Desasterbag" - einen
+// vierten Notfallrucksack aus "Bestückung Desasterbag Kreis Steinfurt",
+// Stand 01.02.2025 (ÄLRD, vollständig ausgewertet), mit erweiterter
+// invasiver Ausstattung (Koniotomie-/Thoraxdrainage-Set, EZ-IO) für den
+// Notarzt allein am Einsatzort.
+const DESASTERBAG_BEITRAG: Partial<Record<MaterialTyp, number>> = {
+  beckengurt: 2, // Gr. S+L
+  ionadel: 3, // Modultasche EZ-IO, 15/25/45mm
+  koniotomieset: 1, // VBM Surgicric II
+  thoraxdrainageset: 3, // Thorax-Drainage-Anlage Set (1) + Thoraxtrokarkatheter CH20+CH24 (2)
+  druckverband: 2, // Modultasche Verband & Blutstillung
+  tourniquet: 4,
+  haemostyptikum: 2, // ChitoGauze XR Pro
+  brandwundenverband: 2, // Verbandtuch Aluderm 73x220
+  verbandmaterial: 4, // Saugkompressen 10x10cm
+  propofol: 2,
+  tranexamsaeure: 2,
+};
+
 const NEF_BESTAND: Partial<Record<MaterialTyp, number>> = addiere(
-  {
-    tourniquet: 4, // Fach 2, Replantattasche
-    stifneck: 2, // Fach 1, Erwachsene+Kind
-    replantatbeutel: 2, // Fach 2, Bein+Hand
-    infusion: 5, // Jonosteril Fach 2 (3) + Thermobox (2)
-    kapnografieadapter: 2, // Modultasche gelb, Hauptstrom+Nasal/Oral
-    sauerstoffflasche: 1, // Fach 7, 5l-Kompositflasche
-    epinephrin: 2, // Kühlbox
-    rocuronium: 2, // Kühlbox
-    atropin: 1, // Schublade oben
-    glucose: 1, // Schublade oben, Glucose 5% 100ml
-    levetiracetam: 10, // Schublade oben, 500mg/5ml
-    aktivkohle: 2, // Schublade oben, Ultracarbon
-    beatmungsbeutel: 1, // Modultasche blau
-    fentanyl: 7, // BtM Tresor (6) + Ampullarium "am Mann" (1)
-    morphin: 7, // BtM Tresor (6) + Ampullarium "am Mann" (1)
-    midazolam: 3, // BtM Tresor (2) + Ampullarium "am Mann" (1)
-  },
-  addiere(RUCKSACK_BEITRAG, { tourniquet: 3, wendltubus: 3 }), // MANV-Tasche NEF
+  addiere(
+    {
+      tourniquet: 4, // Fach 2, Replantattasche
+      stifneck: 2, // Fach 1, Erwachsene+Kind
+      replantatbeutel: 2, // Fach 2, Bein+Hand
+      infusion: 5, // Jonosteril Fach 2 (3) + Thermobox (2)
+      kapnografieadapter: 2, // Modultasche gelb, Hauptstrom+Nasal/Oral
+      sauerstoffflasche: 1, // Fach 7, 5l-Kompositflasche
+      epinephrin: 2, // Kühlbox
+      rocuronium: 2, // Kühlbox
+      atropin: 1, // Schublade oben
+      glucose: 1, // Schublade oben, Glucose 5% 100ml
+      levetiracetam: 10, // Schublade oben, 500mg/5ml
+      aktivkohle: 2, // Schublade oben, Ultracarbon
+      beatmungsbeutel: 1, // Modultasche blau
+      fentanyl: 7, // BtM Tresor (6) + Ampullarium "am Mann" (1)
+      morphin: 7, // BtM Tresor (6) + Ampullarium "am Mann" (1)
+      midazolam: 3, // BtM Tresor (2) + Ampullarium "am Mann" (1)
+    },
+    addiere(RUCKSACK_BEITRAG, { tourniquet: 3, wendltubus: 3 }), // MANV-Tasche NEF
+  ),
+  DESASTERBAG_BEITRAG,
 );
 
 // --- GW-San: reale Bestückung nach BBK-Begleitheft (Bund-Ausführung NRW) ---

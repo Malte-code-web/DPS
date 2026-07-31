@@ -32,15 +32,22 @@ describe('BESTUECKUNG', () => {
     expect(BESTUECKUNG.rtw.morphin).toBe(3);
   });
 
-  it('belegt NEF mit den realen Kreis-Steinfurt-Zahlen, ohne Propofol/Tranexamsäure/EZ-IO', () => {
+  it('belegt NEF mit den realen Kreis-Steinfurt-Zahlen', () => {
     expect(BESTUECKUNG.nef.fentanyl).toBe(7);
     expect(BESTUECKUNG.nef.morphin).toBe(7);
     expect(BESTUECKUNG.nef.levetiracetam).toBe(10);
     expect(BESTUECKUNG.nef.aktivkohle).toBe(2);
-    expect(BESTUECKUNG.nef.propofol).toBeUndefined();
-    expect(BESTUECKUNG.nef.tranexamsaeure).toBeUndefined();
-    expect(BESTUECKUNG.nef.ionadel).toBeUndefined();
     expect(BESTUECKUNG.nef.vakuummatratze).toBeUndefined();
+    expect(BESTUECKUNG.nef.kedsystem).toBeUndefined();
+  });
+
+  it('ergänzt beim NEF den Desasterbag mit erweiterter invasiver Ausstattung', () => {
+    expect(BESTUECKUNG.nef.koniotomieset).toBe(1);
+    expect(BESTUECKUNG.nef.thoraxdrainageset).toBe(3);
+    expect(BESTUECKUNG.nef.ionadel).toBe(3);
+    expect(BESTUECKUNG.nef.propofol).toBe(2);
+    expect(BESTUECKUNG.nef.tranexamsaeure).toBe(2);
+    expect(BESTUECKUNG.rtw.koniotomieset).toBe(1); // RTW führt keinen Desasterbag, eigener Wert
   });
 
   it('belegt GW-San ohne Medikamente, ohne Tourniquet, ohne Larynxmaske (BBK-Begleitheft)', () => {

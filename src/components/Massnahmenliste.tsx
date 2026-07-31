@@ -8,12 +8,13 @@ import {
   massnahmenDerKategorie,
   voraussetzungKurz,
 } from '../domain/massnahmen';
-import { ANALGETIKA, gewichtVon, hatDosisreferenz } from '../domain/dosierung';
+import { ANALGETIKA, NOTFALLNARKOSE, gewichtVon, hatDosisreferenz } from '../domain/dosierung';
 import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
 import { Analgesieauswahl } from './Analgesieauswahl';
 import { Dosiseingabe } from './Dosiseingabe';
+import { Notfallnarkoseauswahl } from './Notfallnarkoseauswahl';
 import type {
   Massnahme,
   MassnahmeId,
@@ -212,18 +213,24 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
     <div className="massnahmen">
       {KATEGORIEN.map((kategorie) => {
         // Die sechs Analgetika stehen nicht einzeln in der Liste, sondern
-        // hinter der Analgesie-Sammelauswahl (→ `ui.analgesieauswahl`).
+        // hinter der Analgesie-Sammelauswahl (→ `ui.analgesieauswahl`); die
+        // vier Notfallnarkose-Maßnahmen ebenso hinter ihrer eigenen
+        // Sammelauswahl (→ `ui.notfallnarkoseauswahl`).
         const gruppeVoll = massnahmenDerKategorie(kategorie).filter(
           (massnahme) => !arten || arten.includes(massnahme.art),
         );
-        const gruppe = gruppeVoll.filter((massnahme) => !ANALGETIKA.includes(massnahme.id));
-        // Sammelauswahl nur zeigen, wo Medikamente überhaupt gelistet werden -
-        // sonst erschiene sie doppelt (einmal je Reiter mit D-Kategorie).
+        const gruppe = gruppeVoll.filter(
+          (massnahme) => !ANALGETIKA.includes(massnahme.id) && !NOTFALLNARKOSE.includes(massnahme.id),
+        );
+        // Sammelauswahlen nur zeigen, wo Medikamente überhaupt gelistet werden -
+        // sonst erschienen sie doppelt (einmal je Reiter mit der jeweiligen Kategorie).
         const zeigeAnalgesie =
           kategorie === 'D' && (!arten || arten.includes('medikament'));
+        const zeigeNotfallnarkose =
+          kategorie === 'A' && (!arten || arten.includes('medikament'));
         // Reiter, in dem eine Gruppe leer bleibt (z. B. keine Medikamente in
         // der Kategorie), gar nicht erst als Kopf zeigen.
-        if (gruppe.length === 0 && !zeigeAnalgesie) return null;
+        if (gruppe.length === 0 && !zeigeAnalgesie && !zeigeNotfallnarkose) return null;
         const istOffen = offen.has(kategorie);
         const erledigt = gruppeVoll.filter((massnahme) =>
           patient.durchgefuehrteMassnahmen.includes(massnahme.id),
@@ -253,6 +260,9 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
               <div className="gruppe-inhalt">
                 {zeigeAnalgesie && (
                   <Analgesieauswahl patient={patient} onMassnahme={onMassnahme} />
+                )}
+                {zeigeNotfallnarkose && (
+                  <Notfallnarkoseauswahl patient={patient} onMassnahme={onMassnahme} />
                 )}
                 {gruppe.map(zeile)}
               </div>

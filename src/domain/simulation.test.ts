@@ -101,11 +101,17 @@ describe('Szenariodaten', () => {
   it('hält die ärztlichen Maßnahmen jenseits der SAA klein und benannt', () => {
     // Im MANV die knappste Ressource - das muss sichtbar bleiben. Wächst diese
     // Liste, ist das eine bewusste Entscheidung und keine Nebenwirkung.
+    // Die vier Notfallnarkose-Maßnahmen (→ `domain.notfallnarkose`) sind
+    // genau eine solche bewusste Erweiterung.
     const aerztlich = WAEHLBARE_MASSNAHMEN.filter((m) => m.qualifikation === 'notarzt');
     expect(aerztlich.map((m) => m.id).sort()).toEqual([
+      'esketamin_narkose',
       'intubation',
       'koniotomie',
       'levetiracetam',
+      'propofol',
+      'rocuronium',
+      'thiopental',
       'thoraxdrainage',
     ]);
   });
@@ -236,7 +242,15 @@ describe('Atemwegssicherung', () => {
 
   it('verlangt vor jeder Atemwegssicherung die Mundraumkontrolle', () => {
     expect(fehlendeVoraussetzung(MASSNAHMEN.atemwege_freimachen, [])).toEqual(['mundraumkontrolle']);
-    expect(fehlendeVoraussetzung(MASSNAHMEN.intubation, [])).toEqual(['mundraumkontrolle']);
+    // Intubation lässt zusätzlich den RSI-Weg über Rocuronium zu
+    // (→ `domain.notfallnarkose`) - beide Optionen stehen bei fehlender
+    // Voraussetzung zur Wahl.
+    expect(fehlendeVoraussetzung(MASSNAHMEN.intubation, [])).toEqual([
+      'mundraumkontrolle',
+      'rocuronium',
+    ]);
+    expect(fehlendeVoraussetzung(MASSNAHMEN.intubation, ['mundraumkontrolle'])).toBeNull();
+    expect(fehlendeVoraussetzung(MASSNAHMEN.intubation, ['rocuronium'])).toBeNull();
     expect(
       fehlendeVoraussetzung(MASSNAHMEN.atemwege_freimachen, ['mundraumkontrolle']),
     ).toBeNull();

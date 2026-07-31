@@ -3,8 +3,17 @@ import {
   darfDelegieren,
   erfuelltQualifikation,
   massnahmeGesperrtWegenQualifikation,
+  notfallnarkoseTeamVerfuegbar,
 } from './qualifikation';
 import type { MassnahmeRecht } from './qualifikation';
+import type { Spieler } from './sitzung';
+import type { Qualifikation } from './types';
+
+let naechsteId = 0;
+function spielerMit(qualifikation: Qualifikation): Spieler {
+  naechsteId += 1;
+  return { id: `s-${naechsteId}`, name: `Spieler ${naechsteId}`, rolle: 'spieler', qualifikation };
+}
 
 describe('erfuelltQualifikation', () => {
   it('lässt die eigene Stufe und alles darunter zu', () => {
@@ -77,5 +86,52 @@ describe('darfDelegieren', () => {
     expect(darfDelegieren(recht, 'basis')).toBe(false);
     expect(darfDelegieren(recht, 'notsan')).toBe(true);
     expect(darfDelegieren(recht, 'notarzt')).toBe(true);
+  });
+});
+
+describe('notfallnarkoseTeamVerfuegbar', () => {
+  it('sperrt nichts außerhalb einer Sitzung, egal wie besetzt', () => {
+    expect(notfallnarkoseTeamVerfuegbar(false, [])).toBe(true);
+    expect(notfallnarkoseTeamVerfuegbar(false, [spielerMit('basis')])).toBe(true);
+  });
+
+  it('lässt ein Team aus RS + NotSan + NotArzt zu', () => {
+    const spieler = [
+      spielerMit('rettungssanitaeter'),
+      spielerMit('notsan'),
+      spielerMit('notarzt'),
+    ];
+    expect(notfallnarkoseTeamVerfuegbar(true, spieler)).toBe(true);
+  });
+
+  it('sperrt, wenn eine der drei Rollen fehlt', () => {
+    // Nur RS + NotArzt, kein NotSan.
+    const ohneNotsan = [spielerMit('rettungssanitaeter'), spielerMit('notarzt')];
+    expect(notfallnarkoseTeamVerfuegbar(true, ohneNotsan)).toBe(false);
+
+    // Nur ein einzelner NotArzt allein - auch die höchste Stufe füllt nicht
+    // gleichzeitig alle drei Rollen.
+    expect(notfallnarkoseTeamVerfuegbar(true, [spielerMit('notarzt')])).toBe(false);
+  });
+
+  it('lässt eine höhere Stufe eine niedrigere Rolle füllen, aber nicht doppelt zählen', () => {
+    // Zwei Notärztinnen + eine RS: die zweite Notärztin deckt die NotSan-Rolle
+    // rangmäßig ab, die RS bleibt für die dritte Rolle übrig.
+    const team = [spielerMit('notarzt'), spielerMit('notarzt'), spielerMit('rettungssanitaeter')];
+    expect(notfallnarkoseTeamVerfuegbar(true, team)).toBe(true);
+
+    // Eine einzelne Notärztin plus eine RS reicht nicht - die NotSan-Rolle
+    // bleibt unbesetzt, weil die Notärztin schon für ihre eigene Rolle gezogen wurde.
+    const zuKlein = [spielerMit('notarzt'), spielerMit('rettungssanitaeter')];
+    expect(notfallnarkoseTeamVerfuegbar(true, zuKlein)).toBe(false);
+  });
+
+  it('ist unabhängig von der Reihenfolge im Spieler-Array', () => {
+    const team = [
+      spielerMit('notarzt'),
+      spielerMit('rettungssanitaeter'),
+      spielerMit('notsan'),
+    ];
+    expect(notfallnarkoseTeamVerfuegbar(true, [...team].reverse())).toBe(true);
   });
 });

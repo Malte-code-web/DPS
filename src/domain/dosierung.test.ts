@@ -206,3 +206,65 @@ describe('Dosisreferenzen jenseits der Analgesie', () => {
     expect(ergebnis.effekt!.herzfrequenz!).toBeLessThan(0);
   });
 });
+
+describe('Notfallnarkose (RSI)', () => {
+  it('deckt alle vier Notfallnarkose-Maßnahmen mit einer Referenz ab', () => {
+    const erwartet = ['propofol', 'thiopental', 'esketamin_narkose', 'rocuronium'] as const;
+    for (const id of erwartet) {
+      expect(DOSISREFERENZ[id], id).toBeDefined();
+      expect(MASSNAHMEN[id], id).toBeDefined();
+      expect(hatDosisreferenz(id)).toBe(true);
+    }
+  });
+
+  it('lässt bei therapeutischer Dosis Propofol den Kreislauf senken und Esketamin-Narkose ihn stützen', () => {
+    // Genau der Unterschied, der die Mittelwahl situationsabhängig macht -
+    // schon bei korrekter Dosis, nicht erst bei Überdosierung.
+    const propofol = wirkungBeiDosis(
+      'propofol',
+      MASSNAHMEN.propofol.sofortEffekt,
+      empfohleneDosisMg('propofol', 80),
+      80,
+    );
+    const esketaminNarkose = wirkungBeiDosis(
+      'esketamin_narkose',
+      MASSNAHMEN.esketamin_narkose.sofortEffekt,
+      empfohleneDosisMg('esketamin_narkose', 80),
+      80,
+    );
+    expect(propofol.stufe).toBe('therapeutisch');
+    expect(esketaminNarkose.stufe).toBe('therapeutisch');
+    expect(propofol.effekt!.systolischerRR!).toBeLessThan(0);
+    expect(esketaminNarkose.effekt!.systolischerRR!).toBeGreaterThan(0);
+  });
+
+  it('esketamin_narkose ist eine eigene Referenz getrennt vom analgetischen Esketamin', () => {
+    const gewichtKg = 80;
+    // Die Narkose-Zieldosis läge beim analgetischen Esketamin (max 0,5 mg/kg)
+    // bereits deutlich überdosiert.
+    const narkoseDosis = empfohleneDosisMg('esketamin_narkose', gewichtKg);
+    expect(bewerteDosis('esketamin', narkoseDosis, gewichtKg)).toBe('ueberdosiert');
+    expect(bewerteDosis('esketamin_narkose', narkoseDosis, gewichtKg)).toBe('therapeutisch');
+  });
+
+  it('bleibt bei Rocuronium-Überdosierung ohne zusätzlichen Schadeffekt (große Sicherheitsspanne)', () => {
+    const basis = MASSNAHMEN.rocuronium.sofortEffekt!;
+    const ergebnis = wirkungBeiDosis('rocuronium', basis, 500, 80); // 6,25 mg/kg, weit über 3
+    expect(ergebnis.stufe).toBe('ueberdosiert');
+    expect(ergebnis.effekt).toEqual(basis);
+  });
+
+  it('lässt Rocuronium bei zu niedriger Dosis ohne Wirkung - keine ausreichende Relaxierung', () => {
+    const ergebnis = wirkungBeiDosis('rocuronium', MASSNAHMEN.rocuronium.sofortEffekt, 10, 80); // 0,125 mg/kg < 0,6
+    expect(ergebnis.stufe).toBe('unterdosiert');
+    expect(ergebnis.effekt).toBeNull();
+    expect(ergebnis.loestProblem).toBe(false);
+  });
+
+  it('lähmt bei korrekter Rocuronium-Dosis die Atmung vollständig', () => {
+    const dosis = empfohleneDosisMg('rocuronium', 80);
+    const ergebnis = wirkungBeiDosis('rocuronium', MASSNAHMEN.rocuronium.sofortEffekt, dosis, 80);
+    expect(ergebnis.stufe).toBe('therapeutisch');
+    expect(ergebnis.effekt!.atemfrequenz!).toBeLessThan(-30);
+  });
+});

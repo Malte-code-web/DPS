@@ -46,8 +46,9 @@ nur über den Zustand der Patienten und das Debriefing.
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
-| Maßnahmen | 84 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 36 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
-| Gewichtsbezogene Dosierung | 17 Medikamente rechnen die Dosis in mg gegen das Patientengewicht: zu niedrig bleibt wirkungslos, zu hoch löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus. Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen dafür hinter einem Sammel-Button „Analgesie" statt einzeln in der Liste; die übrigen elf (Epinephrin, Amiodaron, Lidocain, Atropin, Metoprolol, Midazolam, Diazepam-Rectiole, Naloxon, Nitrat, Urapidil, Furosemid) öffnen die Dosis-Eingabe direkt an ihrer Katalogzeile. Referenzwerte recherchiert (SAA/BPR Kreis Steinfurt, Toxikologie-Literatur); bewusste didaktische Kontraste je Mittel (Nalbuphin: Ceiling-Effekt statt Toxizität; Paracetamol: verzögerte statt akute Hepatotoxizität; Naloxon: präzipitierte Entzugsreaktion statt Organtoxizität; Urapidil: keine Reflextachykardie; Nitrat: paradoxe Bradykardie statt Reflextachykardie) |
+| Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
+| Gewichtsbezogene Dosierung | 21 Medikamente rechnen die Dosis in mg gegen das Patientengewicht: zu niedrig bleibt wirkungslos, zu hoch löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus. Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen dafür hinter einem Sammel-Button „Analgesie" statt einzeln in der Liste; die vier Notfallnarkose-Mittel ebenso hinter „Notfallnarkose" (→ Zeile unten); die übrigen elf (Epinephrin, Amiodaron, Lidocain, Atropin, Metoprolol, Midazolam, Diazepam-Rectiole, Naloxon, Nitrat, Urapidil, Furosemid) öffnen die Dosis-Eingabe direkt an ihrer Katalogzeile. Referenzwerte recherchiert (SAA/BPR Kreis Steinfurt, Toxikologie-Literatur); bewusste didaktische Kontraste je Mittel (Nalbuphin: Ceiling-Effekt statt Toxizität; Paracetamol: verzögerte statt akute Hepatotoxizität; Naloxon: präzipitierte Entzugsreaktion statt Organtoxizität; Urapidil: keine Reflextachykardie; Nitrat: paradoxe Bradykardie statt Reflextachykardie) |
+| Notfallnarkose (RSI) | Induktionsmittel wählen (Propofol/Thiopental - hämodynamisch stabil; Esketamin - instabil/Schock, kreislaufstützend statt -dämpfend) und dosieren, danach Rocuronium zur Relaxierung, danach Intubation - als einzige Maßnahme im Katalog zusätzlich an ein anwesendes Team aus Rettungssanitäter/-in, NotSan und Notärztin/Notarzt gleichzeitig gebunden; eine einzelne Person darf nicht einleiten, selbst mit höchster Qualifikation. Referenz: Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND); Wirkstoffe abgeglichen gegen die Bestückungsliste RTW Kreis Steinfurt |
 | Diagnostik | 13 Einzeluntersuchungen nach RD-Standard; jede deckt nur ihren Befund auf und kostet ihre eigene Zeit; der verlegte Atemweg wird durch Mundraumkontrolle oder Bodycheck entdeckt |
 | Monitor | Angeschlossen zeigt er HF, SpO₂, Atemfrequenz und Blutdruck (NIBP) fortlaufend und alarmiert gestaffelt: gelb (mittel) bei auffälligem, rot (hoch) bei kritischem Wert - mit unterschiedlichem Tonmuster; der Ton ist nur im selben Einsatzabschnitt zu hören |
 | Einsatzabschnitte | Schadensstelle → Eingangssichtung → drei Zelte → Ausgangssichtung → Abtransport, mit eigener Ansicht je Abschnitt |
@@ -57,9 +58,9 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-239 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
-Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor, Baukasten und
-gewichtsbezogene Dosierung.
+250 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor, Baukasten,
+gewichtsbezogene Dosierung und die Team-Voraussetzung der Notfallnarkose.
 
 ### Bewusst noch nicht gebaut
 
@@ -80,17 +81,6 @@ gewichtsbezogene Dosierung.
 - **Führung**: Eine zweite Qualifikationsebene neben der fachlichen (wer darf
   disponieren, Kräfte einteilen) ist als eigener Baustein vorgesehen, aber
   noch nicht gebaut (→ ROADMAP.md, Baustein 3).
-- **Notfallnarkose**: Als langfristiges Ziel vorgesehen, analog zur Analgesie-
-  Sammelauswahl (→ `ui.analgesieauswahl`) - ein Sammel-Button für die RSI-
-  Medikamente mit derselben gewichtsbezogenen Dosierung. Noch nicht begonnen.
-  Die Bestückungsliste RTW Kreis Steinfurt (Stand 01.02.2025) führt die dafür
-  nötigen Wirkstoffgruppen bereits real mit: **Induktion** Thiopental
-  500 mg + Propofol 1 % 50 ml, **Relaxierung** Rocuronium 100 mg/5 ml
-  (beide im Kühlfach neben Epinephrin), **Analgesie/Ko-Induktion** Esketamin
-  und Midazolam (bereits im Katalog) - keiner dieser drei Wirkstoffe
-  (Thiopental, Propofol, Rocuronium) ist bisher als eigene Maßnahme im
-  Katalog hinterlegt.
-
 ### Bekannte Vereinfachungen
 
 - Die Verschlechterungsraten sind **didaktisch geschätzt, nicht aus Leitlinien
@@ -609,7 +599,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -641,13 +631,16 @@ _150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `domain.analgetika` | [`src/domain/dosierung.ts:256`](src/domain/dosierung.ts#L256) | Die sechs Mittel der Analgesie-Sammelauswahl |
-| `domain.dosierbar` | [`src/domain/dosierung.ts:244`](src/domain/dosierung.ts#L244) | Alle Medikamente mit eigener Dosis-Eingabe |
+| `domain.analgetika` | [`src/domain/dosierung.ts:302`](src/domain/dosierung.ts#L302) | Die sechs Mittel der Analgesie-Sammelauswahl |
+| `domain.dosierbar` | [`src/domain/dosierung.ts:290`](src/domain/dosierung.ts#L290) | Alle Medikamente mit eigener Dosis-Eingabe |
 | `domain.dosierung` | [`src/domain/dosierung.ts:4`](src/domain/dosierung.ts#L4) | Gewichtsbezogene Dosierung: zu wenig wirkt nicht, zu viel schadet |
-| `domain.gewicht` | [`src/domain/dosierung.ts:273`](src/domain/dosierung.ts#L273) | Körpergewicht - hinterlegt oder geschätzt |
+| `domain.gewicht` | [`src/domain/dosierung.ts:337`](src/domain/dosierung.ts#L337) | Körpergewicht - hinterlegt oder geschätzt |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
-| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:29`](src/domain/qualifikation.ts#L29) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
-| `domain.qualifikation` | [`src/domain/qualifikation.ts:4`](src/domain/qualifikation.ts#L4) | Rangfolge und Prüfung der fachlichen Qualifikation |
+| `domain.massnahmerecht` | [`src/domain/qualifikation.ts:30`](src/domain/qualifikation.ts#L30) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
+| `domain.notfallnarkose` | [`src/domain/massnahmen.ts:318`](src/domain/massnahmen.ts#L318) | Team aus RS + NotSan + NotArzt nötig |
+| `domain.notfallnarkose_liste` | [`src/domain/dosierung.ts:319`](src/domain/dosierung.ts#L319) | Die drei Induktionsmittel der Notfallnarkose-Sammelauswahl |
+| `domain.notfallnarkose_team` | [`src/domain/qualifikation.ts:82`](src/domain/qualifikation.ts#L82) | Team aus RS + NotSan + NotArzt gleichzeitig anwesend |
+| `domain.qualifikation` | [`src/domain/qualifikation.ts:5`](src/domain/qualifikation.ts#L5) | Rangfolge und Prüfung der fachlichen Qualifikation |
 
 #### einzelfaelle
 
@@ -686,24 +679,25 @@ _150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.sofort` | [`src/domain/massnahmen.ts:1205`](src/domain/massnahmen.ts#L1205) | Lebensrettende Griffe der Schadensstelle |
-| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:1158`](src/domain/massnahmen.ts#L1158) | Was aus der Auswahl verschwindet, aber gültig bleibt |
-| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:1227`](src/domain/massnahmen.ts#L1227) | Was vor einer Maßnahme erledigt sein muss |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:1170`](src/domain/massnahmen.ts#L1170) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.sofort` | [`src/domain/massnahmen.ts:1285`](src/domain/massnahmen.ts#L1285) | Lebensrettende Griffe der Schadensstelle |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:1238`](src/domain/massnahmen.ts#L1238) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:1307`](src/domain/massnahmen.ts#L1307) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:1250`](src/domain/massnahmen.ts#L1250) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:347`](src/domain/types.ts#L347) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:427`](src/domain/types.ts#L427) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:473`](src/domain/types.ts#L473) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:364`](src/domain/types.ts#L364) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:444`](src/domain/types.ts#L444) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.finalsichtung` | [`src/domain/types.ts:490`](src/domain/types.ts#L490) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:283`](src/domain/types.ts#L283) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.patient` | [`src/domain/types.ts:462`](src/domain/types.ts#L462) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:391`](src/domain/types.ts#L391) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:317`](src/domain/types.ts#L317) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
-| `modell.qualifikation` | [`src/domain/types.ts:220`](src/domain/types.ts#L220) | Fünf Ausbildungsstufen von Basis bis Notärztin |
+| `modell.koerperregion` | [`src/domain/types.ts:300`](src/domain/types.ts#L300) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.notfallnarkose` | [`src/domain/types.ts:285`](src/domain/types.ts#L285) | Nur mit vollem Team durchführbar |
+| `modell.patient` | [`src/domain/types.ts:479`](src/domain/types.ts#L479) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:408`](src/domain/types.ts#L408) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:334`](src/domain/types.ts#L334) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -827,13 +821,13 @@ _150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `test.abschnitte` | [`src/state/reducer.test.ts:222`](src/state/reducer.test.ts#L222) | Der Weg eines Patienten und die erlaubten Verlegungen |
-| `test.atemweg` | [`src/domain/simulation.test.ts:218`](src/domain/simulation.test.ts#L218) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
+| `test.atemweg` | [`src/domain/simulation.test.ts:224`](src/domain/simulation.test.ts#L224) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
 | `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
-| `test.tubus` | [`src/domain/simulation.test.ts:267`](src/domain/simulation.test.ts#L267) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
+| `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:64`](src/state/reducer.test.ts#L64) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
-| `test.zeitverlauf` | [`src/domain/simulation.test.ts:131`](src/domain/simulation.test.ts#L131) | Verschlechterung, Todesfaelle und Latenzzeiten |
+| `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
 
@@ -857,10 +851,11 @@ _150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:38`](src/components/Massnahmenliste.tsx#L38) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:39`](src/components/Massnahmenliste.tsx#L39) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
+| `ui.notfallnarkoseauswahl` | [`src/components/Notfallnarkoseauswahl.tsx:24`](src/components/Notfallnarkoseauswahl.tsx#L24) | Induktionsmittel wählen, dann relaxieren - erst mit vollem Team |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:34`](src/pages/uebungsleitung/PatientEditor.tsx#L34) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:41`](src/components/PatientKarte.tsx#L41) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
@@ -903,7 +898,7 @@ _150 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           239 Tests
+npm run test           250 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -925,6 +920,7 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | mSTaRT-Algorithmus und Grenzwerte | Fachliteratur, umgesetzt in `triage.ts` |
 | Tatsächliche Bestückung (welche Medikamente in welcher Konzentration wirklich mitgeführt werden) | [Bestückung RTW Kreis Steinfurt, Stand 01.02.2025](https://www.kreis-steinfurt.de/kv_steinfurt/Kreisverwaltung/%C3%84mter/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/Rettungsmittel/RTW%20Best%C3%BCckungsliste%20Februar%202025%20(Ausbau%20WAS)%20Kreis%20Steinfurt.pdf), ÄLRD Kreis Steinfurt |
 | Überdosierungsschwellen und -wirkung der elf Medikamente jenseits der Analgesie (→ `domain.dosierung`) | LAST/Lidocain-Toxizität (EMCrit IBCC, Medscape); Amiodaron-IV-Toxizität (PMC4867816, PMC9199562); Anticholinerges Syndrom/Atropin (StatPearls NBK534798); Betablocker-Toxizität (Medscape 813342, LITFL); Midazolam-Fachinfo (FDA); Naloxon-Sicherheitsprofil/präzipitierter Entzug (PMC11089786); Nitroglycerin-Bezold-Jarisch-Reflex (AHA Circulation 54:624); Urapidil-Pharmakologie (ScienceDirect); Furosemid-Fachinfo Overdosage (Pfizer); Epinephrin-Fehldosierungsfälle (AME Case Reports, PMC6954811) |
+| Notfallnarkose (RSI): Medikamentenauswahl, Dosierung, Team | Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND, Notfall+Rettungsmedizin); Rocuronium-RSI-Dosis und Sicherheitsspanne (Notfall+Rettungsmedizin 2016, gasnarkose.at); Bestückung RTW Kreis Steinfurt Stand 01.02.2025 (Propofol, Thiopental, Rocuronium) |
 
 **Was NICHT aus der Quelle stammt:** die Zeitdauern (`dauerSek`) und die
 Sofortwirkungen (`sofortEffekt`) der Maßnahmen. Beides sind didaktische

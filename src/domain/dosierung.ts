@@ -238,6 +238,52 @@ export const DOSISREFERENZ: Partial<Record<MassnahmeId, Dosisreferenz>> = {
     maxEinzeldosisMg: 40,
     toxischerEffekt: { systolischerRR: -15, herzfrequenz: 15, rekapzeit: 0.5 },
   },
+
+  // --- Notfallnarkose (RSI, → `NOTFALLNARKOSE`) -----------------------
+  // Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen
+  // (DGAI/BAND, Notfall+Rettungsmedizin): Esketamin 80 mg, Thiopental 300 mg
+  // oder Propofol 150 mg zur Einleitung beim ca. 78 kg schweren
+  // Referenzerwachsenen. Je instabiler der Patient, desto eher Esketamin
+  // statt Propofol/Thiopental - deshalb tragen die therapeutischen Effekte
+  // hier bewusst schon bei Zieldosis den realen hämodynamischen Unterschied
+  // (Propofol/Thiopental leicht kreislaufdepressiv, Esketamin stützend), nicht
+  // erst bei Überdosierung - genau das macht die Medikamentenwahl zur echten
+  // Entscheidung statt einer reinen Dosisrechnung.
+  propofol: {
+    minMgProKg: 1,
+    zielMgProKg: 1.9,
+    maxMgProKg: 3,
+    maxEinzeldosisMg: 150,
+    toxischerEffekt: { systolischerRR: -20, herzfrequenz: -10, atemfrequenz: -3 },
+  },
+  thiopental: {
+    minMgProKg: 2,
+    zielMgProKg: 3.85,
+    maxMgProKg: 6,
+    maxEinzeldosisMg: 300,
+    toxischerEffekt: { systolischerRR: -20, herzfrequenz: -8, atemfrequenz: -4 },
+  },
+  esketamin_narkose: {
+    // Eigene Referenz getrennt von `esketamin` (Analgetikum, 0,0625-0,5 mg/kg) -
+    // die Narkosedosis liegt deutlich höher, und eine Überdosierung bedeutet
+    // hier überschießende Hypertonie/Tachykardie statt der bei der
+    // Schmerztherapie unerwünschten Dissoziation.
+    minMgProKg: 0.5,
+    zielMgProKg: 1.2,
+    maxMgProKg: 2.5,
+    maxEinzeldosisMg: 80,
+    toxischerEffekt: { herzfrequenz: 20, systolischerRR: 25, gcs: -2 },
+  },
+  rocuronium: {
+    // RSI-Dosis 1,2 mg/kg gut belegt; die reale Sicherheitsspanne ist enorm
+    // (kardiale Symptome laut Literatur erst ab ca. 135 mg/kg) - eine
+    // Überdosierung verschwendet Medikament und verlängert die Lähmung
+    // unnötig, ohne zusätzliche Organtoxizität. Deshalb kein toxischerEffekt,
+    // dieselbe Ceiling-Logik wie bei Nalbuphin oben.
+    minMgProKg: 0.6,
+    zielMgProKg: 1.2,
+    maxMgProKg: 3,
+  },
 };
 
 /**
@@ -268,6 +314,24 @@ export const ANALGETIKA: MassnahmeId[] = [
   'paracetamol',
   'ibuprofen',
 ];
+
+/**
+ * @anker domain.notfallnarkose_liste Die drei Induktionsmittel der Notfallnarkose-Sammelauswahl
+ *
+ * Zur Auswahl in der ersten Stufe der Notfallnarkose-Sammelauswahl
+ * (→ `ui.notfallnarkoseauswahl`) - jedes davon `benoetigtTeam: true`
+ * (→ `modell.notfallnarkose`). Rocuronium (zweite Stufe) steht bewusst nicht
+ * hier, sondern wird erst sichtbar, sobald eines dieser drei Mittel gegeben
+ * wurde (→ `rocuronium.benoetigtEinesVon`).
+ */
+export const NOTFALLNARKOSE_INDUKTION: MassnahmeId[] = [
+  'propofol',
+  'thiopental',
+  'esketamin_narkose',
+];
+
+/** Alle vier Notfallnarkose-Maßnahmen - für den Zeilenfilter in `Massnahmenliste`. */
+export const NOTFALLNARKOSE: MassnahmeId[] = [...NOTFALLNARKOSE_INDUKTION, 'rocuronium'];
 
 /**
  * @anker domain.gewicht Körpergewicht - hinterlegt oder geschätzt

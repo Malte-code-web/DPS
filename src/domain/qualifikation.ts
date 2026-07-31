@@ -1,3 +1,4 @@
+import type { Spieler } from './sitzung';
 import type { Qualifikation } from './types';
 
 /**
@@ -75,4 +76,31 @@ export function massnahmeGesperrtWegenQualifikation(
 export function darfDelegieren(recht: MassnahmeRecht, eigene: Qualifikation | null): boolean {
   if (eigene === null || recht.delegationsziel === null) return false;
   return erfuelltQualifikation(eigene, recht.qualifikation);
+}
+
+/**
+ * @anker domain.notfallnarkose_team Team aus RS + NotSan + NotArzt gleichzeitig anwesend
+ *
+ * Anders als jede Qualifikationssperre reicht hier nicht die eigene Stufe -
+ * es müssen drei *verschiedene* Personen mit Rettungssanitäter-, NotSan- und
+ * NotArzt-Qualifikation gleichzeitig in der Sitzung sein (→ `benoetigtTeam`,
+ * `modell.notfallnarkose`). Eine einzelne, noch so hoch qualifizierte Person
+ * darf nicht allein einleiten. Geprüft wird von der höchsten Anforderung her:
+ * zuerst eine Notärztin/ein Notarzt aus dem Spieler-Pool gezogen, danach aus
+ * dem Rest ein/e NotSan, danach aus dem verbleibenden Rest ein/e
+ * Rettungssanitäter/-in - so kann eine überqualifizierte Person nicht
+ * mehrere Rollen gleichzeitig "besetzen". Außerhalb einer Mehrspieler-Sitzung
+ * gilt dieselbe Ausnahme wie bei jeder anderen Qualifikationssperre: im
+ * Einzel-/Teamspiel bleibt alles frei wählbar.
+ */
+export function notfallnarkoseTeamVerfuegbar(sitzungAktiv: boolean, spieler: Spieler[]): boolean {
+  if (!sitzungAktiv) return true;
+  const pool = [...spieler];
+  const ziehe = (mindestens: Qualifikation): boolean => {
+    const index = pool.findIndex((s) => erfuelltQualifikation(s.qualifikation, mindestens));
+    if (index === -1) return false;
+    pool.splice(index, 1);
+    return true;
+  };
+  return ziehe('notarzt') && ziehe('notsan') && ziehe('rettungssanitaeter');
 }

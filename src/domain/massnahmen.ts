@@ -284,7 +284,10 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   },
   intubation: {
     id: 'intubation',
-    benoetigtEinesVon: ['mundraumkontrolle'],
+    // Entweder der bestehende Weg beim bereits bewusstlosen/tolerierenden
+    // Patienten (Mundraumkontrolle), oder neu über die volle Notfallnarkose-
+    // Sequenz beim wachen Patienten (→ `rocuronium`, `domain.notfallnarkose`).
+    benoetigtEinesVon: ['mundraumkontrolle', 'rocuronium'],
     effektNurBeiProblem: true,
     label: 'Endotracheale Intubation',
     kategorie: 'A',
@@ -309,6 +312,83 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
       'Chirurgische Technik (Skalpell - Bougie - Tubus 6,0). Ultima Ratio am Ende des Atemwegsalgorithmus.',
     indikation: '"Can\'t intubate, can\'t oxygenate" - Versagen aller anderen Verfahren.',
     sofortEffekt: { spo2: 14 },
+  },
+
+  // --- A: Notfallnarkose (RSI) ---------------------------------------
+  // @anker domain.notfallnarkose Team aus RS + NotSan + NotArzt nötig
+  //
+  // Anders als jede andere Maßnahme im Katalog braucht die Einleitung ein
+  // gleichzeitig anwesendes Team dreier verschiedener Qualifikationsstufen
+  // (→ `benoetigtTeam`, `notfallnarkoseTeamVerfuegbar` in qualifikation.ts) -
+  // eine Person allein, und sei sie noch so hoch qualifiziert, darf nicht
+  // einleiten. Die Wahl des Induktionsmittels macht real Unterschied: Wer
+  // bereits hämodynamisch instabil ist, bekommt durch Propofol/Thiopental
+  // (beide leicht kreislaufdepressiv) einen zusätzlichen Blutdruckabfall,
+  // Esketamin dagegen wirkt sympathomimetisch und stützt den Kreislauf eher -
+  // deshalb SAA-Empfehlung "Opiat + Esketamin + Rocuronium" bei Instabilität
+  // (Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen,
+  // DGAI/BAND, Notfall+Rettungsmedizin).
+  propofol: {
+    id: 'propofol',
+    benoetigtEinesVon: ZUGANG,
+    benoetigtTeam: true,
+    label: 'Propofol (Notfallnarkose)',
+    kategorie: 'A',
+    art: 'medikament',
+    qualifikation: 'notarzt',
+    dauerSek: 60,
+    hinweis:
+      'Standard-Induktionsmittel. Kreislaufdepressiv (Vasodilatation) - beim bereits hypotensiven Patienten Esketamin bevorzugen.',
+    indikation: 'Notfallnarkose zur Atemwegssicherung beim hämodynamisch stabilen Patienten.',
+    dosierung:
+      '1,5-2,5 mg/kg KG i.v. (Handlungsempfehlung: 150 mg beim ca. 78 kg schweren Erwachsenen)',
+    sofortEffekt: { gcs: -8, systolischerRR: -10, herzfrequenz: -5 },
+  },
+  thiopental: {
+    id: 'thiopental',
+    benoetigtEinesVon: ZUGANG,
+    benoetigtTeam: true,
+    label: 'Thiopental (Notfallnarkose)',
+    kategorie: 'A',
+    art: 'medikament',
+    qualifikation: 'notarzt',
+    dauerSek: 60,
+    hinweis:
+      'Barbiturat, Alternative zu Propofol - hirndrucksenkend, deshalb bei isoliertem Schädel-Hirn-Trauma erwogen (hier nicht simuliert). Ebenfalls kreislaufdepressiv, nicht bei Instabilität.',
+    indikation: 'Notfallnarkose zur Atemwegssicherung, Alternative zu Propofol.',
+    dosierung:
+      '3-5 mg/kg KG i.v. (Handlungsempfehlung: 300 mg beim ca. 78 kg schweren Erwachsenen)',
+    sofortEffekt: { gcs: -8, systolischerRR: -12, atemfrequenz: -2 },
+  },
+  esketamin_narkose: {
+    id: 'esketamin_narkose',
+    benoetigtEinesVon: ZUGANG,
+    benoetigtTeam: true,
+    label: 'Esketamin (Notfallnarkose)',
+    kategorie: 'A',
+    art: 'medikament',
+    qualifikation: 'notarzt',
+    dauerSek: 60,
+    hinweis:
+      'Sympathomimetisch statt kreislaufdepressiv - Mittel der Wahl beim hämodynamisch instabilen Patienten (Handlungsempfehlung: "Opiat + Esketamin + Rocuronium" bei Instabilität). Eigener Katalogeintrag getrennt vom analgetischen Esketamin (→ `esketamin`) - anderer Dosisbereich, andere Bedeutung von Überdosierung.',
+    indikation: 'Notfallnarkose zur Atemwegssicherung beim hämodynamisch instabilen Patienten.',
+    dosierung:
+      '1-2 mg/kg KG i.v. (Handlungsempfehlung: 80 mg beim ca. 78 kg schweren Erwachsenen); bei Ketamin statt Esketamin Dosis verdoppeln',
+    sofortEffekt: { gcs: -8, systolischerRR: 8, herzfrequenz: 10 },
+  },
+  rocuronium: {
+    id: 'rocuronium',
+    benoetigtEinesVon: ['propofol', 'thiopental', 'esketamin_narkose'],
+    label: 'Rocuronium (Relaxierung)',
+    kategorie: 'A',
+    art: 'medikament',
+    qualifikation: 'notarzt',
+    dauerSek: 45,
+    hinweis:
+      'Nicht-depolarisierendes Muskelrelaxans, nur nach eingeleiteter Narkose (nie ohne Sedierung - sonst wach und gelähmt). Lähmt auch die Atemmuskulatur vollständig: Team übernimmt die Beatmung. Große Sicherheitsspanne - eine Überdosis verschwendet Medikament und verlängert die Lähmung unnötig, ohne zusätzliche Organtoxizität (Ceiling-Effekt-Analogie zu Nalbuphin, → `domain.dosierung`).',
+    indikation: 'Muskelrelaxierung nach eingeleiteter Notfallnarkose, unmittelbar vor der Intubation.',
+    dosierung: '1,2 mg/kg KG i.v. (RSI-Dosis)',
+    sofortEffekt: { atemfrequenz: -50 },
   },
 
   // --- B: Beatmung --------------------------------------------------

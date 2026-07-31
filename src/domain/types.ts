@@ -212,6 +212,13 @@ export type MassnahmeId =
   | 'koniotomie'
   | 'levetiracetam'
   | 'thoraxdrainage'
+  // Notfallnarkose (RSI) - eigene Einträge trotz teils gleichem Wirkstoff wie
+  // ein Analgetikum, weil Dosisbereich und Überdosierungsbedeutung anders
+  // sind (→ `domain.dosierung`, `esketamin_narkose` vs. `esketamin`)
+  | 'propofol'
+  | 'thiopental'
+  | 'esketamin_narkose'
+  | 'rocuronium'
   // Sammelbegriff aus der ersten Fassung - siehe massnahmen.veraltet
   | 'analgesie';
 
@@ -274,6 +281,16 @@ export interface Massnahme {
    * den Atemweg dann nicht.
    */
   nurBeiBewusstlosigkeit?: boolean;
+  /**
+   * @anker modell.notfallnarkose Nur mit vollem Team durchführbar
+   *
+   * Nur mit gleichzeitig anwesendem Team aus Rettungssanitäter/-in, NotSan
+   * und Notärztin/Notarzt durchführbar (→ `notfallnarkoseTeamVerfuegbar` in
+   * `qualifikation.ts`) - bisher nur bei den drei Notfallnarkose-
+   * Induktionsmitteln gesetzt. Außerhalb einer Mehrspieler-Sitzung nicht
+   * durchgesetzt, wie jede andere Qualifikationssperre auch.
+   */
+  benoetigtTeam?: boolean;
   /** Nicht mehr in der Auswahl, aber in alten Szenarien noch gültig. */
   veraltet?: boolean;
 }

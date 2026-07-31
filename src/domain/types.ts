@@ -443,7 +443,84 @@ export interface Fahrzeug extends FahrzeugVorlage {
    * Zählungen (→ `domain.staerkemeldung`) und Anzeige filtern leere Einträge.
    */
   besatzung: string[];
+  /**
+   * Materialbestand zur Laufzeit (→ `domain.material`), beim Öffnen der
+   * Sitzung aus der Bestückung des Fahrzeugtyps materialisiert und von dort
+   * ab pro Fahrzeug-Exemplar unabhängig verbraucht.
+   */
+  material: Partial<Record<MaterialTyp, number>>;
 }
+
+/**
+ * @anker modell.material Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht
+ *
+ * Jede Maßnahme, die ein reales Einwegmaterial verbraucht, hängt an genau
+ * einem `MaterialTyp` (→ `domain.material`); mehrere Maßnahmen dürfen auf
+ * denselben Typ zeigen, wenn sie real dasselbe Material verbrauchen (z. B.
+ * `absaugen_oral`/`absaugen_endobronchial` -> `absaugkatheter`). Bewusst nur
+ * Verbrauchsgüter, keine wiederverwendeten Geräte (Defibrillator,
+ * Beatmungsgerät, Absauggerät, Monitor, Laryngoskop) - die bleiben
+ * unlimitiert.
+ */
+export type MaterialTyp =
+  // Verbandmaterial / Blutstillung
+  | 'druckverband'
+  | 'haemostyptikum'
+  | 'tourniquet'
+  | 'beckengurt'
+  | 'verbandmaterial'
+  | 'brandwundenverband'
+  | 'replantatbeutel'
+  // Atemweg / Beatmung
+  | 'guedeltubus'
+  | 'wendltubus'
+  | 'larynxmaske'
+  | 'endotrachealtubus'
+  | 'koniotomieset'
+  | 'absaugkatheter'
+  | 'beatmungsbeutel'
+  | 'cpapmaske'
+  | 'kapnografieadapter'
+  | 'sauerstoffflasche'
+  | 'thoraxentlastungsnadel'
+  | 'thoraxdrainageset'
+  // Zugänge / Infusion
+  | 'ivkanuele'
+  | 'ionadel'
+  | 'infusion'
+  // Immobilisation
+  | 'stifneck'
+  | 'vakuummatratze'
+  | 'kedsystem'
+  | 'universalschiene'
+  // Medikamente (eine Ampullenart je Wirkstoff)
+  | 'amiodaron'
+  | 'atropin'
+  | 'ass'
+  | 'butylscopolamin'
+  | 'dimenhydrinat'
+  | 'dimetinden'
+  | 'epinephrin'
+  | 'esketamin'
+  | 'furosemid'
+  | 'glucose'
+  | 'glucose_oral'
+  | 'heparin'
+  | 'ipratropium'
+  | 'lidocain'
+  | 'metoprolol'
+  | 'midazolam'
+  | 'naloxon'
+  | 'nitrat'
+  | 'paracetamol'
+  | 'prednisolon'
+  | 'propofol'
+  | 'rocuronium'
+  | 'salbutamol'
+  | 'thiamin'
+  | 'thiopental'
+  | 'tranexamsaeure'
+  | 'urapidil';
 
 /** An welcher Stelle im Ablauf eine Sichtungsentscheidung gefallen ist. */
 export type Sichtungsstelle =

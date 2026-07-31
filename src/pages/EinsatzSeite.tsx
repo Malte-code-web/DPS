@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
@@ -5,10 +6,12 @@ import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
 import { formatStaerke, staerkemeldung } from '../domain/fuehrung';
+import { BESTUECKUNG, MATERIAL_LABEL } from '../domain/material';
 import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { PatientSeite } from './PatientSeite';
+import type { MaterialTyp } from '../domain/types';
 
 /** @anker ui.einsatzseite Abschnittsliste oder Patientenseite */
 export function EinsatzSeite() {
@@ -17,6 +20,17 @@ export function EinsatzSeite() {
   const ausgewaehlt = state.patienten.find(
     (patient) => patient.id === state.ausgewaehlterPatientId,
   );
+  const [materialOffen, setMaterialOffen] = useState<Set<string>>(() => new Set());
+  const materialUmschalten = (fahrzeugId: string) =>
+    setMaterialOffen((bisher) => {
+      const naechste = new Set(bisher);
+      if (naechste.has(fahrzeugId)) {
+        naechste.delete(fahrzeugId);
+      } else {
+        naechste.add(fahrzeugId);
+      }
+      return naechste;
+    });
 
   // Der Alarmton ist an den Aufenthaltsort gebunden: es zählt die höchste Stufe,
   // die im gerade gezeigten Abschnitt ansteht (→ `ui.monitoralarm`). Ein
@@ -90,11 +104,47 @@ export function EinsatzSeite() {
                       .filter(Boolean)
                       .join(', ');
                     const staerke = staerkemeldung(fahrzeug.besatzung, state.sitzung.spieler);
+                    const sollMaterial = BESTUECKUNG[fahrzeug.typ];
+                    const sollGesamt = Object.values(sollMaterial).reduce(
+                      (summe, menge) => summe + menge,
+                      0,
+                    );
+                    const istGesamt = Object.values(fahrzeug.material).reduce(
+                      (summe, menge) => summe + (menge ?? 0),
+                      0,
+                    );
+                    const materialDetailOffen = materialOffen.has(fahrzeug.id);
                     return (
                       <article key={fahrzeug.id} className="fahrzeugkarte">
                         <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
                         <p className="fahrzeug-staerke">Stärke {formatStaerke(staerke)}</p>
                         <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
+                        {sollGesamt > 0 && (
+                          <>
+                            <button
+                              type="button"
+                              className="fahrzeug-material-knopf"
+                              aria-expanded={materialDetailOffen}
+                              onClick={() => materialUmschalten(fahrzeug.id)}
+                            >
+                              Material: {istGesamt} von {sollGesamt} Posten
+                            </button>
+                            {materialDetailOffen && (
+                              <dl className="fahrzeug-material-detail">
+                                {(Object.entries(sollMaterial) as [MaterialTyp, number][]).map(
+                                  ([typ, soll]) => (
+                                    <div key={typ}>
+                                      <dt>{MATERIAL_LABEL[typ]}</dt>
+                                      <dd>
+                                        {fahrzeug.material[typ] ?? 0} / {soll}
+                                      </dd>
+                                    </div>
+                                  ),
+                                )}
+                              </dl>
+                            )}
+                          </>
+                        )}
                         <FahrzeugVerlegung fahrzeug={fahrzeug} />
                       </article>
                     );

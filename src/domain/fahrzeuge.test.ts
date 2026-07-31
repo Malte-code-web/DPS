@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FAHRZEUGTYPEN, FAHRZEUGTYP_INFO, fahrzeugAusVorlage, verlegeFahrzeug } from './fahrzeuge';
+import { BESTUECKUNG } from './material';
 import type { Fahrzeug } from './types';
 
 describe('FAHRZEUGTYP_INFO', () => {
@@ -29,7 +30,7 @@ describe('FAHRZEUGTYP_INFO', () => {
 });
 
 describe('fahrzeugAusVorlage', () => {
-  it('startet an der Schadensstelle ohne Besatzung', () => {
+  it('startet an der Schadensstelle ohne Besatzung, mit vollem Materialbestand', () => {
     const fahrzeug = fahrzeugAusVorlage({ id: 'rtw-1', typ: 'rtw', kennung: 'Florian 1' });
     expect(fahrzeug).toEqual({
       id: 'rtw-1',
@@ -37,7 +38,14 @@ describe('fahrzeugAusVorlage', () => {
       kennung: 'Florian 1',
       abschnitt: 'schadensstelle',
       besatzung: [],
+      material: BESTUECKUNG.rtw,
     });
+  });
+
+  it('kopiert den Bestand, statt den Katalog zu teilen', () => {
+    const fahrzeug = fahrzeugAusVorlage({ id: 'rtw-1', typ: 'rtw' });
+    fahrzeug.material.tourniquet = 0;
+    expect(BESTUECKUNG.rtw.tourniquet).not.toBe(0);
   });
 });
 
@@ -47,6 +55,7 @@ describe('verlegeFahrzeug', () => {
     typ: 'rtw',
     abschnitt: 'schadensstelle',
     besatzung: ['spieler-1'],
+    material: {},
   };
 
   it('setzt den neuen Abschnitt, ohne die Besatzung zu verändern', () => {

@@ -4,6 +4,7 @@ import {
   fehlendeVoraussetzung,
   voraussetzungKurz,
 } from '../domain/massnahmen';
+import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
 import type { MassnahmeId, Patient } from '../domain/types';
@@ -48,6 +49,7 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
             eigeneQualifikation,
             delegiert,
           );
+          const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
 
           return (
             <button
@@ -56,7 +58,7 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
               className={`sofort-knopf massnahme-${massnahme.art}${
                 erledigt ? ' massnahme-erledigt' : ''
               }`}
-              disabled={gesperrt || erledigt || fehlt !== null || qualifikationFehlt}
+              disabled={gesperrt || erledigt || fehlt !== null || qualifikationFehlt || materialFehlt}
               onClick={() => onMassnahme(massnahme.id)}
             >
               <span className="sofort-label">{massnahme.label}</span>
@@ -67,7 +69,9 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
                     ? voraussetzungKurz(fehlt)
                     : qualifikationFehlt
                       ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                      : `${massnahme.dauerSek} s`}
+                      : materialFehlt
+                        ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                        : `${massnahme.dauerSek} s`}
               </span>
             </button>
           );

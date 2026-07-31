@@ -1,3 +1,4 @@
+import { materialAusVorlage } from './material';
 import type { Einsatzabschnitt, Fahrzeug, FahrzeugTyp, FahrzeugVorlage } from './types';
 
 /**
@@ -58,9 +59,13 @@ export const FAHRZEUGTYPEN: FahrzeugTyp[] = [
   'gw_log',
 ];
 
-/** Vorlage -> Laufzeit-Fahrzeug, startet an der Schadensstelle ohne Besatzung. */
+/**
+ * Vorlage -> Laufzeit-Fahrzeug, startet an der Schadensstelle ohne
+ * Besatzung, mit vollem Materialbestand nach der Bestückung des Fahrzeugtyps
+ * (→ `domain.material`).
+ */
 export function fahrzeugAusVorlage(vorlage: FahrzeugVorlage): Fahrzeug {
-  return { ...vorlage, abschnitt: 'schadensstelle', besatzung: [] };
+  return { ...vorlage, abschnitt: 'schadensstelle', besatzung: [], material: materialAusVorlage(vorlage.typ) };
 }
 
 /** Wie `verlegePatient` in simulation.ts, aber ohne Sichtungs-/Status-Prüfung - Fahrzeuge werden nicht gesichtet. */

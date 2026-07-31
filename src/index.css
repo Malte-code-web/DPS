@@ -3275,6 +3275,44 @@ tbody tr:last-child td {
   border-radius: var(--radius);
 }
 
+.fahrzeug-material-knopf {
+  align-self: flex-start;
+  padding: 0.2rem 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-leise);
+  text-decoration: underline dotted;
+}
+
+.fahrzeug-material-detail {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--bg-panel-hoch);
+  border: 1px dashed var(--rand);
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.fahrzeug-material-detail > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.fahrzeug-material-detail dt {
+  color: var(--text-leise);
+}
+
+.fahrzeug-material-detail dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* --- Responsiv ---------------------------------------------------- */
 
 @media (max-width: 1000px) {

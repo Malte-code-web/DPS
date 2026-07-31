@@ -9,6 +9,7 @@ import {
   voraussetzungKurz,
 } from '../domain/massnahmen';
 import { ANALGETIKA, NOTFALLNARKOSE, gewichtVon, hatDosisreferenz } from '../domain/dosierung';
+import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
 import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useSimulation } from '../state/useSimulation';
@@ -91,6 +92,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
       eigeneQualifikation,
       delegiert,
     );
+    const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
     const zeigeDelegieren =
       state.sitzung.aktiv &&
       darfDelegieren(recht, eigeneQualifikation) &&
@@ -113,7 +115,9 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
           className={`massnahme massnahme-${massnahme.art}${
             bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
           }`}
-          disabled={gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt}
+          disabled={
+            gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt || materialFehlt
+          }
           aria-expanded={hatDosis ? dosisPanelOffen : undefined}
           onClick={() =>
             hatDosis ? setDosisOffen(dosisPanelOffen ? null : massnahme.id) : onMassnahme(massnahme.id)
@@ -137,7 +141,9 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
                   voraussetzungKurz(fehlt)
                 : qualifikationFehlt
                   ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                  : `${massnahme.dauerSek} s`}
+                  : materialFehlt
+                    ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                    : `${massnahme.dauerSek} s`}
           </span>
         </button>
 

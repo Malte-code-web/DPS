@@ -6,6 +6,7 @@ import {
   voraussetzungKurz,
 } from '../domain/massnahmen';
 import { NOTFALLNARKOSE_INDUKTION, gewichtVon } from '../domain/dosierung';
+import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
 import {
   massnahmeGesperrtWegenQualifikation,
   notfallnarkoseTeamVerfuegbar,
@@ -92,8 +93,14 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
               delegiert,
             );
             const teamFehlt = Boolean(massnahme.benoetigtTeam) && !teamVerfuegbar;
+            const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
             const gesperrtHier =
-              gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt || teamFehlt;
+              gesperrt ||
+              bereitsDurchgefuehrt ||
+              fehlt !== null ||
+              qualifikationFehlt ||
+              teamFehlt ||
+              materialFehlt;
             const istGewaehlt = gewaehlt === massnahme.id;
 
             return (
@@ -121,7 +128,9 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
                           ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
                           : teamFehlt
                             ? 'Team: RS + NotSan + Notärztin nötig'
-                            : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
+                            : materialFehlt
+                              ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                              : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
                   </span>
                 </button>
 

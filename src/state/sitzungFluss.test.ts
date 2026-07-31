@@ -219,6 +219,76 @@ describe('Fahrzeug-Verlegung im Einsatz', () => {
   });
 });
 
+describe('Materialverbrauch im Einsatz', () => {
+  const patientId = busunfall.patienten[0]!.id;
+
+  it('zieht beim Ausführen einer materialgebundenen Maßnahme Bestand vom Fahrzeug im selben Abschnitt ab', () => {
+    const vorbereitet = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      { typ: 'sitzungStarten' },
+    );
+    const vorher = vorbereitet.fahrzeuge[0]!.material.tourniquet!;
+    expect(vorbereitet.patienten.find((p) => p.id === patientId)?.abschnitt).toBe('schadensstelle');
+
+    const nachher = simulationReducer(vorbereitet, {
+      typ: 'massnahmeDurchfuehren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    expect(nachher.fahrzeuge[0]!.material.tourniquet).toBe(vorher - 1);
+  });
+
+  it('sperrt nichts im Reducer, sinkt aber nie unter 0', () => {
+    let state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      { typ: 'sitzungStarten' },
+    );
+    const gesamtbestand = state.fahrzeuge.reduce(
+      (summe, fahrzeug) => summe + (fahrzeug.material.tourniquet ?? 0),
+      0,
+    );
+    for (let i = 0; i < gesamtbestand + 3; i += 1) {
+      state = simulationReducer(state, {
+        typ: 'massnahmeDurchfuehren',
+        patientId,
+        massnahmeId: 'tourniquet',
+      });
+    }
+    const gesamtRestbestand = state.fahrzeuge.reduce(
+      (summe, fahrzeug) => summe + (fahrzeug.material.tourniquet ?? 0),
+      0,
+    );
+    expect(gesamtRestbestand).toBe(0);
+  });
+
+  it('bleibt im Solo-Modus ohne Fahrzeuge unberührt', () => {
+    const solo = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'szenarioStarten',
+      szenario: busunfall,
+      alleine: true,
+    });
+    expect(solo.fahrzeuge).toEqual([]);
+    const nachher = simulationReducer(solo, {
+      typ: 'massnahmeDurchfuehren',
+      patientId,
+      massnahmeId: 'tourniquet',
+    });
+    expect(nachher.fahrzeuge).toEqual([]);
+  });
+});
+
 describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
   it('startet mit dem Katalog-Standard, delegierbar an alle (basis)', () => {
     expect(ANFANGSZUSTAND.massnahmenrechte.tourniquet).toEqual({

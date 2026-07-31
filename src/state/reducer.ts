@@ -3,6 +3,7 @@ import { DIAGNOSTIK } from '../domain/diagnostik';
 import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
+import { verbraucheMaterial } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
@@ -366,13 +367,19 @@ export function simulationReducer(
       );
     }
 
-    case 'massnahmeDurchfuehren':
+    case 'massnahmeDurchfuehren': {
+      const behandelter = state.patienten.find((patient) => patient.id === action.patientId);
+      if (!behandelter) return state;
       return zeitVergehen(
-        mitPatient(state, action.patientId, (patient) =>
-          wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
-        ),
+        {
+          ...mitPatient(state, action.patientId, (patient) =>
+            wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
+          ),
+          fahrzeuge: verbraucheMaterial(state.fahrzeuge, action.massnahmeId, behandelter.abschnitt),
+        },
         MASSNAHMEN[action.massnahmeId].dauerSek,
       );
+    }
 
     case 'massnahmeDelegieren':
       // Freigabe durch Rücksprache - kostet keine Einsatzzeit (→ `domain.qualifikation`).

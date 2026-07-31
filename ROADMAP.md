@@ -140,10 +140,16 @@ nicht „darf mehr behandeln", sondern **andere Rechte**.
 Der größte neue Baustein, aber klar abgegrenzt und datengetrieben aus realen
 Listen und Konzepten.
 
-- 🟡 **Verbrauchsgüter** (Tourniquet, Sauerstoff, Medikamente …): als Bestände
-  modelliert, die Maßnahmen aufbrauchen. Der Mechanismus für Voraussetzungen
-  existiert im Kern bereits (`benoetigtEinesVon`, etwa i.v.-Zugang vor
-  i.v.-Medikament); ein Verbrauchsfeld ergänzt ihn.
+- ✅ **Verbrauchsgüter** (~50 Materialtypen: Tourniquet, Sauerstoff, Zugänge,
+  Atemwegshilfen, Immobilisation, Medikamente …): als Bestand je Fahrzeug
+  modelliert (`Fahrzeug.material`), datengetrieben aus realen Bestückungs-
+  listen (RTW Kreis Steinfurt, BBK-Begleitheft GW-San, Packliste AB-MANV
+  Kreis Steinfurt - vollständig ausgewertet; NEF/KTW/GW-Rett daraus
+  hergeleitet). Rund 50 Maßnahmen ziehen bei Ausführung 1 Einheit vom Bestand
+  eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt
+  die Maßnahme. Ohne Fahrzeuge im Spiel (Solo) unbegrenzt wie bisher.
+  - 💤 **Noch offen:** kein Nachschub/Umlagern zwischen Fahrzeugen (nur über
+    `fahrzeugVerlegen`, ein Fahrzeug mit Bestand an den Ort bringen).
 - 🟡 **Fahrzeuge** (RTW, NEF, KTW, GW-Rett, GW-San, AB-MANV, ELW 2, GW-Log) als
   eigene, einzeln zuweisbare Objekte, datengetrieben aus dem MANV-Konzept
   Kreis Steinfurt (Stand 05.12.2019, Abschnitt 3 „Verfügbare Ressourcen" und
@@ -200,7 +206,8 @@ Jeder Schritt ist eigenständig nutzbar:
 2. **Qualifikation** ✅ fertig · **Führung** 🟡 teilweise (Fahrzeugdisposition
    fertig, Kräfte-/Patientenzuweisung und Transportfreigabe offen).
 3. **Material/Logistik** – Fahrzeuge 🟡 teilweise fertig (Zuweisung, Besatzung,
-   Verlegung), Kapazität/Transport-Kopplung offen; Verbrauchsgüter offen.
+   Verlegung, Kapazität/Transport-Kopplung offen); **Verbrauchsgüter** ✅ fertig
+   (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
 
 ## Ehrliche Grenzen
 
@@ -225,5 +232,7 @@ Nicht „geht nicht", sondern „kostet":
   Patientenzuweisung und Transportfreigabe brauchen noch euer Konzept – für
   den Rest von Baustein 3.
 - **Fahrzeuglisten:** MANV-Konzept Kreis Steinfurt liefert bereits die
-  Kernfahrzeuge je MANV-Stufe. **Verbrauchsgüterlisten** fehlen noch – für den
-  Rest von Baustein 4.
+  Kernfahrzeuge je MANV-Stufe. **Verbrauchsgüterlisten** liegen für RTW
+  (Kreis Steinfurt), GW-San (BBK) und AB-MANV (Kreis Steinfurt) real vor;
+  NEF/KTW/GW-Rett sind daraus hergeleitet – bei Bedarf eigene Listen dafür,
+  für mehr Genauigkeit als die aktuelle Schätzung.

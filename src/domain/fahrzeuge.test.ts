@@ -15,6 +15,17 @@ describe('FAHRZEUGTYP_INFO', () => {
       expect(FAHRZEUGTYP_INFO[typ].sollbesatzung, typ).toBeGreaterThan(0);
     }
   });
+
+  it('setzt die reale Sollbesatzung je Fahrzeugtyp (→ Fahrzeugtyp-Doku)', () => {
+    expect(FAHRZEUGTYP_INFO.rtw.sollbesatzung).toBe(2);
+    expect(FAHRZEUGTYP_INFO.nef.sollbesatzung).toBe(2);
+    expect(FAHRZEUGTYP_INFO.ktw.sollbesatzung).toBe(2);
+    expect(FAHRZEUGTYP_INFO.gw_rett.sollbesatzung).toBe(2);
+    expect(FAHRZEUGTYP_INFO.gw_san.sollbesatzung).toBe(6);
+    expect(FAHRZEUGTYP_INFO.ab_manv.sollbesatzung).toBe(2);
+    expect(FAHRZEUGTYP_INFO.elw2.sollbesatzung).toBe(6);
+    expect(FAHRZEUGTYP_INFO.gw_log.sollbesatzung).toBe(6);
+  });
 });
 
 describe('fahrzeugAusVorlage', () => {

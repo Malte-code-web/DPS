@@ -140,14 +140,15 @@ nicht „darf mehr behandeln", sondern **andere Rechte**.
 Der größte neue Baustein, aber klar abgegrenzt und datengetrieben aus realen
 Listen und Konzepten.
 
-- ✅ **Verbrauchsgüter** (~50 Materialtypen: Tourniquet, Sauerstoff, Zugänge,
+- ✅ **Verbrauchsgüter** (58 Materialtypen: Tourniquet, Sauerstoff, Zugänge,
   Atemwegshilfen, Immobilisation, Medikamente …): als Bestand je Fahrzeug
   modelliert (`Fahrzeug.material`), datengetrieben aus realen Bestückungs-
-  listen (RTW Kreis Steinfurt, BBK-Begleitheft GW-San, Packliste AB-MANV
-  Kreis Steinfurt - vollständig ausgewertet; NEF/KTW/GW-Rett daraus
-  hergeleitet). Rund 50 Maßnahmen ziehen bei Ausführung 1 Einheit vom Bestand
-  eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt
-  die Maßnahme. Ohne Fahrzeuge im Spiel (Solo) unbegrenzt wie bisher.
+  listen (RTW/NEF Kreis Steinfurt inkl. gemeinsamem Rucksacksystem und
+  MANV-Tasche, BBK-Begleitheft GW-San, Packliste AB-MANV Kreis Steinfurt -
+  vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet). 60 Maßnahmen
+  ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben
+  Einsatzabschnitt; ist dort nichts mehr da, sperrt die Maßnahme. Ohne
+  Fahrzeuge im Spiel (Solo) unbegrenzt wie bisher.
   - 💤 **Noch offen:** kein Nachschub/Umlagern zwischen Fahrzeugen (nur über
     `fahrzeugVerlegen`, ein Fahrzeug mit Bestand an den Ort bringen).
 - 🟡 **Fahrzeuge** (RTW, NEF, KTW, GW-Rett, GW-San, AB-MANV, ELW 2, GW-Log) als
@@ -232,7 +233,8 @@ Nicht „geht nicht", sondern „kostet":
   Patientenzuweisung und Transportfreigabe brauchen noch euer Konzept – für
   den Rest von Baustein 3.
 - **Fahrzeuglisten:** MANV-Konzept Kreis Steinfurt liefert bereits die
-  Kernfahrzeuge je MANV-Stufe. **Verbrauchsgüterlisten** liegen für RTW
-  (Kreis Steinfurt), GW-San (BBK) und AB-MANV (Kreis Steinfurt) real vor;
-  NEF/KTW/GW-Rett sind daraus hergeleitet – bei Bedarf eigene Listen dafür,
-  für mehr Genauigkeit als die aktuelle Schätzung.
+  Kernfahrzeuge je MANV-Stufe. **Verbrauchsgüterlisten** liegen für RTW und
+  NEF (Kreis Steinfurt, inkl. Rucksacksystem und MANV-Tasche), GW-San (BBK)
+  und AB-MANV (Kreis Steinfurt) real vor; nur KTW/GW-Rett sind noch
+  hergeleitet – bei Bedarf eigene Listen dafür, für mehr Genauigkeit als die
+  aktuelle Schätzung.

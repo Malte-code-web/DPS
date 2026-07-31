@@ -22,13 +22,25 @@ function fahrzeug(overrides: Partial<Fahrzeug> = {}): Fahrzeug {
 }
 
 describe('BESTUECKUNG', () => {
-  it('belegt RTW mit den realen Kreis-Steinfurt-Zahlen', () => {
-    expect(BESTUECKUNG.rtw.tourniquet).toBe(4);
-    expect(BESTUECKUNG.rtw.guedeltubus).toBe(4);
-    expect(BESTUECKUNG.rtw.larynxmaske).toBe(3);
-    expect(BESTUECKUNG.rtw.ivkanuele).toBe(50);
-    expect(BESTUECKUNG.rtw.infusion).toBe(9);
-    expect(BESTUECKUNG.rtw.midazolam).toBe(6);
+  it('belegt RTW mit den realen Kreis-Steinfurt-Zahlen (Hauptliste + MANV-Tasche + Rucksacksystem)', () => {
+    expect(BESTUECKUNG.rtw.tourniquet).toBe(8);
+    expect(BESTUECKUNG.rtw.guedeltubus).toBe(12);
+    expect(BESTUECKUNG.rtw.larynxmaske).toBe(10);
+    expect(BESTUECKUNG.rtw.ivkanuele).toBe(65);
+    expect(BESTUECKUNG.rtw.infusion).toBe(10);
+    expect(BESTUECKUNG.rtw.midazolam).toBe(9);
+    expect(BESTUECKUNG.rtw.morphin).toBe(3);
+  });
+
+  it('belegt NEF mit den realen Kreis-Steinfurt-Zahlen, ohne Propofol/Tranexamsäure/EZ-IO', () => {
+    expect(BESTUECKUNG.nef.fentanyl).toBe(7);
+    expect(BESTUECKUNG.nef.morphin).toBe(7);
+    expect(BESTUECKUNG.nef.levetiracetam).toBe(10);
+    expect(BESTUECKUNG.nef.aktivkohle).toBe(2);
+    expect(BESTUECKUNG.nef.propofol).toBeUndefined();
+    expect(BESTUECKUNG.nef.tranexamsaeure).toBeUndefined();
+    expect(BESTUECKUNG.nef.ionadel).toBeUndefined();
+    expect(BESTUECKUNG.nef.vakuummatratze).toBeUndefined();
   });
 
   it('belegt GW-San ohne Medikamente, ohne Tourniquet, ohne Larynxmaske (BBK-Begleitheft)', () => {
@@ -81,10 +93,17 @@ describe('MATERIAL_LABEL / MASSNAHME_MATERIAL', () => {
     expect(MASSNAHME_MATERIAL.esketamin_narkose).toBe('esketamin');
   });
 
+  it('bindet die aus NEF/Rucksack neu gefundenen Medikamente', () => {
+    expect(MASSNAHME_MATERIAL.fentanyl).toBe('fentanyl');
+    expect(MASSNAHME_MATERIAL.morphin).toBe('morphin');
+    expect(MASSNAHME_MATERIAL.levetiracetam).toBe('levetiracetam');
+    expect(MASSNAHME_MATERIAL.aktivkohle).toBe('aktivkohle');
+    expect(MASSNAHME_MATERIAL.diazepam_rektal).toBe('diazepam_rektal');
+  });
+
   it('lässt Maßnahmen ohne auffindbare Quelle unlimitiert', () => {
-    expect(MASSNAHME_MATERIAL.fentanyl).toBeUndefined();
     expect(MASSNAHME_MATERIAL.nalbuphin).toBeUndefined();
-    expect(MASSNAHME_MATERIAL.aktivkohle).toBeUndefined();
+    expect(MASSNAHME_MATERIAL.glucagon).toBeUndefined();
     expect(MASSNAHME_MATERIAL.reanimation).toBeUndefined();
     expect(MASSNAHME_MATERIAL.defibrillation).toBeUndefined();
   });

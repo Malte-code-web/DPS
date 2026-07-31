@@ -46,6 +46,8 @@ nur über den Zustand der Patienten und das Debriefing.
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
+| Führung | Zweite Ebene neben der Qualifikation: TrFü/GrFü/ZgFü/OrgL RD/LNA, aufsteigender Rang (OrgL RD und LNA gleichrangig). Die Übungsleitung weist die Rolle im Wartebereich zu; ab Zugführer aufwärts (oder die Übungsleitung selbst) darf Fahrzeuge disponieren |
+| Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt; Besatzung wird im Wartebereich zugewiesen, in der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
 | Gewichtsbezogene Dosierung | 21 Medikamente rechnen die Dosis in mg gegen das Patientengewicht: zu niedrig bleibt wirkungslos, zu hoch löst zusätzlich zur Wirkung eine mittelspezifische Verschlechterung aus. Die sechs Analgetika (Morphin, Fentanyl, Nalbuphin, Esketamin, Paracetamol, Ibuprofen) stehen dafür hinter einem Sammel-Button „Analgesie" statt einzeln in der Liste; die vier Notfallnarkose-Mittel ebenso hinter „Notfallnarkose" (→ Zeile unten); die übrigen elf (Epinephrin, Amiodaron, Lidocain, Atropin, Metoprolol, Midazolam, Diazepam-Rectiole, Naloxon, Nitrat, Urapidil, Furosemid) öffnen die Dosis-Eingabe direkt an ihrer Katalogzeile. Referenzwerte recherchiert (SAA/BPR Kreis Steinfurt, Toxikologie-Literatur); bewusste didaktische Kontraste je Mittel (Nalbuphin: Ceiling-Effekt statt Toxizität; Paracetamol: verzögerte statt akute Hepatotoxizität; Naloxon: präzipitierte Entzugsreaktion statt Organtoxizität; Urapidil: keine Reflextachykardie; Nitrat: paradoxe Bradykardie statt Reflextachykardie) |
 | Notfallnarkose (RSI) | Induktionsmittel wählen (Propofol/Thiopental - hämodynamisch stabil; Esketamin - instabil/Schock, kreislaufstützend statt -dämpfend) und dosieren, danach Rocuronium zur Relaxierung, danach Intubation - als einzige Maßnahme im Katalog zusätzlich an ein anwesendes Team aus Rettungssanitäter/-in, NotSan und Notärztin/Notarzt gleichzeitig gebunden; eine einzelne Person darf nicht einleiten, selbst mit höchster Qualifikation. Referenz: Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND); Wirkstoffe abgeglichen gegen die Bestückungsliste RTW Kreis Steinfurt |
@@ -58,9 +60,10 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-250 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
-Qualifikation/Delegation, Szenarioprüfung, Probelauf, Diagnostik, Monitor, Baukasten,
-gewichtsbezogene Dosierung und die Team-Voraussetzung der Notfallnarkose.
+273 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+Qualifikation/Delegation, Führungsrollen, Fahrzeuge/MANV-Stufen, Szenarioprüfung, Probelauf,
+Diagnostik, Monitor, Baukasten, gewichtsbezogene Dosierung und die Team-Voraussetzung der
+Notfallnarkose.
 
 ### Bewusst noch nicht gebaut
 
@@ -78,9 +81,17 @@ gewichtsbezogene Dosierung und die Team-Voraussetzung der Notfallnarkose.
 - **Übungsleiter-Konten**: Die Anmeldung der Übungsleitung ist noch ein
   Platzhalter (Anzeigename genügt); echte Konten mit E-Mail/Passwort über
   Supabase Auth sind Mehrspieler-Stufe 3 (→ ROADMAP.md).
-- **Führung**: Eine zweite Qualifikationsebene neben der fachlichen (wer darf
-  disponieren, Kräfte einteilen) ist als eigener Baustein vorgesehen, aber
-  noch nicht gebaut (→ ROADMAP.md, Baustein 3).
+- **Führung**: Fahrzeugdisposition ist umgesetzt (→ oben, `domain.fuehrung`).
+  Kräfte-/Patientenzuweisung, Einsatzabschnitte eröffnen/zuordnen und
+  Transporte freigeben sind als Konzept (`Fuehrungsrolle`,
+  `erfuelltFuehrung`) angelegt, aber noch nicht gebaut (→ ROADMAP.md,
+  Baustein 3).
+- **Fahrzeugkapazität**: Fahrzeuge tragen keine Transportplätze; die
+  bestehende Patientenverlegung (`Verlegung.tsx`/`patientVerlegen`) ist davon
+  unabhängig und bleibt unverändert. „Patient mit diesem Fahrzeug
+  abtransportieren" mit begrenzten Plätzen bleibt Ausbau (→ ROADMAP.md,
+  Baustein 4).
+
 ### Bekannte Vereinfachungen
 
 - Die Verschlechterungsraten sind **didaktisch geschätzt, nicht aus Leitlinien
@@ -599,7 +610,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_162 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -634,7 +645,10 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.analgetika` | [`src/domain/dosierung.ts:302`](src/domain/dosierung.ts#L302) | Die sechs Mittel der Analgesie-Sammelauswahl |
 | `domain.dosierbar` | [`src/domain/dosierung.ts:290`](src/domain/dosierung.ts#L290) | Alle Medikamente mit eigener Dosis-Eingabe |
 | `domain.dosierung` | [`src/domain/dosierung.ts:4`](src/domain/dosierung.ts#L4) | Gewichtsbezogene Dosierung: zu wenig wirkt nicht, zu viel schadet |
+| `domain.fahrzeuge` | [`src/domain/fahrzeuge.ts:4`](src/domain/fahrzeuge.ts#L4) | Fahrzeuge entstehen aus Vorlagen und durchlaufen dieselben Abschnitte wie Patienten |
+| `domain.fuehrung` | [`src/domain/fuehrung.ts:5`](src/domain/fuehrung.ts#L5) | Rangfolge und Prüfung der Führungsrolle |
 | `domain.gewicht` | [`src/domain/dosierung.ts:337`](src/domain/dosierung.ts#L337) | Körpergewicht - hinterlegt oder geschätzt |
+| `domain.manvstufen` | [`src/domain/manvStufen.ts:4`](src/domain/manvStufen.ts#L4) | MANV-Stufen des Kreises Steinfurt -> kumulativer Fahrzeugbestand |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
 | `domain.massnahmerecht` | [`src/domain/qualifikation.ts:30`](src/domain/qualifikation.ts#L30) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
 | `domain.notfallnarkose` | [`src/domain/massnahmen.ts:318`](src/domain/massnahmen.ts#L318) | Team aus RS + NotSan + NotArzt nötig |
@@ -688,15 +702,17 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:364`](src/domain/types.ts#L364) | Die Stationen, die ein Patient durchläuft |
-| `modell.diagnostik` | [`src/domain/types.ts:444`](src/domain/types.ts#L444) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.finalsichtung` | [`src/domain/types.ts:490`](src/domain/types.ts#L490) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.abschnitte` | [`src/domain/types.ts:386`](src/domain/types.ts#L386) | Die Stationen, die ein Patient durchläuft |
+| `modell.diagnostik` | [`src/domain/types.ts:507`](src/domain/types.ts#L507) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.fahrzeug` | [`src/domain/types.ts:402`](src/domain/types.ts#L402) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
+| `modell.finalsichtung` | [`src/domain/types.ts:553`](src/domain/types.ts#L553) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:300`](src/domain/types.ts#L300) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.notfallnarkose` | [`src/domain/types.ts:285`](src/domain/types.ts#L285) | Nur mit vollem Team durchführbar |
-| `modell.patient` | [`src/domain/types.ts:479`](src/domain/types.ts#L479) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:408`](src/domain/types.ts#L408) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:334`](src/domain/types.ts#L334) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.koerperregion` | [`src/domain/types.ts:322`](src/domain/types.ts#L322) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.notfallnarkose` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar |
+| `modell.patient` | [`src/domain/types.ts:542`](src/domain/types.ts#L542) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:471`](src/domain/types.ts#L471) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
@@ -772,35 +788,35 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:104`](src/state/reducer.ts#L104) | Alles, was der Übende auslösen kann |
-| `state.phase` | [`src/state/reducer.ts:35`](src/state/reducer.ts#L35) | Die Hauptzustände der Anwendung |
+| `state.aktionen` | [`src/state/reducer.ts:124`](src/state/reducer.ts#L124) | Alles, was der Übende auslösen kann |
+| `state.phase` | [`src/state/reducer.ts:43`](src/state/reducer.ts#L43) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:32`](src/state/SimulationProvider.tsx#L32) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:222`](src/state/reducer.ts#L222) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:146`](src/state/reducer.ts#L146) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:266`](src/state/reducer.ts#L266) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:173`](src/state/reducer.ts#L173) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:18`](src/state/SimulationProvider.tsx#L18) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:189`](src/state/reducer.ts#L189) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:48`](src/state/reducer.ts#L48) | Der gesamte Zustand einer laufenden Übung |
+| `state.zeit` | [`src/state/reducer.ts:219`](src/state/reducer.ts#L219) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
+| `state.zustand` | [`src/state/reducer.ts:57`](src/state/reducer.ts#L57) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1443`](src/index.css#L1443) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1827`](src/index.css#L1827) | Vollbildseite mit stehendem Kopf |
+| `stil.anhaengekarte` | [`src/index.css:1455`](src/index.css#L1455) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1839`](src/index.css#L1839) | Vollbildseite mit stehendem Kopf |
 | `stil.editor` | [`src/index.css:641`](src/index.css#L641) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3109`](src/index.css#L3109) | Die angeheftete Leiste so flach wie möglich |
-| `stil.ersteindruck` | [`src/index.css:1880`](src/index.css#L1880) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:3059`](src/index.css#L3059) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.einsatzleiste` | [`src/index.css:3263`](src/index.css#L3263) | Die angeheftete Leiste so flach wie möglich |
+| `stil.ersteindruck` | [`src/index.css:1892`](src/index.css#L1892) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:3071`](src/index.css#L3071) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:298`](src/index.css#L298) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:377`](src/index.css#L377) | Rollenwahl, Anmeldung, Beitritt und Wartebereich |
 | `stil.modi` | [`src/index.css:568`](src/index.css#L568) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1706`](src/index.css#L1706) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:2250`](src/index.css#L2250) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.patientnav` | [`src/index.css:1718`](src/index.css#L1718) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.raster` | [`src/index.css:2262`](src/index.css#L2262) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:148`](src/index.css#L148) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3179`](src/index.css#L3179) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3333`](src/index.css#L3333) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3310`](src/index.css#L3310) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3464`](src/index.css#L3464) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -835,11 +851,11 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
-| `ui.alleinspiel` | [`src/pages/SetupSeite.tsx:52`](src/pages/SetupSeite.tsx#L52) | Vor dem Start wählen, ob man allein spielt */} |
+| `ui.alleinspiel` | [`src/pages/SetupSeite.tsx:54`](src/pages/SetupSeite.tsx#L54) | Vor dem Start wählen, ob man allein spielt */} |
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:21`](src/components/Analgesieauswahl.tsx#L21) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.anmeldung` | [`src/pages/AnmeldungSeite.tsx:5`](src/pages/AnmeldungSeite.tsx#L5) | Übungsleiter-Anmeldung (Login folgt mit dem Server) |
-| `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
+| `ui.app` | [`src/App.tsx:14`](src/App.tsx#L14) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.beitritt` | [`src/pages/BeitrittSeite.tsx:5`](src/pages/BeitrittSeite.tsx#L5) | Spieler tritt mit Code und Name bei |
@@ -847,8 +863,10 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:10`](src/pages/EinsatzSeite.tsx#L10) | Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:12`](src/pages/EinsatzSeite.tsx#L12) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
+| `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
+| `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:7`](src/components/FahrzeugVerlegung.tsx#L7) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:39`](src/components/Massnahmenliste.tsx#L39) | Das einklappbare xABCDE-Akkordeon |
@@ -868,7 +886,7 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:7`](src/components/Verlegung.tsx#L7) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:13`](src/pages/WartebereichSeite.tsx#L13) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
+| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:15`](src/pages/WartebereichSeite.tsx#L15) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 
 #### vorlagen
 
@@ -898,7 +916,7 @@ _155 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           250 Tests
+npm run test           273 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
@@ -921,6 +939,7 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | Tatsächliche Bestückung (welche Medikamente in welcher Konzentration wirklich mitgeführt werden) | [Bestückung RTW Kreis Steinfurt, Stand 01.02.2025](https://www.kreis-steinfurt.de/kv_steinfurt/Kreisverwaltung/%C3%84mter/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/Rettungsmittel/RTW%20Best%C3%BCckungsliste%20Februar%202025%20(Ausbau%20WAS)%20Kreis%20Steinfurt.pdf), ÄLRD Kreis Steinfurt |
 | Überdosierungsschwellen und -wirkung der elf Medikamente jenseits der Analgesie (→ `domain.dosierung`) | LAST/Lidocain-Toxizität (EMCrit IBCC, Medscape); Amiodaron-IV-Toxizität (PMC4867816, PMC9199562); Anticholinerges Syndrom/Atropin (StatPearls NBK534798); Betablocker-Toxizität (Medscape 813342, LITFL); Midazolam-Fachinfo (FDA); Naloxon-Sicherheitsprofil/präzipitierter Entzug (PMC11089786); Nitroglycerin-Bezold-Jarisch-Reflex (AHA Circulation 54:624); Urapidil-Pharmakologie (ScienceDirect); Furosemid-Fachinfo Overdosage (Pfizer); Epinephrin-Fehldosierungsfälle (AME Case Reports, PMC6954811) |
 | Notfallnarkose (RSI): Medikamentenauswahl, Dosierung, Team | Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND, Notfall+Rettungsmedizin); Rocuronium-RSI-Dosis und Sicherheitsspanne (Notfall+Rettungsmedizin 2016, gasnarkose.at); Bestückung RTW Kreis Steinfurt Stand 01.02.2025 (Propofol, Thiopental, Rocuronium) |
+| Fahrzeugbestand je MANV-Stufe (MANV-10 bis MANV-50plus) | Vorplanung für die Bewältigung großer (medizinischer) Schadenslagen im Kreis Steinfurt (MANV-Konzept), Stand 05.12.2019, Abschnitt 3 „Verfügbare Ressourcen" und 5.1-5.5 „Alarmierungsstufen" |
 
 **Was NICHT aus der Quelle stammt:** die Zeitdauern (`dauerSek`) und die
 Sofortwirkungen (`sofortEffekt`) der Maßnahmen. Beides sind didaktische

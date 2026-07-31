@@ -1,7 +1,9 @@
 import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { Einsatzleiste } from '../components/Einsatzleiste';
+import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
+import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
 import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
@@ -42,6 +44,9 @@ export function EinsatzSeite() {
   const patienten = state.patienten.filter(
     (patient) => patient.abschnitt === state.ausgewaehlterAbschnitt,
   );
+  const fahrzeuge = state.fahrzeuge.filter(
+    (fahrzeug) => fahrzeug.abschnitt === state.ausgewaehlterAbschnitt,
+  );
 
   return (
     <div className="einsatz">
@@ -70,6 +75,31 @@ export function EinsatzSeite() {
               </div>
             )}
           </section>
+
+          {state.fahrzeuge.length > 0 && (
+            <section className="fahrzeugliste-abschnitt">
+              <h2>Fahrzeuge in diesem Abschnitt ({fahrzeuge.length})</h2>
+              {fahrzeuge.length === 0 ? (
+                <p className="leerer-abschnitt">Zurzeit kein Fahrzeug in diesem Abschnitt.</p>
+              ) : (
+                <div className="fahrzeugkarten">
+                  {fahrzeuge.map((fahrzeug) => {
+                    const besatzungNamen = fahrzeug.besatzung
+                      .map((id) => state.sitzung.spieler.find((s) => s.id === id)?.name)
+                      .filter(Boolean)
+                      .join(', ');
+                    return (
+                      <article key={fahrzeug.id} className="fahrzeugkarte">
+                        <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
+                        <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
+                        <FahrzeugVerlegung fahrzeug={fahrzeug} />
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
         </>
       )}
     </div>

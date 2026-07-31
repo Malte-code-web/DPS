@@ -14,7 +14,9 @@ export function SetupSeite() {
 
   const starten = (szenario: (typeof SZENARIEN)[number]) => {
     if (host) {
-      dispatch({ typ: 'sitzungEroeffnen', szenario });
+      // Die Sitzung öffnet sich erst nach der Fahrzeugkonfiguration
+      // (→ `ui.fahrzeugkonfiguration`), nicht direkt hier.
+      dispatch({ typ: 'szenarioFuerSitzungWaehlen', szenario });
     } else {
       dispatch({ typ: 'szenarioStarten', szenario, alleine });
     }
@@ -87,7 +89,7 @@ export function SetupSeite() {
                       : `${szenario.patienten.length} Betroffene`}
                   </span>
                   <button type="button" className="primaer" onClick={() => starten(szenario)}>
-                    {host ? 'Sitzung eröffnen' : alleine ? 'Allein starten' : 'Einsatz starten'}
+                    {host ? 'Weiter: Fahrzeuge zuweisen' : alleine ? 'Allein starten' : 'Einsatz starten'}
                   </button>
                 </div>
               </article>

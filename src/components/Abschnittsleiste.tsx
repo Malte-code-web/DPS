@@ -16,6 +16,9 @@ export function Abschnittsleiste() {
         const anzahl = state.patienten.filter(
           (patient) => patient.abschnitt === abschnitt.id,
         ).length;
+        const fahrzeugAnzahl = state.fahrzeuge.filter(
+          (fahrzeug) => fahrzeug.abschnitt === abschnitt.id,
+        ).length;
         const aktiv = state.ausgewaehlterAbschnitt === abschnitt.id;
         const farbe = abschnitt.kategorie ? ` rand-${abschnitt.kategorie}` : '';
 
@@ -29,6 +32,11 @@ export function Abschnittsleiste() {
           >
             <span className="abschnitt-name">{abschnitt.kurz}</span>
             <span className="abschnitt-anzahl">{anzahl}</span>
+            {fahrzeugAnzahl > 0 && (
+              <span className="abschnitt-fahrzeuganzahl" aria-label={`${fahrzeugAnzahl} Fahrzeuge`}>
+                Fzg {fahrzeugAnzahl}
+              </span>
+            )}
           </button>
         );
       })}

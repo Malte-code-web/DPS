@@ -1,6 +1,8 @@
+import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
+import { FUEHRUNGSROLLE_LABEL, FUEHRUNGSROLLEN, darfFahrzeugeDisponieren } from '../domain/fuehrung';
 import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
 import { useSimulation } from '../state/useSimulation';
-import type { Qualifikation } from '../domain/types';
+import type { Fuehrungsrolle, Qualifikation } from '../domain/types';
 
 const QUALIFIKATIONEN: Qualifikation[] = [
   'basis',
@@ -13,8 +15,19 @@ const QUALIFIKATIONEN: Qualifikation[] = [
 /** @anker ui.wartebereich Lobby vor dem Start - Code, Teilnehmende, Startknopf */
 export function WartebereichSeite() {
   const { state, dispatch } = useSimulation();
-  const { sitzung, szenario } = state;
+  const { sitzung, szenario, fahrzeuge } = state;
   const host = sitzung.rolle === 'uebungsleiter';
+  const eigeneFuehrungsrolle = sitzung.spieler.find((s) => s.id === sitzung.eigeneId)?.fuehrungsrolle;
+  const darfDisponieren = darfFahrzeugeDisponieren(sitzung.aktiv, sitzung.rolle, eigeneFuehrungsrolle);
+
+  const umschalten = (fahrzeugId: string, spielerId: string) => {
+    const fahrzeug = fahrzeuge.find((f) => f.id === fahrzeugId);
+    if (!fahrzeug) return;
+    const besatzung = fahrzeug.besatzung.includes(spielerId)
+      ? fahrzeug.besatzung.filter((id) => id !== spielerId)
+      : [...fahrzeug.besatzung, spielerId];
+    dispatch({ typ: 'fahrzeugBesatzungGesetzt', fahrzeugId, besatzung });
+  };
 
   return (
     <main className="setup">
@@ -54,7 +67,8 @@ export function WartebereichSeite() {
           <p className="hinweis">
             Stelle deine eigene fachliche Qualifikation ein - sichtbar für alle. Maßnahmen darüber
             sind im Einsatz gesperrt, bis jemand mit ausreichender Qualifikation sie für den
-            Patienten freigibt.
+            Patienten freigibt. Die Führungsrolle teilt die Übungsleitung zu, nicht jede Person
+            selbst.
           </p>
         )}
         {sitzung.spieler.length === 0 ? (
@@ -93,10 +107,79 @@ export function WartebereichSeite() {
                       {QUALIFIKATION_VOLLNAME[spieler.qualifikation]}
                     </span>
                   )}
+                  {host ? (
+                    <select
+                      className="spieler-fuehrungsrolle-wahl"
+                      aria-label={`Führungsrolle von ${spieler.name}`}
+                      value={spieler.fuehrungsrolle ?? 'keine'}
+                      onChange={(event) =>
+                        dispatch({
+                          typ: 'spielerFuehrungsrolleSetzen',
+                          spielerId: spieler.id,
+                          rolle: event.target.value as Fuehrungsrolle,
+                        })
+                      }
+                    >
+                      {FUEHRUNGSROLLEN.map((rolle) => (
+                        <option key={rolle} value={rolle}>
+                          {FUEHRUNGSROLLE_LABEL[rolle]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    (spieler.fuehrungsrolle ?? 'keine') !== 'keine' && (
+                      <span className="spieler-fuehrungsrolle">
+                        {FUEHRUNGSROLLE_LABEL[spieler.fuehrungsrolle ?? 'keine']}
+                      </span>
+                    )
+                  )}
                 </li>
               );
             })}
           </ul>
+        )}
+
+        {fahrzeuge.length > 0 && (
+          <>
+            <h2>Fahrzeuge &amp; Besatzung ({fahrzeuge.length})</h2>
+            {!darfDisponieren && (
+              <p className="hinweis">
+                Besatzung zuweisen dürfen die Übungsleitung oder eine Person mit Führungsrolle ab
+                Zugführer.
+              </p>
+            )}
+            <ul className="fahrzeugliste">
+              {fahrzeuge.map((fahrzeug) => {
+                const besatzungNamen = fahrzeug.besatzung
+                  .map((id) => sitzung.spieler.find((s) => s.id === id)?.name)
+                  .filter(Boolean)
+                  .join(', ');
+                return (
+                  <li key={fahrzeug.id} className="fahrzeug-besatzung-zeile">
+                    <span className="fahrzeug-typ">{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</span>
+                    {darfDisponieren ? (
+                      <div className="besatzung-auswahl">
+                        {sitzung.spieler.map((spieler) => (
+                          <label key={spieler.id} className="besatzung-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={fahrzeug.besatzung.includes(spieler.id)}
+                              onChange={() => umschalten(fahrzeug.id, spieler.id)}
+                            />
+                            {spieler.name}
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="fahrzeug-besatzung-namen">
+                        {besatzungNamen || 'keine Besatzung'}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
         {host ? (

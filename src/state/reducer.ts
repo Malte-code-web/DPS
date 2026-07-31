@@ -1,7 +1,10 @@
 import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
 import { DIAGNOSTIK } from '../domain/diagnostik';
+import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
+import { fahrzeugeFuerStufe } from '../domain/manvStufen';
+import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SICHTUNGSDAUER_SEK,
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -18,6 +21,7 @@ import type { Massnahmenrechte } from '../domain/massnahmenrechte';
 import {
   KEINE_SITZUNG,
   erzeugeCode,
+  erzeugeId,
   mitSpieler,
   ohneSpieler,
 } from '../domain/sitzung';
@@ -25,6 +29,10 @@ import type { Rolle, Sitzungszustand, Spieler } from '../domain/sitzung';
 import type {
   DiagnostikId,
   Einsatzabschnitt,
+  Fahrzeug,
+  FahrzeugTyp,
+  FahrzeugVorlage,
+  Fuehrungsrolle,
   MassnahmeId,
   Patient,
   Qualifikation,
@@ -39,6 +47,7 @@ export type Phase =
   | 'anmeldung'
   | 'beitritt'
   | 'massnahmenrechte'
+  | 'fahrzeugkonfiguration'
   | 'wartebereich'
   | 'setup'
   | 'einsatz'
@@ -74,6 +83,15 @@ export interface SimulationState {
    */
   massnahmenrechte: Massnahmenrechte;
   /**
+   * Fahrzeug-Vorlagen, die die Übungsleitung vor Sitzungsbeginn zusammenstellt
+   * (→ `ui.fahrzeugkonfiguration`) - per MANV-Stufe oder einzeln. Nur während
+   * der Phase `'fahrzeugkonfiguration'` relevant; danach materialisiert in
+   * `fahrzeuge`.
+   */
+  fahrzeugWunsch: FahrzeugVorlage[];
+  /** Laufzeit-Fahrzeuge der aktiven Sitzung (→ `modell.fahrzeug`). Leer im Einzelspiel. */
+  fahrzeuge: Fahrzeug[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -98,6 +116,8 @@ export const ANFANGSZUSTAND: SimulationState = {
   alleine: false,
   sitzung: KEINE_SITZUNG,
   massnahmenrechte: standardMassnahmenrechte(),
+  fahrzeugWunsch: [],
+  fahrzeuge: [],
   schnappschussFolge: 0,
 };
 
@@ -132,11 +152,18 @@ export type SimulationAction =
   | { typ: 'anmeldungAbschliessen'; name: string; eigeneId: string }
   | { typ: 'massnahmenrechteSetzen'; rechte: Massnahmenrechte }
   | { typ: 'massnahmenrechteAbgeschlossen' }
-  | { typ: 'sitzungEroeffnen'; szenario: Szenario }
+  | { typ: 'szenarioFuerSitzungWaehlen'; szenario: Szenario }
+  | { typ: 'manvStufeGewaehlt'; stufe: ManvStufeId }
+  | { typ: 'fahrzeugHinzugefuegt'; fahrzeugTyp: FahrzeugTyp }
+  | { typ: 'fahrzeugEntfernt'; fahrzeugId: string }
+  | { typ: 'fahrzeugkonfigurationAbgeschlossen' }
   | { typ: 'spielerBeitreten'; code: string; name: string; eigeneId: string }
   | { typ: 'spielerHinzugefuegt'; spieler: Spieler }
   | { typ: 'spielerEntfernt'; spielerId: string }
   | { typ: 'spielerQualifikationSetzen'; spielerId: string; qualifikation: Qualifikation }
+  | { typ: 'spielerFuehrungsrolleSetzen'; spielerId: string; rolle: Fuehrungsrolle }
+  | { typ: 'fahrzeugBesatzungGesetzt'; fahrzeugId: string; besatzung: string[] }
+  | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -157,6 +184,8 @@ export interface Schnappschuss {
   laufend: boolean;
   geschwindigkeit: number;
   patienten: Patient[];
+  /** Laufzeit-Fahrzeuge - erst ab der Phase `'wartebereich'` befüllt. */
+  fahrzeuge: Fahrzeug[];
   spieler: Spieler[];
   status: Sitzungszustand['status'];
   /** Damit alle Clients dieselben Sperren durchsetzen, nicht nur der Host. */
@@ -179,6 +208,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     geschwindigkeit: state.geschwindigkeit,
     folge,
     patienten: state.patienten,
+    fahrzeuge: state.fahrzeuge,
     spieler: state.sitzung.spieler,
     status: state.sitzung.status,
     massnahmenrechte: state.massnahmenrechte,
@@ -215,6 +245,20 @@ function mitPatient(
     ...state,
     patienten: state.patienten.map((patient) =>
       patient.id === patientId ? aenderung(patient) : patient,
+    ),
+  };
+}
+
+/** Wendet eine Aenderung auf genau ein Fahrzeug an - Pendant zu `mitPatient`. */
+function mitFahrzeug(
+  state: SimulationState,
+  fahrzeugId: string,
+  aenderung: (fahrzeug: Fahrzeug) => Fahrzeug,
+): SimulationState {
+  return {
+    ...state,
+    fahrzeuge: state.fahrzeuge.map((fahrzeug) =>
+      fahrzeug.id === fahrzeugId ? aenderung(fahrzeug) : fahrzeug,
     ),
   };
 }
@@ -408,7 +452,39 @@ export function simulationReducer(
     case 'massnahmenrechteAbgeschlossen':
       return { ...state, phase: 'setup' };
 
-    case 'sitzungEroeffnen': {
+    // --- Fahrzeugkonfiguration (→ `domain.manvstufen`, `ui.fahrzeugkonfiguration`) ---
+    // Zwischen Szenariowahl und Sitzungseröffnung: die Sitzung (Code,
+    // Spielerliste) existiert hier noch nicht - erst
+    // `fahrzeugkonfigurationAbgeschlossen` öffnet sie, wie zuvor
+    // `sitzungEroeffnen` es direkt beim Szenario-Klick tat.
+    case 'szenarioFuerSitzungWaehlen':
+      return {
+        ...state,
+        phase: 'fahrzeugkonfiguration',
+        szenario: action.szenario,
+        fahrzeugWunsch: action.szenario.fahrzeuge ?? [],
+      };
+
+    case 'manvStufeGewaehlt':
+      return { ...state, fahrzeugWunsch: fahrzeugeFuerStufe(action.stufe) };
+
+    case 'fahrzeugHinzugefuegt':
+      return {
+        ...state,
+        fahrzeugWunsch: [
+          ...state.fahrzeugWunsch,
+          { id: erzeugeId(), typ: action.fahrzeugTyp },
+        ],
+      };
+
+    case 'fahrzeugEntfernt':
+      return {
+        ...state,
+        fahrzeugWunsch: state.fahrzeugWunsch.filter((f) => f.id !== action.fahrzeugId),
+      };
+
+    case 'fahrzeugkonfigurationAbgeschlossen': {
+      if (!state.szenario) return state;
       const code = erzeugeCode();
       const selbst: Spieler = {
         id: state.sitzung.eigeneId ?? 'leiter',
@@ -423,7 +499,8 @@ export function simulationReducer(
         massnahmenrechte: state.massnahmenrechte,
         modus: 'digital',
         phase: 'wartebereich',
-        szenario: action.szenario,
+        szenario: state.szenario,
+        fahrzeuge: state.fahrzeugWunsch.map(fahrzeugAusVorlage),
         sitzung: {
           aktiv: true,
           rolle: 'uebungsleiter',
@@ -482,6 +559,38 @@ export function simulationReducer(
         },
       };
 
+    case 'spielerFuehrungsrolleSetzen':
+      // Anders als die Qualifikation (jede Person wählt sich selbst) wird die
+      // Führungsrolle zugeteilt - Aufruf ist deshalb nur der Übungsleitung
+      // sinnvoll zugänglich (→ `ui.wartebereich`), im Reducer selbst wie
+      // gewohnt nicht zusätzlich geprüft (kooperatives Übungstool).
+      return {
+        ...state,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? { ...spieler, fuehrungsrolle: action.rolle }
+              : spieler,
+          ),
+        },
+      };
+
+    case 'fahrzeugBesatzungGesetzt':
+      return mitFahrzeug(state, action.fahrzeugId, (fahrzeug) => ({
+        ...fahrzeug,
+        besatzung: action.besatzung,
+      }));
+
+    case 'fahrzeugVerlegen': {
+      const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
+      if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return state;
+      return zeitVergehen(
+        mitFahrzeug(state, action.fahrzeugId, (eintrag) => verlegeFahrzeug(eintrag, action.ziel)),
+        VERLEGUNGSDAUER_SEK,
+      );
+    }
+
     case 'verbindungsfehlerSetzen':
       return { ...state, sitzung: { ...state.sitzung, verbindungsfehler: action.meldung } };
 
@@ -520,6 +629,7 @@ export function simulationReducer(
         laufend: s.laufend,
         geschwindigkeit: s.geschwindigkeit,
         patienten: s.patienten,
+        fahrzeuge: s.fahrzeuge,
         massnahmenrechte: s.massnahmenrechte,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,

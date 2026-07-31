@@ -240,6 +240,28 @@ export type MassnahmeId =
  */
 export type Qualifikation = 'basis' | 'rettungshelfer' | 'rettungssanitaeter' | 'notsan' | 'notarzt';
 
+/**
+ * Organisatorische Führungsebene, unabhängig von der fachlichen Qualifikation.
+ * @anker modell.fuehrung Führung ist eine zweite Ebene neben der Qualifikation
+ *
+ * Nicht „darf mehr behandeln", sondern „darf einteilen": Truppführer (`truppfuehrer`)
+ * und Gruppenführer (`gruppenfuehrer`) führen kleine Teileinheiten, Zugführer
+ * (`zugfuehrer`) den ganzen Zug - erst ab hier darf disponiert werden (→
+ * `domain.fuehrung`). Organisatorischer Leiter Rettungsdienst (`orgl_rd`) und
+ * Leitende Notärztin/Leitender Notarzt (`lna`) sind reale Spitzenfunktionen
+ * ohne Rangfolge zueinander (medizinische vs. organisatorische Leitung) -
+ * beide stehen im selben, höchsten Rang. `keine` ist der Standard: eine
+ * Führungsrolle wird von der Übungsleitung zugeteilt, nicht wie die
+ * Qualifikation selbst gewählt (→ `sitzung.modell`).
+ */
+export type Fuehrungsrolle =
+  | 'keine'
+  | 'truppfuehrer'
+  | 'gruppenfuehrer'
+  | 'zugfuehrer'
+  | 'orgl_rd'
+  | 'lna';
+
 /** Handgriff, invasiver Eingriff oder Medikament. */
 export type Massnahmenart = 'basis' | 'invasiv' | 'medikament';
 
@@ -375,6 +397,47 @@ export type Einsatzabschnitt =
   | 'zelt_gruen'
   | 'ausgangssichtung'
   | 'transport';
+
+/**
+ * @anker modell.fahrzeug Fahrzeuge durchlaufen dieselben Stationen wie Patienten
+ *
+ * Kernfahrzeuge nach dem MANV-Konzept Kreis Steinfurt (Rettungswagen,
+ * Notarzt-Einsatzfahrzeug, Krankentransportwagen, Gerätewagen Rettungsdienst/
+ * Sanitätsdienst, Abrollbehälter MANV, Einsatzleitwagen 2, Gerätewagen
+ * Logistik) - Einsatzeinheiten, Patiententransportzüge und Behandlungs-/
+ * Betreuungsplatz-Bereitschaften sind bewusst kein eigenes Fahrzeug-Objekt,
+ * sondern bleiben spätere Erweiterung (→ ROADMAP.md, Baustein 4).
+ */
+export type FahrzeugTyp =
+  | 'rtw'
+  | 'nef'
+  | 'ktw'
+  | 'gw_rett'
+  | 'gw_san'
+  | 'ab_manv'
+  | 'elw2'
+  | 'gw_log';
+
+/** Statische Vorlage - Teil eines `Szenario`, vor Sitzungsbeginn bearbeitbar. */
+export interface FahrzeugVorlage {
+  id: string;
+  typ: FahrzeugTyp;
+  /** Funkrufname oder Kennzeichen - rein informativ. */
+  kennung?: string;
+}
+
+/**
+ * Laufzeit-Fahrzeug: `FahrzeugVorlage` plus aktueller Standort und Besatzung.
+ * Durchläuft denselben Abschnitts-Graphen wie `Patient.abschnitt`
+ * (→ `domain.fahrzeuge`), hat aber keine tickende Simulation - anders als
+ * Patienten entstehen Fahrzeuge daher schon beim Öffnen der Sitzung, nicht
+ * erst beim Start der Übung.
+ */
+export interface Fahrzeug extends FahrzeugVorlage {
+  abschnitt: Einsatzabschnitt;
+  /** Spieler-IDs der zugewiesenen Besatzung (→ `sitzung.modell`). */
+  besatzung: string[];
+}
 
 /** An welcher Stelle im Ablauf eine Sichtungsentscheidung gefallen ist. */
 export type Sichtungsstelle =
@@ -519,4 +582,10 @@ export interface Szenario {
   /** Kurze Einsatzbeschreibung für die Übungsleitung. */
   einsatzhinweis: string;
   patienten: PatientVorlage[];
+  /**
+   * Vorschlag für den Fahrzeugbestand - die Übungsleitung passt ihn vor
+   * Sitzungsbeginn an (→ `ui.fahrzeugkonfiguration`). Optional, damit
+   * bestehende Szenariodateien gültig bleiben.
+   */
+  fahrzeuge?: FahrzeugVorlage[];
 }

@@ -55,7 +55,8 @@ describe('Lobby-Fluss der Übungsleitung', () => {
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
       { typ: 'massnahmenrechteAbgeschlossen' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
     );
     expect(state.phase).toBe('wartebereich');
     expect(state.sitzung.aktiv).toBe(true);
@@ -65,6 +66,156 @@ describe('Lobby-Fluss der Übungsleitung', () => {
     // Der Übungsleiter steht selbst in der Teilnehmerliste.
     expect(state.sitzung.spieler).toHaveLength(1);
     expect(state.sitzung.spieler[0]).toMatchObject({ id: 'leiter-1', rolle: 'uebungsleiter' });
+  });
+});
+
+describe('Fahrzeugkonfiguration vor der Sitzungseröffnung', () => {
+  it('geht nach der Szenariowahl in die Fahrzeugkonfiguration, ohne die Sitzung zu öffnen', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+    );
+    expect(state.phase).toBe('fahrzeugkonfiguration');
+    expect(state.szenario?.id).toBe(busunfall.id);
+    expect(state.sitzung.aktiv).toBe(false);
+    expect(state.sitzung.code).toBeNull();
+  });
+
+  it('füllt den Fahrzeugwunsch per MANV-Stufe und lässt ihn manuell nachjustieren', () => {
+    const nachStufe = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+    );
+    expect(nachStufe.fahrzeugWunsch.filter((f) => f.typ === 'rtw')).toHaveLength(3);
+
+    const hinzugefuegt = simulationReducer(nachStufe, {
+      typ: 'fahrzeugHinzugefuegt',
+      fahrzeugTyp: 'gw_san',
+    });
+    expect(hinzugefuegt.fahrzeugWunsch).toHaveLength(nachStufe.fahrzeugWunsch.length + 1);
+
+    const einesEntfernt = simulationReducer(hinzugefuegt, {
+      typ: 'fahrzeugEntfernt',
+      fahrzeugId: hinzugefuegt.fahrzeugWunsch.at(-1)!.id,
+    });
+    expect(einesEntfernt.fahrzeugWunsch).toHaveLength(nachStufe.fahrzeugWunsch.length);
+  });
+
+  it('materialisiert den Fahrzeugwunsch beim Abschluss und öffnet erst dann die Sitzung', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    expect(state.phase).toBe('wartebereich');
+    expect(state.sitzung.aktiv).toBe(true);
+    expect(state.sitzung.code).toMatch(/^[A-Z0-9]{5}$/);
+    expect(state.fahrzeuge).toHaveLength(7); // 3 RTW + 2 NEF + 1 KTW + 1 GW-Rett
+    expect(state.fahrzeuge.every((f) => f.abschnitt === 'schadensstelle' && f.besatzung.length === 0)).toBe(
+      true,
+    );
+  });
+});
+
+describe('Führungsrolle und Fahrzeug-Besatzung im Wartebereich', () => {
+  function sitzungMitSpieler(): SimulationState {
+    const geoeffnet = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    return simulationReducer(geoeffnet, {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 'anna', name: 'Anna', rolle: 'spieler', qualifikation: 'notsan' },
+    });
+  }
+
+  it('teilt eine Führungsrolle zu - anders als die Qualifikation nicht selbst gewählt', () => {
+    const state = sitzungMitSpieler();
+    expect(state.sitzung.spieler.find((s) => s.id === 'anna')?.fuehrungsrolle).toBeUndefined();
+
+    const zugewiesen = simulationReducer(state, {
+      typ: 'spielerFuehrungsrolleSetzen',
+      spielerId: 'anna',
+      rolle: 'zugfuehrer',
+    });
+    expect(zugewiesen.sitzung.spieler.find((s) => s.id === 'anna')?.fuehrungsrolle).toBe('zugfuehrer');
+  });
+
+  it('weist einem Fahrzeug Besatzung zu', () => {
+    const state = sitzungMitSpieler();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+
+    const besetzt = simulationReducer(state, {
+      typ: 'fahrzeugBesatzungGesetzt',
+      fahrzeugId,
+      besatzung: ['anna', 'leiter-1'],
+    });
+    expect(besetzt.fahrzeuge.find((f) => f.id === fahrzeugId)?.besatzung).toEqual(['anna', 'leiter-1']);
+    // Andere Fahrzeuge bleiben unberührt.
+    expect(besetzt.fahrzeuge.find((f) => f.id !== fahrzeugId)?.besatzung).toEqual([]);
+  });
+});
+
+describe('Fahrzeug-Verlegung im Einsatz', () => {
+  it('verlegt ein Fahrzeug entlang desselben Abschnitts-Graphen wie Patienten', () => {
+    const vorbereitet = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      { typ: 'sitzungStarten' },
+    );
+    const fahrzeugId = vorbereitet.fahrzeuge[0]!.id;
+    expect(vorbereitet.fahrzeuge[0]!.abschnitt).toBe('schadensstelle');
+
+    const verlegt = simulationReducer(vorbereitet, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'eingangssichtung',
+    });
+    expect(verlegt.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('eingangssichtung');
+    // Wie jede Zeitkosten-Aktion läuft die Uhr für alle mit.
+    expect(verlegt.zeitSek).toBeGreaterThan(vorbereitet.zeitSek);
+  });
+
+  it('lehnt eine nicht erlaubte Verlegung ab (Graph aus abschnitte.ts)', () => {
+    const vorbereitet = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      { typ: 'sitzungStarten' },
+    );
+    const fahrzeugId = vorbereitet.fahrzeuge[0]!.id;
+    // Von der Schadensstelle geht es nur zur Eingangssichtung, nicht direkt ins Zelt.
+    const abgelehnt = simulationReducer(vorbereitet, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'zelt_rot',
+    });
+    expect(abgelehnt.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('schadensstelle');
   });
 });
 
@@ -108,7 +259,8 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
       { typ: 'massnahmenrechteSetzen', rechte: angepasst },
       { typ: 'massnahmenrechteAbgeschlossen' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
     );
     expect(state.massnahmenrechte.tourniquet).toEqual({
       qualifikation: 'basis',
@@ -124,7 +276,8 @@ describe('Teilnehmerverwaltung im Wartebereich', () => {
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
       { typ: 'massnahmenrechteAbgeschlossen' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
     );
   }
 
@@ -181,7 +334,8 @@ describe('Host-autoritative Synchronisation', () => {
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
         { typ: 'massnahmenrechteAbgeschlossen' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -309,7 +463,8 @@ describe('Nachhol-Takt aus dem Hintergrund', () => {
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
         { typ: 'massnahmenrechteAbgeschlossen' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -352,7 +507,8 @@ describe('schnappschussAus enthält nur geteilte Scheiben', () => {
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
         { typ: 'massnahmenrechteAbgeschlossen' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
       ),
       { typ: 'sitzungStarten' },
     );
@@ -379,7 +535,8 @@ describe('Fachliche Qualifikation im Mehrspieler', () => {
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
       { typ: 'massnahmenrechteAbgeschlossen' },
-      { typ: 'sitzungEroeffnen', szenario: busunfall },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
     );
     return simulationReducer(host, {
       typ: 'spielerHinzugefuegt',
@@ -422,7 +579,8 @@ describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
         { typ: 'massnahmenrechteAbgeschlossen' },
-        { typ: 'sitzungEroeffnen', szenario: busunfall },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
       ),
       { typ: 'sitzungStarten' },
     );

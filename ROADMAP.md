@@ -112,19 +112,26 @@ Baustein 3 (Führung).
 Führung ist eine **zweite, eigene Ebene** neben der fachlichen Qualifikation –
 nicht „darf mehr behandeln", sondern **andere Rechte**.
 
-- 🟡 **Geplant:** Pro Spieler eine Führungsrolle (z. B. TrFü / GrFü / ZgFü /
-  OrgL / LNA) mit eigenen Befugnissen:
-  - Kräfte und Patienten zuweisen,
-  - Einsatzabschnitte eröffnen und zuordnen,
-  - Transporte freigeben,
-  - Fahrzeuge und Material disponieren (→ Baustein 4).
+- 🟡 **Teilweise fertig.** Pro Spieler eine Führungsrolle (`Fuehrungsrolle`:
+  `truppfuehrer` / `gruppenfuehrer` / `zugfuehrer` / `orgl_rd` / `lna`, Rang
+  aufsteigend - OrgL RD und LNA teilen sich bewusst denselben Spitzenrang, da
+  beide reale, gleichrangige Spitzenfunktionen ohne Rangfolge zueinander
+  sind). Anders als die Qualifikation (jede Person stellt sie selbst ein)
+  **weist die Übungsleitung die Führungsrolle zu** - passend zum realen
+  Vorbild einer Kommandobenennung.
+  - ✅ **Fahrzeuge und Material disponieren:** umgesetzt (→ Baustein 4). Ab
+    Zugführer aufwärts darf Besatzung zugewiesen und ein Fahrzeug zwischen
+    Einsatzabschnitten verlegt werden; die Übungsleitung darf das immer,
+    unabhängig von einer eigenen Führungsrolle.
+  - 💤 **Noch offen:** Kräfte/Patienten gezielt zuweisen, Einsatzabschnitte
+    eröffnen und zuordnen, Transporte freigeben - als Konzept
+    (`Fuehrungsrolle`/`erfuelltFuehrung`) bereits vorhanden, aber noch nicht
+    auf die bestehende, ungegatete Patientenverlegung angewendet.
+  - Enforcement wie bei Baustein 2 bewusst nur clientseitig.
 - So behandelt ein NotSan ohne Führungsrolle, teilt aber keine Kräfte ein; eine
   OrgL koordiniert, ohne selbst zu intubieren.
 
 **Abhängigkeit:** Baustein 1; sinnvoll gemeinsam mit Baustein 2 gedacht.
-
-**Braucht von außen:** die Führungsrollen und ihre Entscheidungsrechte nach eurem
-Konzept.
 
 ---
 
@@ -137,17 +144,31 @@ Listen und Konzepten.
   modelliert, die Maßnahmen aufbrauchen. Der Mechanismus für Voraussetzungen
   existiert im Kern bereits (`benoetigtEinesVon`, etwa i.v.-Zugang vor
   i.v.-Medikament); ein Verbrauchsfeld ergänzt ihn.
-- 💤 **Fahrzeuge** (RTW, NEF, GW-San …): tragen Kapazität (Transportplätze je
-  Kategorie), Material und Personal mit Qualifikation an Bord. Sie verbinden sich
-  mit dem bestehenden **Transport-Abschnitt**: Aus „Patient verlegen" wird
-  „Patient mit diesem Fahrzeug abtransportieren" – mit Fahrzeit und begrenzten
-  Plätzen. Knappheit wird spürbar.
+- 🟡 **Fahrzeuge** (RTW, NEF, KTW, GW-Rett, GW-San, AB-MANV, ELW 2, GW-Log) als
+  eigene, einzeln zuweisbare Objekte, datengetrieben aus dem MANV-Konzept
+  Kreis Steinfurt (Stand 05.12.2019, Abschnitt 3 „Verfügbare Ressourcen" und
+  5.1–5.5 „Alarmierungsstufen"):
+  - Die Übungsleitung wählt vor Sitzungsbeginn entweder eine MANV-Stufe
+    (MANV-10 bis MANV-50plus - füllt den Fahrzeugbestand mit einem Klick nach
+    der Kreis-Steinfurt-Tabelle) oder stellt Fahrzeuge einzeln zusammen;
+    beides lässt sich danach von Hand nachjustieren.
+  - Besatzung (Spieler-IDs) wird schon im Wartebereich pro Fahrzeug
+    zugewiesen, durch die Übungsleitung oder eine Person mit Führungsrolle ab
+    Zugführer.
+  - In der laufenden Übung verlegt ein Zugführer (oder die Übungsleitung) ein
+    Fahrzeug zwischen Einsatzabschnitten - über dieselbe Abschnitts-Graph-Logik
+    wie die bestehende Patientenverlegung, ohne eigenen Graphen.
+  - Bewusst nur die Kernfahrzeuge, kein EE/PTZ-10/BHP-B 50/BTP-B 500/
+    SEG-Notärzte - das bleibt Ausbau.
+  - 💤 **Noch offen:** Kapazität (Transportplätze je Kategorie) und die
+    Verbindung mit dem Transport-Abschnitt: Aus „Patient verlegen" wird
+    „Patient mit diesem Fahrzeug abtransportieren" – mit Fahrzeit und
+    begrenzten Plätzen. `Verlegung.tsx`/`patientVerlegen` bleiben bewusst
+    unangetastet, Fahrzeuge und Patienten laufen als zwei unabhängige Listen
+    nebeneinander her.
 
 **Abhängigkeit:** wirkt am stärksten mit Baustein 2/3 (wer disponiert, wer hat
 welche Qualifikation an Bord).
-
-**Braucht von außen:** reale Material- und Fahrzeuglisten (als Tabelle/Konzept) –
-sie werden zu Datendateien.
 
 ---
 
@@ -176,8 +197,10 @@ Jeder Schritt ist eigenständig nutzbar:
 
 1. **Mehrspieler fertig** (Stufe 3 folgt) – Fundament, an dem Qualifikation und
    Führung hängen. Stufe 1 und 2 sind verifiziert im Einsatz.
-2. **Qualifikation** ✅ fertig · **Führung** offen – als Nächstes dran.
-3. **Material/Logistik** – erst Verbrauchsgüter, dann Fahrzeuge/Transport.
+2. **Qualifikation** ✅ fertig · **Führung** 🟡 teilweise (Fahrzeugdisposition
+   fertig, Kräfte-/Patientenzuweisung und Transportfreigabe offen).
+3. **Material/Logistik** – Fahrzeuge 🟡 teilweise fertig (Zuweisung, Besatzung,
+   Verlegung), Kapazität/Transport-Kopplung offen; Verbrauchsgüter offen.
 
 ## Ehrliche Grenzen
 
@@ -197,5 +220,10 @@ Nicht „geht nicht", sondern „kostet":
 
 - **Supabase-Projekt** (kostenlos, EU-Region) – eingerichtet und in Betrieb
   seit Stufe 2. Für Stufe 3 (Übungsleiter-Konten) reicht dasselbe Projekt.
-- **Führungsrollen** und ihre Entscheidungsrechte – für Baustein 3.
-- **Material- und Fahrzeuglisten** – für Baustein 4.
+- **Führungsrollen und Entscheidungsrechte:** Ränge (TrFü/GrFü/ZgFü/OrgL RD/
+  LNA) und Fahrzeugdisposition sind nach eurem Konzept umgesetzt; Kräfte-/
+  Patientenzuweisung und Transportfreigabe brauchen noch euer Konzept – für
+  den Rest von Baustein 3.
+- **Fahrzeuglisten:** MANV-Konzept Kreis Steinfurt liefert bereits die
+  Kernfahrzeuge je MANV-Stufe. **Verbrauchsgüterlisten** fehlen noch – für den
+  Rest von Baustein 4.

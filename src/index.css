@@ -1147,6 +1147,18 @@ button.gefahr {
   border-color: color-mix(in srgb, var(--sk-farbe, var(--akzent)) 55%, transparent);
 }
 
+.abschnitt-fahrzeuganzahl {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .leerer-abschnitt {
   padding: 2rem 0;
   color: var(--text-leise);
@@ -3095,6 +3107,148 @@ tbody tr:last-child td {
     background: color-mix(in srgb, var(--sk-farbe) 26%, var(--bg-panel-hoch));
     border-color: color-mix(in srgb, var(--sk-farbe) 65%, transparent);
   }
+}
+
+/* --- Fahrzeuge & Führungsebene (→ ui.fahrzeugkonfiguration, ui.wartebereich) --- */
+
+.manvstufen-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+
+.manvstufen-liste button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.manvstufe-label {
+  font-weight: 600;
+}
+
+.manvstufe-bereich {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+}
+
+.fahrzeug-hinzufuegen {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.fahrzeug-hinzufuegen select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.fahrzeug-liste,
+.fahrzeugliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fahrzeug-zeile,
+.fahrzeug-besatzung-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.fahrzeug-info {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  color: var(--text-leise);
+}
+
+.fahrzeug-typ {
+  font-weight: 600;
+}
+
+.besatzung-auswahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  flex-basis: 100%;
+}
+
+.besatzung-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.fahrzeug-besatzung-namen {
+  font-size: 0.82rem;
+  color: var(--text-leise);
+}
+
+.spieler-fuehrungsrolle-wahl,
+.spieler-fuehrungsrolle {
+  flex-basis: 100%;
+}
+
+@media (min-width: 480px) {
+  .spieler-fuehrungsrolle-wahl,
+  .spieler-fuehrungsrolle {
+    flex-basis: auto;
+  }
+}
+
+.spieler-fuehrungsrolle-wahl {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.spieler-fuehrungsrolle {
+  font-size: 0.82rem;
+  color: var(--akzent);
+  white-space: nowrap;
+}
+
+.fahrzeugliste-abschnitt {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.fahrzeugkarten {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.8rem;
+}
+
+.fahrzeugkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem 0.9rem;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
 }
 
 /* --- Responsiv ---------------------------------------------------- */

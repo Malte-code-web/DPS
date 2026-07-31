@@ -1,4 +1,4 @@
-import type { Qualifikation } from './types';
+import type { Fuehrungsrolle, Qualifikation } from './types';
 
 /**
  * @anker sitzung.modell Rollen, Spieler und Code einer gemeinsamen Sitzung
@@ -22,6 +22,12 @@ export interface Spieler {
    * und lässt sich dort vor dem Start anheben.
    */
   qualifikation: Qualifikation;
+  /**
+   * Organisatorische Führungsrolle (→ `modell.fuehrung`), von der
+   * Übungsleitung zugeteilt - anders als die Qualifikation nicht selbst
+   * gewählt. Fehlt das Feld (z. B. bei älteren Schnappschüssen), gilt `'keine'`.
+   */
+  fuehrungsrolle?: Fuehrungsrolle;
 }
 
 /** Der lokale Sitzungszustand eines Clients (teils geteilt, teils nur hier). */

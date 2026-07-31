@@ -2,6 +2,7 @@ import { AnmeldungSeite } from './pages/AnmeldungSeite';
 import { BeitrittSeite } from './pages/BeitrittSeite';
 import { DebriefingSeite } from './pages/DebriefingSeite';
 import { EinsatzSeite } from './pages/EinsatzSeite';
+import { FahrzeugkonfigurationSeite } from './pages/FahrzeugkonfigurationSeite';
 import { MassnahmenrechteSeite } from './pages/MassnahmenrechteSeite';
 import { RolleSeite } from './pages/RolleSeite';
 import { SetupSeite } from './pages/SetupSeite';
@@ -23,6 +24,8 @@ export function App() {
       return <BeitrittSeite />;
     case 'massnahmenrechte':
       return <MassnahmenrechteSeite />;
+    case 'fahrzeugkonfiguration':
+      return <FahrzeugkonfigurationSeite />;
     case 'wartebereich':
       return <WartebereichSeite />;
     case 'setup':

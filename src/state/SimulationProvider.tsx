@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { erzeugeSitzungstransport } from '../net/transportAuswahl';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
+import { erzeugeId } from '../domain/sitzung';
 import {
   ladeEigeneSzenarien,
   ladeMassnahmenrechte,
@@ -18,6 +19,18 @@ import type { Schnappschuss, SimulationAction } from './reducer';
  * @anker state.uhr Der Taktgeber der laufenden Simulation
  */
 const TAKT_MS = 500;
+
+/**
+ * Ein Realtime-Broadcast ist reines Fire-and-Forget - anders als bei einem
+ * kompletten Verbindungsabbruch (→ `net.supabase`) bleibt ein einzelner
+ * verlorener `aktion`-Broadcast dabei unsichtbar: Der Kanal meldet keinen
+ * Fehler, die Nachricht kommt einfach nie an. Ohne Bestätigung sah eine
+ * Maßnahme eines Spielers dann so aus, als hätte sie nichts bewirkt, während
+ * der Host (er wendet lokal immer direkt an) nie betroffen war.
+ * @anker state.aktionsbestaetigung Bestätigte Aktionen mit Wiederholung
+ */
+const AKTION_BESTAETIGUNG_TIMEOUT_MS = 2500;
+const AKTION_BESTAETIGUNG_MAX_VERSUCHE = 5;
 
 /** Aktionen, die jeder Client für sich behält - Navigation und das Verlassen. */
 function istLokaleAktion(action: SimulationAction): boolean {
@@ -72,6 +85,32 @@ export function SimulationProvider({
   const istSpieler = sitzung.aktiv && sitzung.rolle === 'spieler';
   const istHost = sitzung.aktiv && sitzung.rolle === 'uebungsleiter';
 
+  // Spieler-Seite (→ `state.aktionsbestaetigung`): je gesendeter, noch nicht
+  // bestätigter Aktion ein Wiederholungs-Timer. Host-Seite: bereits
+  // angewendete Nachrichten-IDs, damit eine Wiederholung nicht doppelt wirkt
+  // (z. B. doppelt verbrauchtes Material bei zweifach angewendeter Maßnahme).
+  const ausstehendeAktionenRef = useRef<
+    Map<string, { aktion: SimulationAction; versuch: number; timer: ReturnType<typeof setTimeout> }>
+  >(new Map());
+  const verarbeiteteAktionenRef = useRef<Set<string>>(new Set());
+
+  const sendeAktionMitBestaetigung = useCallback((aktion: SimulationAction, nachrichtId = erzeugeId()) => {
+    const transport = transportRef.current;
+    if (!transport) return;
+    transport.senden({ typ: 'aktion', aktion, nachrichtId });
+    const bisheriger = ausstehendeAktionenRef.current.get(nachrichtId);
+    const versuch = (bisheriger?.versuch ?? 0) + 1;
+    if (bisheriger) clearTimeout(bisheriger.timer);
+    const timer = setTimeout(() => {
+      if (versuch >= AKTION_BESTAETIGUNG_MAX_VERSUCHE) {
+        ausstehendeAktionenRef.current.delete(nachrichtId);
+        return;
+      }
+      sendeAktionMitBestaetigung(aktion, nachrichtId);
+    }, AKTION_BESTAETIGUNG_TIMEOUT_MS);
+    ausstehendeAktionenRef.current.set(nachrichtId, { aktion, versuch, timer });
+  }, []);
+
   // Die Uhr läuft beim Solo-Spieler und beim Host; ein Spieler bekommt die Zeit
   // aus den Schnappschüssen des Hosts.
   //
@@ -117,6 +156,9 @@ export function SimulationProvider({
   useEffect(() => {
     if (!sitzung.aktiv || !sitzung.code || !sitzung.rolle) return;
     const rolle = sitzung.rolle;
+    // Stabile Map-Instanz (nie neu zugewiesen) - hier einmal eingefangen,
+    // damit die Aufräumfunktion nicht erneut über `.current` gehen muss.
+    const ausstehendeAktionen = ausstehendeAktionenRef.current;
     const transport = transportFabrik(
       sitzung.code,
       (nachricht) => {
@@ -126,10 +168,27 @@ export function SimulationProvider({
           } else if (nachricht.typ === 'verlassen') {
             dispatch({ typ: 'spielerEntfernt', spielerId: nachricht.spielerId });
           } else if (nachricht.typ === 'aktion') {
-            dispatch(nachricht.aktion);
+            // Dedupliziert: eine Wiederholung nach verlorener Bestätigung
+            // (→ `state.aktionsbestaetigung`) wendet dieselbe Aktion nicht
+            // zweimal an, bestätigt aber trotzdem erneut - falls gerade die
+            // erste Bestätigung selbst verloren ging.
+            if (!verarbeiteteAktionenRef.current.has(nachricht.nachrichtId)) {
+              verarbeiteteAktionenRef.current.add(nachricht.nachrichtId);
+              dispatch(nachricht.aktion);
+            }
+            transportRef.current?.senden({
+              typ: 'aktionBestaetigt',
+              nachrichtId: nachricht.nachrichtId,
+            });
           }
         } else if (nachricht.typ === 'schnappschuss') {
           dispatch({ typ: 'schnappschussAnwenden', schnappschuss: nachricht.schnappschuss });
+        } else if (nachricht.typ === 'aktionBestaetigt') {
+          const eintrag = ausstehendeAktionenRef.current.get(nachricht.nachrichtId);
+          if (eintrag) {
+            clearTimeout(eintrag.timer);
+            ausstehendeAktionenRef.current.delete(nachricht.nachrichtId);
+          }
         }
       },
       (status, meldung) => {
@@ -158,6 +217,8 @@ export function SimulationProvider({
       if (rolle === 'spieler' && sitzung.eigeneId) {
         transport.senden({ typ: 'verlassen', spielerId: sitzung.eigeneId });
       }
+      for (const { timer } of ausstehendeAktionen.values()) clearTimeout(timer);
+      ausstehendeAktionen.clear();
       transport.schliessen();
       transportRef.current = null;
     };
@@ -215,13 +276,13 @@ export function SimulationProvider({
   const dispatchRoutet = useCallback(
     (action: SimulationAction) => {
       if (istSpieler && !istLokaleAktion(action) && transportRef.current) {
-        transportRef.current.senden({ typ: 'aktion', aktion: action });
+        sendeAktionMitBestaetigung(action);
         if (istOptimistischeAktion(action)) dispatch(action);
       } else {
         dispatch(action);
       }
     },
-    [istSpieler],
+    [istSpieler, sendeAktionMitBestaetigung],
   );
 
   const wert = useMemo(() => ({ state, dispatch: dispatchRoutet }), [state, dispatchRoutet]);

@@ -11,5 +11,6 @@ import type { Schnappschuss, SimulationAction } from '../state/reducer';
 export type SitzungsNachricht =
   | { typ: 'beitritt'; spieler: Spieler }
   | { typ: 'verlassen'; spielerId: string }
-  | { typ: 'aktion'; aktion: SimulationAction }
+  | { typ: 'aktion'; aktion: SimulationAction; nachrichtId: string }
+  | { typ: 'aktionBestaetigt'; nachrichtId: string }
   | { typ: 'schnappschuss'; schnappschuss: Schnappschuss };

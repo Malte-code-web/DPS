@@ -29,6 +29,24 @@ function istLokaleAktion(action: SimulationAction): boolean {
 }
 
 /**
+ * Aktionen, die ein Spieler zusätzlich zum Versand an den Host sofort selbst
+ * anwendet, statt auf den vollen Netzwerk-Umlauf (Host wendet an -> Host
+ * verteilt Schnappschuss -> hier ankommen) zu warten. Das `<select>` der
+ * eigenen Qualifikation (→ `ui.wartebereich`) hängt direkt an
+ * `spieler.qualifikation` aus dem synchronisierten Zustand - ohne diese
+ * sofortige lokale Anwendung wirkte eine Auswahl bei jeder Verzögerung oder
+ * verlorenen Nachricht wie "nicht übernommen". Bewusst nur für diese eine,
+ * auf die eigene Person begrenzte Einstellung: Der nächste Schnappschuss vom
+ * Host überschreibt die Spielerliste ohnehin vollständig, sodass eine
+ * abweichende lokale Vermutung sich selbst korrigiert - anders als bei
+ * simulationsrelevanten Aktionen (z. B. `massnahmeDurchfuehren`), wo nur der
+ * Host rechnen darf.
+ */
+function istOptimistischeAktion(action: SimulationAction): boolean {
+  return action.typ === 'spielerQualifikationSetzen';
+}
+
+/**
  * @anker state.provider Rollen-bewusster Zustandsverteiler
  *
  * Einzelspiel läuft wie bisher rein lokal. In einer Sitzung ist der Übungsleiter
@@ -198,6 +216,7 @@ export function SimulationProvider({
     (action: SimulationAction) => {
       if (istSpieler && !istLokaleAktion(action) && transportRef.current) {
         transportRef.current.senden({ typ: 'aktion', aktion: action });
+        if (istOptimistischeAktion(action)) dispatch(action);
       } else {
         dispatch(action);
       }

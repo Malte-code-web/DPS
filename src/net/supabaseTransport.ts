@@ -20,11 +20,22 @@ import type { TransportFabrik } from './sitzungstransport';
  * (Exponential-Backoff) im Hintergrund, und sofort, sobald die Seite wieder
  * sichtbar wird (`visibilitychange`) - ohne auf den nächsten Backoff-Schritt
  * zu warten.
+ *
+ * `subscribe()` meldet einen Fehlschlag nur, wenn Supabase selbst
+ * `CHANNEL_ERROR`/`TIMED_OUT`/`CLOSED` zurückgibt - hängt der zugrunde
+ * liegende Websocket-Aufbau schon davor fest (beobachtet mit Safari als
+ * Übungsleitung: die Gegenseite blieb dauerhaft ohne jede Fehlermeldung im
+ * "verbindet..."-Zustand hängen, ohne dass der Callback je aufgerufen
+ * wurde), bleibt dieser Callback für immer aus. Ein eigenes Zeitlimit fängt
+ * genau das ab, unabhängig davon, ob Supabase selbst einen Status meldet.
  */
 const PRAEFIX = 'dps-sitzung-';
 
 /** Obergrenze für den Backoff, damit ein dauerhafter Ausfall nicht zu selten neu versucht. */
 const MAX_WARTEZEIT_MS = 15_000;
+
+/** Eigenes Zeitlimit für den Verbindungsaufbau, falls Supabase selbst nie antwortet. */
+const SUBSCRIBE_TIMEOUT_MS = 10_000;
 
 export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onStatus) => {
   const client = supabase;
@@ -45,6 +56,7 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
   let warteschlange: SitzungsNachricht[] = [];
   let wiederverbindungsVersuch = 0;
   let wiederverbindungsTimer: ReturnType<typeof setTimeout> | null = null;
+  let subscribeTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   const tatsaechlichSenden = (nachricht: SitzungsNachricht) => {
     if (!kanal) return;
@@ -62,6 +74,13 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
     }
   };
 
+  const subscribeTimeoutAbbrechen = () => {
+    if (subscribeTimeoutTimer !== null) {
+      clearTimeout(subscribeTimeoutTimer);
+      subscribeTimeoutTimer = null;
+    }
+  };
+
   const planeWiederverbindung = () => {
     if (geschlossen || wiederverbindungsTimer !== null) return;
     const wartezeit = Math.min(1000 * 2 ** wiederverbindungsVersuch, MAX_WARTEZEIT_MS);
@@ -72,9 +91,18 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
     }, wartezeit);
   };
 
+  const alsFehlgeschlagenBehandeln = (meldung: string) => {
+    if (geschlossen) return;
+    subscribeTimeoutAbbrechen();
+    verbunden = false;
+    onStatus?.('fehler', meldung);
+    planeWiederverbindung();
+  };
+
   const verbinde = () => {
     if (geschlossen) return;
     verbunden = false;
+    subscribeTimeoutAbbrechen();
     if (kanal) {
       void client.removeChannel(kanal);
     }
@@ -93,15 +121,21 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
           verbunden = true;
           wiederverbindungsVersuch = 0;
           wiederverbindungAbbrechen();
+          subscribeTimeoutAbbrechen();
           onStatus?.('verbunden');
           for (const nachricht of warteschlange) tatsaechlichSenden(nachricht);
           warteschlange = [];
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          verbunden = false;
-          onStatus?.('fehler', fehler?.message ?? `Verbindung ${status.toLowerCase()}.`);
-          planeWiederverbindung();
+          alsFehlgeschlagenBehandeln(fehler?.message ?? `Verbindung ${status.toLowerCase()}.`);
         }
       });
+    // Fängt den Fall ab, dass Supabase selbst nie einen Status meldet
+    // (→ oben in der Modul-Dokumentation) - ohne dieses Zeitlimit bliebe der
+    // Aufbau sonst für immer in der Schwebe.
+    subscribeTimeoutTimer = setTimeout(() => {
+      subscribeTimeoutTimer = null;
+      alsFehlgeschlagenBehandeln('Verbindungsaufbau dauert zu lange.');
+    }, SUBSCRIBE_TIMEOUT_MS);
   };
 
   verbinde();
@@ -125,6 +159,7 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
     schliessen() {
       geschlossen = true;
       wiederverbindungAbbrechen();
+      subscribeTimeoutAbbrechen();
       document.removeEventListener('visibilitychange', beiSichtbarkeit);
       if (kanal) void client.removeChannel(kanal);
     },

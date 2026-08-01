@@ -9,8 +9,8 @@ import type { Schnappschuss, SimulationAction } from '../state/reducer';
  * Modell nicht - die Domäne rechnet nur der Host.
  */
 export type SitzungsNachricht =
-  | { typ: 'beitritt'; spieler: Spieler }
+  | { typ: 'beitritt'; spieler: Spieler; nachrichtId: string }
   | { typ: 'verlassen'; spielerId: string }
   | { typ: 'aktion'; aktion: SimulationAction; nachrichtId: string }
-  | { typ: 'aktionBestaetigt'; nachrichtId: string }
+  | { typ: 'nachrichtBestaetigt'; nachrichtId: string }
   | { typ: 'schnappschuss'; schnappschuss: Schnappschuss };

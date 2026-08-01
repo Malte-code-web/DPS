@@ -67,6 +67,13 @@ export function EinsatzSeite() {
     <div className="einsatz">
       <Einsatzleiste szenario={szenario} />
 
+      {state.sitzung.verbindungsfehler && (
+        <p className="hinweis hinweis-fehler hinweis-verbindung" role="alert">
+          Verbindung gestört: {state.sitzung.verbindungsfehler} Prüfe die Internetverbindung - die
+          Seite versucht es weiter im Hintergrund.
+        </p>
+      )}
+
       {ausgewaehlt ? (
         // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen
         <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />

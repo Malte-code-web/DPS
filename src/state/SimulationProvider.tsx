@@ -32,6 +32,14 @@ const TAKT_MS = 500;
 const AKTION_BESTAETIGUNG_TIMEOUT_MS = 2500;
 const AKTION_BESTAETIGUNG_MAX_VERSUCHE = 5;
 
+/**
+ * Intervall für den erneuten Versand desselben Schnappschusses
+ * (→ oben bei `folgeRef`) - schnell genug, dass eine verlorene Nachricht
+ * sich in wenigen Sekunden von selbst heilt, ohne den Kanal unnötig zu
+ * belasten.
+ */
+const SCHNAPPSCHUSS_HEARTBEAT_MS = 4000;
+
 /** Aktionen, die jeder Client für sich behält - Navigation und das Verlassen. */
 function istLokaleAktion(action: SimulationAction): boolean {
   return (
@@ -262,14 +270,30 @@ export function SimulationProvider({
   // fortlaufenden Laufnummer - damit ein Spieler eine verspätet über das Netz
   // eintreffende ältere Nachricht erkennen und verwerfen kann
   // (→ `state.schnappschuss`, `schnappschussAnwenden`).
+  //
+  // Ein verlorener Broadcast heilt sich sonst nur, wenn sich der Zustand
+  // danach nochmal ändert - der tickende Simulationstakt sorgt dafür im
+  // laufenden Einsatz von selbst, aber im Wartebereich (oder bei einer
+  // pausierten Übung) ändert sich unter Umständen lange nichts mehr, z. B.
+  // wenn die Übungsleitung nach einer einzigen Besatzungszuweisung wartet.
+  // Ein Spieler, dem genau diese eine Nachricht entgangen ist, sah dann
+  // dauerhaft nicht, wie die Fahrzeuge besetzt werden. Deshalb sendet der
+  // Host dieselbe zuletzt gebildete Nachricht (gleiche Folgenummer) im
+  // Hintergrund erneut - für jeden, der sie schon hat, ein wirkungsloses
+  // No-op (→ `schnappschussAnwenden`), für jeden anderen die Reparatur.
   const folgeRef = useRef(0);
   useEffect(() => {
     if (!istHost) return;
     folgeRef.current += 1;
-    transportRef.current?.senden({
-      typ: 'schnappschuss',
+    const nachricht = {
+      typ: 'schnappschuss' as const,
       schnappschuss: { ...schnappschuss, folge: folgeRef.current },
-    });
+    };
+    transportRef.current?.senden(nachricht);
+    const intervall = setInterval(() => {
+      transportRef.current?.senden(nachricht);
+    }, SCHNAPPSCHUSS_HEARTBEAT_MS);
+    return () => clearInterval(intervall);
   }, [istHost, schnappschuss]);
 
   // Ein Spieler schickt Sim-Aktionen an den Host, statt sie selbst anzuwenden.

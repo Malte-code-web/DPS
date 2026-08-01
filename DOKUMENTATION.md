@@ -16,7 +16,7 @@ lebensrettende Handgriffe, Behandlungsplatz betreiben, Patienten abtransportiere
 
 Die drei Lernziele, an denen der gesamte Aufbau ausgerichtet ist:
 
-1. **Vorsichtung nach mSTaRT** – schnell und ohne Messwerte kategorisieren.
+1. **Vorsichtung nach tacSTART** – schnell und ohne Messwerte kategorisieren.
 2. **Zeit als knappe Ressource begreifen** – wer sich festarbeitet, verliert sie
    bei allen anderen.
 3. **Der Versuchung zur Individualmedizin standhalten** – die Anwendung erlaubt
@@ -42,7 +42,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | KI-Unterstützung | Erzeugt Szenarien direkt aus der App: Auftrag ans Modell, an ein JSON-Schema gebunden, Ergebnis geprüft und durchgespielt, Befunde gehen automatisch zur Nachbesserung zurück. Der Auftrag zum Kopieren bleibt als Weg ohne Zugang |
 | Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
-| mSTaRT | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet |
+| tacSTART | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet - kritische Blutung wird vorgezogen vor Atemwege/Atmung geprüft (TCCC-nah), von Kreis Steinfurt in der MANV-Tasche als "Checkliste (Vor)Sichtung tacSTART" mitgeführt |
 | Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich |
@@ -365,7 +365,7 @@ einem eigenen Szenario:
 Alle drei Wege laufen durch dieselbe Prüfung (→ `szenario.pruefung`). **Fehler**
 verhindern das Sichern - fehlende Felder, unbekannte Maßnahmen-IDs, Werte
 ausserhalb der Grenzen, doppelte Patienten-IDs. **Warnungen** halten nicht auf;
-dazu zählt insbesondere eine Referenzkategorie, die vom mSTaRT-Ergebnis abweicht:
+dazu zählt insbesondere eine Referenzkategorie, die vom tacSTART-Ergebnis abweicht:
 Der Editor zeigt die berechnete Kategorie an und bietet an, sie zu übernehmen -
 erzwingt sie aber nicht, weil eine Abweichung didaktisch gewollt sein kann.
 
@@ -755,9 +755,9 @@ _165 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sichtung.bewertung` | [`src/domain/triage.ts:127`](src/domain/triage.ts#L127) | Über- oder unterschätzt - Grundlage der Debriefing-Spalte |
-| `sichtung.grenzwerte` | [`src/domain/triage.ts:25`](src/domain/triage.ts#L25) | Zahlen, an denen die Sichtung kippt (AF, RR, GCS, Rekapzeit) |
-| `sichtung.mstart` | [`src/domain/triage.ts:45`](src/domain/triage.ts#L45) | Der mSTaRT-Algorithmus als Entscheidungskette |
+| `sichtung.bewertung` | [`src/domain/triage.ts:134`](src/domain/triage.ts#L134) | Über- oder unterschätzt - Grundlage der Debriefing-Spalte |
+| `sichtung.grenzwerte` | [`src/domain/triage.ts:32`](src/domain/triage.ts#L32) | Zahlen, an denen die Sichtung kippt (AF, RR, GCS, Rekapzeit) |
+| `sichtung.tacstart` | [`src/domain/triage.ts:52`](src/domain/triage.ts#L52) | Der tacSTART-Algorithmus als Entscheidungskette |
 
 #### sim
 
@@ -848,9 +848,9 @@ _165 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `test.abschnitte` | [`src/state/reducer.test.ts:222`](src/state/reducer.test.ts#L222) | Der Weg eines Patienten und die erlaubten Verlegungen |
 | `test.atemweg` | [`src/domain/simulation.test.ts:224`](src/domain/simulation.test.ts#L224) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
-| `test.mstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
+| `test.tacstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:64`](src/state/reducer.test.ts#L64) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
@@ -917,7 +917,7 @@ _165 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
   Die Zeit kommt immer als Parameter herein.
 - **Zustand ist unveränderlich**: Der Reducer gibt neue Objekte zurück.
 - **Neue Szenarien sind Daten**, kein Code (→ `szenarien.liste`). Ein Test prüft
-  automatisch, dass die hinterlegte Referenzkategorie zum mSTaRT-Ergebnis passt.
+  automatisch, dass die hinterlegte Referenzkategorie zum tacSTART-Ergebnis passt.
 - **CSS**: eine Datei, Klassennamen auf Deutsch, Farben über Variablen. Vorsicht
   bei Spezifitäten – `button:hover` schlägt eine einzelne Klasse
   (→ `stil.sk-farbe`).
@@ -945,7 +945,7 @@ npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 | Abgleich des gesamten Katalogs, Kontraindikationen, Kinderdosen, zugangsfreie Applikationswege | [SAA und BPR 2025 der ÄLRD in BW, BB, MV, NRW, SN, ST](https://www.aelrd-nrw.de/wp-content/uploads/2025/08/SAA_BPR_2025.pdf) (Stand 30.04.2025); [DBRD-Musteralgorithmen 2026](https://www.dbrd.de/images/algorithmen/DBRD_Musteralgorithmen_2026.pdf); [AWMF S3 Polytrauma 187-023](https://register.awmf.org/de/leitlinien/detail/187-023); ERC/RCUK 2025; Pyramidenprozess Anlage 3 |
 | Sichtungskategorien und Eigenschutz vor der Vorsichtung | Bundesärztekammer, Sichtungskategorien; BBK, 6. Sichtungs-Konsensus-Konferenz |
 | Sichtungskategorien SK I-IV | Bundeseinheitliche Systematik |
-| mSTaRT-Algorithmus und Grenzwerte | Fachliteratur, umgesetzt in `triage.ts` |
+| tacSTART-Algorithmus und Grenzwerte | Ladehof, Redmer, Neitzel, Offterdinger, Kanz: „tacSTART als adaptierter Sichtungsalgorithmus in Bedrohungslagen", Notfall + Rettungsmedizin 21(6):469-477, 2018; öffentliche Checkliste „Checkliste Vorsichtung - tacSTART" (trema-europe.de); von Kreis Steinfurt in der MANV-Tasche referenziert (→ `domain.material`) |
 | Tatsächliche Bestückung (welche Medikamente in welcher Konzentration wirklich mitgeführt werden) | [Bestückung RTW Kreis Steinfurt, Stand 01.02.2025](https://www.kreis-steinfurt.de/kv_steinfurt/Kreisverwaltung/%C3%84mter/Amt%20f%C3%BCr%20Bev%C3%B6lkerungsschutz/Rettungsdienst/Rettungsmittel/RTW%20Best%C3%BCckungsliste%20Februar%202025%20(Ausbau%20WAS)%20Kreis%20Steinfurt.pdf), ÄLRD Kreis Steinfurt |
 | Überdosierungsschwellen und -wirkung der elf Medikamente jenseits der Analgesie (→ `domain.dosierung`) | LAST/Lidocain-Toxizität (EMCrit IBCC, Medscape); Amiodaron-IV-Toxizität (PMC4867816, PMC9199562); Anticholinerges Syndrom/Atropin (StatPearls NBK534798); Betablocker-Toxizität (Medscape 813342, LITFL); Midazolam-Fachinfo (FDA); Naloxon-Sicherheitsprofil/präzipitierter Entzug (PMC11089786); Nitroglycerin-Bezold-Jarisch-Reflex (AHA Circulation 54:624); Urapidil-Pharmakologie (ScienceDirect); Furosemid-Fachinfo Overdosage (Pfizer); Epinephrin-Fehldosierungsfälle (AME Case Reports, PMC6954811) |
 | Notfallnarkose (RSI): Medikamentenauswahl, Dosierung, Team | Handlungsempfehlung zur prähospitalen Notfallnarkose beim Erwachsenen (DGAI/BAND, Notfall+Rettungsmedizin); Rocuronium-RSI-Dosis und Sicherheitsspanne (Notfall+Rettungsmedizin 2016, gasnarkose.at); Bestückung RTW Kreis Steinfurt Stand 01.02.2025 (Propofol, Thiopental, Rocuronium) |

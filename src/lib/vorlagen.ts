@@ -5,7 +5,7 @@ import type { PatientVorlage, Problem, Szenario } from '../domain/types';
  * @anker vorlagen.neu Startpunkte für neue Szenarien, Patienten und Probleme
  *
  * Die Werte sind bewusst so gewählt, dass ein frisch angelegter Patient die
- * Prüfung besteht: unauffällige Vitalwerte, nicht gehfähig, damit mSTaRT
+ * Prüfung besteht: unauffällige Vitalwerte, nicht gehfähig, damit tacSTART
  * SK II ergibt.
  */
 

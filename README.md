@@ -6,7 +6,7 @@ Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich – und
 
 Geübt werden
 
-- die **Vorsichtung nach mSTaRT** (Sichtungskategorien SK I–IV),
+- die **Vorsichtung nach tacSTART** (Sichtungskategorien SK I–IV),
 - das **Priorisieren knapper Ressourcen** (jede Maßnahme kostet Zeit),
 - die **Nachsichtung**, weil sich Patienten im Verlauf verändern.
 
@@ -155,7 +155,7 @@ sofort finden lässt.
 src/
   domain/        Fachlogik, framework-unabhängig und vollständig getestet
     types.ts         Datenmodell (Patient, Vitalwerte, Problem, Maßnahme, Szenario)
-    triage.ts        mSTaRT-Algorithmus inkl. nachvollziehbarer Entscheidungskette
+    triage.ts        tacSTART-Algorithmus inkl. nachvollziehbarer Entscheidungskette
     simulation.ts    Zeitverlauf: Verschlechterung, Maßnahmenwirkung, Todeskriterien
     massnahmen.ts    Maßnahmenkatalog nach xABCDE-Schema
     qualifikation.ts, massnahmenrechte.ts  Fünf Qualifikationsstufen, Durchführungs-
@@ -223,7 +223,7 @@ Der didaktische Kern der Anwendung liegt im Aufbau dieser Seite.
 
 **Stufe 1 – Ersteinschätzung** zeigt den ersten Eindruck ohne Messwerte (gehfähig,
 kritische Blutung, Atmung, Radialispuls, Reaktion), den Maßnahmenkatalog und die
-Sichtungskategorie. Vitalparameter sind hier bewusst nicht sichtbar – mSTaRT kommt
+Sichtungskategorie. Vitalparameter sind hier bewusst nicht sichtbar – tacSTART kommt
 ohne sie aus.
 
 Der Maßnahmenkatalog folgt dem **xABCDE-Schema** und ist gruppenweise einklappbar.
@@ -286,7 +286,7 @@ Die Oberfläche ist für den Einsatz auf dem Telefon ausgelegt – auch weil ein
 - Keine Ansicht erzeugt horizontales Scrollen.
 
 Die Fachlogik ist bewusst frei von React: `simuliereSchritt`, `wendeMassnahmeAn` und
-`sichtungNachMstart` sind reine Funktionen und lassen sich unabhängig von der Oberfläche
+`sichtungNachTacstart` sind reine Funktionen und lassen sich unabhängig von der Oberfläche
 testen oder später auf einem Server ausführen.
 
 ## Simulationsmodell
@@ -314,7 +314,7 @@ die Veränderung eines einzelnen Ticks (Bruchteile einer Minute) verloren gehen.
 
 Ein neues Szenario ist eine Datenstruktur in `src/domain/szenarien.ts` – kein Code nötig.
 Der Test `simulation.test.ts` prüft automatisch, dass die hinterlegte Referenzkategorie
-jedes Patienten zum Einsatzbeginn exakt dem mSTaRT-Algorithmus entspricht.
+jedes Patienten zum Einsatzbeginn exakt dem tacSTART-Algorithmus entspricht.
 
 ## Hinweis
 

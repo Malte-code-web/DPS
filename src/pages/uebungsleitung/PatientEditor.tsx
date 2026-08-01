@@ -1,7 +1,7 @@
 import { geschaetztesGewicht } from '../../domain/dosierung';
 import { KATEGORIEN, KATEGORIE_LABEL, massnahmenDerKategorie } from '../../domain/massnahmen';
 import { startwert } from '../../domain/simulation';
-import { mstartAbweichung } from '../../domain/szenarioPruefung';
+import { tacstartAbweichung } from '../../domain/szenarioPruefung';
 import { KOERPERREGION_TEXT, PUPILLEN_TEXT, SICHTUNGSKATEGORIEN } from '../../domain/types';
 import { VITAL_META, VITAL_REIHENFOLGE } from '../../lib/format';
 import { leeresProblem, naechsteProblemNummer } from '../../lib/vorlagen';
@@ -33,11 +33,11 @@ interface Props {
 /**
  * @anker ui.patienteditor Formular für einen Szenario-Patienten samt Problemen
  *
- * Die Referenzkategorie wird laufend gegen mSTaRT geprüft. Abweichungen sind
+ * Die Referenzkategorie wird laufend gegen tacSTART geprüft. Abweichungen sind
  * erlaubt, werden aber angezeigt - mit einer Schaltfläche zum Übernehmen.
  */
 export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
-  const abweichung = mstartAbweichung(patient);
+  const abweichung = tacstartAbweichung(patient);
 
   const setze = <K extends keyof PatientVorlage>(feld: K, wert: PatientVorlage[K]) =>
     onAendern({ ...patient, [feld]: wert });
@@ -199,13 +199,13 @@ export function PatientEditor({ patient, onAendern, onEntfernen }: Props) {
       </div>
       {abweichung ? (
         <p className="editor-abweichung">
-          mSTaRT ergibt aus diesen Startwerten <strong>{abweichung}</strong>.
+          tacSTART ergibt aus diesen Startwerten <strong>{abweichung}</strong>.
           <button type="button" onClick={() => setze('erwarteteSK', abweichung)}>
             Übernehmen
           </button>
         </p>
       ) : (
-        <p className="editor-stimmig">Referenzkategorie stimmt mit mSTaRT überein.</p>
+        <p className="editor-stimmig">Referenzkategorie stimmt mit tacSTART überein.</p>
       )}
 
       <h4>Probleme</h4>

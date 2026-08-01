@@ -11,7 +11,7 @@ interface Befund {
  * @anker ui.ersteindruck Die fünf Befunde der Vorsichtung, ohne Messwerte
  *
  * Was eine Einsatzkraft in den ersten Sekunden ohne Gerät feststellt.
- * Genau diese vier Befunde braucht der mSTaRT-Algorithmus - Messwerte
+ * Genau diese vier Befunde braucht der tacSTART-Algorithmus - Messwerte
  * gehören ausdrücklich nicht dazu.
  */
 export function Ersteindruck({ patient }: { patient: Patient }) {

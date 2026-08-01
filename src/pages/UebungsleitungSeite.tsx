@@ -103,7 +103,7 @@ export function UebungsleitungSeite() {
         <h1>Übungsleitung</h1>
         <p>
           Eigene Lagen bauen, prüfen und weitergeben. Jedes Szenario wird gegen dieselben Regeln
-          geprüft wie die mitgelieferten - inklusive Abgleich der Referenzkategorie mit mSTaRT.
+          geprüft wie die mitgelieferten - inklusive Abgleich der Referenzkategorie mit tacSTART.
         </p>
       </header>
 

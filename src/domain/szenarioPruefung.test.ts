@@ -3,7 +3,7 @@ import { baueKiPrompt } from '../lib/kiPrompt';
 import { leererPatient, leeresSzenario } from '../lib/vorlagen';
 import { WAEHLBARE_MASSNAHMEN } from './massnahmen';
 import { SZENARIEN } from './szenarien';
-import { mstartAbweichung, pruefeSzenario } from './szenarioPruefung';
+import { tacstartAbweichung, pruefeSzenario } from './szenarioPruefung';
 import type { Szenario } from './types';
 
 /** @anker test.szenariopruefung Die Prüfung, durch die jedes importierte Szenario muss */
@@ -91,14 +91,14 @@ describe('Szenarioprüfung', () => {
     expect(ergebnis.gueltig).toBe(true);
     expect(
       ergebnis.befunde.some(
-        (befund) => befund.schwere === 'warnung' && befund.text.includes('mSTaRT'),
+        (befund) => befund.schwere === 'warnung' && befund.text.includes('tacSTART'),
       ),
     ).toBe(true);
-    expect(mstartAbweichung(patient)).toBe('SK2');
+    expect(tacstartAbweichung(patient)).toBe('SK2');
   });
 
   it('meldet keine Abweichung, wenn die Kategorie passt', () => {
-    expect(mstartAbweichung(leererPatient(1))).toBeNull();
+    expect(tacstartAbweichung(leererPatient(1))).toBeNull();
   });
 });
 

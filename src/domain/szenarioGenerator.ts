@@ -1,6 +1,6 @@
 import { geschaetztesGewicht } from './dosierung';
 import { patientAusVorlage } from './simulation';
-import { sichtungNachMstart } from './triage';
+import { sichtungNachTacstart } from './triage';
 import type {
   Koerperregion,
   MassnahmeId,
@@ -56,7 +56,7 @@ interface Muster {
   start: number;
   /** Begleitende Veränderungen pro Minute - klein halten, sie laufen mit. */
   begleit?: VitalVerlauf;
-  /** Nur für SK1: welcher Zweig des mSTaRT greifen soll. */
+  /** Nur für SK1: welcher Zweig des tacSTART greifen soll. */
   weg?: 'blutung' | 'atmung' | 'kreislauf' | 'bewusstsein';
   /** Körperliche Befunde - der Weg, das Problem überhaupt zu finden. */
   pupillen?: Pupillenbefund;
@@ -493,7 +493,7 @@ export function verteilung(anzahl: number): Sichtungskategorie[] {
   ];
 }
 
-/** Die Startwerte, die den gewünschten mSTaRT-Zweig auslösen. */
+/** Die Startwerte, die den gewünschten tacSTART-Zweig auslösen. */
 function grundwerte(muster: Muster, w: Wuerfel): { werte: Startwerte; flags: Flags } {
   const flags: Flags = {
     gehfaehig: false,
@@ -641,11 +641,11 @@ function bauePatient(
     ...(muster.ekg ? { ekg: muster.ekg } : {}),
     probleme: [baueProblem(muster, plan, werte[muster.leitwert])],
     // Die Referenzkategorie wird nicht behauptet, sondern gerechnet - damit
-    // kann sie nie von mSTaRT abweichen.
+    // kann sie nie von tacSTART abweichen.
     erwarteteSK: 'SK2',
   };
 
-  return { ...vorlage, erwarteteSK: sichtungNachMstart(patientAusVorlage(vorlage)).kategorie };
+  return { ...vorlage, erwarteteSK: sichtungNachTacstart(patientAusVorlage(vorlage)).kategorie };
 }
 
 export interface GeneratorWunsch {

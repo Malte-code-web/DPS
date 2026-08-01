@@ -202,7 +202,7 @@ export function simuliereSchritt(patient: Patient, dtSek: number, zeitSek: numbe
 }
 
 /**
- * Zeitbedarf einer Vorsichtung nach mSTaRT.
+ * Zeitbedarf einer Vorsichtung nach tacSTART.
  * @anker sim.zeitkosten Stellschrauben für Sichtungs- und Untersuchungsdauer
  */
 export const SICHTUNGSDAUER_SEK = 20;

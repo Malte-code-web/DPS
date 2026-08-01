@@ -12,7 +12,7 @@ import type { Befund } from '../domain/szenarioPruefung';
  * nicht auseinanderlaufen.
  *
  * Regeln, Maßnahmen-IDs und Grenzwerte stammen aus dem echten Katalog und den
- * echten mSTaRT-Schwellen - der Auftrag kann also nicht veralten.
+ * echten tacSTART-Schwellen - der Auftrag kann also nicht veralten.
  */
 export interface PromptWunsch {
   lage: string;
@@ -23,7 +23,7 @@ export interface PromptWunsch {
 /** Rolle und Handwerkszeug - bleibt über alle Anfragen gleich. */
 export const KI_SYSTEM = `Du bist Übungsplaner für den Rettungsdienst und entwirfst Szenarien für
 eine MANV-Simulation (Massenanfall von Verletzten). Du kennst die Sichtung
-nach mSTaRT und den Ablauf auf einem Behandlungsplatz.
+nach tacSTART und den Ablauf auf einem Behandlungsplatz.
 
 Deine Patienten sind keine Standbilder: jedes Problem verändert die Vitalwerte
 pro Minute weiter, solange es nicht behandelt ist. Genau daraus entsteht der
@@ -54,7 +54,7 @@ export function regeltext(): string {
 2. "startetNachMin" lässt ein Problem verzögert einsetzen (z. B. Spannungspneu).
 3. "behandeltDurch" darf nur diese Maßnahmen-IDs enthalten:
 ${massnahmenliste()}
-4. "erwarteteSK" muss dem mSTaRT-Ergebnis aus den Startwerten entsprechen.
+4. "erwarteteSK" muss dem tacSTART-Ergebnis aus den Startwerten entsprechen.
    Geprüft wird in dieser Reihenfolge:
    - gehfaehig = true -> SK3
    - kritischeBlutung = true -> SK1

@@ -28,7 +28,7 @@ export const TRAININGSMODI: ModusInfo[] = [
       'Eine vollständige MANV-Lage am Bildschirm: sichten, versorgen, den Behandlungsplatz betreiben - allein oder im Team.',
     zielgruppe: 'Einsatzkräfte im Rettungsdienst und Sanitätsdienst, einzeln oder in Kleingruppen',
     geplant: [
-      'Vorsichtung nach mSTaRT an der Schadensstelle',
+      'Vorsichtung nach tacSTART an der Schadensstelle',
       'Behandlungsplatz mit Eingangssichtung, drei Zelten und Ausgangssichtung',
       'Debriefing mit Auswertung der Sichtung und der gebundenen Zeit',
     ],

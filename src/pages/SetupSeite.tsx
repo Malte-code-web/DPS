@@ -47,7 +47,7 @@ export function SetupSeite() {
         <p>
           {host
             ? 'Wähle die Lage, die alle gemeinsam bearbeiten. Anschließend geht es in den Wartebereich, wo die Spieler beitreten - dort startest du die Übung.'
-            : 'Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung nach mSTaRT und eine sinnvolle Verteilung der knappen Ressourcen.'}
+            : 'Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung nach tacSTART und eine sinnvolle Verteilung der knappen Ressourcen.'}
         </p>
       </section>
 
@@ -103,7 +103,7 @@ export function SetupSeite() {
         <ol>
           <li>Lagemeldung lesen und die Patienten in der Übersicht sichten.</li>
           <li>
-            Jeden Patienten nach mSTaRT vorsichten: gehfähig, kritische Blutung, Atmung,
+            Jeden Patienten nach tacSTART vorsichten: gehfähig, kritische Blutung, Atmung,
             Atemfrequenz, Kreislauf, Bewusstsein.
           </li>
           <li>Lebensrettende Sofortmaßnahmen durchführen - jede Maßnahme kostet Zeit.</li>

@@ -1,6 +1,6 @@
 import { MASSNAHMEN } from './massnahmen';
 import { patientAusVorlage } from './simulation';
-import { sichtungNachMstart } from './triage';
+import { sichtungNachTacstart } from './triage';
 import { KOERPERREGION_TEXT, SICHTUNGSKATEGORIEN } from './types';
 import type {
   Koerperregion,
@@ -225,9 +225,9 @@ function pruefePatient(vorlage: unknown, ort: string, befunde: Befund[]): void {
   }
 }
 
-/** Vergleicht die hinterlegte Referenzkategorie mit dem mSTaRT-Ergebnis. */
-export function mstartAbweichung(vorlage: PatientVorlage): Sichtungskategorie | null {
-  const berechnet = sichtungNachMstart(patientAusVorlage(vorlage)).kategorie;
+/** Vergleicht die hinterlegte Referenzkategorie mit dem tacSTART-Ergebnis. */
+export function tacstartAbweichung(vorlage: PatientVorlage): Sichtungskategorie | null {
+  const berechnet = sichtungNachTacstart(patientAusVorlage(vorlage)).kategorie;
   return berechnet === vorlage.erwarteteSK ? null : berechnet;
 }
 
@@ -262,15 +262,15 @@ export function pruefeSzenario(wert: unknown): Pruefergebnis {
     }
   });
 
-  // Die mSTaRT-Prüfung setzt eine strukturell heile Vorlage voraus.
+  // Die tacSTART-Prüfung setzt eine strukturell heile Vorlage voraus.
   if (befunde.every((befund) => befund.schwere !== 'fehler')) {
     for (const patient of szenario.patienten) {
-      const abweichung = mstartAbweichung(patient);
+      const abweichung = tacstartAbweichung(patient);
       if (abweichung) {
         befunde.push({
           schwere: 'warnung',
           ort: `Patient ${patient.id}`,
-          text: `erwarteteSK ist ${patient.erwarteteSK}, mSTaRT ergibt aus den Startwerten ${abweichung}.`,
+          text: `erwarteteSK ist ${patient.erwarteteSK}, tacSTART ergibt aus den Startwerten ${abweichung}.`,
         });
       }
     }

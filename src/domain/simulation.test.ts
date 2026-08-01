@@ -14,7 +14,7 @@ import {
   wendeMassnahmeAn,
 } from './simulation';
 import { SZENARIEN } from './szenarien';
-import { sichtungNachMstart } from './triage';
+import { sichtungNachTacstart } from './triage';
 import type { Patient, PatientVorlage } from './types';
 
 const ALLE_VORLAGEN: PatientVorlage[] = SZENARIEN.flatMap((szenario) => szenario.patienten);
@@ -37,10 +37,10 @@ describe('Szenariodaten', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('bildet die hinterlegte Referenzkategorie exakt nach mSTaRT ab', () => {
+  it('bildet die hinterlegte Referenzkategorie exakt nach tacSTART ab', () => {
     for (const vorlage of ALLE_VORLAGEN) {
       const patient = patientAusVorlage(vorlage);
-      expect(sichtungNachMstart(patient).kategorie, `Patient ${vorlage.id}`).toBe(
+      expect(sichtungNachTacstart(patient).kategorie, `Patient ${vorlage.id}`).toBe(
         vorlage.erwarteteSK,
       );
     }
@@ -158,7 +158,7 @@ describe('Zeitverlauf', () => {
     const patient = patientAusVorlage(ALLE_VORLAGEN.find((v) => v.id === 'B-05')!);
     const spaeter = simuliere(patient, 30);
     expect(spaeter.status).not.toBe('verstorben');
-    expect(sichtungNachMstart(spaeter).kategorie).toBe('SK3');
+    expect(sichtungNachTacstart(spaeter).kategorie).toBe('SK3');
   });
 
   it('aktiviert verzögerte Probleme erst nach ihrer Latenzzeit', () => {
@@ -174,7 +174,7 @@ describe('Zeitverlauf', () => {
     expect(patient.gehfaehig).toBe(true);
     const spaeter = simuliere(patient, 10);
     expect(spaeter.gehfaehig).toBe(false);
-    expect(sichtungNachMstart(spaeter).kategorie).toBe('SK1');
+    expect(sichtungNachTacstart(spaeter).kategorie).toBe('SK1');
   });
 
   it('verändert transportierte Patienten nicht mehr', () => {

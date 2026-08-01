@@ -120,7 +120,7 @@ const patient = objekt({
   erwarteteSK: {
     type: 'string',
     enum: KATEGORIEN,
-    description: 'Ergebnis des mSTaRT-Algorithmus aus den Startwerten.',
+    description: 'Ergebnis des tacSTART-Algorithmus aus den Startwerten.',
   },
   pupillen: {
     type: 'string',

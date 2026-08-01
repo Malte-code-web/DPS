@@ -1,7 +1,14 @@
 import type { Patient, Sichtungskategorie, Vitalwerte } from './types';
 
 /**
- * Vorsichtung nach mSTaRT (modified Simple Triage And Rapid Treatment).
+ * Vorsichtung nach tacSTART (Ladehof et al., "tacSTART als adaptierter
+ * Sichtungsalgorithmus in Bedrohungslagen", Notfall + Rettungsmedizin
+ * 21(6):469-477, 2018) - eine Modifikation von mSTaRT/START mit
+ * vorgezogener Behandlung kritischer Blutungen (<C>, vor Atemwege/Atmung),
+ * angelehnt an TCCC. Gleichermaßen für zivile und militärische
+ * Einsatzkräfte gedacht und ohne Sichtungserfahrung erlernbar; von Kreis
+ * Steinfurt in der mitgeführten MANV-Tasche als "Checkliste (Vor)Sichtung
+ * tacSTART" referenziert (→ `domain.material`).
  *
  * Der Algorithmus dient in der Simulation zwei Zwecken:
  *  - als Referenzlösung für das Debriefing,
@@ -21,7 +28,7 @@ export interface Sichtungsergebnis {
 }
 
 /**
- * Grenzwerte des mSTaRT-Algorithmus.
+ * Grenzwerte des tacSTART-Algorithmus.
  * @anker sichtung.grenzwerte Zahlen, an denen die Sichtung kippt (AF, RR, GCS, Rekapzeit)
  */
 export const GRENZWERTE = {
@@ -42,8 +49,8 @@ export function radialispulsTastbar(vitalwerte: Vitalwerte): boolean {
   return vitalwerte.systolischerRR >= GRENZWERTE.radialispulsRRsys;
 }
 
-/** @anker sichtung.mstart Der mSTaRT-Algorithmus als Entscheidungskette */
-export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
+/** @anker sichtung.tacstart Der tacSTART-Algorithmus als Entscheidungskette */
+export function sichtungNachTacstart(patient: Patient): Sichtungsergebnis {
   const schritte: Sichtungsschritt[] = [];
   const v = patient.vitalwerte;
 
@@ -65,37 +72,37 @@ export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
   }
 
   if (patient.gehfaehig) {
-    return ergebnis('SK3', 'Gehfähig?', 'Ja - Patient folgt der Aufforderung zum Sammelplatz');
+    return ergebnis('SK3', 'I - Gehfähig?', 'Ja - in Sicherheit schicken, Sammelplatz');
   }
-  weiter('Gehfähig?', 'Nein');
+  weiter('I - Gehfähig?', 'Nein');
 
   if (patient.kritischeBlutung) {
     return ergebnis(
       'SK1',
-      'Kritische Blutung?',
-      'Ja - sofortige Blutstillung, danach SK I',
+      '<C> - Kritische Blutung?',
+      'Ja - sofort behandeln (Tourniquet, ggf. Druckverband), danach SK I',
     );
   }
-  weiter('Kritische Blutung?', 'Nein');
+  weiter('<C> - Kritische Blutung?', 'Nein');
 
   if (!patient.spontanatmung) {
     return ergebnis(
       'SK4',
-      'Spontanatmung nach Freimachen der Atemwege?',
+      'A - Spontanatmung nach Freimachen der Atemwege?',
       'Nein - im MANV keine Reanimation, betreuende Behandlung',
     );
   }
-  weiter('Spontanatmung nach Freimachen der Atemwege?', 'Ja');
+  weiter('A - Spontanatmung nach Freimachen der Atemwege?', 'Ja');
 
   if (v.atemfrequenz > GRENZWERTE.atemfrequenzHoch || v.atemfrequenz < GRENZWERTE.atemfrequenzNiedrig) {
     return ergebnis(
       'SK1',
-      `Atemfrequenz zwischen ${GRENZWERTE.atemfrequenzNiedrig} und ${GRENZWERTE.atemfrequenzHoch}/min?`,
+      `B - Atemfrequenz zwischen ${GRENZWERTE.atemfrequenzNiedrig} und ${GRENZWERTE.atemfrequenzHoch}/min?`,
       `Nein - ${anzeige(v.atemfrequenz)}/min`,
     );
   }
   weiter(
-    `Atemfrequenz zwischen ${GRENZWERTE.atemfrequenzNiedrig} und ${GRENZWERTE.atemfrequenzHoch}/min?`,
+    `B - Atemfrequenz zwischen ${GRENZWERTE.atemfrequenzNiedrig} und ${GRENZWERTE.atemfrequenzHoch}/min?`,
     `Ja - ${anzeige(v.atemfrequenz)}/min`,
   );
 
@@ -103,23 +110,23 @@ export function sichtungNachMstart(patient: Patient): Sichtungsergebnis {
   if (!pulsTastbar || v.rekapzeit > GRENZWERTE.rekapzeitKritisch) {
     return ergebnis(
       'SK1',
-      'Radialispuls tastbar und Rekapzeit <= 2 s?',
+      'C - Radialispuls tastbar und Rekapzeit <= 2 s?',
       !pulsTastbar
         ? `Nein - RR syst. ${anzeige(v.systolischerRR)} mmHg, kein Radialispuls`
         : `Nein - Rekapzeit ${v.rekapzeit.toFixed(1)} s`,
     );
   }
-  weiter('Radialispuls tastbar und Rekapzeit <= 2 s?', 'Ja');
+  weiter('C - Radialispuls tastbar und Rekapzeit <= 2 s?', 'Ja');
 
   if (!patient.befolgtAufforderungen || v.gcs < GRENZWERTE.gcsKritisch) {
     return ergebnis(
       'SK1',
-      'Befolgt einfache Aufforderungen?',
+      'D - Befolgt einfache Aufforderungen?',
       `Nein - GCS ${anzeige(v.gcs)}`,
     );
   }
 
-  return ergebnis('SK2', 'Befolgt einfache Aufforderungen?', `Ja - GCS ${anzeige(v.gcs)}`);
+  return ergebnis('SK2', 'D - Befolgt einfache Aufforderungen?', `Ja - GCS ${anzeige(v.gcs)}`);
 }
 
 /**

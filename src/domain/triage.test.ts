@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { patientAusVorlage } from './simulation';
-import { bewerteSichtung, radialispulsTastbar, sichtungNachMstart } from './triage';
+import { bewerteSichtung, radialispulsTastbar, sichtungNachTacstart } from './triage';
 import type { Patient, PatientVorlage, Vitalwerte } from './types';
 
 const NORMWERTE: Vitalwerte = {
@@ -39,22 +39,22 @@ function mitVitalwerten(teil: Partial<Vitalwerte>): Patient {
   return patient({ vitalwerte: { ...NORMWERTE, ...teil } });
 }
 
-/** @anker test.mstart Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte */
-describe('mSTaRT', () => {
+/** @anker test.tacstart Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte */
+describe('tacSTART', () => {
   it('sichtet gehfähige Patienten als SK III', () => {
-    expect(sichtungNachMstart(patient({ gehfaehig: true })).kategorie).toBe('SK3');
+    expect(sichtungNachTacstart(patient({ gehfaehig: true })).kategorie).toBe('SK3');
   });
 
   it('priorisiert die kritische Blutung vor allen weiteren Kriterien', () => {
-    expect(sichtungNachMstart(patient({ kritischeBlutung: true })).kategorie).toBe('SK1');
+    expect(sichtungNachTacstart(patient({ kritischeBlutung: true })).kategorie).toBe('SK1');
   });
 
   it('sichtet fehlende Spontanatmung als SK IV', () => {
-    expect(sichtungNachMstart(patient({ spontanatmung: false })).kategorie).toBe('SK4');
+    expect(sichtungNachTacstart(patient({ spontanatmung: false })).kategorie).toBe('SK4');
   });
 
   it('sichtet Verstorbene als EX, unabhängig von den Messwerten', () => {
-    expect(sichtungNachMstart(patient({ status: 'verstorben' })).kategorie).toBe('EX');
+    expect(sichtungNachTacstart(patient({ status: 'verstorben' })).kategorie).toBe('EX');
   });
 
   it.each([
@@ -64,7 +64,7 @@ describe('mSTaRT', () => {
     ['Rekapzeit verlängert', { rekapzeit: 2.5 }],
     ['Bewusstsein eingetrübt', { gcs: 8 }],
   ])('sichtet bei %s als SK I', (_bezeichnung, abweichung) => {
-    expect(sichtungNachMstart(mitVitalwerten(abweichung)).kategorie).toBe('SK1');
+    expect(sichtungNachTacstart(mitVitalwerten(abweichung)).kategorie).toBe('SK1');
   });
 
   it.each([
@@ -74,15 +74,15 @@ describe('mSTaRT', () => {
     ['Rekapzeit am Grenzwert', { rekapzeit: 2 }],
     ['GCS am Grenzwert', { gcs: 9 }],
   ])('sichtet bei %s noch als SK II', (_bezeichnung, grenzwert) => {
-    expect(sichtungNachMstart(mitVitalwerten(grenzwert)).kategorie).toBe('SK2');
+    expect(sichtungNachTacstart(mitVitalwerten(grenzwert)).kategorie).toBe('SK2');
   });
 
   it('sichtet Patienten, die keinen Aufforderungen folgen, als SK I', () => {
-    expect(sichtungNachMstart(patient({ befolgtAufforderungen: false })).kategorie).toBe('SK1');
+    expect(sichtungNachTacstart(patient({ befolgtAufforderungen: false })).kategorie).toBe('SK1');
   });
 
   it('dokumentiert genau einen entscheidenden Schritt', () => {
-    const ergebnis = sichtungNachMstart(patient({ gehfaehig: true }));
+    const ergebnis = sichtungNachTacstart(patient({ gehfaehig: true }));
     expect(ergebnis.schritte.filter((schritt) => schritt.entscheidend)).toHaveLength(1);
   });
 

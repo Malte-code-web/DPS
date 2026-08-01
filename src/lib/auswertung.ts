@@ -4,7 +4,7 @@ import {
   individualmedizinZeitSek,
   sichtungAn,
 } from "../domain/simulation";
-import { bewerteSichtung, sichtungNachMstart } from "../domain/triage";
+import { bewerteSichtung, sichtungNachTacstart } from "../domain/triage";
 import type { Sichtungsbewertung } from "../domain/triage";
 import type { Patient, Sichtungskategorie } from "../domain/types";
 
@@ -47,7 +47,7 @@ export interface Debriefingzeile {
   patient: Patient;
   vergeben: Sichtungskategorie | null;
   referenz: Sichtungskategorie;
-  /** Kategorie nach mSTaRT auf Basis des aktuellen Zustands. */
+  /** Kategorie nach tacSTART auf Basis des aktuellen Zustands. */
   aktuell: Sichtungskategorie;
   bewertung: Sichtungsbewertung;
   /** An der Ausgangssichtung vergebene Kategorie, sofern der Patient dort ankam. */
@@ -70,7 +70,7 @@ export function erstelleDebriefing(patienten: Patient[]): Debriefingzeile[] {
       patient,
       vergeben: vorsichtung,
       referenz: patient.erwarteteSK,
-      aktuell: sichtungNachMstart(patient).kategorie,
+      aktuell: sichtungNachTacstart(patient).kategorie,
       abschluss: sichtungAn(patient, "ausgangssichtung"),
       abschnitt: abschnittInfo(patient.abschnitt).name,
       bewertung: bewerteSichtung(vorsichtung, patient.erwarteteSK),

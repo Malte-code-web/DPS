@@ -4,7 +4,7 @@ import type { Szenario } from './types';
  * @anker szenarien.liste Die Übungsszenarien - hier neue Lagen und Patienten anlegen
  *
  * Übungsszenarien. Die Vitalwerte sind so gewählt, dass die erwartete
- * Sichtungskategorie zum Einsatzbeginn dem mSTaRT-Algorithmus entspricht -
+ * Sichtungskategorie zum Einsatzbeginn dem tacSTART-Algorithmus entspricht -
  * durch den Zeitverlauf kann sie sich jedoch verändern (Nachsichtung!).
  */
 
@@ -16,7 +16,7 @@ const busunfall: Szenario = {
     'Reisebus mit Schulklasse von der Fahrbahn abgekommen und umgestürzt. ' +
     'Etwa 10 Betroffene, mehrere eingeklemmt. Erster RTW vor Ort, NEF in Anfahrt.',
   einsatzhinweis:
-    'Vorsichtung nach mSTaRT durchführen, danach Behandlungsplatz aufbauen. ' +
+    'Vorsichtung nach tacSTART durchführen, danach Behandlungsplatz aufbauen. ' +
     'Achtung: mindestens ein Patient verschlechtert sich im Verlauf deutlich.',
   patienten: [
     {

@@ -641,7 +641,7 @@ describe('Fachliche Qualifikation im Mehrspieler', () => {
   });
 });
 
-describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
+describe('Delegationsanfrage (delegationAnfragen/delegationBeantworten)', () => {
   function imEinsatz(): SimulationState {
     return simulationReducer(
       spiele(
@@ -656,49 +656,168 @@ describe('Delegation einer Maßnahme (massnahmeDelegieren)', () => {
     );
   }
 
-  it('trägt eine Maßnahme als delegiert für genau diesen Patienten ein', () => {
+  it('trägt eine Anfrage ein', () => {
     const state = imEinsatz();
     const patientId = state.patienten[0]!.id;
     const nachher = simulationReducer(state, {
-      typ: 'massnahmeDelegieren',
+      typ: 'delegationAnfragen',
+      id: 'anfrage-1',
       patientId,
       massnahmeId: 'tourniquet',
+      anfragendeId: 's-1',
+      angefragteId: 'leiter-1',
     });
-    const patient = nachher.patienten.find((p) => p.id === patientId)!;
-    expect(patient.delegierteMassnahmen).toEqual(['tourniquet']);
-    // Andere Patienten bleiben unberührt.
-    for (const anderer of nachher.patienten.filter((p) => p.id !== patientId)) {
-      expect(anderer.delegierteMassnahmen).toEqual([]);
-    }
+    expect(nachher.delegationsanfragen).toEqual([
+      {
+        id: 'anfrage-1',
+        patientId,
+        massnahmeId: 'tourniquet',
+        anfragendeId: 's-1',
+        angefragteId: 'leiter-1',
+      },
+    ]);
   });
 
-  it('trägt dieselbe Maßnahme nicht doppelt ein', () => {
+  it('trägt dieselbe Anfrage-Id nicht doppelt ein', () => {
     const state = imEinsatz();
     const patientId = state.patienten[0]!.id;
-    const einmal = simulationReducer(state, {
-      typ: 'massnahmeDelegieren',
+    const aktion = {
+      typ: 'delegationAnfragen' as const,
+      id: 'anfrage-1',
+      patientId,
+      massnahmeId: 'tourniquet' as const,
+      anfragendeId: 's-1',
+      angefragteId: 'leiter-1',
+    };
+    const zweimal = simulationReducer(simulationReducer(state, aktion), aktion);
+    expect(zweimal.delegationsanfragen).toHaveLength(1);
+  });
+
+  it('gibt die Maßnahme bei Annahme gezielt nur für die anfragende Person frei', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const angefragt = simulationReducer(state, {
+      typ: 'delegationAnfragen',
+      id: 'anfrage-1',
       patientId,
       massnahmeId: 'tourniquet',
+      anfragendeId: 's-1',
+      angefragteId: 'leiter-1',
     });
-    const zweimal = simulationReducer(einmal, {
-      typ: 'massnahmeDelegieren',
+    const nachher = simulationReducer(angefragt, {
+      typ: 'delegationBeantworten',
+      id: 'anfrage-1',
+      angenommen: true,
+    });
+    expect(nachher.delegationsanfragen).toEqual([]);
+    const patient = nachher.patienten.find((p) => p.id === patientId)!;
+    expect(patient.delegierteMassnahmen).toEqual([{ massnahmeId: 'tourniquet', spielerId: 's-1' }]);
+  });
+
+  it('gibt bei Ablehnung nichts frei, entfernt aber die Anfrage', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const angefragt = simulationReducer(state, {
+      typ: 'delegationAnfragen',
+      id: 'anfrage-1',
       patientId,
       massnahmeId: 'tourniquet',
+      anfragendeId: 's-1',
+      angefragteId: 'leiter-1',
     });
-    expect(zweimal.patienten.find((p) => p.id === patientId)?.delegierteMassnahmen).toEqual([
-      'tourniquet',
-    ]);
+    const nachher = simulationReducer(angefragt, {
+      typ: 'delegationBeantworten',
+      id: 'anfrage-1',
+      angenommen: false,
+    });
+    expect(nachher.delegationsanfragen).toEqual([]);
+    expect(nachher.patienten.find((p) => p.id === patientId)?.delegierteMassnahmen).toEqual([]);
+  });
+
+  it('ignoriert eine unbekannte Anfrage-Id bei der Antwort', () => {
+    const state = imEinsatz();
+    const nachher = simulationReducer(state, {
+      typ: 'delegationBeantworten',
+      id: 'unbekannt',
+      angenommen: true,
+    });
+    expect(nachher).toEqual(state);
+  });
+
+  it('trägt eine angenommene Freigabe nicht doppelt ein', () => {
+    const state = imEinsatz();
+    const patientId = state.patienten[0]!.id;
+    const vorherFreigegeben = simulationReducer(
+      simulationReducer(state, {
+        typ: 'delegationAnfragen',
+        id: 'anfrage-1',
+        patientId,
+        massnahmeId: 'tourniquet',
+        anfragendeId: 's-1',
+        angefragteId: 'leiter-1',
+      }),
+      { typ: 'delegationBeantworten', id: 'anfrage-1', angenommen: true },
+    );
+    const zweiteAnfrage = simulationReducer(
+      simulationReducer(vorherFreigegeben, {
+        typ: 'delegationAnfragen',
+        id: 'anfrage-2',
+        patientId,
+        massnahmeId: 'tourniquet',
+        anfragendeId: 's-1',
+        angefragteId: 'leiter-1',
+      }),
+      { typ: 'delegationBeantworten', id: 'anfrage-2', angenommen: true },
+    );
+    expect(
+      zweiteAnfrage.patienten.find((p) => p.id === patientId)?.delegierteMassnahmen,
+    ).toEqual([{ massnahmeId: 'tourniquet', spielerId: 's-1' }]);
   });
 
   it('kostet keine Einsatzzeit', () => {
     const state = imEinsatz();
     const patientId = state.patienten[0]!.id;
-    const nachher = simulationReducer(state, {
-      typ: 'massnahmeDelegieren',
+    const angefragt = simulationReducer(state, {
+      typ: 'delegationAnfragen',
+      id: 'anfrage-1',
       patientId,
       massnahmeId: 'tourniquet',
+      anfragendeId: 's-1',
+      angefragteId: 'leiter-1',
+    });
+    const nachher = simulationReducer(angefragt, {
+      typ: 'delegationBeantworten',
+      id: 'anfrage-1',
+      angenommen: true,
     });
     expect(nachher.zeitSek).toBe(state.zeitSek);
+  });
+});
+
+describe('spielerAbschnittGesetzt', () => {
+  function eroeffnetMitSpieler(): SimulationState {
+    const host = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    return simulationReducer(host, {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 's-1', name: 'Anna', rolle: 'spieler', qualifikation: 'basis' },
+    });
+  }
+
+  it('setzt den aktuellen Abschnitt eines Spielers, ohne andere zu ändern', () => {
+    const state = simulationReducer(eroeffnetMitSpieler(), {
+      typ: 'spielerAbschnittGesetzt',
+      spielerId: 's-1',
+      abschnitt: 'zelt_rot',
+    });
+    expect(state.sitzung.spieler.find((s) => s.id === 's-1')?.aktuellerAbschnitt).toBe('zelt_rot');
+    expect(state.sitzung.spieler.find((s) => s.id === 'leiter-1')?.aktuellerAbschnitt).toBeUndefined();
   });
 });
 

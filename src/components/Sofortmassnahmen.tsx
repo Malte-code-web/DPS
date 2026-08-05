@@ -6,7 +6,9 @@ import {
 } from '../domain/massnahmen';
 import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
+import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import type { MassnahmeId, Patient } from '../domain/types';
 
 interface Props {
@@ -29,6 +31,7 @@ interface Props {
  */
 export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
   const { state } = useSimulation();
+  const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   const eigeneQualifikation = state.sitzung.aktiv
     ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
@@ -43,37 +46,66 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
             ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
           const erledigt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
           const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
-          const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
+          const delegiert = istDelegiert(patient.delegierteMassnahmen, massnahme.id);
           const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
             recht,
             eigeneQualifikation,
             delegiert,
           );
           const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
+          const kannAnfragen =
+            state.sitzung.aktiv &&
+            qualifikationFehlt &&
+            recht.delegationsziel !== null &&
+            !erledigt &&
+            !materialFehlt &&
+            fehlt === null;
+          const anfrageOffen = offenFuer === massnahme.id;
 
           return (
-            <button
-              key={massnahme.id}
-              type="button"
-              className={`sofort-knopf massnahme-${massnahme.art}${
-                erledigt ? ' massnahme-erledigt' : ''
-              }`}
-              disabled={gesperrt || erledigt || fehlt !== null || qualifikationFehlt || materialFehlt}
-              onClick={() => onMassnahme(massnahme.id)}
-            >
-              <span className="sofort-label">{massnahme.label}</span>
-              <span className="sofort-marke">
-                {erledigt
-                  ? 'erledigt'
-                  : fehlt
-                    ? voraussetzungKurz(fehlt)
-                    : qualifikationFehlt
-                      ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                      : materialFehlt
-                        ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                        : `${massnahme.dauerSek} s`}
-              </span>
-            </button>
+            <div key={massnahme.id} className="sofort-eintrag">
+              <button
+                type="button"
+                className={`sofort-knopf massnahme-${massnahme.art}${
+                  erledigt ? ' massnahme-erledigt' : ''
+                }`}
+                disabled={
+                  gesperrt || erledigt || fehlt !== null || materialFehlt || (qualifikationFehlt && !kannAnfragen)
+                }
+                aria-expanded={kannAnfragen ? anfrageOffen : undefined}
+                onClick={() => {
+                  if (kannAnfragen) {
+                    setOffenFuer(anfrageOffen ? null : massnahme.id);
+                    return;
+                  }
+                  onMassnahme(massnahme.id);
+                }}
+              >
+                <span className="sofort-label">{massnahme.label}</span>
+                <span className="sofort-marke">
+                  {erledigt
+                    ? 'erledigt'
+                    : fehlt
+                      ? voraussetzungKurz(fehlt)
+                      : kannAnfragen
+                        ? 'Freigabe anfragen'
+                        : qualifikationFehlt
+                          ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                          : materialFehlt
+                            ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                            : `${massnahme.dauerSek} s`}
+                </span>
+              </button>
+
+              {anfrageOffen && (
+                <DelegationAnfrageAuswahl
+                  massnahmeLabel={massnahme.label}
+                  kandidaten={kandidatenFuer(recht)}
+                  onAnfragen={(angefragteId) => anfragen(patient, massnahme.id, angefragteId)}
+                  onAbbrechen={() => setOffenFuer(null)}
+                />
+              )}
+            </div>
           );
         })}
       </div>

@@ -28,6 +28,7 @@ import {
 } from '../domain/sitzung';
 import type { Rolle, Sitzungszustand, Spieler } from '../domain/sitzung';
 import type {
+  DelegationsAnfrage,
   DiagnostikId,
   Einsatzabschnitt,
   Fahrzeug,
@@ -93,6 +94,12 @@ export interface SimulationState {
   /** Laufzeit-Fahrzeuge der aktiven Sitzung (→ `modell.fahrzeug`). Leer im Einzelspiel. */
   fahrzeuge: Fahrzeug[];
   /**
+   * Noch nicht beantwortete Delegationsanfragen (→ `modell.delegationsanfrage`,
+   * `ui.delegationsanfrage`) - jeder Client filtert selbst auf die an ihn
+   * gerichteten heraus.
+   */
+  delegationsanfragen: DelegationsAnfrage[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -119,6 +126,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   massnahmenrechte: standardMassnahmenrechte(),
   fahrzeugWunsch: [],
   fahrzeuge: [],
+  delegationsanfragen: [],
   schnappschussFolge: 0,
 };
 
@@ -142,7 +150,15 @@ export type SimulationAction =
       /** Nur bei Maßnahmen mit Dosisreferenz relevant (→ `domain.dosierung`). */
       dosisMg?: number;
     }
-  | { typ: 'massnahmeDelegieren'; patientId: string; massnahmeId: MassnahmeId }
+  | {
+      typ: 'delegationAnfragen';
+      id: string;
+      patientId: string;
+      massnahmeId: MassnahmeId;
+      anfragendeId: string;
+      angefragteId: string;
+    }
+  | { typ: 'delegationBeantworten'; id: string; angenommen: boolean }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
@@ -163,6 +179,7 @@ export type SimulationAction =
   | { typ: 'spielerEntfernt'; spielerId: string }
   | { typ: 'spielerQualifikationSetzen'; spielerId: string; qualifikation: Qualifikation }
   | { typ: 'spielerFuehrungsrolleSetzen'; spielerId: string; rolle: Fuehrungsrolle }
+  | { typ: 'spielerAbschnittGesetzt'; spielerId: string; abschnitt: Einsatzabschnitt }
   | { typ: 'fahrzeugBesatzungGesetzt'; fahrzeugId: string; besatzung: string[] }
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
   | { typ: 'sitzungStarten' }
@@ -191,6 +208,8 @@ export interface Schnappschuss {
   status: Sitzungszustand['status'];
   /** Damit alle Clients dieselben Sperren durchsetzen, nicht nur der Host. */
   massnahmenrechte: Massnahmenrechte;
+  /** Noch nicht beantwortete Delegationsanfragen (→ `modell.delegationsanfrage`). */
+  delegationsanfragen: DelegationsAnfrage[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -213,6 +232,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     spieler: state.sitzung.spieler,
     status: state.sitzung.status,
     massnahmenrechte: state.massnahmenrechte,
+    delegationsanfragen: state.delegationsanfragen,
   };
 }
 
@@ -381,16 +401,50 @@ export function simulationReducer(
       );
     }
 
-    case 'massnahmeDelegieren':
+    case 'delegationAnfragen':
+      // Dedupliziert über die Anfrage-Id, falls dieselbe Anfrage (z. B. nach
+      // einer verlorenen Bestätigung, → `state.aktionsbestaetigung`) erneut
+      // ankommt.
+      if (state.delegationsanfragen.some((anfrage) => anfrage.id === action.id)) return state;
+      return {
+        ...state,
+        delegationsanfragen: [
+          ...state.delegationsanfragen,
+          {
+            id: action.id,
+            patientId: action.patientId,
+            massnahmeId: action.massnahmeId,
+            anfragendeId: action.anfragendeId,
+            angefragteId: action.angefragteId,
+          },
+        ],
+      };
+
+    case 'delegationBeantworten': {
+      const anfrage = state.delegationsanfragen.find((eintrag) => eintrag.id === action.id);
+      if (!anfrage) return state;
+      const ohneAnfrage = {
+        ...state,
+        delegationsanfragen: state.delegationsanfragen.filter((eintrag) => eintrag.id !== action.id),
+      };
+      if (!action.angenommen) return ohneAnfrage;
       // Freigabe durch Rücksprache - kostet keine Einsatzzeit (→ `domain.qualifikation`).
-      return mitPatient(state, action.patientId, (patient) =>
-        patient.delegierteMassnahmen.includes(action.massnahmeId)
+      // Gezielt für die anfragende Person, nicht patientenweit (→ `modell.delegation`).
+      return mitPatient(ohneAnfrage, anfrage.patientId, (patient) =>
+        patient.delegierteMassnahmen.some(
+          (freigabe) =>
+            freigabe.massnahmeId === anfrage.massnahmeId && freigabe.spielerId === anfrage.anfragendeId,
+        )
           ? patient
           : {
               ...patient,
-              delegierteMassnahmen: [...patient.delegierteMassnahmen, action.massnahmeId],
+              delegierteMassnahmen: [
+                ...patient.delegierteMassnahmen,
+                { massnahmeId: anfrage.massnahmeId, spielerId: anfrage.anfragendeId },
+              ],
             },
       );
+    }
 
     case 'patientVerlegen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
@@ -566,6 +620,22 @@ export function simulationReducer(
         },
       };
 
+    case 'spielerAbschnittGesetzt':
+      // Für alle sichtbar mitgeführt (→ `sitzung.modell`), anders als die rein
+      // lokale Navigation (`ausgewaehlterAbschnitt`) - Grundlage für die
+      // Kandidatenwahl einer Delegationsanfrage (→ `ui.delegationsanfrage`).
+      return {
+        ...state,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? { ...spieler, aktuellerAbschnitt: action.abschnitt }
+              : spieler,
+          ),
+        },
+      };
+
     case 'spielerFuehrungsrolleSetzen':
       // Anders als die Qualifikation (jede Person wählt sich selbst) wird die
       // Führungsrolle zugeteilt - Aufruf ist deshalb nur der Übungsleitung
@@ -638,6 +708,7 @@ export function simulationReducer(
         patienten: s.patienten,
         fahrzeuge: s.fahrzeuge,
         massnahmenrechte: s.massnahmenrechte,
+        delegationsanfragen: s.delegationsanfragen,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

@@ -10,10 +10,12 @@ import {
 } from '../domain/massnahmen';
 import { ANALGETIKA, NOTFALLNARKOSE, gewichtVon, hatDosisreferenz } from '../domain/dosierung';
 import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
-import { darfDelegieren, massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
+import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
+import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
 import { Analgesieauswahl } from './Analgesieauswahl';
+import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import { Dosiseingabe } from './Dosiseingabe';
 import { Notfallnarkoseauswahl } from './Notfallnarkoseauswahl';
 import type {
@@ -54,10 +56,11 @@ interface Props {
  * bewusst zugeklappt: Nachschlagewissen ja, Hinweis auf diesen Patienten nein.
  */
 export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arten }: Props) {
-  const { state, dispatch } = useSimulation();
+  const { state } = useSimulation();
   const [offen, setOffen] = useState<Set<MassnahmenKategorie>>(() => new Set(standardOffen));
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const [dosisOffen, setDosisOffen] = useState<MassnahmeId | null>(null);
+  const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
   // (→ `domain.qualifikation`); im Einzel-/Teamspiel bleibt alles frei wählbar.
@@ -86,20 +89,23 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
       ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
     const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
     const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
-    const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
+    const delegiert = istDelegiert(patient.delegierteMassnahmen, massnahme.id);
     const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
       recht,
       eigeneQualifikation,
       delegiert,
     );
     const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
-    const zeigeDelegieren =
+    // Statt eines eigenen "Freigeben"-Knopfs für Berechtigte fragt jetzt die
+    // Person, die die Maßnahme braucht, gezielt nach (→ `ui.delegationsanfrage`).
+    const kannAnfragen =
       state.sitzung.aktiv &&
-      darfDelegieren(recht, eigeneQualifikation) &&
-      recht.qualifikation !== 'basis' &&
-      !delegiert &&
+      qualifikationFehlt &&
+      recht.delegationsziel !== null &&
       !bereitsDurchgefuehrt &&
+      !materialFehlt &&
       fehlt === null;
+    const anfrageOffen = offenFuer === massnahme.id;
     const detailOffen = detail === massnahme.id;
     const hatDetails = Boolean(massnahme.indikation ?? massnahme.dosierung);
     // Maßnahmen mit eigener Dosisreferenz (→ `domain.dosierung`) öffnen beim
@@ -116,12 +122,24 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
             bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
           }`}
           disabled={
-            gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt || materialFehlt
+            gesperrt ||
+            bereitsDurchgefuehrt ||
+            fehlt !== null ||
+            materialFehlt ||
+            (qualifikationFehlt && !kannAnfragen)
           }
-          aria-expanded={hatDosis ? dosisPanelOffen : undefined}
-          onClick={() =>
-            hatDosis ? setDosisOffen(dosisPanelOffen ? null : massnahme.id) : onMassnahme(massnahme.id)
-          }
+          aria-expanded={kannAnfragen ? anfrageOffen : hatDosis ? dosisPanelOffen : undefined}
+          onClick={() => {
+            if (kannAnfragen) {
+              setOffenFuer(anfrageOffen ? null : massnahme.id);
+              return;
+            }
+            if (hatDosis) {
+              setDosisOffen(dosisPanelOffen ? null : massnahme.id);
+            } else {
+              onMassnahme(massnahme.id);
+            }
+          }}
         >
           <span className="massnahme-label">
             {massnahme.label}
@@ -139,25 +157,23 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
                 ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
                   // Voraussetzung genau fehlt, steht im SAA-Detail.
                   voraussetzungKurz(fehlt)
-                : qualifikationFehlt
-                  ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                  : materialFehlt
-                    ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                    : `${massnahme.dauerSek} s`}
+                : kannAnfragen
+                  ? 'Freigabe anfragen'
+                  : qualifikationFehlt
+                    ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                    : materialFehlt
+                      ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                      : `${massnahme.dauerSek} s`}
           </span>
         </button>
 
-        {zeigeDelegieren && (
-          <button
-            type="button"
-            className="massnahme-delegieren"
-            title={`${massnahme.label} für diesen Patienten freigeben`}
-            onClick={() =>
-              dispatch({ typ: 'massnahmeDelegieren', patientId: patient.id, massnahmeId: massnahme.id })
-            }
-          >
-            Freigeben
-          </button>
+        {anfrageOffen && (
+          <DelegationAnfrageAuswahl
+            massnahmeLabel={massnahme.label}
+            kandidaten={kandidatenFuer(recht)}
+            onAnfragen={(angefragteId) => anfragen(patient, massnahme.id, angefragteId)}
+            onAbbrechen={() => setOffenFuer(null)}
+          />
         )}
 
         {hatDetails && (

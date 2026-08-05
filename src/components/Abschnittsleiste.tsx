@@ -5,7 +5,9 @@ import { useSimulation } from '../state/useSimulation';
  * @anker ui.abschnittsleiste Reiter mit der Belegung je Abschnitt
  *
  * Wegweiser durch die Einsatzabschnitte mit der Zahl der Patienten je
- * Abschnitt - zugleich die Lageübersicht des Behandlungsplatzes.
+ * Abschnitt - zugleich die Lageübersicht des Behandlungsplatzes. Die eigene
+ * Position wird nebenbei synchron mitgeführt (→ `state.provider`,
+ * `ui.delegationsanfrage`), ohne dass diese Ansicht davon etwas wissen muss.
  */
 export function Abschnittsleiste() {
   const { state, dispatch } = useSimulation();

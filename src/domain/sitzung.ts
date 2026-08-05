@@ -1,4 +1,4 @@
-import type { Fuehrungsrolle, Qualifikation } from './types';
+import type { Einsatzabschnitt, Fuehrungsrolle, Qualifikation } from './types';
 
 /**
  * @anker sitzung.modell Rollen, Spieler und Code einer gemeinsamen Sitzung
@@ -28,6 +28,15 @@ export interface Spieler {
    * gewählt. Fehlt das Feld (z. B. bei älteren Schnappschüssen), gilt `'keine'`.
    */
   fuehrungsrolle?: Fuehrungsrolle;
+  /**
+   * Der Einsatzabschnitt, den dieser Spieler gerade selbst ansieht
+   * (→ `ui.abschnittsleiste`) - im Unterschied zur rein lokalen Navigation
+   * eines einzelnen Clients wird das hier für alle sichtbar mitgeführt, damit
+   * eine Delegationsanfrage (→ `ui.delegationsanfrage`) nur an jemanden im
+   * selben Bereich möglich ist. Fehlt das Feld (z. B. bevor die Person
+   * überhaupt navigiert hat), gilt niemand als "im selben Bereich".
+   */
+  aktuellerAbschnitt?: Einsatzabschnitt;
 }
 
 /** Der lokale Sitzungszustand eines Clients (teils geteilt, teils nur hier). */

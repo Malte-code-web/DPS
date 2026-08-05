@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Abschnittsleiste } from '../components/Abschnittsleiste';
+import { DelegationBenachrichtigung } from '../components/DelegationBenachrichtigung';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { PatientKarte } from '../components/PatientKarte';
@@ -73,6 +74,8 @@ export function EinsatzSeite() {
           Seite versucht es weiter im Hintergrund.
         </p>
       )}
+
+      <DelegationBenachrichtigung />
 
       {ausgewaehlt ? (
         // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen

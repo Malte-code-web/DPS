@@ -67,10 +67,13 @@ function istLokaleAktion(action: SimulationAction): boolean {
  * Host überschreibt die Spielerliste ohnehin vollständig, sodass eine
  * abweichende lokale Vermutung sich selbst korrigiert - anders als bei
  * simulationsrelevanten Aktionen (z. B. `massnahmeDurchfuehren`), wo nur der
- * Host rechnen darf.
+ * Host rechnen darf. `spielerAbschnittGesetzt` (→ `sitzung.modell`,
+ * `aktuellerAbschnitt`) läuft aus demselben Grund mit: nur die eigene,
+ * synchron mitgeführte Position - kein Sim-Zustand, den nur der Host
+ * berechnen dürfte.
  */
 function istOptimistischeAktion(action: SimulationAction): boolean {
-  return action.typ === 'spielerQualifikationSetzen';
+  return action.typ === 'spielerQualifikationSetzen' || action.typ === 'spielerAbschnittGesetzt';
 }
 
 /**
@@ -256,7 +259,7 @@ export function SimulationProvider({
 
   // Nur die geteilten Scheiben bilden den Schnappschuss - lokale Navigation
   // (Patientenwahl, Abschnitt) fließt bewusst nicht ein und löst kein Senden aus.
-  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte } = state;
+  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte, delegationsanfragen } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
   // `folge` gehört nicht zum reinen Zustand (→ `state.schnappschuss`) - sie
@@ -273,6 +276,7 @@ export function SimulationProvider({
       spieler: spielerliste,
       status,
       massnahmenrechte,
+      delegationsanfragen,
     }),
     [
       phase,
@@ -285,6 +289,7 @@ export function SimulationProvider({
       spielerliste,
       status,
       massnahmenrechte,
+      delegationsanfragen,
     ],
   );
 
@@ -330,6 +335,21 @@ export function SimulationProvider({
     },
     [istSpieler, sendeMitBestaetigung],
   );
+
+  // Hält `sitzung.spieler[eigene].aktuellerAbschnitt` (→ `sitzung.modell`) mit
+  // der eigenen, sonst rein lokalen Navigation synchron - läuft bei jeder
+  // Änderung von `ausgewaehlterAbschnitt`, also auch beim allerersten Aufruf
+  // der Einsatzseite, nicht erst bei einem manuellen Tab-Klick. Grundlage für
+  // die Kandidatenwahl einer Delegationsanfrage (→ `ui.delegationsanfrage`).
+  const { ausgewaehlterAbschnitt } = state;
+  useEffect(() => {
+    if (!sitzung.aktiv || !sitzung.eigeneId) return;
+    dispatchRoutet({
+      typ: 'spielerAbschnittGesetzt',
+      spielerId: sitzung.eigeneId,
+      abschnitt: ausgewaehlterAbschnitt,
+    });
+  }, [ausgewaehlterAbschnitt, sitzung.aktiv, sitzung.eigeneId, dispatchRoutet]);
 
   const wert = useMemo(() => ({ state, dispatch: dispatchRoutet }), [state, dispatchRoutet]);
 

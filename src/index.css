@@ -1370,7 +1370,14 @@ button.gefahr {
   gap: 0.3rem;
 }
 
-.patient-karte-sofort .massnahme {
+.patient-karte-sofort-eintrag {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-karte-sofort-eintrag .massnahme {
   flex: 1;
 }
 
@@ -2022,6 +2029,16 @@ button.gefahr {
   }
 }
 
+/* Grid-Zelle: Knopf und, falls offen, die Delegationsanfrage darunter. */
+.sofort-eintrag {
+  display: flex;
+  flex-direction: column;
+}
+
+.sofort-eintrag .sofort-knopf {
+  flex: 1;
+}
+
 /*
  * Die Knöpfe tragen Label und Merkzeile in einer knappen, linksbündigen Kachel.
  * Bewusst kompakt: sie stehen dauerhaft in der Übersicht und dürfen die Karte
@@ -2470,14 +2487,38 @@ button.gefahr {
   color: var(--text-leise);
 }
 
-/* Freigabe einer über der eigenen Qualifikation liegenden Maßnahme für den
-   Patienten - erscheint nur, wer sie selbst dürfte (→ `domain.qualifikation`). */
-.massnahme-delegieren {
-  grid-column: 1 / -1;
-  justify-self: start;
-  margin-bottom: 0.3rem;
-  padding: 0.25rem 0.65rem;
-  font-size: 0.72rem;
+/*
+ * @anker stil.delegationsanfrage Kandidatenwahl und Benachrichtigung der Delegation
+ *
+ * Wer die Maßnahme braucht, aber nicht darf, fragt gezielt nach
+ * (→ `ui.delegationsanfrage`) - dieselbe Optik wie die Dosis-Eingabe
+ * (`.dosis-eingabe`), aber eigene Klasse, da sie an anderen Stellen sitzt
+ * (Massnahmenliste, Sofortmaßnahmen, Analgesie-/Notfallnarkoseauswahl,
+ * Patientenkarte).
+ */
+.delegation-anfrage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.delegation-kandidaten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.delegation-kandidaten button {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--akzent);
   background: color-mix(in srgb, var(--akzent) 12%, transparent);
@@ -2485,8 +2526,49 @@ button.gefahr {
   border-radius: 999px;
 }
 
-.massnahme-delegieren:hover {
+.delegation-kandidaten button:hover {
   background: color-mix(in srgb, var(--akzent) 20%, transparent);
+}
+
+.delegation-abbrechen {
+  font-size: 0.72rem;
+  color: var(--text-leise);
+}
+
+/* Overlay, damit die Anfrage unabhängig von der gerade offenen Unterseite
+   sichtbar wird - dieselbe Idee wie der Verbindungsfehler-Banner, aber als
+   echtes Modal, weil eine Antwort erwartet wird. */
+.delegation-benachrichtigung-hintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: color-mix(in srgb, black 55%, transparent);
+}
+
+.delegation-benachrichtigung {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 24rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--radius);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+}
+
+.delegation-benachrichtigung p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.delegation-benachrichtigung-knoepfe {
+  display: flex;
+  gap: 0.6rem;
 }
 
 /* --- Analgesie-Sammelauswahl (→ ui.analgesieauswahl) ---------------- */

@@ -626,6 +626,33 @@ export interface Diagnostik {
 }
 
 /**
+ * @anker modell.delegation Gezielte Freigabe einer Maßnahme für eine bestimmte Person
+ *
+ * Anders als eine patientenweite Freigabe gilt diese nur für die eine Person,
+ * die tatsächlich nachgefragt hat (→ `ui.delegationsanfrage`) - entsteht aus
+ * einer angenommenen `DelegationsAnfrage`.
+ */
+export interface DelegationsFreigabe {
+  massnahmeId: MassnahmeId;
+  spielerId: string;
+}
+
+/**
+ * @anker modell.delegationsanfrage Angefragte, noch nicht beantwortete Delegation
+ *
+ * Der anfragende Spieler wählt eine konkrete, im selben Einsatzabschnitt
+ * anwesende Person mit ausreichender Qualifikation; diese sieht die Anfrage
+ * als Benachrichtigung (→ `ui.delegationsanfrage`) und nimmt an oder lehnt ab.
+ */
+export interface DelegationsAnfrage {
+  id: string;
+  patientId: string;
+  massnahmeId: MassnahmeId;
+  anfragendeId: string;
+  angefragteId: string;
+}
+
+/**
  * Laufzeitzustand eines Patienten während der Simulation.
  * @anker modell.patient Alles, was sich an einem Patienten im Einsatz ändert
  */
@@ -652,10 +679,12 @@ export interface Patient extends PatientVorlage {
   behandelteProbleme: string[];
   durchgefuehrteMassnahmen: MassnahmeId[];
   /**
-   * Maßnahmen, die für diesen Patienten von einer höherqualifizierten Person
-   * freigegeben wurden - hebt die Qualifikationssperre auf (→ `domain.qualifikation`).
+   * Maßnahmen, die für diesen Patienten gezielt für eine bestimmte Person
+   * freigegeben wurden - hebt die Qualifikationssperre für genau diese Person
+   * auf (→ `domain.qualifikation`, `ui.delegationsanfrage`). Eine Freigabe
+   * gilt nicht automatisch für alle, nur für die anfragende Person selbst.
    */
-  delegierteMassnahmen: MassnahmeId[];
+  delegierteMassnahmen: DelegationsFreigabe[];
   /** Welche Untersuchungen durchgeführt wurden - steuert, was sichtbar ist. */
   durchgefuehrteDiagnostik: DiagnostikId[];
   /** Abkürzung für "Bodycheck erfolgt". */

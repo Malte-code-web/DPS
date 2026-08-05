@@ -9,7 +9,9 @@ import { ANALGETIKA, gewichtVon } from '../domain/dosierung';
 import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domain/material';
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
+import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
+import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import { Dosiseingabe } from './Dosiseingabe';
 import type { Massnahme, MassnahmeId, Patient } from '../domain/types';
 
@@ -32,6 +34,7 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
   const { state } = useSimulation();
   const [offen, setOffen] = useState(false);
   const [gewaehlt, setGewaehlt] = useState<MassnahmeId | null>(null);
+  const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
 
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
@@ -72,15 +75,27 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
             const recht = rechtVon(massnahme);
             const bereitsDurchgefuehrt = patient.durchgefuehrteMassnahmen.includes(massnahme.id);
             const fehlt = fehlendeVoraussetzung(massnahme, patient.durchgefuehrteMassnahmen);
-            const delegiert = patient.delegierteMassnahmen.includes(massnahme.id);
+            const delegiert = istDelegiert(patient.delegierteMassnahmen, massnahme.id);
             const qualifikationFehlt = massnahmeGesperrtWegenQualifikation(
               recht,
               eigeneQualifikation,
               delegiert,
             );
             const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
+            const kannAnfragen =
+              state.sitzung.aktiv &&
+              qualifikationFehlt &&
+              recht.delegationsziel !== null &&
+              !bereitsDurchgefuehrt &&
+              !materialFehlt &&
+              fehlt === null;
+            const anfrageOffen = offenFuer === massnahme.id;
             const gesperrtHier =
-              gesperrt || bereitsDurchgefuehrt || fehlt !== null || qualifikationFehlt || materialFehlt;
+              gesperrt ||
+              bereitsDurchgefuehrt ||
+              fehlt !== null ||
+              materialFehlt ||
+              (qualifikationFehlt && !kannAnfragen);
             const istGewaehlt = gewaehlt === massnahme.id;
 
             return (
@@ -89,7 +104,14 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
                   type="button"
                   className={`massnahme massnahme-medikament${istGewaehlt ? ' massnahme-aktiv' : ''}`}
                   disabled={gesperrtHier}
-                  onClick={() => setGewaehlt(massnahme.id)}
+                  aria-expanded={kannAnfragen ? anfrageOffen : undefined}
+                  onClick={() => {
+                    if (kannAnfragen) {
+                      setOffenFuer(anfrageOffen ? null : massnahme.id);
+                      return;
+                    }
+                    setGewaehlt(massnahme.id);
+                  }}
                 >
                   <span className="massnahme-label">
                     {massnahme.label}
@@ -104,13 +126,24 @@ export function Analgesieauswahl({ patient, onMassnahme }: Props) {
                       ? 'durchgeführt'
                       : fehlt
                         ? voraussetzungKurz(fehlt)
-                        : qualifikationFehlt
-                          ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                          : materialFehlt
-                            ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                            : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
+                        : kannAnfragen
+                          ? 'Freigabe anfragen'
+                          : qualifikationFehlt
+                            ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                            : materialFehlt
+                              ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                              : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
                   </span>
                 </button>
+
+                {anfrageOffen && (
+                  <DelegationAnfrageAuswahl
+                    massnahmeLabel={massnahme.label}
+                    kandidaten={kandidatenFuer(recht)}
+                    onAnfragen={(angefragteId) => anfragen(patient, massnahme.id, angefragteId)}
+                    onAbbrechen={() => setOffenFuer(null)}
+                  />
+                )}
 
                 {istGewaehlt && (
                   <Dosiseingabe

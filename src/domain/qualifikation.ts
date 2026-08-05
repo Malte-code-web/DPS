@@ -1,5 +1,5 @@
 import type { Spieler } from './sitzung';
-import type { Qualifikation } from './types';
+import type { DelegationsFreigabe, Einsatzabschnitt, MassnahmeId, Qualifikation } from './types';
 
 /**
  * @anker domain.qualifikation Rangfolge und Prüfung der fachlichen Qualifikation
@@ -76,6 +76,45 @@ export function massnahmeGesperrtWegenQualifikation(
 export function darfDelegieren(recht: MassnahmeRecht, eigene: Qualifikation | null): boolean {
   if (eigene === null || recht.delegationsziel === null) return false;
   return erfuelltQualifikation(eigene, recht.qualifikation);
+}
+
+/**
+ * Ob eine Maßnahme für GENAU diese Person bei diesem Patienten freigegeben
+ * ist (→ `modell.delegation`) - eine gezielte, keine patientenweite Freigabe.
+ */
+export function istFuerSpielerDelegiert(
+  delegierteMassnahmen: DelegationsFreigabe[],
+  massnahmeId: MassnahmeId,
+  spielerId: string | null,
+): boolean {
+  if (!spielerId) return false;
+  return delegierteMassnahmen.some(
+    (freigabe) => freigabe.massnahmeId === massnahmeId && freigabe.spielerId === spielerId,
+  );
+}
+
+/**
+ * @anker domain.delegationskandidaten Wen fragen? - Kandidaten für eine Delegationsanfrage
+ *
+ * Wer als Ziel einer Anfrage infrage kommt: nicht die anfragende Person
+ * selbst, im selben Einsatzabschnitt anwesend (→ `sitzung.modell`,
+ * `aktuellerAbschnitt`) und mit ausreichender Qualifikation, um die Maßnahme
+ * selbst durchführen (und damit delegieren) zu dürfen - dieselbe Regel wie
+ * bei `darfDelegieren`, nur auf jede andere Person statt auf die eigene
+ * angewendet.
+ */
+export function delegationsKandidaten(
+  recht: MassnahmeRecht,
+  spieler: Spieler[],
+  eigeneId: string | null,
+  eigenerAbschnitt: Einsatzabschnitt,
+): Spieler[] {
+  return spieler.filter(
+    (kandidat) =>
+      kandidat.id !== eigeneId &&
+      kandidat.aktuellerAbschnitt === eigenerAbschnitt &&
+      darfDelegieren(recht, kandidat.qualifikation),
+  );
 }
 
 /**

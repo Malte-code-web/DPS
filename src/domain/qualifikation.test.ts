@@ -1,18 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
   darfDelegieren,
+  delegationsKandidaten,
   erfuelltQualifikation,
+  istFuerSpielerDelegiert,
   massnahmeGesperrtWegenQualifikation,
   notfallnarkoseTeamVerfuegbar,
 } from './qualifikation';
 import type { MassnahmeRecht } from './qualifikation';
 import type { Spieler } from './sitzung';
-import type { Qualifikation } from './types';
+import type { DelegationsFreigabe, Einsatzabschnitt, Qualifikation } from './types';
 
 let naechsteId = 0;
-function spielerMit(qualifikation: Qualifikation): Spieler {
+function spielerMit(
+  qualifikation: Qualifikation,
+  aktuellerAbschnitt?: Einsatzabschnitt,
+): Spieler {
   naechsteId += 1;
-  return { id: `s-${naechsteId}`, name: `Spieler ${naechsteId}`, rolle: 'spieler', qualifikation };
+  return {
+    id: `s-${naechsteId}`,
+    name: `Spieler ${naechsteId}`,
+    rolle: 'spieler',
+    qualifikation,
+    aktuellerAbschnitt,
+  };
 }
 
 describe('erfuelltQualifikation', () => {
@@ -133,5 +144,60 @@ describe('notfallnarkoseTeamVerfuegbar', () => {
       spielerMit('notsan'),
     ];
     expect(notfallnarkoseTeamVerfuegbar(true, [...team].reverse())).toBe(true);
+  });
+});
+
+describe('istFuerSpielerDelegiert', () => {
+  const freigaben: DelegationsFreigabe[] = [{ massnahmeId: 'thoraxentlastung', spielerId: 's-1' }];
+
+  it('erkennt eine Freigabe für genau die anfragende Person', () => {
+    expect(istFuerSpielerDelegiert(freigaben, 'thoraxentlastung', 's-1')).toBe(true);
+  });
+
+  it('gilt nicht für eine andere Person, selbst bei derselben Maßnahme', () => {
+    expect(istFuerSpielerDelegiert(freigaben, 'thoraxentlastung', 's-2')).toBe(false);
+  });
+
+  it('gilt nicht für eine andere Maßnahme derselben Person', () => {
+    expect(istFuerSpielerDelegiert(freigaben, 'intubation', 's-1')).toBe(false);
+  });
+
+  it('verweigert ohne eigene Id (außerhalb einer Sitzung)', () => {
+    expect(istFuerSpielerDelegiert(freigaben, 'thoraxentlastung', null)).toBe(false);
+  });
+});
+
+describe('delegationsKandidaten', () => {
+  const recht: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: 'basis' };
+
+  it('lässt nur Personen im selben Abschnitt mit ausreichender Qualifikation zu', () => {
+    const gleicherAbschnitt = spielerMit('notarzt', 'zelt_rot');
+    const andererAbschnitt = spielerMit('notarzt', 'zelt_gelb');
+    const zuNiedrig = spielerMit('basis', 'zelt_rot');
+    const kandidaten = delegationsKandidaten(
+      recht,
+      [gleicherAbschnitt, andererAbschnitt, zuNiedrig],
+      'ich',
+      'zelt_rot',
+    );
+    expect(kandidaten).toEqual([gleicherAbschnitt]);
+  });
+
+  it('schließt die anfragende Person selbst aus', () => {
+    const selbst = { ...spielerMit('notarzt', 'zelt_rot'), id: 'ich' };
+    const kandidaten = delegationsKandidaten(recht, [selbst], 'ich', 'zelt_rot');
+    expect(kandidaten).toEqual([]);
+  });
+
+  it('zählt niemanden ohne bekannten aktuellen Abschnitt (Feld fehlt)', () => {
+    const ohneAbschnitt = spielerMit('notarzt');
+    const kandidaten = delegationsKandidaten(recht, [ohneAbschnitt], 'ich', 'zelt_rot');
+    expect(kandidaten).toEqual([]);
+  });
+
+  it('bleibt leer, wenn die Maßnahme nicht delegierbar ist', () => {
+    const nichtDelegierbar: MassnahmeRecht = { qualifikation: 'notsan', delegationsziel: null };
+    const kandidat = spielerMit('notarzt', 'zelt_rot');
+    expect(delegationsKandidaten(nichtDelegierbar, [kandidat], 'ich', 'zelt_rot')).toEqual([]);
   });
 });

@@ -1,6 +1,13 @@
+import { supabaseKonfiguriert } from '../net/supabaseClient';
 import { useSimulation } from '../state/useSimulation';
 
-/** @anker ui.rolle Übungsleiter oder Spieler wählen */
+/**
+ * @anker ui.rolle Übungsleiter oder Spieler wählen
+ *
+ * Die Übungsleitung braucht ein vorab angelegtes Konto (→ `net.supabaseAuth`)
+ * und damit ein konfiguriertes Supabase-Projekt - ohne das bleibt die Rolle
+ * gesperrt, Spieler treten weiterhin ohne Konto per Code bei.
+ */
 export function RolleSeite() {
   const { dispatch } = useSimulation();
 
@@ -21,10 +28,15 @@ export function RolleSeite() {
         <button
           type="button"
           className="rollen-karte"
+          disabled={!supabaseKonfiguriert}
           onClick={() => dispatch({ typ: 'rolleWaehlen', rolle: 'uebungsleiter' })}
         >
           <h2>Als Übungsleitung</h2>
-          <p>Anmelden, Szenario wählen, Sitzung eröffnen und die Übung starten.</p>
+          <p>
+            {supabaseKonfiguriert
+              ? 'Anmelden, Szenario wählen, Sitzung eröffnen und die Übung starten.'
+              : 'Erfordert ein eingerichtetes Übungsleitungs-Konto (Supabase) - ohne Server-Anbindung nicht verfügbar.'}
+          </p>
         </button>
         <button
           type="button"

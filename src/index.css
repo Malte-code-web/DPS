@@ -399,6 +399,15 @@ select {
   border-color: color-mix(in srgb, var(--akzent) 55%, var(--rand));
 }
 
+.rollen-karte:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.rollen-karte:disabled:hover {
+  border-color: var(--rand);
+}
+
 .rollen-karte h2 {
   margin: 0;
   font-size: 1.05rem;

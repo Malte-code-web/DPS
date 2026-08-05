@@ -42,8 +42,17 @@ treten über einen Code bei und warten im Wartebereich bis zum Start.
   keine Datenbank-Tabelle nötig. **Verifiziert:** Relay-Test gegen ein echtes
   Supabase-Projekt sowie ein voller Ablauf über zwei echte Geräte im selben
   WLAN (PC eröffnet, Handy tritt bei, erscheint in der Teilnehmerliste).
-- 🟡 **Stufe 3 – Übungsleiter-Konten.** Anmeldung mit E-Mail und Passwort
-  (Supabase Auth); nur angemeldete Übungsleitungen eröffnen Sitzungen.
+- ✅ **Stufe 3 – Übungsleiter-Konten.** Anmeldung mit E-Mail und Passwort
+  (Supabase Auth); nur angemeldete Übungsleitungen eröffnen Sitzungen. Konten
+  werden bewusst nicht in der App angelegt, sondern vorab im
+  Supabase-Dashboard ("Authentication" -> "Add user") - die App bietet nur
+  den Login. Ohne konfiguriertes Supabase ist die Übungsleitungs-Rolle
+  komplett gesperrt (mit erklärendem Hinweis), Spieler treten weiterhin ohne
+  Konto per Code bei. **Verifiziert:** Sperre ohne Supabase per Playwright,
+  Fehlerpfad (falsche Zugangsdaten) direkt gegen die echte Supabase-Auth-API
+  bestätigt (Fehlertext-Übersetzung passend zur echten Antwort) - der volle
+  Login-Rundlauf über einen echten Browser ließ sich in der Sandbox wegen
+  einer bekannten Proxy-Einschränkung nicht zusätzlich verifizieren.
 
 **Braucht von außen:** ein kostenloses Supabase-Projekt (EU-Region, DSGVO) –
 URL und anon key (Einrichtung siehe README, Abschnitt „Gemeinsam üben").
@@ -203,8 +212,8 @@ Weiter denkbar, sobald die Bausteine 1–4 stehen:
 
 Jeder Schritt ist eigenständig nutzbar:
 
-1. **Mehrspieler fertig** (Stufe 3 folgt) – Fundament, an dem Qualifikation und
-   Führung hängen. Stufe 1 und 2 sind verifiziert im Einsatz.
+1. **Mehrspieler fertig** ✅ (Stufe 1-3) – Fundament, an dem Qualifikation und
+   Führung hängen. Alle drei Stufen sind verifiziert im Einsatz.
 2. **Qualifikation** ✅ fertig · **Führung** 🟡 teilweise (Fahrzeugdisposition
    fertig, Kräfte-/Patientenzuweisung und Transportfreigabe offen).
 3. **Material/Logistik** – Fahrzeuge 🟡 teilweise fertig (Zuweisung, Besatzung,

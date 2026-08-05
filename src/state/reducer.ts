@@ -48,6 +48,7 @@ export type Phase =
   | 'rolle'
   | 'anmeldung'
   | 'beitritt'
+  | 'modus'
   | 'massnahmenrechte'
   | 'fahrzeugkonfiguration'
   | 'wartebereich'
@@ -291,12 +292,13 @@ export function simulationReducer(
 ): SimulationState {
   switch (action.typ) {
     case 'modusWaehlen':
+      // Nur die digitale Übung führt weiter (zu den Maßnahmenrechten, dem
+      // ersten Schritt der Sitzungseröffnung); die übrigen Modi zeigen auf
+      // derselben Seite (→ `ui.modus`) vorerst nur, was sie können sollen.
       return {
         ...state,
         modus: action.modus,
-        // Nur die digitale Übung führt weiter; die übrigen Modi zeigen
-        // vorerst nur, was sie können sollen.
-        phase: action.modus === 'digital' ? 'setup' : 'start',
+        phase: action.modus === 'digital' ? 'massnahmenrechte' : state.phase,
       };
 
     case 'uebungsleitungOeffnen':
@@ -494,11 +496,11 @@ export function simulationReducer(
       };
 
     case 'anmeldungAbschliessen':
-      // Erst die Maßnahmenrechte (Grundeinstellungen, → `ui.massnahmenrechte`) -
-      // die gelten unabhängig vom Szenario und sind der erste Schritt.
+      // Erst der Modus (→ `ui.modus`) - er entscheidet, auf welche Art das
+      // Szenario gespielt wird, noch vor den Maßnahmenrechten.
       return {
         ...state,
-        phase: 'massnahmenrechte',
+        phase: 'modus',
         sitzung: {
           ...state.sitzung,
           rolle: 'uebungsleiter',

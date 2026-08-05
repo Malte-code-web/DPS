@@ -23,18 +23,40 @@ describe('Lobby-Fluss der Übungsleitung', () => {
     expect(nachRolle.sitzung.rolle).toBe('uebungsleiter');
   });
 
-  it('legt bei der Anmeldung Name und Id an und geht zu den Maßnahmenrechten', () => {
+  it('legt bei der Anmeldung Name und Id an und geht zunächst zum Modus', () => {
     const state = spiele(
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
     );
-    // Die Maßnahmenrechte (Grundeinstellungen) sind der erste Schritt - vor
-    // der Szenariowahl, denn sie gelten unabhängig von der Lage.
-    expect(state.phase).toBe('massnahmenrechte');
+    // Der Modus (→ `ui.modus`) entscheidet, auf welche Art gespielt wird -
+    // noch vor den Maßnahmenrechten, die nur den digitalen Modus betreffen.
+    expect(state.phase).toBe('modus');
     expect(state.sitzung.eigenerName).toBe('OrgL Müller');
     expect(state.sitzung.eigeneId).toBe('leiter-1');
     expect(state.szenario).toBeNull();
+  });
+
+  it('führt nach digitaler Moduswahl zu den Maßnahmenrechten', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+    );
+    expect(state.phase).toBe('massnahmenrechte');
+    expect(state.modus).toBe('digital');
+  });
+
+  it('bleibt bei einem noch nicht gebauten Modus auf der Modus-Seite', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'fuehrungskraefte' },
+    );
+    expect(state.phase).toBe('modus');
+    expect(state.modus).toBe('fuehrungskraefte');
   });
 
   it('geht von den Maßnahmenrechten weiter zur Szenariowahl', () => {
@@ -42,6 +64,7 @@ describe('Lobby-Fluss der Übungsleitung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
     );
     expect(state.phase).toBe('setup');
@@ -54,6 +77,7 @@ describe('Lobby-Fluss der Übungsleitung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -75,6 +99,7 @@ describe('Fahrzeugkonfiguration vor der Sitzungseröffnung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
     );
@@ -89,6 +114,7 @@ describe('Fahrzeugkonfiguration vor der Sitzungseröffnung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -113,6 +139,7 @@ describe('Fahrzeugkonfiguration vor der Sitzungseröffnung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -134,6 +161,7 @@ describe('Führungsrolle und Fahrzeug-Besatzung im Wartebereich', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -178,6 +206,7 @@ describe('Fahrzeug-Verlegung im Einsatz', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -202,6 +231,7 @@ describe('Fahrzeug-Verlegung im Einsatz', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -227,6 +257,7 @@ describe('Materialverbrauch im Einsatz', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -249,6 +280,7 @@ describe('Materialverbrauch im Einsatz', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL Müller', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
@@ -302,6 +334,7 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       {
         typ: 'massnahmenrechteSetzen',
         rechte: {
@@ -327,6 +360,7 @@ describe('Maßnahmenrechte vor der Sitzungseröffnung', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteSetzen', rechte: angepasst },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
@@ -345,6 +379,7 @@ describe('Teilnehmerverwaltung im Wartebereich', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -403,6 +438,7 @@ describe('Host-autoritative Synchronisation', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
         { typ: 'massnahmenrechteAbgeschlossen' },
         { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
         { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -532,6 +568,7 @@ describe('Nachhol-Takt aus dem Hintergrund', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
         { typ: 'massnahmenrechteAbgeschlossen' },
         { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
         { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -576,6 +613,7 @@ describe('schnappschussAus enthält nur geteilte Scheiben', () => {
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
         { typ: 'massnahmenrechteAbgeschlossen' },
         { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
         { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -604,6 +642,7 @@ describe('Fachliche Qualifikation im Mehrspieler', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -648,6 +687,7 @@ describe('Delegationsanfrage (delegationAnfragen/delegationBeantworten)', () => 
         { typ: 'gemeinsamOeffnen' },
         { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
         { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
         { typ: 'massnahmenrechteAbgeschlossen' },
         { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
         { typ: 'fahrzeugkonfigurationAbgeschlossen' },
@@ -800,6 +840,7 @@ describe('spielerAbschnittGesetzt', () => {
       { typ: 'gemeinsamOeffnen' },
       { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
       { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
       { typ: 'massnahmenrechteAbgeschlossen' },
       { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
       { typ: 'fahrzeugkonfigurationAbgeschlossen' },

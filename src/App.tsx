@@ -2,6 +2,7 @@ import { DebriefingSeite } from './pages/DebriefingSeite';
 import { EinsatzSeite } from './pages/EinsatzSeite';
 import { FahrzeugkonfigurationSeite } from './pages/FahrzeugkonfigurationSeite';
 import { MassnahmenrechteSeite } from './pages/MassnahmenrechteSeite';
+import { ModusSeite } from './pages/ModusSeite';
 import { SetupSeite } from './pages/SetupSeite';
 import { StartSeite } from './pages/StartSeite';
 import { UebungsleitungSeite } from './pages/UebungsleitungSeite';
@@ -21,6 +22,8 @@ export function App() {
   const { state } = useSimulation();
 
   switch (state.phase) {
+    case 'modus':
+      return <ModusSeite />;
     case 'massnahmenrechte':
       return <MassnahmenrechteSeite />;
     case 'fahrzeugkonfiguration':

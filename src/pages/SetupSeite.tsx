@@ -1,35 +1,26 @@
-import { useState } from 'react';
 import { EINZELFAELLE } from '../domain/einzelfaelle';
 import { SZENARIEN } from '../domain/szenarien';
 import { useSimulation } from '../state/useSimulation';
 import type { Szenario } from '../domain/types';
 
-/** @anker ui.setup Szenarioauswahl der digitalen Übung, inkl. Alleinspiel */
+/**
+ * @anker ui.setup Szenarioauswahl für die Sitzung
+ *
+ * Nur die Übungsleitung erreicht diese Seite (→ `ui.modus`, digitaler Modus) -
+ * das Szenario beschreibt nur, was wo passiert; die Sitzung öffnet sich erst
+ * nach der Fahrzeugkonfiguration (→ `ui.fahrzeugkonfiguration`).
+ */
 export function SetupSeite() {
   const { state, dispatch } = useSimulation();
-  const [alleine, setAlleine] = useState(false);
-  // Als Übungsleitung wird hier das Szenario gewählt und die Sitzung eröffnet
-  // (Wartebereich), statt direkt allein zu starten.
-  const host = state.sitzung.rolle === 'uebungsleiter';
 
   const starten = (szenario: (typeof SZENARIEN)[number]) => {
-    if (host) {
-      // Die Sitzung öffnet sich erst nach der Fahrzeugkonfiguration
-      // (→ `ui.fahrzeugkonfiguration`), nicht direkt hier.
-      dispatch({ typ: 'szenarioFuerSitzungWaehlen', szenario });
-    } else {
-      dispatch({ typ: 'szenarioStarten', szenario, alleine });
-    }
+    dispatch({ typ: 'szenarioFuerSitzungWaehlen', szenario });
   };
 
   const gruppen: { titel: string; szenarien: Szenario[]; leer: string }[] = [
     { titel: 'Mitgelieferte Szenarien', szenarien: SZENARIEN, leer: '' },
     { titel: 'Einzelfälle', szenarien: EINZELFAELLE, leer: '' },
-    {
-      titel: 'Eigene Szenarien',
-      szenarien: state.eigeneSzenarien,
-      leer: 'Noch keine eigenen Szenarien - in der Übungsleitung anlegen.',
-    },
+    { titel: 'Eigene Szenarien', szenarien: state.eigeneSzenarien, leer: 'Noch keine eigenen Szenarien.' },
   ];
 
   return (
@@ -38,33 +29,12 @@ export function SetupSeite() {
         <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
           &larr; Start
         </button>
-        <h1>{host ? 'Szenario für die Sitzung' : 'Digitale Übung'}</h1>
+        <h1>Szenario für die Sitzung</h1>
         <p>
-          {host
-            ? 'Wähle die Lage, die alle gemeinsam bearbeiten. Anschließend geht es in den Wartebereich, wo die Spieler beitreten - dort startest du die Übung.'
-            : 'Die Patienten verändern sich in Echtzeit: Wer zu spät gesichtet oder falsch priorisiert wird, verschlechtert sich - und kann versterben. Ziel ist eine vollständige Vorsichtung nach tacSTART und eine sinnvolle Verteilung der knappen Ressourcen.'}
+          Wähle die Lage, die alle gemeinsam bearbeiten. Anschließend geht es in den Wartebereich,
+          wo die Spieler beitreten - dort startest du die Übung.
         </p>
       </section>
-
-      {/* @anker ui.alleinspiel Vor dem Start wählen, ob man allein spielt */}
-      {!host && (
-        <section className="alleinspiel">
-          <label className="alleinspiel-schalter">
-            <input
-              type="checkbox"
-              checked={alleine}
-              onChange={(event) => setAlleine(event.target.checked)}
-            />
-            <span>
-              <strong>Alleine spielen</strong>
-              <span className="alleinspiel-hinweis">
-                Für eine einzelne Person: Die Verschlechterung läuft rund 25 % langsamer, weil man
-                nicht alles gleichzeitig schaffen kann. Gilt auch für die volle MANV-Lage.
-              </span>
-            </span>
-          </label>
-        </section>
-      )}
 
       {gruppen.map((gruppe) => (
         <section key={gruppe.titel} className="szenarioliste">
@@ -84,11 +54,16 @@ export function SetupSeite() {
                       : `${szenario.patienten.length} Betroffene`}
                   </span>
                   <button type="button" className="primaer" onClick={() => starten(szenario)}>
-                    {host ? 'Weiter: Fahrzeuge zuweisen' : alleine ? 'Allein starten' : 'Einsatz starten'}
+                    Weiter: Fahrzeuge zuweisen
                   </button>
                 </div>
               </article>
             ))
+          )}
+          {gruppe.titel === 'Eigene Szenarien' && (
+            <button type="button" onClick={() => dispatch({ typ: 'uebungsleitungOeffnen' })}>
+              Szenarien bauen
+            </button>
           )}
         </section>
       ))}

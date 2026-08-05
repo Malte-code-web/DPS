@@ -222,41 +222,9 @@ select {
   color: var(--text-leise);
 }
 
-/* Alleinspiel-Schalter über der Szenarioauswahl. */
-.alleinspiel {
-  margin-bottom: 0.4rem;
-}
-
-.alleinspiel-schalter {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.9rem 1.1rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.alleinspiel-schalter input {
-  margin-top: 0.2rem;
-  width: 1.1rem;
-  height: 1.1rem;
-  accent-color: var(--akzent);
-  flex: none;
-}
-
-.alleinspiel-schalter > span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.alleinspiel-hinweis {
-  font-size: 0.85rem;
-  color: var(--text-leise);
-}
-
+/* Badge in der Einsatzleiste, falls `state.alleine` gesetzt ist
+   (→ `szenarioStarten`, aktuell nicht mehr über die Oberfläche erreichbar,
+   aber weiterhin ein gültiger, getesteter Zustand). */
 .allein-marke {
   margin-left: 0.6rem;
   font-size: 0.62rem;
@@ -436,16 +404,6 @@ select {
 .einstieg-form input:focus-visible {
   outline: 2px solid var(--akzent);
   outline-offset: 1px;
-}
-
-/* Solo-/Team-Modus und Szenario-Editor stehen zweitrangig unter dem
-   Einstieg - kleinere Überschrift statt eigener, gleichrangiger Sektion. */
-.modusliste-zweitrangig h2,
-.szenarioliste-zweitrangig h2 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-leise);
 }
 
 /* --- Wartebereich ------------------------------------------------- */

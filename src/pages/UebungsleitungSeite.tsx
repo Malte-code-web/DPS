@@ -97,8 +97,17 @@ export function UebungsleitungSeite() {
   return (
     <main className="uebungsleitung">
       <header className="setup-kopf">
-        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
-          &larr; Startseite
+        <button
+          type="button"
+          onClick={() =>
+            dispatch(
+              state.sitzung.rolle === 'uebungsleiter'
+                ? { typ: 'zurueckZumSetup' }
+                : { typ: 'zurueckZumStart' },
+            )
+          }
+        >
+          &larr; {state.sitzung.rolle === 'uebungsleiter' ? 'Szenario-Auswahl' : 'Startseite'}
         </button>
         <h1>Übungsleitung</h1>
         <p>

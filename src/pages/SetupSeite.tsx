@@ -35,13 +35,8 @@ export function SetupSeite() {
   return (
     <main className="setup">
       <section className="setup-kopf">
-        <button
-          type="button"
-          onClick={() =>
-            dispatch(host ? { typ: 'gemeinsamOeffnen' } : { typ: 'zurueckZumStart' })
-          }
-        >
-          &larr; {host ? 'Rolle' : 'Trainingsmodus'}
+        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
+          &larr; Start
         </button>
         <h1>{host ? 'Szenario für die Sitzung' : 'Digitale Übung'}</h1>
         <p>

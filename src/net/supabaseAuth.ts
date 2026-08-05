@@ -6,7 +6,7 @@ import { supabase } from './supabaseClient';
  * E-Mail/Passwort-Konten werden nicht in der App angelegt, sondern vorab im
  * Supabase-Dashboard der Übungsleitung ("Authentication" -> "Add user") -
  * hier steht nur der Login. Ohne konfiguriertes Supabase (→ `net.supabaseClient`)
- * ist die Übungsleitungs-Rolle komplett gesperrt (→ `ui.rolle`); Spieler
+ * ist die Übungsleitungs-Rolle komplett gesperrt (→ `ui.start`); Spieler
  * treten weiterhin ohne Konto per Code bei.
  */
 export interface Anmeldeergebnis {

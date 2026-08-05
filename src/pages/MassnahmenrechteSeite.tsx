@@ -60,8 +60,8 @@ export function MassnahmenrechteSeite() {
   return (
     <main className="setup">
       <section className="setup-kopf">
-        <button type="button" onClick={() => dispatch({ typ: 'gemeinsamOeffnen' })}>
-          &larr; Rolle
+        <button type="button" onClick={() => dispatch({ typ: 'zurueckZumStart' })}>
+          &larr; Start
         </button>
         <h1>Maßnahmenrechte</h1>
         <p>

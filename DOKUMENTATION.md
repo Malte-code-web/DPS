@@ -190,10 +190,10 @@ Probelauf und der Generator arbeiten unverändert mit den Originalwerten.
 
 Jede zeitkostende Handlung läuft als echter Countdown bei genau dieser
 Handlung ab (→ `state.zeitkosten`, `ui.zeitkostenanzeige`) - nicht mehr als
-sofortiger Sprung der Einsatzuhr. Wer eine Maßnahme, Diagnostik, Sichtung
-oder Verlegung beginnt, ist für deren Dauer ausgelastet und kann in dieser
-Zeit nichts anderes anstoßen; ein Overlay sperrt währenddessen die Bedienung
-und zeigt die verbleibenden Sekunden. Dass parallel dazu **alle anderen
+sofortiger Sprung der Einsatzuhr. Wer eine Maßnahme, Diagnostik oder
+Verlegung beginnt, ist für deren Dauer ausgelastet und kann in dieser Zeit
+nichts anderes anstoßen; ein Overlay sperrt währenddessen die Bedienung und
+zeigt die verbleibenden Sekunden. Dass parallel dazu **alle anderen
 Patienten gleichzeitig altern**, übernimmt in dieser Wartezeit ausschließlich
 der ohnehin laufende Simulationstakt (`state.uhr`, `case 'tick'`) - wer sich
 an einem Patienten festarbeitet, verliert die Zeit bei allen anderen, nur
@@ -203,14 +203,16 @@ aus, gestaucht um das eingestellte Tempo (1×/2×/4×/10×, → `state.provider`
 
 | Handlung | Zeit |
 | --- | --- |
-| Vorsichtung | 20 s |
+| Sichtung (Vor-, Ein-, Nach-, Ausgangssichtung) | 0 s |
 | Verlegung | 30 s |
 | Blutstillung / Atemweg | 20–60 s |
 | Intubation | 180 s |
 | Vollständige Diagnostik an einem Patienten | 340 s |
 
-Zehn Patienten vorzusichten kostet 3:20 – weniger als zwei Intubationen. Ein Test
-hält das fest (→ `test.zeitkosten`, `zeitkosten.test.ts`).
+Die Sichtung selbst kostet bewusst keine Zeit - sie ist Einschätzen und
+Ankreuzen, kein Handgriff am Patienten. Zeit kostet erst die anschließende
+Verlegung in den passenden Abschnitt. Ein Test hält das fest
+(→ `test.zeitkosten`, `zeitkosten.test.ts`).
 
 ### Der Maßnahmenkatalog
 
@@ -264,8 +266,8 @@ Ein Wert ist erst zu sehen, wenn ihn jemand erhoben hat (→ `diagnostik.katalog
 | Bewusstsein prüfen 20 s | EKG-Monitoring 60 s | |
 | Schmerz erfragen 10 s | | |
 
-Wer an einem Patienten alles erhebt, zahlt **5:40** - mehr als drei Vorsichtungen
-plus zwei Intubationen. Vorher war es ein einziger Knopf für 30 Sekunden, der
+Wer an einem Patienten alles erhebt, zahlt **5:40** - beinahe zwei
+Intubationen. Vorher war es ein einziger Knopf für 30 Sekunden, der
 alles gleichzeitig zeigte; damit war die Rundumdiagnostik in jeder Lage die beste
 Wahl und deshalb keine Entscheidung.
 

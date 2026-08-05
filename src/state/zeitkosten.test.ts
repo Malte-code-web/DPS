@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { VERLEGUNGSDAUER_SEK } from '../domain/abschnitte';
 import { DIAGNOSTIK, DIAGNOSTIK_LISTE, VOLLSTAENDIGE_DIAGNOSTIK_SEK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
-import { SICHTUNGSDAUER_SEK } from '../domain/simulation';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import { zeitkostenLabel, zeitkostenSek } from './zeitkosten';
@@ -44,11 +43,11 @@ describe('zeitkostenSek', () => {
     ).toBe(0);
   });
 
-  it('kostet die erste Sichtung, eine Korrektur an derselben Stelle aber nicht', () => {
+  it('kostet die Sichtung selbst nie Zeit - nur Einschätzen und Ankreuzen', () => {
     const start = imEinsatz();
     expect(
       zeitkostenSek(start, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK1' }),
-    ).toBe(SICHTUNGSDAUER_SEK);
+    ).toBe(0);
 
     const gesichtet = simulationReducer(start, {
       typ: 'patientSichten',
@@ -124,26 +123,21 @@ describe('zeitkostenSek', () => {
     expect(VOLLSTAENDIGE_DIAGNOSTIK_SEK).toBeGreaterThan(300);
   });
 
-  it('kostet die Sichtung an jeder Station einmal, ein Korrigieren nicht', () => {
+  it('kostet die Sichtung an jeder Station nichts, auch nicht nach einer Verlegung', () => {
     let state = imEinsatz();
     const anSchadensstelle = { typ: 'patientSichten' as const, patientId: 'B-01', kategorie: 'SK1' as const };
-    expect(zeitkostenSek(state, anSchadensstelle)).toBe(SICHTUNGSDAUER_SEK);
+    expect(zeitkostenSek(state, anSchadensstelle)).toBe(0);
     state = simulationReducer(state, anSchadensstelle);
-
-    // Korrektur an derselben Stelle kostet nichts mehr.
-    expect(
-      zeitkostenSek(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' }),
-    ).toBe(0);
 
     state = simulationReducer(state, { typ: 'patientVerlegen', patientId: 'B-01', ziel: 'eingangssichtung' });
 
-    // Die nächste Station sichtet erneut - und das kostet wieder.
+    // Auch die Sichtung an der nächsten Station kostet nichts.
     expect(
       zeitkostenSek(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' }),
-    ).toBe(SICHTUNGSDAUER_SEK);
+    ).toBe(0);
   });
 
-  it('bleibt beim lehrbuchgerechten Vorsichten aller Patienten deutlich unter drei Intubationen', () => {
+  it('kostet das Vorsichten aller Patienten insgesamt keine Zeit', () => {
     let state = imEinsatz();
     let summe = 0;
     for (const eintrag of state.patienten) {
@@ -156,7 +150,7 @@ describe('zeitkostenSek', () => {
       state = simulationReducer(state, aktion);
     }
     expect(state.patienten.every((eintrag) => eintrag.gesichtetAls !== null)).toBe(true);
-    expect(summe).toBeLessThan(3 * MASSNAHMEN.intubation.dauerSek);
+    expect(summe).toBe(0);
   });
 });
 
@@ -168,8 +162,5 @@ describe('zeitkostenLabel', () => {
     expect(
       zeitkostenLabel({ typ: 'diagnostikDurchfuehren', patientId: 'B-01', diagnostikId: 'bodycheck' }),
     ).toBe(DIAGNOSTIK.bodycheck.label);
-    expect(zeitkostenLabel({ typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK1' })).toBe(
-      'Sichtung',
-    );
   });
 });

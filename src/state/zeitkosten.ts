@@ -1,7 +1,7 @@
 import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
 import { DIAGNOSTIK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
-import { SICHTUNGSDAUER_SEK, sichtungOffen } from '../domain/simulation';
+import { sichtungOffen } from '../domain/simulation';
 import type { SimulationAction, SimulationState } from './reducer';
 
 /**
@@ -27,11 +27,12 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
       return DIAGNOSTIK[action.diagnostikId].dauerSek;
     }
 
-    case 'patientSichten': {
-      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
-      if (!patient) return 0;
-      return sichtungOffen(patient) ? SICHTUNGSDAUER_SEK : 0;
-    }
+    // Die Sichtung selbst kostet bewusst keine Zeit mehr - der Vorgang ist
+    // reines Einschätzen und Ankreuzen, kein Handgriff am Patienten. Zeit
+    // kostet weiterhin die anschließende Verlegung (→ `patientVerlegen`
+    // unten), nicht die Kategorisierung.
+    case 'patientSichten':
+      return 0;
 
     case 'massnahmeDurchfuehren': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
@@ -62,8 +63,6 @@ export function zeitkostenLabel(action: SimulationAction): string {
   switch (action.typ) {
     case 'diagnostikDurchfuehren':
       return DIAGNOSTIK[action.diagnostikId].label;
-    case 'patientSichten':
-      return 'Sichtung';
     case 'massnahmeDurchfuehren':
       return MASSNAHMEN[action.massnahmeId].label;
     case 'patientVerlegen':

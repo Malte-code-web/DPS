@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { VERLEGUNGSDAUER_SEK } from '../domain/abschnitte';
 import { MASSNAHMEN } from '../domain/massnahmen';
-import {
-  DIAGNOSTIK,
-  DIAGNOSTIK_LISTE,
-  VOLLSTAENDIGE_DIAGNOSTIK_SEK,
-  istBekannt,
-} from '../domain/diagnostik';
-import { SICHTUNGSDAUER_SEK, SOLO_VERSCHLECHTERUNG_FAKTOR, sichtungAn } from '../domain/simulation';
+import { istBekannt } from '../domain/diagnostik';
+import { SOLO_VERSCHLECHTERUNG_FAKTOR, sichtungAn } from '../domain/simulation';
 import { EINZELFAELLE } from '../domain/einzelfaelle';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
@@ -61,85 +55,55 @@ describe('Alleinspiel und Einzelfall', () => {
   });
 });
 
-/** @anker test.zeitkosten Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst */
+/**
+ * @anker test.zeitkosten Belegt, dass der Reducer selbst keine Zeit mehr vorspringen lässt
+ *
+ * Zeitkosten laufen inzwischen als echter Timer bei der Handlung selbst ab
+ * (→ `state.zeitkosten`, `state.provider`), nicht mehr als sofortiger Sprung
+ * der Einsatzuhr im Reducer. Wie lange eine Handlung dauert, prüft
+ * `zeitkosten.test.ts` gegen die reine `zeitkostenSek`-Funktion; hier geht es
+ * nur noch darum, dass der Reducer für dieselben Aktionen `zeitSek`
+ * unangetastet lässt und die eigentliche Wirkung trotzdem sofort anwendet.
+ * Dass währenddessen alle Patienten altern, übernimmt ausschließlich der
+ * Simulationstakt (`case 'tick'`), der real vergangene Zeit einrechnet.
+ */
 describe('Einsatzzeit als Ressource', () => {
-  it('lässt die Uhr um die Dauer der Maßnahme vorrücken', () => {
+  it('lässt die Uhr im Reducer unverändert - nur die Wirkung wird sofort angewendet', () => {
     const start = imEinsatz();
     const nachher = simulationReducer(start, {
       typ: 'massnahmeDurchfuehren',
       patientId: 'B-01',
       massnahmeId: 'intubation',
     });
-    expect(nachher.zeitSek).toBe(start.zeitSek + MASSNAHMEN.intubation.dauerSek);
+    expect(nachher.zeitSek).toBe(start.zeitSek);
+    expect(patient(nachher, 'B-01').durchgefuehrteMassnahmen).toContain('intubation');
   });
 
-  it('verschlechtert währenddessen die übrigen Patienten', () => {
+  it('verschlechtert die übrigen Patienten nur über den Simulationstakt, nicht durch die Handlung selbst', () => {
     const start = imEinsatz();
     // B-04 blutet unbehandelt weiter, waehrend nebenan intubiert wird.
     const vorher = patient(start, 'B-04').vitalwerte.systolischerRR;
-    const nachher = simulationReducer(start, {
+
+    // Die Handlung allein (ohne verstrichene Echtzeit) verändert B-04 nicht.
+    const nachHandlung = simulationReducer(start, {
       typ: 'massnahmeDurchfuehren',
       patientId: 'B-01',
       massnahmeId: 'intubation',
     });
-    expect(patient(nachher, 'B-04').vitalwerte.systolischerRR).toBeLessThan(vorher);
-  });
+    expect(patient(nachHandlung, 'B-04').vitalwerte.systolischerRR).toBe(vorher);
 
-  it('kostet eine schnelle Sofortmaßnahme deutlich weniger Zeit als Individualmedizin', () => {
-    const start = imEinsatz();
-    const sofort = simulationReducer(start, {
-      typ: 'massnahmeDurchfuehren',
-      patientId: 'B-01',
-      massnahmeId: 'tourniquet',
+    // Erst der Takt über die Dauer der Maßnahme (→ Echtzeit-Timer der
+    // Provider-Schicht, hier durch einen entsprechend großen Tick simuliert)
+    // lässt B-04 tatsächlich altern.
+    const nachTakt = simulationReducer(start, {
+      typ: 'tick',
+      dtSek: MASSNAHMEN.intubation.dauerSek,
     });
-    const individual = simulationReducer(start, {
-      typ: 'massnahmeDurchfuehren',
-      patientId: 'B-01',
-      massnahmeId: 'intubation',
-    });
-    expect(sofort.zeitSek).toBeLessThan(individual.zeitSek / 2);
-  });
-
-  it('berechnet die Zeit unabhängig davon, ob sie am Stück oder in Ticks vergeht', () => {
-    const start = imEinsatz();
-    const amStueck = simulationReducer(start, {
-      typ: 'massnahmeDurchfuehren',
-      patientId: 'B-01',
-      massnahmeId: 'intubation',
-    });
-
-    let inTicks = start;
-    for (let i = 0; i < MASSNAHMEN.intubation.dauerSek / 5; i++) {
-      inTicks = simulationReducer(inTicks, { typ: 'tick', dtSek: 5 });
-    }
-
-    expect(amStueck.zeitSek).toBe(inTicks.zeitSek);
-    expect(patient(amStueck, 'B-04').vitalwerte.systolischerRR).toBeCloseTo(
-      patient(inTicks, 'B-04').vitalwerte.systolischerRR,
-      6,
-    );
+    expect(patient(nachTakt, 'B-04').vitalwerte.systolischerRR).toBeLessThan(vorher);
   });
 });
 
 describe('Zeitkosten der einzelnen Handlungen', () => {
-  it('berechnet die erste Sichtung, eine Korrektur aber nicht', () => {
-    const start = imEinsatz();
-    const erste = simulationReducer(start, {
-      typ: 'patientSichten',
-      patientId: 'B-01',
-      kategorie: 'SK1',
-    });
-    expect(erste.zeitSek).toBe(start.zeitSek + SICHTUNGSDAUER_SEK);
-
-    const korrigiert = simulationReducer(erste, {
-      typ: 'patientSichten',
-      patientId: 'B-01',
-      kategorie: 'SK2',
-    });
-    expect(korrigiert.zeitSek).toBe(erste.zeitSek);
-    expect(patient(korrigiert, 'B-01').gesichtetAls).toBe('SK2');
-  });
-
   it('berechnet jede Untersuchung nur beim ersten Mal', () => {
     const start = imEinsatz();
     const untersucht = simulationReducer(start, {
@@ -147,7 +111,6 @@ describe('Zeitkosten der einzelnen Handlungen', () => {
       patientId: 'B-01',
       diagnostikId: 'bodycheck',
     });
-    expect(untersucht.zeitSek).toBe(start.zeitSek + DIAGNOSTIK.bodycheck.dauerSek);
     expect(patient(untersucht, 'B-01').untersucht).toBe(true);
 
     const nochmal = simulationReducer(untersucht, {
@@ -169,24 +132,6 @@ describe('Zeitkosten der einzelnen Handlungen', () => {
 
     expect(istBekannt(patient(nachPuls, 'B-01'), 'herzfrequenz')).toBe(true);
     expect(istBekannt(patient(nachPuls, 'B-01'), 'systolischerRR')).toBe(false);
-    expect(nachPuls.zeitSek).toBe(start.zeitSek + DIAGNOSTIK.puls_tasten.dauerSek);
-  });
-
-  it('lässt die vollständige Diagnostik über fünf Minuten kosten', () => {
-    // Wer an einem Patienten alles erhebt, verliert die Zeit bei allen anderen.
-    const start = imEinsatz();
-    const alles = DIAGNOSTIK_LISTE.reduce(
-      (zustand, eintrag) =>
-        simulationReducer(zustand, {
-          typ: 'diagnostikDurchfuehren',
-          patientId: 'B-01',
-          diagnostikId: eintrag.id,
-        }),
-      start,
-    );
-
-    expect(alles.zeitSek - start.zeitSek).toBe(VOLLSTAENDIGE_DIAGNOSTIK_SEK);
-    expect(VOLLSTAENDIGE_DIAGNOSTIK_SEK).toBeGreaterThan(300);
   });
 
   it('hält den Sichtungszeitpunkt fest, auch wenn Zeit vergeht', () => {
@@ -202,7 +147,7 @@ describe('Zeitkosten der einzelnen Handlungen', () => {
 });
 
 describe('Ablauf einer Vorsichtung', () => {
-  it('bleibt beim lehrbuchgerechten Weg deutlich unter dem Zeitbedarf der Individualmedizin', () => {
+  it('sichtet alle Patienten vor, ohne dass der Reducer dafür Zeit vergehen lässt', () => {
     let vorsichtung = imEinsatz();
     for (const eintrag of vorsichtung.patienten) {
       vorsichtung = simulationReducer(vorsichtung, {
@@ -213,9 +158,8 @@ describe('Ablauf einer Vorsichtung', () => {
     }
     // Zehn Patienten vorgesichtet ...
     expect(vorsichtung.patienten.every((eintrag) => eintrag.gesichtetAls !== null)).toBe(true);
-
-    // ... kostet weniger Zeit, als drei Patienten zu intubieren.
-    expect(vorsichtung.zeitSek).toBeLessThan(3 * MASSNAHMEN.intubation.dauerSek);
+    // ... der Zeitbedarf dafür steht in `zeitkosten.test.ts`.
+    expect(vorsichtung.zeitSek).toBe(0);
   });
 });
 
@@ -253,8 +197,9 @@ describe('Einsatzabschnitte', () => {
       expect(patient(state, 'B-01').abschnitt).toBe(ziel);
     }
     expect(patient(state, 'B-01').status).toBe('transportiert');
-    // Vier Verlegungen und vier Sichtungen - je Station eine.
-    expect(state.zeitSek).toBe(weg.length * (VERLEGUNGSDAUER_SEK + SICHTUNGSDAUER_SEK));
+    // Der Reducer selbst lässt die Uhr unverändert - Zeitkosten laufen jetzt
+    // separat als Echtzeit-Timer (→ `state.zeitkosten`, `zeitkosten.test.ts`).
+    expect(state.zeitSek).toBe(0);
   });
 
   it('verweigert die Verlegung, solange die Sichtung dieser Station fehlt', () => {
@@ -291,27 +236,6 @@ describe('Einsatzabschnitte', () => {
       ziel: 'zelt_rot',
     });
     expect(patient(state, 'B-01').abschnitt).toBe('zelt_rot');
-  });
-
-  it('berechnet je Station eine Sichtung, ein Korrigieren nicht', () => {
-    let state = imEinsatz();
-    const start = state.zeitSek;
-    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK1' });
-    expect(state.zeitSek).toBe(start + SICHTUNGSDAUER_SEK);
-
-    // Korrektur an derselben Stelle kostet nichts.
-    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' });
-    expect(state.zeitSek).toBe(start + SICHTUNGSDAUER_SEK);
-
-    // Die nächste Station sichtet erneut - und das kostet wieder.
-    state = simulationReducer(state, {
-      typ: 'patientVerlegen',
-      patientId: 'B-01',
-      ziel: 'eingangssichtung',
-    });
-    const vorEingang = state.zeitSek;
-    state = simulationReducer(state, { typ: 'patientSichten', patientId: 'B-01', kategorie: 'SK2' });
-    expect(state.zeitSek).toBe(vorEingang + SICHTUNGSDAUER_SEK);
   });
 
   it('lässt keine Sprünge im Ablauf zu', () => {

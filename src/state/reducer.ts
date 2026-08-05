@@ -1,13 +1,10 @@
-import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
-import { DIAGNOSTIK } from '../domain/diagnostik';
+import { istVerlegungMoeglich } from '../domain/abschnitte';
 import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
-import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { verbraucheMaterial } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
-  SICHTUNGSDAUER_SEK,
   SOLO_VERSCHLECHTERUNG_FAKTOR,
   fuehreDiagnostikDurch,
   sichtungOffen,
@@ -237,26 +234,6 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
   };
 }
 
-/**
- * @anker state.zeit Kernmechanik: jede Handlung lässt die Uhr für alle laufen
- *
- * Laesst Einsatzzeit verstreichen - fuer alle Patienten gleichzeitig.
- *
- * Das ist der Kern der Uebung: Wer sich an einem Patienten festarbeitet,
- * verliert die Zeit bei allen anderen. Eine Intubation kostet drei Minuten,
- * in denen nebenan jemand verbluten kann.
- */
-function zeitVergehen(state: SimulationState, dauerSek: number): SimulationState {
-  if (dauerSek <= 0) return state;
-  return {
-    ...state,
-    zeitSek: state.zeitSek + dauerSek,
-    patienten: state.patienten.map((patient) =>
-      simuliereZeitraum(patient, state.zeitSek, dauerSek),
-    ),
-  };
-}
-
 /** Wendet eine Aenderung auf genau einen Patienten an. */
 function mitPatient(
   state: SimulationState,
@@ -368,39 +345,28 @@ export function simulationReducer(
       if (!patient || patient.durchgefuehrteDiagnostik.includes(action.diagnostikId)) {
         return state;
       }
-      return zeitVergehen(
-        mitPatient(state, action.patientId, (eintrag) =>
-          fuehreDiagnostikDurch(eintrag, action.diagnostikId, state.zeitSek),
-        ),
-        DIAGNOSTIK[action.diagnostikId].dauerSek,
+      return mitPatient(state, action.patientId, (eintrag) =>
+        fuehreDiagnostikDurch(eintrag, action.diagnostikId, state.zeitSek),
       );
     }
 
     case 'patientSichten': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       if (!patient) return state;
-      // Jede Station sichtet einmal - ein Korrigieren an derselben Stelle nicht.
-      const dauerSek = sichtungOffen(patient) ? SICHTUNGSDAUER_SEK : 0;
-      return zeitVergehen(
-        mitPatient(state, action.patientId, (eintrag) =>
-          sichtePatient(eintrag, action.kategorie, state.zeitSek, action.final),
-        ),
-        dauerSek,
+      return mitPatient(state, action.patientId, (eintrag) =>
+        sichtePatient(eintrag, action.kategorie, state.zeitSek, action.final),
       );
     }
 
     case 'massnahmeDurchfuehren': {
       const behandelter = state.patienten.find((patient) => patient.id === action.patientId);
       if (!behandelter) return state;
-      return zeitVergehen(
-        {
-          ...mitPatient(state, action.patientId, (patient) =>
-            wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
-          ),
-          fahrzeuge: verbraucheMaterial(state.fahrzeuge, action.massnahmeId, behandelter.abschnitt),
-        },
-        MASSNAHMEN[action.massnahmeId].dauerSek,
-      );
+      return {
+        ...mitPatient(state, action.patientId, (patient) =>
+          wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
+        ),
+        fahrzeuge: verbraucheMaterial(state.fahrzeuge, action.massnahmeId, behandelter.abschnitt),
+      };
     }
 
     case 'delegationAnfragen':
@@ -453,11 +419,8 @@ export function simulationReducer(
       if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return state;
       // Ohne bestätigte Sichtung wird niemand weitergereicht.
       if (sichtungOffen(patient)) return state;
-      const verlegt = zeitVergehen(
-        mitPatient(state, action.patientId, (eintrag) =>
-          verlegePatient(eintrag, action.ziel, state.zeitSek),
-        ),
-        VERLEGUNGSDAUER_SEK,
+      const verlegt = mitPatient(state, action.patientId, (eintrag) =>
+        verlegePatient(eintrag, action.ziel, state.zeitSek),
       );
       // Nach der Verlegung zurück in die Liste des bearbeiteten Abschnitts:
       // Dort warten die übrigen Patienten.
@@ -664,10 +627,7 @@ export function simulationReducer(
     case 'fahrzeugVerlegen': {
       const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
       if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return state;
-      return zeitVergehen(
-        mitFahrzeug(state, action.fahrzeugId, (eintrag) => verlegeFahrzeug(eintrag, action.ziel)),
-        VERLEGUNGSDAUER_SEK,
-      );
+      return mitFahrzeug(state, action.fahrzeugId, (eintrag) => verlegeFahrzeug(eintrag, action.ziel));
     }
 
     case 'verbindungsfehlerSetzen':

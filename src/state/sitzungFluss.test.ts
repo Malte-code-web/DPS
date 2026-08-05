@@ -222,8 +222,9 @@ describe('Fahrzeug-Verlegung im Einsatz', () => {
       ziel: 'eingangssichtung',
     });
     expect(verlegt.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('eingangssichtung');
-    // Wie jede Zeitkosten-Aktion läuft die Uhr für alle mit.
-    expect(verlegt.zeitSek).toBeGreaterThan(vorbereitet.zeitSek);
+    // Der Reducer selbst lässt die Uhr unverändert - die Zeitkosten laufen
+    // jetzt als Echtzeit-Timer bei der Handlung selbst ab (→ `state.zeitkosten`).
+    expect(verlegt.zeitSek).toBe(vorbereitet.zeitSek);
   });
 
   it('lehnt eine nicht erlaubte Verlegung ab (Graph aus abschnitte.ts)', () => {
@@ -460,7 +461,6 @@ describe('Host-autoritative Synchronisation', () => {
     const schnappschuss = schnappschussAus(nachAktion);
     const uebertragen = schnappschuss.patienten.find((p) => p.id === ziel.id)!;
     expect(uebertragen.gesichtetAls).toBe('SK1');
-    expect(schnappschuss.zeitSek).toBeGreaterThan(0);
   });
 
   it('wendet einen Schnappschuss an, behält aber lokale Navigation und Identität', () => {

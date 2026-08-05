@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { erzeugeSitzungstransport } from '../net/transportAuswahl';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
@@ -11,9 +11,11 @@ import {
   sichereMassnahmenrechte,
 } from '../lib/speicher';
 import { SimulationContext } from './context';
+import type { Zeitkostentimer } from './context';
 import { starteTaktgeber } from './taktgeber';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { Schnappschuss, SimulationAction } from './reducer';
+import { zeitkostenLabel, zeitkostenSek } from './zeitkosten';
 
 /**
  * Taktrate der Simulationsuhr in Millisekunden (Echtzeit).
@@ -336,6 +338,58 @@ export function SimulationProvider({
     [istSpieler, sendeMitBestaetigung],
   );
 
+  // Zeitkosten laufen als echter Timer bei der Handlung selbst ab
+  // (→ `state.zeitkosten`), statt die Einsatzuhr sofort im Reducer
+  // vorspringen zu lassen: Wer eine Maßnahme beginnt, ist für deren Dauer
+  // ausgelastet und kann in dieser Zeit nichts anderes anstoßen - der
+  // bereits bestehende Simulationstakt (`case 'tick'`) lässt währenddessen
+  // ganz von selbst alle Patienten altern, genau wie zuvor der sofortige
+  // Sprung, nur eben in Echtzeit statt künstlich vorgezogen.
+  const zeitkostenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [zeitkostentimer, setZeitkostentimer] = useState<Zeitkostentimer | null>(null);
+
+  const dispatchMitZeitkosten = useCallback(
+    (action: SimulationAction) => {
+      const kosten = zeitkostenSek(state, action);
+      if (kosten <= 0) {
+        dispatchRoutet(action);
+        return;
+      }
+      // Schon beschäftigt: eine weitere zeitkostende Handlung wird verworfen,
+      // statt sich hinten anzustellen - wie im echten Einsatz kann dieselbe
+      // Person nicht zwei Dinge gleichzeitig tun.
+      if (zeitkostenTimerRef.current) return;
+      const wartezeitMs = (kosten * 1000) / state.geschwindigkeit;
+      const startMs = Date.now();
+      zeitkostenTimerRef.current = setTimeout(() => {
+        zeitkostenTimerRef.current = null;
+        setZeitkostentimer(null);
+        dispatchRoutet(action);
+      }, wartezeitMs);
+      setZeitkostentimer({ label: zeitkostenLabel(action), startMs, endeMs: startMs + wartezeitMs });
+    },
+    [state, dispatchRoutet],
+  );
+
+  // Ein Einsatzende oder das Verlassen der Sitzung räumt einen noch
+  // laufenden Zeitkosten-Timer ab - dessen Aktion darf nicht nach dem
+  // Wechsel der Phase verspätet doch noch ankommen.
+  useEffect(() => {
+    if (state.phase === 'einsatz') return;
+    if (zeitkostenTimerRef.current) {
+      clearTimeout(zeitkostenTimerRef.current);
+      zeitkostenTimerRef.current = null;
+      setZeitkostentimer(null);
+    }
+  }, [state.phase]);
+
+  useEffect(
+    () => () => {
+      if (zeitkostenTimerRef.current) clearTimeout(zeitkostenTimerRef.current);
+    },
+    [],
+  );
+
   // Hält `sitzung.spieler[eigene].aktuellerAbschnitt` (→ `sitzung.modell`) mit
   // der eigenen, sonst rein lokalen Navigation synchron - läuft bei jeder
   // Änderung von `ausgewaehlterAbschnitt`, also auch beim allerersten Aufruf
@@ -351,7 +405,10 @@ export function SimulationProvider({
     });
   }, [ausgewaehlterAbschnitt, sitzung.aktiv, sitzung.eigeneId, dispatchRoutet]);
 
-  const wert = useMemo(() => ({ state, dispatch: dispatchRoutet }), [state, dispatchRoutet]);
+  const wert = useMemo(
+    () => ({ state, dispatch: dispatchMitZeitkosten, zeitkostentimer }),
+    [state, dispatchMitZeitkosten, zeitkostentimer],
+  );
 
   return <SimulationContext value={wert}>{children}</SimulationContext>;
 }

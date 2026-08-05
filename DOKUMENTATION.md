@@ -63,7 +63,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
-309 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
+332 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
 Qualifikation/Delegation, Führungsrollen und Stärkemeldung, Fahrzeuge/MANV-Stufen,
 Fahrzeug-Bestückung und Materialverbrauch, Szenarioprüfung,
 Probelauf, Diagnostik, Monitor, Baukasten, gewichtsbezogene Dosierung und die Team-Voraussetzung der
@@ -150,13 +150,18 @@ einem Server ausführen.
 ### Datenfluss
 
 ```
-Aktion (Klick)  →  dispatch  →  simulationReducer  →  neuer Zustand  →  Neuaufbau
-                                      │
-                                      ├─ zeitVergehen()      Uhr läuft für alle
-                                      └─ domain/simulation   reine Rechenfunktionen
+Aktion (Klick)  →  dispatchMitZeitkosten  →  ggf. Echtzeit-Timer  →  dispatch  →  simulationReducer  →  neuer Zustand  →  Neuaufbau
+                          │                                                            │
+                          └─ zeitkostenSek()   Dauer bestimmen                         └─ domain/simulation   reine Rechenfunktionen
 ```
 
-Parallel dazu tickt die Uhr (`state.uhr`) alle 500 ms und schickt `tick`-Aktionen.
+Eine zeitkostende Aktion (→ `state.zeitkosten`) wird nicht sofort an den
+Reducer weitergereicht: Der Provider (→ `state.provider`) hält sie zurück,
+zeigt einen Countdown (→ `ui.zeitkostenanzeige`) und reicht sie erst nach
+Ablauf der (um `state.geschwindigkeit` gestauchten) Echtzeit durch. Parallel
+dazu tickt die Uhr (`state.uhr`) unabhängig davon alle 500 ms und schickt
+`tick`-Aktionen - sie lässt während der Wartezeit alle Patienten altern, ganz
+gleich, ob gerade jemand beschäftigt ist oder nicht.
 
 ---
 
@@ -183,8 +188,18 @@ Probelauf und der Generator arbeiten unverändert mit den Originalwerten.
 
 ### Zeit als Ressource
 
-Jede Handlung kostet ihre Dauer, und zwar **für alle Patienten gleichzeitig**
-(→ `state.zeit`). Die Rechnung, um die es geht:
+Jede zeitkostende Handlung läuft als echter Countdown bei genau dieser
+Handlung ab (→ `state.zeitkosten`, `ui.zeitkostenanzeige`) - nicht mehr als
+sofortiger Sprung der Einsatzuhr. Wer eine Maßnahme, Diagnostik, Sichtung
+oder Verlegung beginnt, ist für deren Dauer ausgelastet und kann in dieser
+Zeit nichts anderes anstoßen; ein Overlay sperrt währenddessen die Bedienung
+und zeigt die verbleibenden Sekunden. Dass parallel dazu **alle anderen
+Patienten gleichzeitig altern**, übernimmt in dieser Wartezeit ausschließlich
+der ohnehin laufende Simulationstakt (`state.uhr`, `case 'tick'`) - wer sich
+an einem Patienten festarbeitet, verliert die Zeit bei allen anderen, nur
+eben in Echtzeit statt künstlich vorgezogen. Die Dauer selbst rechnet
+`zeitkostenSek` (→ `state.zeitkosten`) mit denselben Wächtern wie der Reducer
+aus, gestaucht um das eingestellte Tempo (1×/2×/4×/10×, → `state.provider`):
 
 | Handlung | Zeit |
 | --- | --- |
@@ -195,7 +210,7 @@ Jede Handlung kostet ihre Dauer, und zwar **für alle Patienten gleichzeitig**
 | Vollständige Diagnostik an einem Patienten | 340 s |
 
 Zehn Patienten vorzusichten kostet 3:20 – weniger als zwei Intubationen. Ein Test
-hält das fest (→ `test.zeitkosten`).
+hält das fest (→ `test.zeitkosten`, `zeitkosten.test.ts`).
 
 ### Der Maßnahmenkatalog
 
@@ -619,7 +634,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_173 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -804,39 +819,39 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:134`](src/state/reducer.ts#L134) | Alles, was der Übende auslösen kann |
-| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:36`](src/state/SimulationProvider.tsx#L36) | Bestätigte Nachrichten mit Wiederholung |
+| `state.aktionen` | [`src/state/reducer.ts:131`](src/state/reducer.ts#L131) | Alles, was der Übende auslösen kann |
+| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.phase` | [`src/state/reducer.ts:45`](src/state/reducer.ts#L45) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:80`](src/state/SimulationProvider.tsx#L80) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:288`](src/state/reducer.ts#L288) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:192`](src/state/reducer.ts#L192) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.phase` | [`src/state/reducer.ts:42`](src/state/reducer.ts#L42) | Die Hauptzustände der Anwendung |
+| `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
+| `state.reducer` | [`src/state/reducer.ts:265`](src/state/reducer.ts#L265) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:189`](src/state/reducer.ts#L189) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
-| `state.uhr` | [`src/state/SimulationProvider.tsx:20`](src/state/SimulationProvider.tsx#L20) | Der Taktgeber der laufenden Simulation |
-| `state.zeit` | [`src/state/reducer.ts:241`](src/state/reducer.ts#L241) | Kernmechanik: jede Handlung lässt die Uhr für alle laufen |
-| `state.zustand` | [`src/state/reducer.ts:60`](src/state/reducer.ts#L60) | Der gesamte Zustand einer laufenden Übung |
+| `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
+| `state.zeitkosten` | [`src/state/zeitkosten.ts:8`](src/state/zeitkosten.ts#L8) | Wie lange eine Handlung den Handelnden bindet |
+| `state.zustand` | [`src/state/reducer.ts:57`](src/state/reducer.ts#L57) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1437`](src/index.css#L1437) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1821`](src/index.css#L1821) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2453`](src/index.css#L2453) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.anhaengekarte` | [`src/index.css:1488`](src/index.css#L1488) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1872`](src/index.css#L1872) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2504`](src/index.css#L2504) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:603`](src/index.css#L603) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3382`](src/index.css#L3382) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:3433`](src/index.css#L3433) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:348`](src/index.css#L348) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1874`](src/index.css#L1874) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:3128`](src/index.css#L3128) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.ersteindruck` | [`src/index.css:1925`](src/index.css#L1925) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:3179`](src/index.css#L3179) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:266`](src/index.css#L266) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:345`](src/index.css#L345) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:530`](src/index.css#L530) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1700`](src/index.css#L1700) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:2254`](src/index.css#L2254) | Zweispaltiges Raster der Patientenansichten ab 900 px |
+| `stil.patientnav` | [`src/index.css:1751`](src/index.css#L1751) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.raster` | [`src/index.css:2305`](src/index.css#L2305) | Zweispaltiges Raster der Patientenansichten ab 900 px |
 | `stil.sk-farbe` | [`src/index.css:148`](src/index.css#L148) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3452`](src/index.css#L3452) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3503`](src/index.css#L3503) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3583`](src/index.css#L3583) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3634`](src/index.css#L3634) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -856,13 +871,13 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `test.abschnitte` | [`src/state/reducer.test.ts:222`](src/state/reducer.test.ts#L222) | Der Weg eines Patienten und die erlaubten Verlegungen |
+| `test.abschnitte` | [`src/state/reducer.test.ts:166`](src/state/reducer.test.ts#L166) | Der Weg eines Patienten und die erlaubten Verlegungen |
 | `test.atemweg` | [`src/domain/simulation.test.ts:224`](src/domain/simulation.test.ts#L224) | Sofortmaßnahmen und die Wirkung der Atemwegssicherung |
 | `test.szenariodaten` | [`src/domain/simulation.test.ts:33`](src/domain/simulation.test.ts#L33) | Prueft, dass jede Szenario-Vorlage in sich stimmig ist |
 | `test.szenariopruefung` | [`src/domain/szenarioPruefung.test.ts:9`](src/domain/szenarioPruefung.test.ts#L9) | Die Prüfung, durch die jedes importierte Szenario muss |
 | `test.tacstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
-| `test.zeitkosten` | [`src/state/reducer.test.ts:64`](src/state/reducer.test.ts#L64) | Belegt, dass jede Handlung die Uhr fuer alle weiterlaufen laesst |
+| `test.zeitkosten` | [`src/state/reducer.test.ts:59`](src/state/reducer.test.ts#L59) | Belegt, dass der Reducer selbst keine Zeit mehr vorspringen lässt |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -882,7 +897,7 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.delegationsbenachrichtigung` | [`src/components/DelegationBenachrichtigung.tsx:5`](src/components/DelegationBenachrichtigung.tsx#L5) | Benachrichtigung: jemand braucht eine Freigabe |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:17`](src/pages/EinsatzSeite.tsx#L17) | Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:18`](src/pages/EinsatzSeite.tsx#L18) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:7`](src/components/FahrzeugVerlegung.tsx#L7) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
@@ -906,6 +921,7 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:7`](src/components/Verlegung.tsx#L7) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:23`](src/pages/WartebereichSeite.tsx#L23) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
+| `ui.zeitkostenanzeige` | [`src/components/Zeitkostenanzeige.tsx:5`](src/components/Zeitkostenanzeige.tsx#L5) | Laufender Zeitkosten-Timer sperrt die Bedienung |
 
 #### vorlagen
 
@@ -935,7 +951,7 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           309 Tests
+npm run test           332 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

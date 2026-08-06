@@ -963,35 +963,53 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ## 7b. Versionen und Rückweg
 
-Jeder abgeschlossene, geprüfte Stand bekommt einen eigenen Branch
-`DPS-0.<nummer>` (aufsteigend). Er wird **nicht weiterentwickelt**, sondern
-eingefroren - er ist ausschließlich der Rückweg, falls eine spätere Änderung
-schiefgeht. Entwickelt wird weiter auf dem Arbeitsbranch.
+Jeder abgeschlossene, geprüfte Stand wird als **Tag** `v<major>.<minor>.<patch>`
+eingefroren - nicht als Branch. Ein Tag ist unveränderlich: Man kann nicht aus
+Versehen darauf weiterentwickeln, und er bezeichnet immer exakt denselben
+Stand. Ein Branch wandert dagegen mit jedem Commit weiter und taugt damit
+gerade nicht als verlässlicher Rückweg. Entwickelt wird auf dem Arbeitsbranch.
 
-Wichtig: Git erlaubt keine Leerzeichen in Branchnamen. Aus "DPS 0.2" wird
-deshalb `DPS-0.2`.
+### Welche Stelle wird hochgezählt
 
-| Branch | Stand |
+| Änderung | Beispiel | Neue Nummer |
+| --- | --- | --- |
+| Verhalten oder Funktion ändert sich | Zeitkosten laufen als Timer statt als Sprung; Login eingebaut | `0.2.0` → `0.3.0` |
+| Korrektur oder Politur, Verhalten bleibt | Kontrast angehoben, Querscrollen behoben, totes CSS entfernt | `0.2.0` → `0.2.1` |
+| Nur Text/Doku, kein Code | Quellenangabe ergänzt | gar keine neue Version |
+
+Im Zweifel die kleinere Stufe: Eine Patch-Nummer zu viel schadet nicht, eine
+zu grob zusammengefasste Version nimmt den genauen Rückweg.
+
+### Bisherige Stände
+
+| Tag | Stand |
 | --- | --- |
-| `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
+| `v0.2.0` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
+| `v0.1` | Patientenseite als Anhängekarte, Befundtafel als Bedienfläche |
 
-Ältere Rückwege, die es schon vor dieser Systematik gab: Tag `v0.1` und der
-Branch `backup-vor-modus-umbau` (Stand vor dem Umbau auf Login + Moduswahl).
+Daneben liegt der Branch `backup-vor-modus-umbau` - ein Rückweg aus der Zeit
+vor dieser Systematik (Stand vor dem Umbau auf Login + Moduswahl).
 
-**Ablauf für den nächsten Schritt:** erst die Änderung auf dem Arbeitsbranch
-fertigstellen und prüfen (`npm run typecheck`, `npm test`, `npm run lint`,
-Build), dann `package.json` auf die neue Nummer heben, committen und den
-Branch `DPS-0.<nummer+1>` genau auf diesen Commit setzen und pushen. So ist
-jede Versionsnummer ein Stand, der nachweislich lief.
+### Ablauf für den nächsten Stand
+
+Erst die Änderung fertigstellen und prüfen (`npm run typecheck`, `npm test`,
+`npm run lint`, `npm run build`), dann:
 
 ```bash
-# Beispiel: neuen Stand als DPS-0.3 einfrieren
-git branch DPS-0.3            # zeigt auf den aktuellen, geprüften Commit
-git push -u origin DPS-0.3
+# 1. Nummer in package.json heben und mitcommitten
+# 2. Stand einfrieren - -a erzeugt ein annotiertes Tag mit Datum und Text
+git tag -a v0.2.1 -m "Kurz: was dieser Stand kann"
+git push origin v0.2.1
 
-# Zurück auf einen alten Stand schauen
-git checkout DPS-0.2
+# Alte Stände ansehen
+git tag -l                    # alle Versionen
+git checkout v0.2.0           # nur anschauen
+
+# Wirklich zurückgehen: neuen Branch aus dem alten Stand aufmachen
+git checkout -b rueckweg-von-0.2.0 v0.2.0
 ```
+
+So ist jede Versionsnummer ein Stand, der nachweislich lief.
 
 ## 8. Befehle
 

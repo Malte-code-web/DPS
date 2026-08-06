@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { Fehlergrenze } from './components/Fehlergrenze';
 import { SimulationProvider } from './state/SimulationProvider';
 import './index.css';
 
@@ -11,8 +12,10 @@ if (!wurzel) {
 
 createRoot(wurzel).render(
   <StrictMode>
-    <SimulationProvider>
-      <App />
-    </SimulationProvider>
+    <Fehlergrenze>
+      <SimulationProvider>
+        <App />
+      </SimulationProvider>
+    </Fehlergrenze>
   </StrictMode>,
 );

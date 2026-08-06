@@ -43,7 +43,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | tacSTART | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet - kritische Blutung wird vorgezogen vor Atemwege/Atmung geprüft (TCCC-nah), von Kreis Steinfurt in der MANV-Tasche als "Checkliste (Vor)Sichtung tacSTART" mitgeführt |
-| Zeitmechanik | Jede Handlung (Sichtung, Untersuchung, Maßnahme, Verlegung) lässt die Uhr für alle Patienten weiterlaufen |
+| Zeitmechanik | Maßnahme, Untersuchung und Verlegung laufen als echter Countdown bei der Handlung selbst ab - wer handelt, ist so lange ausgelastet und kann nichts anderes anstoßen, ein Overlay sperrt währenddessen die Bedienung. Alle anderen Patienten altern in dieser Zeit über den ohnehin laufenden Simulationstakt, nicht mehr über einen künstlichen Sprung der Uhr. Die Sichtung selbst kostet keine Zeit (Einschätzen und Ankreuzen, kein Handgriff am Patienten) - erst die anschließende Verlegung |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle. Der Supabase-Transport baut eine abgebrochene Verbindung selbst neu auf (steigende Wartezeit im Hintergrund, sofort beim Zurückwechseln in den Vordergrund über `visibilitychange`) - ein in den Hintergrund geschobener Browser muss die Sitzung dadurch nicht mehr manuell neu laden. Ein eigenes Zeitlimit (10 s) fängt zusätzlich den Fall ab, dass der zugrunde liegende Websocket-Aufbau hängen bleibt, ohne dass Supabase selbst je einen Fehler meldet. Jede Aktion eines Spielers (Maßnahme, Diagnostik, Sichtung ...) sowie sein Beitritt selbst werden an den Host per Bestätigung quittiert; bleibt sie aus, wird bis zu 5-mal automatisch wiederholt - der Host wendet eine wiederholt eintreffende Nachricht dedupliziert trotzdem nur einmal an, ein Realtime-Broadcast liefert sonst ohne jede Fehlermeldung einfach nie zu. Ohne das blieb ein Beitritt spurlos verschwunden, wenn der Host ihn genau in dem Moment verpasste, etwa mitten in einer eigenen Wiederverbindung nach Hintergrund. Denselben Grund hat der alle 4 Sekunden erneut gesendete Schnappschuss: ändert sich der Zustand länger nicht mehr (z. B. Wartebereich nach einer einzelnen Besatzungszuweisung), heilt kein Simulationstakt einen verlorenen Broadcast mehr von selbst - der Neuversand schon |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich - die eigene Auswahl erscheint sofort (optimistisch, ohne auf den Netzwerk-Umlauf über den Host zu warten) |
 | Delegationsanfrage | Wer eine delegierbare Maßnahme wegen fehlender Qualifikation nicht durchführen darf, kann sie trotzdem anklicken - statt gesperrt zu sein, öffnet sich eine Auswahl der durchführungsberechtigten Personen im selben Einsatzabschnitt. Die angefragte Person bekommt eine Benachrichtigung mit Annehmen/Ablehnen; erst nach Annahme ist die Maßnahme freigegeben - gezielt nur für die anfragende Person, nicht patientenweit für alle. Ersetzt den früheren proaktiven „Freigeben"-Knopf vollständig |
@@ -61,6 +61,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Debriefing | Kennzahlen, Vergleich gegen die Referenz, Ausweis der Individualmedizin |
 | Szenarien | Zwei Lagen mit zusammen 16 Patienten |
 | Bedienung | Für Smartphone ausgelegt: Tippziele ≥ 44 px, kein Querscrollen, Tabellen brechen zu Karten um |
+| Fehlergrenze | Ein unerwarteter Renderfehler zeigt eine Ausweichseite mit Neuladen-Knopf und einklappbaren technischen Details, statt die App zu einer weißen Seite ohne jede Erklärung abstürzen zu lassen (→ `ui.fehlergrenze`) |
 | Weitergabe | `npm run build:single` erzeugt eine einzelne HTML-Datei ohne Server |
 
 332 automatische Tests (Vitest) über Domänenlogik, Zustandsverwaltung, Mehrspieler-Sitzung,
@@ -636,7 +637,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_174 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -837,22 +838,23 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1506`](src/index.css#L1506) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1890`](src/index.css#L1890) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2370`](src/index.css#L2370) | Kandidatenwahl und Benachrichtigung der Delegation |
-| `stil.editor` | [`src/index.css:626`](src/index.css#L626) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3285`](src/index.css#L3285) | Die angeheftete Leiste so flach wie möglich |
-| `stil.einstieg` | [`src/index.css:364`](src/index.css#L364) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1943`](src/index.css#L1943) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:3029`](src/index.css#L3029) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.massnahmenrechte` | [`src/index.css:274`](src/index.css#L274) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
-| `stil.mehrspieler` | [`src/index.css:361`](src/index.css#L361) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
-| `stil.modi` | [`src/index.css:553`](src/index.css#L553) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1769`](src/index.css#L1769) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.sk-farbe` | [`src/index.css:156`](src/index.css#L156) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3355`](src/index.css#L3355) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.anhaengekarte` | [`src/index.css:1563`](src/index.css#L1563) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1947`](src/index.css#L1947) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2427`](src/index.css#L2427) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.editor` | [`src/index.css:683`](src/index.css#L683) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:3342`](src/index.css#L3342) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
+| `stil.ersteindruck` | [`src/index.css:2000`](src/index.css#L2000) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
+| `stil.hover` | [`src/index.css:3086`](src/index.css#L3086) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
+| `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
+| `stil.modi` | [`src/index.css:610`](src/index.css#L610) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1826`](src/index.css#L1826) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
+| `stil.telefon` | [`src/index.css:3412`](src/index.css#L3412) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3486`](src/index.css#L3486) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3543`](src/index.css#L3543) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -902,6 +904,7 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:7`](src/components/FahrzeugVerlegung.tsx#L7) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
+| `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:42`](src/components/Massnahmenliste.tsx#L42) | Das einklappbare xABCDE-Akkordeon |

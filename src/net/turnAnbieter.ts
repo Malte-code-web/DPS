@@ -22,9 +22,14 @@ export function istTurnKonfiguriert(umgebung: TurnUmgebung): boolean {
   return Boolean(umgebung.appName && umgebung.apiKey);
 }
 
+// .trim() gegen ein unsichtbares Leerzeichen/Zeilenumbruch beim Eintragen in
+// eine Hosting-Oberfläche (z. B. Vercel) - würde sonst eine leicht kaputte
+// Adresse bauen ("https:// dps.metered.live/..." oder mit Zeilenumbruch im
+// API-Key), die weder Fehler noch Erfolg zeigt, nur ein unspezifisches
+// "Load failed".
 const umgebung: TurnUmgebung = {
-  appName: import.meta.env.VITE_METERED_APP_NAME as string | undefined,
-  apiKey: import.meta.env.VITE_METERED_API_KEY as string | undefined,
+  appName: (import.meta.env.VITE_METERED_APP_NAME as string | undefined)?.trim(),
+  apiKey: (import.meta.env.VITE_METERED_API_KEY as string | undefined)?.trim(),
 };
 
 export const turnKonfiguriert = istTurnKonfiguriert(umgebung);
@@ -49,23 +54,28 @@ export interface TurnErgebnis {
 }
 
 async function einAbrufversuch(): Promise<TurnErgebnis> {
+  // Der Hostname landet bei einem Fehlschlag mit in der Diagnose (→
+  // ui.sprechfunk) - sichtbar falsch geschriebene/verstümmelte Werte (z. B.
+  // durch Copy-Paste in eine Hosting-Oberfläche) fallen damit sofort auf,
+  // statt nur ein unspezifisches "Load failed" zu zeigen.
+  const host = `${umgebung.appName}.metered.live`;
   try {
     const antwort = await fetch(
-      `https://${umgebung.appName}.metered.live/api/v1/turn/credentials?apiKey=${umgebung.apiKey}`,
+      `https://${host}/api/v1/turn/credentials?apiKey=${umgebung.apiKey}`,
       { signal: AbortSignal.timeout(ABRUF_TIMEOUT_MS) },
     );
-    if (!antwort.ok) return { server: [], fehler: `HTTP ${antwort.status} von Metered.ca` };
+    if (!antwort.ok) return { server: [], fehler: `HTTP ${antwort.status} von ${host}` };
     const daten: unknown = await antwort.json();
-    if (!Array.isArray(daten)) return { server: [], fehler: 'unerwartete Antwort von Metered.ca (kein Array)' };
+    if (!Array.isArray(daten)) return { server: [], fehler: `unerwartete Antwort von ${host} (kein Array)` };
     return { server: daten as RTCIceServer[], fehler: null };
   } catch (fehler) {
     const name = fehler instanceof Error ? fehler.name : '';
     const text =
       name === 'TimeoutError' || name === 'AbortError'
-        ? `Zeitüberschreitung nach ${ABRUF_TIMEOUT_MS / 1000}s`
+        ? `Zeitüberschreitung nach ${ABRUF_TIMEOUT_MS / 1000}s (${host})`
         : fehler instanceof Error
-          ? fehler.message
-          : 'unbekannter Fehler';
+          ? `${fehler.message} (${host})`
+          : `unbekannter Fehler (${host})`;
     return { server: [], fehler: text };
   }
 }

@@ -253,6 +253,20 @@ welche Qualifikation an Bord).
   statt als erkennbaren Timeout). Jetzt 12 Sekunden je Versuch, dazu ein
   zweiter Versuch bei Fehlschlag, bevor endgültig auf STUN zurückgefallen
   wird.
+- ✅ **Hostname in der TURN-Diagnose + getrimmte Umgebungsvariablen**
+  (`DPS-0.7.8`) - trotz 12 Sekunden Zeitlimit und Wiederholungsversuch
+  zeigte die Diagnose auf echten Handys im Mobilfunknetz weiterhin
+  "TURN-Server geladen: nein - Load failed", diesmal mit einer gesamten
+  Verbindungsdauer weit unter dem Zeitlimit - kein Timeout also. Ein
+  direkter Aufruf derselben Abruf-Adresse im Handy-Browser lieferte
+  wieder sofort die richtigen Zugangsdaten. Naheliegender Verdacht: ein
+  unsichtbares Leerzeichen oder ein Zeilenumbruch beim Eintragen der
+  Umgebungsvariablen in Vercels Oberfläche, das eine leicht kaputte
+  Abruf-Adresse baut. App-Name und API-Key werden jetzt beim Einlesen
+  getrimmt, und jede Fehlermeldung nennt zusätzlich den tatsächlich
+  verwendeten Hostnamen - damit zeigt die nächste Diagnose entweder eine
+  erfolgreiche Verbindung (falls das die Ursache war) oder den genauen
+  Hostnamen zum Abgleich.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

@@ -215,6 +215,16 @@ welche Qualifikation an Bord).
   Verbindung länger als 8 Sekunden im Status "verbindet", wird einmal
   automatisch mit `iceTransportPolicy: 'relay'` neu verhandelt (`restartIce`
   + neues Angebot) - erzwingt den TURN-Server statt endlos zu warten.
+- ✅ **Dreifache Signalisierung** (`DPS-0.7.4`) - selbst mit Relay-Fallback
+  blieb eine Verbindung zwischen zwei Geräten im selben Mobilfunknetz
+  weiterhin ohne Erfolg. Der Transport liefert ohne Zustellgarantie
+  (→ `net.protokoll`), über ein Mobilfunknetz geht dabei öfter mal eine
+  einzelne Nachricht verloren als im WLAN - eine ICE-Verhandlung besteht
+  aus vielen Einzelnachrichten (Angebot, Antwort, oft ein Dutzend
+  Kandidaten), fehlt auch nur einer, bleibt die Verbindung aus, ohne dass
+  irgendwo ein Fehler auftaucht. Jede Signalnachricht wird jetzt dreifach
+  im Abstand von 700ms verschickt statt nur einmal; erneutes Anwenden
+  derselben Nachricht ist harmlos.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { holeTurnServer, turnKonfiguriert } from '../net/turnAnbieter';
 import { useSimulation } from './useSimulation';
 import type { FunkSignalNachricht } from './context';
+import type { FunkSignalDaten } from '../net/protokoll';
 
 /**
  * Ohne TURN-Zugangsdaten (→ `net.turnAnbieter`) bleibt es bei reinem STUN -
@@ -90,13 +91,28 @@ export function useSprechfunk(kanal: string | null): {
     });
   }
 
+  // Der Transport ist reines Fire-and-Forget ohne Zustellgarantie
+  // (→ `net.protokoll`) - über ein Mobilfunknetz geht dabei spürbar öfter
+  // mal eine einzelne Nachricht verloren als im WLAN. Eine ICE-Verhandlung
+  // besteht aus vielen Einzelnachrichten (Angebot, Antwort, oft ein Dutzend
+  // Kandidaten) - fehlt auch nur einer, kann die Verbindung ausbleiben, ohne
+  // dass irgendwo ein Fehler auftaucht. Jede Signalnachricht wird deshalb
+  // dreifach im Abstand von 700ms verschickt statt nur einmal; erneutes
+  // Anwenden derselben Nachricht ist harmlos (Kandidaten sind idempotent,
+  // Antworten werden unten anhand des Verhandlungszustands verworfen).
+  function sendeSignalMehrfach(anId: string, daten: FunkSignalDaten) {
+    sendeFunkSignal(anId, daten);
+    setTimeout(() => sendeFunkSignal(anId, daten), 700);
+    setTimeout(() => sendeFunkSignal(anId, daten), 2000);
+  }
+
   function sendeAngebot(verbindung: RTCPeerConnection, teilnehmerId: string) {
     verbindung
       .createOffer()
       .then((angebot) => verbindung.setLocalDescription(angebot))
       .then(() => {
         const sdp = verbindung.localDescription?.sdp;
-        if (sdp) sendeFunkSignal(teilnehmerId, { art: 'angebot', sdp });
+        if (sdp) sendeSignalMehrfach(teilnehmerId, { art: 'angebot', sdp });
       });
   }
 
@@ -114,7 +130,7 @@ export function useSprechfunk(kanal: string | null): {
 
     verbindung.onicecandidate = (event) => {
       if (event.candidate) {
-        sendeFunkSignal(teilnehmerId, { art: 'icecandidate', kandidat: event.candidate.toJSON() });
+        sendeSignalMehrfach(teilnehmerId, { art: 'icecandidate', kandidat: event.candidate.toJSON() });
       }
     };
     verbindung.ontrack = (event) => {
@@ -279,14 +295,24 @@ export function useSprechfunk(kanal: string | null): {
       }
       if (!peer) return;
       const { daten } = nachricht;
+      // Jede Signalnachricht kommt wegen der dreifachen Zustellung
+      // (→ `sendeSignalMehrfach`) möglicherweise mehrfach an - eine Antwort
+      // ein zweites Mal anzuwenden würde mit einem Verhandlungsfehler
+      // abbrechen (nur im Zustand "have-local-offer" gültig), ein Angebot
+      // ein zweites Mal ist dagegen harmlos (normale Neuverhandlung).
       if (daten.art === 'angebot') {
-        await peer.verbindung.setRemoteDescription({ type: 'offer', sdp: daten.sdp });
-        const antwort = await peer.verbindung.createAnswer();
-        await peer.verbindung.setLocalDescription(antwort);
-        const sdp = peer.verbindung.localDescription?.sdp;
-        if (sdp) sendeFunkSignal(nachricht.vonId, { art: 'antwort', sdp });
+        try {
+          await peer.verbindung.setRemoteDescription({ type: 'offer', sdp: daten.sdp });
+          const antwort = await peer.verbindung.createAnswer();
+          await peer.verbindung.setLocalDescription(antwort);
+          const sdp = peer.verbindung.localDescription?.sdp;
+          if (sdp) sendeSignalMehrfach(nachricht.vonId, { art: 'antwort', sdp });
+        } catch {
+          // Doppelte/verspätete Zustellung in einem inzwischen anderen Verhandlungszustand - ignorieren.
+        }
       } else if (daten.art === 'antwort') {
-        await peer.verbindung.setRemoteDescription({ type: 'answer', sdp: daten.sdp });
+        if (peer.verbindung.signalingState !== 'have-local-offer') return;
+        await peer.verbindung.setRemoteDescription({ type: 'answer', sdp: daten.sdp }).catch(() => {});
       } else if (daten.art === 'icecandidate') {
         await peer.verbindung.addIceCandidate(daten.kandidat).catch(() => {});
       }

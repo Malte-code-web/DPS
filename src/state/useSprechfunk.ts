@@ -22,9 +22,20 @@ export interface Kanalmitglied {
   verbindung: Verbindungsstatus;
 }
 
+/**
+ * Manche Netze (v. a. wenn beide Seiten im selben Mobilfunknetz stecken)
+ * liefern direkte ICE-Kandidaten, die zunächst brauchbar aussehen, tatsächlich
+ * aber nicht funktionieren - ohne Gegenmaßnahme bleibt die Verbindung dann
+ * dauerhaft im Status "verbindet" hängen, obwohl ein funktionierender
+ * TURN-Relay bereitsteht. Nach dieser Wartezeit wird einmal mit erzwungenem
+ * Relay neu verhandelt (→ RELAY_TIMEOUT_MS unten).
+ */
+const RELAY_TIMEOUT_MS = 8000;
+
 interface Peer {
   verbindung: RTCPeerConnection;
   audio: HTMLAudioElement;
+  relayTimeout: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -67,6 +78,7 @@ export function useSprechfunk(kanal: string | null): {
   function schliessePeer(teilnehmerId: string) {
     const peer = peersRef.current.get(teilnehmerId);
     if (!peer) return;
+    clearTimeout(peer.relayTimeout);
     peer.verbindung.close();
     peer.audio.srcObject = null;
     peer.audio.remove();
@@ -76,6 +88,16 @@ export function useSprechfunk(kanal: string | null): {
       naechste.delete(teilnehmerId);
       return naechste;
     });
+  }
+
+  function sendeAngebot(verbindung: RTCPeerConnection, teilnehmerId: string) {
+    verbindung
+      .createOffer()
+      .then((angebot) => verbindung.setLocalDescription(angebot))
+      .then(() => {
+        const sdp = verbindung.localDescription?.sdp;
+        if (sdp) sendeFunkSignal(teilnehmerId, { art: 'angebot', sdp });
+      });
   }
 
   function erzeugePeer(teilnehmerId: string, eigeneId: string): Peer {
@@ -100,6 +122,7 @@ export function useSprechfunk(kanal: string | null): {
       audio.play().catch(() => {});
     };
     verbindung.onconnectionstatechange = () => {
+      if (verbindung.connectionState === 'connected') clearTimeout(relayTimeout);
       const status: Verbindungsstatus =
         verbindung.connectionState === 'connected'
           ? 'verbunden'
@@ -109,20 +132,27 @@ export function useSprechfunk(kanal: string | null): {
       setVerbindungen((bisher) => new Map(bisher).set(teilnehmerId, status));
     };
 
-    const peer = { verbindung, audio };
+    // Bleibt es zu lange ohne Verbindung, obwohl ein TURN-Server konfiguriert
+    // ist, direkte/reflexive Kandidaten erzwungen ignorieren und nur noch
+    // über den Relay verhandeln (→ RELAY_TIMEOUT_MS oben). Beide Seiten lösen
+    // das unabhängig voneinander aus; nur die anrufende Seite verschickt das
+    // erneute Angebot, um doppelte Neuverhandlung zu vermeiden.
+    const relayTimeout = setTimeout(() => {
+      if (verbindung.connectionState === 'connected') return;
+      if (iceServerRef.current.length <= 1) return;
+      verbindung.setConfiguration({ iceServers: iceServerRef.current, iceTransportPolicy: 'relay' });
+      if (eigeneId < teilnehmerId) {
+        verbindung.restartIce();
+        sendeAngebot(verbindung, teilnehmerId);
+      }
+    }, RELAY_TIMEOUT_MS);
+
+    const peer = { verbindung, audio, relayTimeout };
     peersRef.current.set(teilnehmerId, peer);
     setVerbindungen((bisher) => new Map(bisher).set(teilnehmerId, 'verbindet'));
 
     // Deterministische Anruf-Regel: die kleinere Id ruft an.
-    if (eigeneId < teilnehmerId) {
-      verbindung
-        .createOffer()
-        .then((angebot) => verbindung.setLocalDescription(angebot))
-        .then(() => {
-          const sdp = verbindung.localDescription?.sdp;
-          if (sdp) sendeFunkSignal(teilnehmerId, { art: 'angebot', sdp });
-        });
-    }
+    if (eigeneId < teilnehmerId) sendeAngebot(verbindung, teilnehmerId);
 
     return peer;
   }

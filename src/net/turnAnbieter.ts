@@ -30,9 +30,18 @@ const umgebung: TurnUmgebung = {
 export const turnKonfiguriert = istTurnKonfiguriert(umgebung);
 
 /**
+ * Wartezeit, nach der der Abruf aufgegeben wird - ohne dieses Limit blockiert
+ * ein hängender oder sehr langsamer Abruf (blockierter Domainname, lahmes
+ * Netz) den gesamten Sprechfunk auf unbestimmte Zeit, obwohl reines STUN
+ * für diese Verbindung eventuell völlig ausgereicht hätte.
+ */
+const ABRUF_TIMEOUT_MS = 5000;
+
+/**
  * Holt TURN-Zugangsdaten von Metered.ca. Liefert bei fehlender Konfiguration,
- * einem Netzwerkfehler oder einer ungültigen Antwort bewusst eine leere
- * Liste statt zu werfen - der Sprechfunk fällt dann einfach auf reines STUN
+ * einem Netzwerkfehler, einer ungültigen Antwort oder einem zu langsamen
+ * Abruf (→ `ABRUF_TIMEOUT_MS`) bewusst eine leere Liste statt zu werfen oder
+ * unbegrenzt zu warten - der Sprechfunk fällt dann einfach auf reines STUN
  * zurück, statt ganz zu blockieren (→ `state.sprechfunk`).
  */
 export async function holeTurnServer(): Promise<RTCIceServer[]> {
@@ -40,6 +49,7 @@ export async function holeTurnServer(): Promise<RTCIceServer[]> {
   try {
     const antwort = await fetch(
       `https://${umgebung.appName}.metered.live/api/v1/turn/credentials?apiKey=${umgebung.apiKey}`,
+      { signal: AbortSignal.timeout(ABRUF_TIMEOUT_MS) },
     );
     if (!antwort.ok) return [];
     const daten: unknown = await antwort.json();

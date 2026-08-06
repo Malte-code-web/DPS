@@ -207,6 +207,14 @@ welche Qualifikation an Bord).
   selben Mobilfunknetz. Ohne hinterlegte Zugangsdaten läuft alles
   unverändert mit reinem STUN weiter (zuverlässig nur im selben Netz); ein
   Fehlschlag beim Abrufen der TURN-Zugangsdaten blockiert nichts.
+- ✅ **Erzwungener Relay-Fallback nach 8 s** (`DPS-0.7.3`) - selbst mit
+  konfiguriertem TURN-Server blieb eine Verbindung zwischen zwei Geräten im
+  selben Mobilfunknetz weiterhin hängen: das Netz liefert scheinbar
+  brauchbare direkte ICE-Kandidaten, die tatsächlich nicht funktionieren,
+  ICE bevorzugt sie trotzdem vor dem funktionierenden Relay. Bleibt eine
+  Verbindung länger als 8 Sekunden im Status "verbindet", wird einmal
+  automatisch mit `iceTransportPolicy: 'relay'` neu verhandelt (`restartIce`
+  + neues Angebot) - erzwingt den TURN-Server statt endlos zu warten.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

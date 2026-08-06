@@ -636,7 +636,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_173 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -837,23 +837,22 @@ _173 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1488`](src/index.css#L1488) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1872`](src/index.css#L1872) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2504`](src/index.css#L2504) | Kandidatenwahl und Benachrichtigung der Delegation |
-| `stil.editor` | [`src/index.css:603`](src/index.css#L603) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3433`](src/index.css#L3433) | Die angeheftete Leiste so flach wie möglich |
-| `stil.einstieg` | [`src/index.css:348`](src/index.css#L348) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1925`](src/index.css#L1925) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.hover` | [`src/index.css:3179`](src/index.css#L3179) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.massnahmenrechte` | [`src/index.css:266`](src/index.css#L266) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
-| `stil.mehrspieler` | [`src/index.css:345`](src/index.css#L345) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
-| `stil.modi` | [`src/index.css:530`](src/index.css#L530) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1751`](src/index.css#L1751) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.raster` | [`src/index.css:2305`](src/index.css#L2305) | Zweispaltiges Raster der Patientenansichten ab 900 px |
-| `stil.sk-farbe` | [`src/index.css:148`](src/index.css#L148) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3503`](src/index.css#L3503) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.anhaengekarte` | [`src/index.css:1506`](src/index.css#L1506) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1890`](src/index.css#L1890) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2370`](src/index.css#L2370) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.editor` | [`src/index.css:626`](src/index.css#L626) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:3285`](src/index.css#L3285) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einstieg` | [`src/index.css:364`](src/index.css#L364) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
+| `stil.ersteindruck` | [`src/index.css:1943`](src/index.css#L1943) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.hover` | [`src/index.css:3029`](src/index.css#L3029) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.massnahmenrechte` | [`src/index.css:274`](src/index.css#L274) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
+| `stil.mehrspieler` | [`src/index.css:361`](src/index.css#L361) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
+| `stil.modi` | [`src/index.css:553`](src/index.css#L553) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1769`](src/index.css#L1769) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.sk-farbe` | [`src/index.css:156`](src/index.css#L156) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
+| `stil.telefon` | [`src/index.css:3355`](src/index.css#L3355) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3634`](src/index.css#L3634) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3486`](src/index.css#L3486) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -948,6 +947,19 @@ _173 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 - **CSS**: eine Datei, Klassennamen auf Deutsch, Farben über Variablen. Vorsicht
   bei Spezifitäten – `button:hover` schlägt eine einzelne Klasse
   (→ `stil.sk-farbe`).
+- **Kontrast**: Normaler Text erreicht mindestens 4.5:1 gegen seinen Grund
+  (WCAG AA). Deshalb gibt es zwei Blautöne (→ `stil.tokens`): `--akzent` für
+  Text und Rahmen auf dunklem Grund, `--akzent-stark` als Fläche unter weißer
+  Schrift. Eine gesättigte Farbe auf dem helleren `--bg-panel-hoch` wird mit
+  `color-mix(… , var(--text))` eine Spur aufgehellt, statt die Kategoriefarbe
+  selbst zu ändern.
+- **Tippziele**: Auf Touch-Geräten sind Knöpfe, Auswahlfelder **und
+  Eingabefelder** mindestens 44 px hoch (→ `stil.touch`).
+- **Schmale Geräte**: Die Oberfläche darf bis hinunter zu 320 px nicht quer
+  scrollen. Flex-Elemente mit langem Inhalt (`<select>`, lange Komposita)
+  brauchen dafür `min-width: 0` – ohne das schrumpfen sie nie unter ihre
+  Inhaltsbreite. `overflow-wrap: anywhere` ist dabei die falsche Wahl: Es
+  senkt die Mindestbreite auf ein Zeichen und bricht Wörter senkrecht um.
 
 ## 8. Befehle
 

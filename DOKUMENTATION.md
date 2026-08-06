@@ -961,6 +961,38 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
   Inhaltsbreite. `overflow-wrap: anywhere` ist dabei die falsche Wahl: Es
   senkt die Mindestbreite auf ein Zeichen und bricht Wörter senkrecht um.
 
+## 7b. Versionen und Rückweg
+
+Jeder abgeschlossene, geprüfte Stand bekommt einen eigenen Branch
+`DPS-0.<nummer>` (aufsteigend). Er wird **nicht weiterentwickelt**, sondern
+eingefroren - er ist ausschließlich der Rückweg, falls eine spätere Änderung
+schiefgeht. Entwickelt wird weiter auf dem Arbeitsbranch.
+
+Wichtig: Git erlaubt keine Leerzeichen in Branchnamen. Aus "DPS 0.2" wird
+deshalb `DPS-0.2`.
+
+| Branch | Stand |
+| --- | --- |
+| `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
+
+Ältere Rückwege, die es schon vor dieser Systematik gab: Tag `v0.1` und der
+Branch `backup-vor-modus-umbau` (Stand vor dem Umbau auf Login + Moduswahl).
+
+**Ablauf für den nächsten Schritt:** erst die Änderung auf dem Arbeitsbranch
+fertigstellen und prüfen (`npm run typecheck`, `npm test`, `npm run lint`,
+Build), dann `package.json` auf die neue Nummer heben, committen und den
+Branch `DPS-0.<nummer+1>` genau auf diesen Commit setzen und pushen. So ist
+jede Versionsnummer ein Stand, der nachweislich lief.
+
+```bash
+# Beispiel: neuen Stand als DPS-0.3 einfrieren
+git branch DPS-0.3            # zeigt auf den aktuellen, geprüften Commit
+git push -u origin DPS-0.3
+
+# Zurück auf einen alten Stand schauen
+git checkout DPS-0.2
+```
+
 ## 8. Befehle
 
 ```bash

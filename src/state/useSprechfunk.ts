@@ -21,6 +21,52 @@ export interface Kanalmitglied {
   teilnehmerId: string;
   name: string;
   verbindung: Verbindungsstatus;
+  /** Lesbarer Diagnosetext zum Kopieren - welche Kandidatentypen, welche Fehler, welcher Verlauf (→ ui.sprechfunk). */
+  diagnose: string;
+}
+
+type KandidatenArt = 'host' | 'srflx' | 'prflx' | 'relay' | 'unbekannt';
+
+/** Der Kandidatentyp steckt in der rohen SDP-Zeile ("... typ relay ..."), nicht in der serialisierten Form. */
+function kandidatenArtAus(candidate: string): KandidatenArt {
+  const treffer = /typ (host|srflx|prflx|relay)/.exec(candidate);
+  return (treffer?.[1] as KandidatenArt) ?? 'unbekannt';
+}
+
+interface PeerDiagnose {
+  gesendet: Record<KandidatenArt, number>;
+  empfangen: Record<KandidatenArt, number>;
+  kandidatenFehler: string[];
+  verlauf: string[];
+}
+
+function neueDiagnose(): PeerDiagnose {
+  return {
+    gesendet: { host: 0, srflx: 0, prflx: 0, relay: 0, unbekannt: 0 },
+    empfangen: { host: 0, srflx: 0, prflx: 0, relay: 0, unbekannt: 0 },
+    kandidatenFehler: [],
+    verlauf: [],
+  };
+}
+
+function formatZaehler(zaehler: Record<KandidatenArt, number>): string {
+  return (['host', 'srflx', 'relay', 'prflx'] as const)
+    .filter((art) => zaehler[art] > 0)
+    .map((art) => `${art}=${zaehler[art]}`)
+    .join(', ');
+}
+
+function formatDiagnose(diagnose: PeerDiagnose, turnEintraege: number): string {
+  const zeilen = [
+    `TURN-Server geladen: ${turnEintraege > 0 ? `ja (${turnEintraege} Einträge)` : 'nein'}`,
+    `Gesendete Kandidaten: ${formatZaehler(diagnose.gesendet) || 'keine'}`,
+    `Empfangene Kandidaten: ${formatZaehler(diagnose.empfangen) || 'keine'}`,
+  ];
+  if (diagnose.kandidatenFehler.length > 0) {
+    zeilen.push(`ICE-Fehler: ${diagnose.kandidatenFehler.join(' | ')}`);
+  }
+  zeilen.push('Verlauf:', ...diagnose.verlauf);
+  return zeilen.join('\n');
 }
 
 /**
@@ -37,6 +83,11 @@ interface Peer {
   verbindung: RTCPeerConnection;
   audio: HTMLAudioElement;
   relayTimeout: ReturnType<typeof setTimeout>;
+  diagnose: PeerDiagnose;
+}
+
+function zeitstempel(): string {
+  return new Date().toLocaleTimeString('de-DE', { hour12: false });
 }
 
 /**
@@ -122,6 +173,8 @@ export function useSprechfunk(kanal: string | null): {
     audio.autoplay = true;
     audio.style.display = 'none';
     document.body.appendChild(audio);
+    const diagnose = neueDiagnose();
+    diagnose.verlauf.push(`${zeitstempel()} Verbindung angelegt`);
 
     const mikrofon = mikrofonRef.current;
     if (mikrofon) {
@@ -130,8 +183,13 @@ export function useSprechfunk(kanal: string | null): {
 
     verbindung.onicecandidate = (event) => {
       if (event.candidate) {
+        const art = (event.candidate.type as KandidatenArt | undefined) ?? 'unbekannt';
+        diagnose.gesendet[art] += 1;
         sendeSignalMehrfach(teilnehmerId, { art: 'icecandidate', kandidat: event.candidate.toJSON() });
       }
+    };
+    verbindung.onicecandidateerror = (event: RTCPeerConnectionIceErrorEvent) => {
+      diagnose.kandidatenFehler.push(`${event.errorCode} ${event.errorText} (${event.url})`);
     };
     verbindung.ontrack = (event) => {
       audio.srcObject = event.streams[0] ?? null;
@@ -145,7 +203,13 @@ export function useSprechfunk(kanal: string | null): {
           : verbindung.connectionState === 'connecting' || verbindung.connectionState === 'new'
             ? 'verbindet'
             : 'getrennt';
+      diagnose.verlauf.push(
+        `${zeitstempel()} Verbindung: ${verbindung.connectionState} (ICE: ${verbindung.iceConnectionState})`,
+      );
       setVerbindungen((bisher) => new Map(bisher).set(teilnehmerId, status));
+    };
+    verbindung.oniceconnectionstatechange = () => {
+      diagnose.verlauf.push(`${zeitstempel()} ICE: ${verbindung.iceConnectionState}`);
     };
 
     // Bleibt es zu lange ohne Verbindung, obwohl ein TURN-Server konfiguriert
@@ -156,6 +220,7 @@ export function useSprechfunk(kanal: string | null): {
     const relayTimeout = setTimeout(() => {
       if (verbindung.connectionState === 'connected') return;
       if (iceServerRef.current.length <= 1) return;
+      diagnose.verlauf.push(`${zeitstempel()} Erzwinge Relay-Neuverhandlung`);
       verbindung.setConfiguration({ iceServers: iceServerRef.current, iceTransportPolicy: 'relay' });
       if (eigeneId < teilnehmerId) {
         verbindung.restartIce();
@@ -163,7 +228,7 @@ export function useSprechfunk(kanal: string | null): {
       }
     }, RELAY_TIMEOUT_MS);
 
-    const peer = { verbindung, audio, relayTimeout };
+    const peer = { verbindung, audio, relayTimeout, diagnose };
     peersRef.current.set(teilnehmerId, peer);
     setVerbindungen((bisher) => new Map(bisher).set(teilnehmerId, 'verbindet'));
 
@@ -314,6 +379,10 @@ export function useSprechfunk(kanal: string | null): {
         if (peer.verbindung.signalingState !== 'have-local-offer') return;
         await peer.verbindung.setRemoteDescription({ type: 'answer', sdp: daten.sdp }).catch(() => {});
       } else if (daten.art === 'icecandidate') {
+        if (daten.kandidat.candidate) {
+          const art = kandidatenArtAus(daten.kandidat.candidate);
+          peer.diagnose.empfangen[art] += 1;
+        }
         await peer.verbindung.addIceCandidate(daten.kandidat).catch(() => {});
       }
     };
@@ -329,11 +398,16 @@ export function useSprechfunk(kanal: string | null): {
     setSprechenAktiv(naechsterZustand);
   };
 
-  const mitglieder: Kanalmitglied[] = zielListe.map((m) => ({
-    teilnehmerId: m.teilnehmerId,
-    name: m.teilnehmerName,
-    verbindung: verbindungen.get(m.teilnehmerId) ?? 'verbindet',
-  }));
+  const mitglieder: Kanalmitglied[] = zielListe.map((m) => {
+    const peer = peersRef.current.get(m.teilnehmerId);
+    const turnEintraege = iceServerRef.current.length - 1;
+    return {
+      teilnehmerId: m.teilnehmerId,
+      name: m.teilnehmerName,
+      verbindung: verbindungen.get(m.teilnehmerId) ?? 'verbindet',
+      diagnose: peer ? formatDiagnose(peer.diagnose, turnEintraege) : 'Noch keine Verbindung angelegt.',
+    };
+  });
 
   return { mitglieder, sprechenAktiv, sprechenUmschalten, mikrofonFehler };
 }

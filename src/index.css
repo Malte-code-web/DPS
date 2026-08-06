@@ -2564,13 +2564,45 @@ button.gefahr {
 
 .sprechfunk-mitglied {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.4rem;
   padding: 0.4rem 0.5rem;
   border-radius: 8px;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   font-size: 0.85rem;
+}
+
+.sprechfunk-mitglied-zeile {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sprechfunk-diagnose-knopf {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.sprechfunk-diagnose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px dashed var(--rand);
+}
+
+.sprechfunk-diagnose pre {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-leise);
+  max-height: 12rem;
+  overflow-y: auto;
 }
 
 .sprechfunk-status-punkt {

@@ -225,6 +225,15 @@ welche Qualifikation an Bord).
   irgendwo ein Fehler auftaucht. Jede Signalnachricht wird jetzt dreifach
   im Abstand von 700ms verschickt statt nur einmal; erneutes Anwenden
   derselben Nachricht ist harmlos.
+- ✅ **Diagnose je Kanalmitglied** (`DPS-0.7.5`) - trotz TURN-Server,
+  Relay-Fallback und dreifacher Signalisierung blieb eine Verbindung
+  zwischen zwei Geräten im selben Mobilfunknetz weiterhin ohne Erfolg.
+  Ohne Entwicklerkonsole auf dem Handy war bisher nicht erkennbar, woran
+  es liegt. Ein "Diagnose"-Knopf je Mitglied zeigt jetzt: ob TURN-Zugangsdaten
+  geladen wurden, welche ICE-Kandidatentypen (host/srflx/relay) gesendet
+  und empfangen wurden, aufgetretene ICE-Fehler
+  (`RTCPeerConnection.onicecandidateerror`) und einen zeitgestempelten
+  Verbindungsverlauf - als Text zum Kopieren, um ihn weiterzugeben.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

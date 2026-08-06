@@ -27,6 +27,8 @@ export function Sprechfunk() {
   const eigenerKanal = state.rufgruppen.find((m) => m.teilnehmerId === eigeneId)?.kanal ?? null;
 
   const [offen, setOffen] = useState(false);
+  const [diagnoseOffenFuer, setDiagnoseOffenFuer] = useState<string | null>(null);
+  const [diagnoseKopiert, setDiagnoseKopiert] = useState(false);
   const { mitglieder, sprechenAktiv, sprechenUmschalten, mikrofonFehler } = useSprechfunk(eigenerKanal);
 
   if (!state.sitzung.aktiv) return null;
@@ -107,9 +109,38 @@ export function Sprechfunk() {
                 ) : (
                   mitglieder.map((mitglied) => (
                     <li key={mitglied.teilnehmerId} className={`sprechfunk-mitglied sprechfunk-${mitglied.verbindung}`}>
-                      <span className="sprechfunk-status-punkt" aria-hidden="true" />
-                      {mitglied.name}
-                      <span className="sprechfunk-status-text">{STATUS_LABEL[mitglied.verbindung]}</span>
+                      <div className="sprechfunk-mitglied-zeile">
+                        <span className="sprechfunk-status-punkt" aria-hidden="true" />
+                        {mitglied.name}
+                        <span className="sprechfunk-status-text">{STATUS_LABEL[mitglied.verbindung]}</span>
+                        <button
+                          type="button"
+                          className="sprechfunk-diagnose-knopf"
+                          onClick={() =>
+                            setDiagnoseOffenFuer((bisher) =>
+                              bisher === mitglied.teilnehmerId ? null : mitglied.teilnehmerId,
+                            )
+                          }
+                        >
+                          Diagnose
+                        </button>
+                      </div>
+                      {diagnoseOffenFuer === mitglied.teilnehmerId && (
+                        <div className="sprechfunk-diagnose">
+                          <pre>{mitglied.diagnose}</pre>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(mitglied.diagnose).then(() => {
+                                setDiagnoseKopiert(true);
+                                setTimeout(() => setDiagnoseKopiert(false), 2000);
+                              });
+                            }}
+                          >
+                            {diagnoseKopiert ? 'Kopiert!' : 'Diagnose kopieren'}
+                          </button>
+                        </div>
+                      )}
                     </li>
                   ))
                 )}

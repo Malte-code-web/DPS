@@ -1003,6 +1003,7 @@ zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.4` | Delegationsanfrage als nicht blockierende Benachrichtigung statt Vollbild-Modal |
 | `DPS-0.3` | Error Boundary: Renderfehler zeigen eine Ausweichseite statt weißer Seite |
 | `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
 | `backup-vor-modus-umbau` | vor dem Umbau auf Login + Moduswahl (aus der Zeit vor dieser Systematik) |

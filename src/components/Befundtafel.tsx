@@ -1,6 +1,8 @@
 import { DIAGNOSTIK, DIAGNOSTIK_FUER, istBekannt } from '../domain/diagnostik';
 import { PUPILLEN_TEXT } from '../domain/types';
 import { VITAL_META, VITAL_REIHENFOLGE, vitalFormat, vitalStufe } from '../lib/format';
+import { istDiagnostikAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import type { Befundschluessel, DiagnostikId, Patient } from '../domain/types';
 
 interface Props {
@@ -24,6 +26,8 @@ interface Props {
  */
 export function Befundtafel({ patient, onDiagnostik }: Props) {
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
 
   /** Ein Feld der Tafel: entweder Wert oder Knopf mit Preis. */
   function feld(
@@ -33,6 +37,7 @@ export function Befundtafel({ patient, onDiagnostik }: Props) {
   ) {
     const bekannt = istBekannt(patient, schluessel);
     const diagnostik = DIAGNOSTIK[DIAGNOSTIK_FUER[schluessel]];
+    const zkEigen = zk.aktion !== null && istDiagnostikAktion(zk.aktion, patient.id, diagnostik.id);
 
     if (bekannt) {
       return (
@@ -47,7 +52,9 @@ export function Befundtafel({ patient, onDiagnostik }: Props) {
       <button
         type="button"
         className="vital vital-unbekannt"
-        disabled={gesperrt || !onDiagnostik}
+        style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
+        disabled={gesperrt || !onDiagnostik || (zkBeschaeftigt && !zkEigen)}
+        aria-busy={zkEigen || undefined}
         title={`${diagnostik.label} · ${diagnostik.dauerSek} s`}
         onClick={() => onDiagnostik?.(diagnostik.id)}
       >
@@ -56,7 +63,11 @@ export function Befundtafel({ patient, onDiagnostik }: Props) {
           <span className="vital-offen" aria-hidden="true">
             –
           </span>
-          {onDiagnostik && <small className="vital-preis">{diagnostik.dauerSek} s</small>}
+          {onDiagnostik && (
+            <small className="vital-preis">
+              {zkEigen ? `noch ${zk.restSek} s` : `${diagnostik.dauerSek} s`}
+            </small>
+          )}
         </span>
       </button>
     );
@@ -108,6 +119,8 @@ export function Befundtafel({ patient, onDiagnostik }: Props) {
         {textbefunde.map((befund) => {
           const bekannt = istBekannt(patient, befund.schluessel);
           const diagnostik = DIAGNOSTIK[DIAGNOSTIK_FUER[befund.schluessel]];
+          const zkEigen =
+            zk.aktion !== null && istDiagnostikAktion(zk.aktion, patient.id, diagnostik.id);
           return (
             <div key={befund.label} className={bekannt ? '' : 'befund-offen'}>
               <dt>{befund.label}</dt>
@@ -118,10 +131,16 @@ export function Befundtafel({ patient, onDiagnostik }: Props) {
                   <button
                     type="button"
                     className="befund-erheben"
-                    disabled={gesperrt || !onDiagnostik}
+                    style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
+                    disabled={gesperrt || !onDiagnostik || (zkBeschaeftigt && !zkEigen)}
+                    aria-busy={zkEigen || undefined}
                     onClick={() => onDiagnostik?.(diagnostik.id)}
                   >
-                    {onDiagnostik ? `${diagnostik.label} · ${diagnostik.dauerSek} s` : 'nicht erhoben'}
+                    {zkEigen
+                      ? `noch ${zk.restSek} s`
+                      : onDiagnostik
+                        ? `${diagnostik.label} · ${diagnostik.dauerSek} s`
+                        : 'nicht erhoben'}
                   </button>
                 )}
               </dd>

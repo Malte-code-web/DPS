@@ -1,6 +1,8 @@
 import { VERLEGUNGSDAUER_SEK, moeglicheZiele, zeltFuerKategorie } from '../domain/abschnitte';
 import { sichtungOffen } from '../domain/simulation';
 import { useSimulation } from '../state/useSimulation';
+import { istPatientVerlegenAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import type { Patient } from '../domain/types';
 
 /**
@@ -16,6 +18,8 @@ import type { Patient } from '../domain/types';
  */
 export function Verlegung({ patient }: { patient: Patient }) {
   const { dispatch } = useSimulation();
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
   const ziele = moeglicheZiele(patient.abschnitt);
   const verstorben = patient.status === 'verstorben';
   const wartetAufSichtung = sichtungOffen(patient);
@@ -30,6 +34,7 @@ export function Verlegung({ patient }: { patient: Patient }) {
     <div className="verlegung">
       {ziele.map((ziel) => {
         const passend = ziel.id === empfohlen;
+        const zkEigen = zk.aktion !== null && istPatientVerlegenAktion(zk.aktion, patient.id, ziel.id);
         return (
           <button
             key={ziel.id}
@@ -37,7 +42,9 @@ export function Verlegung({ patient }: { patient: Patient }) {
             className={`verlegung-button${passend ? ' verlegung-empfohlen' : ''}${
               ziel.kategorie ? ` rand-${ziel.kategorie}` : ''
             }`}
-            disabled={verstorben || wartetAufSichtung}
+            style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
+            disabled={verstorben || wartetAufSichtung || (zkBeschaeftigt && !zkEigen)}
+            aria-busy={zkEigen || undefined}
             aria-label={passend ? `${ziel.name} - empfohlen` : ziel.name}
             onClick={() => dispatch({ typ: 'patientVerlegen', patientId: patient.id, ziel: ziel.id })}
           >
@@ -49,7 +56,9 @@ export function Verlegung({ patient }: { patient: Patient }) {
                 </span>
               )}
             </span>
-            <span className="verlegung-dauer">{VERLEGUNGSDAUER_SEK} s</span>
+            <span className="verlegung-dauer">
+              {zkEigen ? `noch ${zk.restSek} s` : `${VERLEGUNGSDAUER_SEK} s`}
+            </span>
           </button>
         );
       })}

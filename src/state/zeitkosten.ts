@@ -2,6 +2,7 @@ import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte'
 import { DIAGNOSTIK } from '../domain/diagnostik';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { sichtungOffen } from '../domain/simulation';
+import type { DiagnostikId, Einsatzabschnitt, MassnahmeId } from '../domain/types';
 import type { SimulationAction, SimulationState } from './reducer';
 
 /**
@@ -58,7 +59,7 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
   }
 }
 
-/** Anzeigetext für den Beschäftigt-Hinweis (→ `ui.einsatzseite`) während der Wartezeit. */
+/** Anzeigetext für den Beschäftigt-Hinweis auf anderen Knöpfen während der Wartezeit. */
 export function zeitkostenLabel(action: SimulationAction): string {
   switch (action.typ) {
     case 'diagnostikDurchfuehren':
@@ -72,4 +73,68 @@ export function zeitkostenLabel(action: SimulationAction): string {
     default:
       return '';
   }
+}
+
+/**
+ * @anker state.zeitkostenabgleich Erkennt den eigenen Knopf im laufenden Timer
+ *
+ * Der Zeitkosten-Timer (→ `state.zeitkostentimer`) trägt die vollständige
+ * Aktion, nicht nur eine Kennung - diese Wächter fragen gezielt "bin ich das
+ * gerade?", statt eine generische Aktions-Gleichheit zu prüfen. So kann der
+ * Countdown genau am angeklickten Knopf laufen (→ `ui.massnahmenliste` u. a.),
+ * ohne ein eigenes Vergleichsschema für jede Aktionsart zu erfinden.
+ */
+export function istMassnahmeAktion(
+  aktion: SimulationAction,
+  patientId: string,
+  massnahmeId: MassnahmeId,
+): boolean {
+  return (
+    aktion.typ === 'massnahmeDurchfuehren' &&
+    aktion.patientId === patientId &&
+    aktion.massnahmeId === massnahmeId
+  );
+}
+
+/** Wie `istMassnahmeAktion`, aber für einen ganzen Sammel-Button (Analgesie, Notfallnarkose). */
+export function istMassnahmeAusSammlung(
+  aktion: SimulationAction,
+  patientId: string,
+  massnahmeIds: readonly MassnahmeId[],
+): boolean {
+  return (
+    aktion.typ === 'massnahmeDurchfuehren' &&
+    aktion.patientId === patientId &&
+    massnahmeIds.includes(aktion.massnahmeId)
+  );
+}
+
+export function istDiagnostikAktion(
+  aktion: SimulationAction,
+  patientId: string,
+  diagnostikId: DiagnostikId,
+): boolean {
+  return (
+    aktion.typ === 'diagnostikDurchfuehren' &&
+    aktion.patientId === patientId &&
+    aktion.diagnostikId === diagnostikId
+  );
+}
+
+export function istPatientVerlegenAktion(
+  aktion: SimulationAction,
+  patientId: string,
+  ziel: Einsatzabschnitt,
+): boolean {
+  return aktion.typ === 'patientVerlegen' && aktion.patientId === patientId && aktion.ziel === ziel;
+}
+
+export function istFahrzeugVerlegenAktion(
+  aktion: SimulationAction,
+  fahrzeugId: string,
+  ziel: Einsatzabschnitt,
+): boolean {
+  return (
+    aktion.typ === 'fahrzeugVerlegen' && aktion.fahrzeugId === fahrzeugId && aktion.ziel === ziel
+  );
 }

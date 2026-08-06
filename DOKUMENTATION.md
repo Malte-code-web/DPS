@@ -43,7 +43,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Probelauf | Jedes Szenario wird über 30 Minuten unbehandelt und bestversorgt durchgespielt; der Editor zeigt je Patient den Todeszeitpunkt |
 | Simulationskern | Vitalwerte verändern sich pro Minute durch unbehandelte Probleme, Latenzzeiten, Todeskriterien, abgeleitete Sichtungsbefunde |
 | tacSTART | Vollständig mit nachvollziehbarer Entscheidungskette; alle Zweige getestet - kritische Blutung wird vorgezogen vor Atemwege/Atmung geprüft (TCCC-nah), von Kreis Steinfurt in der MANV-Tasche als "Checkliste (Vor)Sichtung tacSTART" mitgeführt |
-| Zeitmechanik | Maßnahme, Untersuchung und Verlegung laufen als echter Countdown bei der Handlung selbst ab - wer handelt, ist so lange ausgelastet und kann nichts anderes anstoßen, ein Overlay sperrt währenddessen die Bedienung. Alle anderen Patienten altern in dieser Zeit über den ohnehin laufenden Simulationstakt, nicht mehr über einen künstlichen Sprung der Uhr. Die Sichtung selbst kostet keine Zeit (Einschätzen und Ankreuzen, kein Handgriff am Patienten) - erst die anschließende Verlegung |
+| Zeitmechanik | Maßnahme, Untersuchung und Verlegung laufen als echter Countdown direkt im angeklickten Knopf ab (Füllstand plus "noch X s") - kein separates Overlay. Jeder andere zeitkostende Knopf ist währenddessen gesperrt, alles andere (Navigation, eine Delegationsanfrage annehmen) bleibt bedienbar. Alle Patienten altern in dieser Zeit über den ohnehin laufenden Simulationstakt, nicht über einen künstlichen Sprung der Uhr. Die Sichtung selbst kostet keine Zeit (Einschätzen und Ankreuzen, kein Handgriff am Patienten) - erst die anschließende Verlegung |
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle. Der Supabase-Transport baut eine abgebrochene Verbindung selbst neu auf (steigende Wartezeit im Hintergrund, sofort beim Zurückwechseln in den Vordergrund über `visibilitychange`) - ein in den Hintergrund geschobener Browser muss die Sitzung dadurch nicht mehr manuell neu laden. Ein eigenes Zeitlimit (10 s) fängt zusätzlich den Fall ab, dass der zugrunde liegende Websocket-Aufbau hängen bleibt, ohne dass Supabase selbst je einen Fehler meldet. Jede Aktion eines Spielers (Maßnahme, Diagnostik, Sichtung ...) sowie sein Beitritt selbst werden an den Host per Bestätigung quittiert; bleibt sie aus, wird bis zu 5-mal automatisch wiederholt - der Host wendet eine wiederholt eintreffende Nachricht dedupliziert trotzdem nur einmal an, ein Realtime-Broadcast liefert sonst ohne jede Fehlermeldung einfach nie zu. Ohne das blieb ein Beitritt spurlos verschwunden, wenn der Host ihn genau in dem Moment verpasste, etwa mitten in einer eigenen Wiederverbindung nach Hintergrund. Denselben Grund hat der alle 4 Sekunden erneut gesendete Schnappschuss: ändert sich der Zustand länger nicht mehr (z. B. Wartebereich nach einer einzelnen Besatzungszuweisung), heilt kein Simulationstakt einen verlorenen Broadcast mehr von selbst - der Neuversand schon |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich - die eigene Auswahl erscheint sofort (optimistisch, ohne auf den Netzwerk-Umlauf über den Host zu warten) |
 | Delegationsanfrage | Wer eine delegierbare Maßnahme wegen fehlender Qualifikation nicht durchführen darf, kann sie trotzdem anklicken - statt gesperrt zu sein, öffnet sich eine Auswahl der durchführungsberechtigten Personen im selben Einsatzabschnitt. Die angefragte Person bekommt eine nicht blockierende Benachrichtigung am unteren Bildschirmrand (→ `ui.delegationsbenachrichtigung`) mit Annehmen/Ablehnen - kein Vollbild-Modal, die eigene Arbeit läuft währenddessen weiter; erst nach Annahme ist die Maßnahme freigegeben - gezielt nur für die anfragende Person, nicht patientenweit für alle. Ersetzt den früheren proaktiven „Freigeben"-Knopf vollständig |
@@ -158,8 +158,9 @@ Aktion (Klick)  →  dispatchMitZeitkosten  →  ggf. Echtzeit-Timer  →  dispa
 
 Eine zeitkostende Aktion (→ `state.zeitkosten`) wird nicht sofort an den
 Reducer weitergereicht: Der Provider (→ `state.provider`) hält sie zurück,
-zeigt einen Countdown (→ `ui.zeitkostenanzeige`) und reicht sie erst nach
-Ablauf der (um `state.geschwindigkeit` gestauchten) Echtzeit durch. Parallel
+der betroffene Knopf zeigt einen Countdown (→ `state.zeitkostenstatus`) und
+sie geht erst nach Ablauf der (um `state.geschwindigkeit` gestauchten)
+Echtzeit durch. Parallel
 dazu tickt die Uhr (`state.uhr`) unabhängig davon alle 500 ms und schickt
 `tick`-Aktionen - sie lässt während der Wartezeit alle Patienten altern, ganz
 gleich, ob gerade jemand beschäftigt ist oder nicht.
@@ -190,17 +191,27 @@ Probelauf und der Generator arbeiten unverändert mit den Originalwerten.
 ### Zeit als Ressource
 
 Jede zeitkostende Handlung läuft als echter Countdown bei genau dieser
-Handlung ab (→ `state.zeitkosten`, `ui.zeitkostenanzeige`) - nicht mehr als
-sofortiger Sprung der Einsatzuhr. Wer eine Maßnahme, Diagnostik oder
-Verlegung beginnt, ist für deren Dauer ausgelastet und kann in dieser Zeit
-nichts anderes anstoßen; ein Overlay sperrt währenddessen die Bedienung und
-zeigt die verbleibenden Sekunden. Dass parallel dazu **alle anderen
-Patienten gleichzeitig altern**, übernimmt in dieser Wartezeit ausschließlich
-der ohnehin laufende Simulationstakt (`state.uhr`, `case 'tick'`) - wer sich
-an einem Patienten festarbeitet, verliert die Zeit bei allen anderen, nur
-eben in Echtzeit statt künstlich vorgezogen. Die Dauer selbst rechnet
-`zeitkostenSek` (→ `state.zeitkosten`) mit denselben Wächtern wie der Reducer
-aus, gestaucht um das eingestellte Tempo (1×/2×/4×/10×, → `state.provider`):
+Handlung ab (→ `state.zeitkosten`) - nicht mehr als sofortiger Sprung der
+Einsatzuhr, und nicht in einem separaten Overlay, sondern direkt im
+angeklickten Knopf: Er füllt sich (Knopf-Hintergrund als Verlaufsbalken,
+→ `state.zeitkostenstatus`) und zeigt "noch X s" statt seines sonstigen
+Textes. Jeder andere zeitkostende Knopf ist währenddessen gesperrt - wer
+eine Maßnahme, Diagnostik oder Verlegung beginnt, ist für deren Dauer
+ausgelastet und kann nichts anderes davon anstoßen. Navigation (Patient
+wechseln, Abschnitt wechseln) und eine eingehende Delegationsanfrage
+beantworten bleiben dagegen jederzeit möglich - beides kostet selbst keine
+Zeit. Welcher Knopf konkret gerade läuft, erkennt jeder Knopf für sich
+selbst über einen Abgleich der laufenden Aktion (→ `state.zeitkostenabgleich`,
+z. B. `istMassnahmeAktion`) - der Timer-Zustand trägt dafür die vollständige
+Aktion, nicht nur eine Kennung.
+
+Dass parallel dazu **alle anderen Patienten gleichzeitig altern**, übernimmt
+in dieser Wartezeit ausschließlich der ohnehin laufende Simulationstakt
+(`state.uhr`, `case 'tick'`) - wer sich an einem Patienten festarbeitet,
+verliert die Zeit bei allen anderen, nur eben in Echtzeit statt künstlich
+vorgezogen. Die Dauer selbst rechnet `zeitkostenSek` (→ `state.zeitkosten`)
+mit denselben Wächtern wie der Reducer aus, gestaucht um das eingestellte
+Tempo (1×/2×/4×/10×, → `state.provider`):
 
 | Handlung | Zeit |
 | --- | --- |
@@ -637,7 +648,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_174 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_176 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -831,30 +842,32 @@ _174 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `state.schnappschuss` | [`src/state/reducer.ts:189`](src/state/reducer.ts#L189) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
-| `state.zeitkosten` | [`src/state/zeitkosten.ts:8`](src/state/zeitkosten.ts#L8) | Wie lange eine Handlung den Handelnden bindet |
+| `state.zeitkosten` | [`src/state/zeitkosten.ts:9`](src/state/zeitkosten.ts#L9) | Wie lange eine Handlung den Handelnden bindet |
+| `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:79`](src/state/zeitkosten.ts#L79) | Erkennt den eigenen Knopf im laufenden Timer |
+| `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
 | `state.zustand` | [`src/state/reducer.ts:57`](src/state/reducer.ts#L57) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1563`](src/index.css#L1563) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1947`](src/index.css#L1947) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2428`](src/index.css#L2428) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.anhaengekarte` | [`src/index.css:1512`](src/index.css#L1512) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1896`](src/index.css#L1896) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2377`](src/index.css#L2377) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:683`](src/index.css#L683) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3356`](src/index.css#L3356) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:3305`](src/index.css#L3305) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:2000`](src/index.css#L2000) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.ersteindruck` | [`src/index.css:1949`](src/index.css#L1949) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:3100`](src/index.css#L3100) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3049`](src/index.css#L3049) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:610`](src/index.css#L610) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1826`](src/index.css#L1826) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.patientnav` | [`src/index.css:1775`](src/index.css#L1775) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3426`](src/index.css#L3426) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3375`](src/index.css#L3375) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3557`](src/index.css#L3557) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3506`](src/index.css#L3506) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -881,6 +894,7 @@ _174 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `test.tacstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:59`](src/state/reducer.test.ts#L59) | Belegt, dass der Reducer selbst keine Zeit mehr vorspringen lässt |
+| `test.zeitkostenabgleich` | [`src/state/zeitkosten.test.ts:177`](src/state/zeitkosten.test.ts#L177) | Ein Knopf erkennt, ob genau er gerade läuft |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -889,43 +903,42 @@ _174 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
-| `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:24`](src/components/Analgesieauswahl.tsx#L24) | Ein Sammel-Button statt sechs Einzelknöpfe |
+| `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
-| `ui.befundtafel` | [`src/components/Befundtafel.tsx:13`](src/components/Befundtafel.tsx#L13) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
+| `ui.befundtafel` | [`src/components/Befundtafel.tsx:15`](src/components/Befundtafel.tsx#L15) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
 | `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
 | `ui.delegationsanfrage` | [`src/components/DelegationAnfrageAuswahl.tsx:11`](src/components/DelegationAnfrageAuswahl.tsx#L11) | Popover: wen um Freigabe fragen? |
 | `ui.delegationsbenachrichtigung` | [`src/components/DelegationBenachrichtigung.tsx:5`](src/components/DelegationBenachrichtigung.tsx#L5) | Benachrichtigung: jemand braucht eine Freigabe |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:18`](src/pages/EinsatzSeite.tsx#L18) | Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:17`](src/pages/EinsatzSeite.tsx#L17) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
-| `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:7`](src/components/FahrzeugVerlegung.tsx#L7) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
+| `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:9`](src/components/FahrzeugVerlegung.tsx#L9) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
-| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:42`](src/components/Massnahmenliste.tsx#L42) | Das einklappbare xABCDE-Akkordeon |
+| `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:44`](src/components/Massnahmenliste.tsx#L44) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.modus` | [`src/pages/ModusSeite.tsx:5`](src/pages/ModusSeite.tsx#L5) | Modus wählen - entscheidet, auf welche Art gespielt wird |
-| `ui.monitor` | [`src/components/Monitor.tsx:18`](src/components/Monitor.tsx#L18) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
+| `ui.monitor` | [`src/components/Monitor.tsx:20`](src/components/Monitor.tsx#L20) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
-| `ui.notfallnarkoseauswahl` | [`src/components/Notfallnarkoseauswahl.tsx:27`](src/components/Notfallnarkoseauswahl.tsx#L27) | Induktionsmittel wählen, dann relaxieren - erst mit vollem Team |
+| `ui.notfallnarkoseauswahl` | [`src/components/Notfallnarkoseauswahl.tsx:29`](src/components/Notfallnarkoseauswahl.tsx#L29) | Induktionsmittel wählen, dann relaxieren - erst mit vollem Team |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:34`](src/pages/uebungsleitung/PatientEditor.tsx#L34) | Formular für einen Szenario-Patienten samt Problemen |
-| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:30`](src/pages/patient/Patientenansicht.tsx#L30) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
-| `ui.patientkarte` | [`src/components/PatientKarte.tsx:43`](src/components/PatientKarte.tsx#L43) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
+| `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:32`](src/pages/patient/Patientenansicht.tsx#L32) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
+| `ui.patientkarte` | [`src/components/PatientKarte.tsx:45`](src/components/PatientKarte.tsx#L45) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:7`](src/pages/SetupSeite.tsx#L7) | Szenarioauswahl für die Sitzung |
-| `ui.sofortmassnahmen` | [`src/components/Sofortmassnahmen.tsx:20`](src/components/Sofortmassnahmen.tsx#L20) | Lebensrettende Griffe, dauerhaft in der Übersicht |
+| `ui.sofortmassnahmen` | [`src/components/Sofortmassnahmen.tsx:22`](src/components/Sofortmassnahmen.tsx#L22) | Lebensrettende Griffe, dauerhaft in der Übersicht |
 | `ui.start` | [`src/pages/StartSeite.tsx:10`](src/pages/StartSeite.tsx#L10) | Startseite: nur der Einstieg als Spieler oder Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
-| `ui.verlegung` | [`src/components/Verlegung.tsx:7`](src/components/Verlegung.tsx#L7) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
+| `ui.verlegung` | [`src/components/Verlegung.tsx:9`](src/components/Verlegung.tsx#L9) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:23`](src/pages/WartebereichSeite.tsx#L23) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
-| `ui.zeitkostenanzeige` | [`src/components/Zeitkostenanzeige.tsx:5`](src/components/Zeitkostenanzeige.tsx#L5) | Laufender Zeitkosten-Timer sperrt die Bedienung |
 
 #### vorlagen
 
@@ -1003,6 +1016,7 @@ zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.5` | Zeitkosten-Countdown läuft im Knopf der gewählten Maßnahme statt in einer eigenen Vollbild-Anzeige |
 | `DPS-0.4` | Delegationsanfrage als nicht blockierende Benachrichtigung statt Vollbild-Modal |
 | `DPS-0.3` | Error Boundary: Renderfehler zeigen eine Ausweichseite statt weißer Seite |
 | `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |

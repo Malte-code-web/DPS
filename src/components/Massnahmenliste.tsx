@@ -14,6 +14,8 @@ import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import type { MassnahmeRecht } from '../domain/qualifikation';
 import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
+import { istMassnahmeAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import { Analgesieauswahl } from './Analgesieauswahl';
 import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import { Dosiseingabe } from './Dosiseingabe';
@@ -61,6 +63,8 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
   const [detail, setDetail] = useState<MassnahmeId | null>(null);
   const [dosisOffen, setDosisOffen] = useState<MassnahmeId | null>(null);
   const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
   // (→ `domain.qualifikation`); im Einzel-/Teamspiel bleibt alles frei wählbar.
@@ -113,6 +117,7 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
     // Mechanismus wie in der Analgesie-Sammelauswahl (→ `ui.analgesieauswahl`).
     const hatDosis = hatDosisreferenz(massnahme.id);
     const dosisPanelOffen = dosisOffen === massnahme.id;
+    const zkEigen = zk.aktion !== null && istMassnahmeAktion(zk.aktion, patient.id, massnahme.id);
 
     return (
       <div key={massnahme.id} className="massnahme-zeile">
@@ -121,13 +126,16 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
           className={`massnahme massnahme-${massnahme.art}${
             bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
           }`}
+          style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
           disabled={
             gesperrt ||
             bereitsDurchgefuehrt ||
             fehlt !== null ||
             materialFehlt ||
-            (qualifikationFehlt && !kannAnfragen)
+            (qualifikationFehlt && !kannAnfragen) ||
+            (zkBeschaeftigt && !zkEigen)
           }
+          aria-busy={zkEigen || undefined}
           aria-expanded={kannAnfragen ? anfrageOffen : hatDosis ? dosisPanelOffen : undefined}
           onClick={() => {
             if (kannAnfragen) {
@@ -151,19 +159,21 @@ export function Massnahmenliste({ patient, onMassnahme, standardOffen = [], arte
             )}
           </span>
           <span className="massnahme-dauer">
-            {bereitsDurchgefuehrt
-              ? 'durchgeführt'
-              : fehlt
-                ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
-                  // Voraussetzung genau fehlt, steht im SAA-Detail.
-                  voraussetzungKurz(fehlt)
-                : kannAnfragen
-                  ? 'Freigabe anfragen'
-                  : qualifikationFehlt
-                    ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                    : materialFehlt
-                      ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                      : `${massnahme.dauerSek} s`}
+            {zkEigen
+              ? `noch ${zk.restSek} s`
+              : bereitsDurchgefuehrt
+                ? 'durchgeführt'
+                : fehlt
+                  ? // Kurz halten - der Knopf darf nicht überlaufen. Welche
+                    // Voraussetzung genau fehlt, steht im SAA-Detail.
+                    voraussetzungKurz(fehlt)
+                  : kannAnfragen
+                    ? 'Freigabe anfragen'
+                    : qualifikationFehlt
+                      ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                      : materialFehlt
+                        ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                        : `${massnahme.dauerSek} s`}
           </span>
         </button>
 

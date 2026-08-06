@@ -1084,57 +1084,6 @@ button.gefahr {
   border-bottom: 1px solid var(--rand);
 }
 
-/* Zeitkosten-Timer (→ `state.zeitkosten`, `ui.zeitkostenanzeige`): deckt die
-   Bedienfläche unterhalb der Einsatzleiste ab, solange eine Handlung noch
-   läuft - wer beschäftigt ist, kann nichts anderes anstoßen. Die
-   Einsatzleiste selbst bleibt außerhalb von `.einsatz-inhalt` und damit
-   bedienbar (Pause, Tempo, Einsatz beenden). */
-.einsatz-inhalt {
-  position: relative;
-}
-
-.zeitkosten-sperre {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 3rem 1rem;
-  background: color-mix(in srgb, black 45%, transparent);
-}
-
-.zeitkosten-anzeige {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  max-width: 22rem;
-  width: 100%;
-  padding: 1rem 1.2rem;
-  border-radius: var(--radius);
-  background: var(--bg-panel-hoch);
-  border: 1px solid var(--rand);
-  box-shadow: var(--schatten);
-}
-
-.zeitkosten-titel {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.zeitkosten-balken {
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--bg-panel);
-  overflow: hidden;
-}
-
-.zeitkosten-balken-fuellung {
-  height: 100%;
-  background: var(--akzent);
-  transition: width 0.2s linear;
-}
-
 .einsatzleiste-mitte {
   display: flex;
   flex-direction: column;

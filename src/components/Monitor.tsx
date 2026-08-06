@@ -6,6 +6,8 @@ import {
   monitorPrioritaet,
 } from '../domain/monitor';
 import { VITAL_META, vitalFormat, vitalStufe } from '../lib/format';
+import { istMassnahmeAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import type { Patient } from '../domain/types';
 
 interface Props {
@@ -26,8 +28,11 @@ interface Props {
  */
 export function Monitor({ patient, onAnschliessen }: Props) {
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
 
   if (!monitorAngeschlossen(patient)) {
+    const zkEigen = zk.aktion !== null && istMassnahmeAktion(zk.aktion, patient.id, 'monitoring');
     return (
       <section className="monitor monitor-aus" aria-label="Patientenmonitor">
         <div className="monitor-kopf">
@@ -37,11 +42,15 @@ export function Monitor({ patient, onAnschliessen }: Props) {
         <button
           type="button"
           className="monitor-anschluss"
-          disabled={gesperrt}
+          style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
+          disabled={gesperrt || (zkBeschaeftigt && !zkEigen)}
+          aria-busy={zkEigen || undefined}
           onClick={onAnschliessen}
         >
           <span>Monitor anschließen</span>
-          <span className="monitor-anschluss-dauer">{MASSNAHMEN.monitoring.dauerSek} s</span>
+          <span className="monitor-anschluss-dauer">
+            {zkEigen ? `noch ${zk.restSek} s` : `${MASSNAHMEN.monitoring.dauerSek} s`}
+          </span>
         </button>
       </section>
     );

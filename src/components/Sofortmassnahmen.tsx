@@ -8,6 +8,8 @@ import { MASSNAHME_MATERIAL, MATERIAL_LABEL, materialVerfuegbar } from '../domai
 import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
+import { istMassnahmeAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import type { MassnahmeId, Patient } from '../domain/types';
 
@@ -32,6 +34,8 @@ interface Props {
 export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
   const { state } = useSimulation();
   const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   const eigeneQualifikation = state.sitzung.aktiv
     ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
@@ -61,6 +65,7 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
             !materialFehlt &&
             fehlt === null;
           const anfrageOffen = offenFuer === massnahme.id;
+          const zkEigen = zk.aktion !== null && istMassnahmeAktion(zk.aktion, patient.id, massnahme.id);
 
           return (
             <div key={massnahme.id} className="sofort-eintrag">
@@ -69,9 +74,16 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
                 className={`sofort-knopf massnahme-${massnahme.art}${
                   erledigt ? ' massnahme-erledigt' : ''
                 }`}
+                style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
                 disabled={
-                  gesperrt || erledigt || fehlt !== null || materialFehlt || (qualifikationFehlt && !kannAnfragen)
+                  gesperrt ||
+                  erledigt ||
+                  fehlt !== null ||
+                  materialFehlt ||
+                  (qualifikationFehlt && !kannAnfragen) ||
+                  (zkBeschaeftigt && !zkEigen)
                 }
+                aria-busy={zkEigen || undefined}
                 aria-expanded={kannAnfragen ? anfrageOffen : undefined}
                 onClick={() => {
                   if (kannAnfragen) {
@@ -83,17 +95,19 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
               >
                 <span className="sofort-label">{massnahme.label}</span>
                 <span className="sofort-marke">
-                  {erledigt
-                    ? 'erledigt'
-                    : fehlt
-                      ? voraussetzungKurz(fehlt)
-                      : kannAnfragen
-                        ? 'Freigabe anfragen'
-                        : qualifikationFehlt
-                          ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                          : materialFehlt
-                            ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                            : `${massnahme.dauerSek} s`}
+                  {zkEigen
+                    ? `noch ${zk.restSek} s`
+                    : erledigt
+                      ? 'erledigt'
+                      : fehlt
+                        ? voraussetzungKurz(fehlt)
+                        : kannAnfragen
+                          ? 'Freigabe anfragen'
+                          : qualifikationFehlt
+                            ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                            : materialFehlt
+                              ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                              : `${massnahme.dauerSek} s`}
                 </span>
               </button>
 

@@ -4,7 +4,15 @@ import { DIAGNOSTIK, DIAGNOSTIK_LISTE, VOLLSTAENDIGE_DIAGNOSTIK_SEK } from '../d
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
-import { zeitkostenLabel, zeitkostenSek } from './zeitkosten';
+import {
+  istDiagnostikAktion,
+  istFahrzeugVerlegenAktion,
+  istMassnahmeAktion,
+  istMassnahmeAusSammlung,
+  istPatientVerlegenAktion,
+  zeitkostenLabel,
+  zeitkostenSek,
+} from './zeitkosten';
 import type { SimulationState } from './reducer';
 
 /** Startet den Busunfall und liefert den Zustand direkt nach dem Alarm. */
@@ -162,5 +170,51 @@ describe('zeitkostenLabel', () => {
     expect(
       zeitkostenLabel({ typ: 'diagnostikDurchfuehren', patientId: 'B-01', diagnostikId: 'bodycheck' }),
     ).toBe(DIAGNOSTIK.bodycheck.label);
+  });
+});
+
+/**
+ * @anker test.zeitkostenabgleich Ein Knopf erkennt, ob genau er gerade läuft
+ *
+ * Diese Wächter entscheiden, ob der Countdown auf einem bestimmten Knopf
+ * erscheint (→ `state.zeitkostenabgleich`) - nicht nur, ob irgendetwas läuft.
+ */
+describe('Zeitkosten-Abgleich', () => {
+  it('istMassnahmeAktion erkennt nur exakt Patient und Maßnahme', () => {
+    const aktion = { typ: 'massnahmeDurchfuehren' as const, patientId: 'B-01', massnahmeId: 'intubation' as const };
+    expect(istMassnahmeAktion(aktion, 'B-01', 'intubation')).toBe(true);
+    expect(istMassnahmeAktion(aktion, 'B-02', 'intubation')).toBe(false);
+    expect(istMassnahmeAktion(aktion, 'B-01', 'tourniquet')).toBe(false);
+    expect(istMassnahmeAktion({ typ: 'patientWaehlen', patientId: 'B-01' }, 'B-01', 'intubation')).toBe(
+      false,
+    );
+  });
+
+  it('istMassnahmeAusSammlung erkennt jedes Mittel der Sammlung, sonst nicht', () => {
+    const aktion = { typ: 'massnahmeDurchfuehren' as const, patientId: 'B-01', massnahmeId: 'morphin' as const };
+    expect(istMassnahmeAusSammlung(aktion, 'B-01', ['morphin', 'fentanyl'])).toBe(true);
+    expect(istMassnahmeAusSammlung(aktion, 'B-01', ['fentanyl'])).toBe(false);
+    expect(istMassnahmeAusSammlung(aktion, 'B-02', ['morphin'])).toBe(false);
+  });
+
+  it('istDiagnostikAktion erkennt nur exakt Patient und Untersuchung', () => {
+    const aktion = { typ: 'diagnostikDurchfuehren' as const, patientId: 'B-01', diagnostikId: 'bodycheck' as const };
+    expect(istDiagnostikAktion(aktion, 'B-01', 'bodycheck')).toBe(true);
+    expect(istDiagnostikAktion(aktion, 'B-01', 'puls_tasten')).toBe(false);
+    expect(istDiagnostikAktion(aktion, 'B-02', 'bodycheck')).toBe(false);
+  });
+
+  it('istPatientVerlegenAktion erkennt nur exakt Patient und Ziel', () => {
+    const aktion = { typ: 'patientVerlegen' as const, patientId: 'B-01', ziel: 'zelt_rot' as const };
+    expect(istPatientVerlegenAktion(aktion, 'B-01', 'zelt_rot')).toBe(true);
+    expect(istPatientVerlegenAktion(aktion, 'B-01', 'zelt_gruen')).toBe(false);
+    expect(istPatientVerlegenAktion(aktion, 'B-02', 'zelt_rot')).toBe(false);
+  });
+
+  it('istFahrzeugVerlegenAktion erkennt nur exakt Fahrzeug und Ziel', () => {
+    const aktion = { typ: 'fahrzeugVerlegen' as const, fahrzeugId: 'f-1', ziel: 'zelt_rot' as const };
+    expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_rot')).toBe(true);
+    expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_gruen')).toBe(false);
+    expect(istFahrzeugVerlegenAktion(aktion, 'f-2', 'zelt_rot')).toBe(false);
   });
 });

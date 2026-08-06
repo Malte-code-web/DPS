@@ -1,6 +1,8 @@
 import { VERLEGUNGSDAUER_SEK, moeglicheZiele } from '../domain/abschnitte';
 import { darfFahrzeugeDisponieren } from '../domain/fuehrung';
 import { useSimulation } from '../state/useSimulation';
+import { istFahrzeugVerlegenAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import type { Fahrzeug } from '../domain/types';
 
 /**
@@ -13,6 +15,8 @@ import type { Fahrzeug } from '../domain/types';
  */
 export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
   const { state, dispatch } = useSimulation();
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
   const ziele = moeglicheZiele(fahrzeug.abschnitt);
   const eigeneFuehrungsrolle = state.sitzung.spieler.find(
     (s) => s.id === state.sitzung.eigeneId,
@@ -32,20 +36,28 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
       {gesperrt && (
         <p className="hinweis">Nur Übungsleitung oder Zugführer und höher dürfen verlegen.</p>
       )}
-      {ziele.map((ziel) => (
-        <button
-          key={ziel.id}
-          type="button"
-          className={`verlegung-button${ziel.kategorie ? ` rand-${ziel.kategorie}` : ''}`}
-          disabled={gesperrt}
-          onClick={() =>
-            dispatch({ typ: 'fahrzeugVerlegen', fahrzeugId: fahrzeug.id, ziel: ziel.id })
-          }
-        >
-          <span className="verlegung-ziel">{ziel.name}</span>
-          <span className="verlegung-dauer">{VERLEGUNGSDAUER_SEK} s</span>
-        </button>
-      ))}
+      {ziele.map((ziel) => {
+        const zkEigen =
+          zk.aktion !== null && istFahrzeugVerlegenAktion(zk.aktion, fahrzeug.id, ziel.id);
+        return (
+          <button
+            key={ziel.id}
+            type="button"
+            className={`verlegung-button${ziel.kategorie ? ` rand-${ziel.kategorie}` : ''}`}
+            style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
+            disabled={gesperrt || (zkBeschaeftigt && !zkEigen)}
+            aria-busy={zkEigen || undefined}
+            onClick={() =>
+              dispatch({ typ: 'fahrzeugVerlegen', fahrzeugId: fahrzeug.id, ziel: ziel.id })
+            }
+          >
+            <span className="verlegung-ziel">{ziel.name}</span>
+            <span className="verlegung-dauer">
+              {zkEigen ? `noch ${zk.restSek} s` : `${VERLEGUNGSDAUER_SEK} s`}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

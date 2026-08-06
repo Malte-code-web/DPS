@@ -366,7 +366,12 @@ export function SimulationProvider({
         setZeitkostentimer(null);
         dispatchRoutet(action);
       }, wartezeitMs);
-      setZeitkostentimer({ label: zeitkostenLabel(action), startMs, endeMs: startMs + wartezeitMs });
+      setZeitkostentimer({
+        aktion: action,
+        label: zeitkostenLabel(action),
+        startMs,
+        endeMs: startMs + wartezeitMs,
+      });
     },
     [state, dispatchRoutet],
   );

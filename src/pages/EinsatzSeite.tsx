@@ -4,7 +4,6 @@ import { DelegationBenachrichtigung } from '../components/DelegationBenachrichti
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { PatientKarte } from '../components/PatientKarte';
-import { Zeitkostenanzeige } from '../components/Zeitkostenanzeige';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
 import { formatStaerke, staerkemeldung } from '../domain/fuehrung';
@@ -69,107 +68,103 @@ export function EinsatzSeite() {
     <div className="einsatz">
       <Einsatzleiste szenario={szenario} />
 
-      <div className="einsatz-inhalt">
-        <Zeitkostenanzeige />
+      {state.sitzung.verbindungsfehler && (
+        <p className="hinweis hinweis-fehler hinweis-verbindung" role="alert">
+          Verbindung gestört: {state.sitzung.verbindungsfehler} Prüfe die Internetverbindung - die
+          Seite versucht es weiter im Hintergrund.
+        </p>
+      )}
 
-        {state.sitzung.verbindungsfehler && (
-          <p className="hinweis hinweis-fehler hinweis-verbindung" role="alert">
-            Verbindung gestört: {state.sitzung.verbindungsfehler} Prüfe die Internetverbindung - die
-            Seite versucht es weiter im Hintergrund.
-          </p>
-        )}
+      <DelegationBenachrichtigung />
 
-        <DelegationBenachrichtigung />
+      {ausgewaehlt ? (
+        // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen
+        <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />
+      ) : (
+        <>
+          <Abschnittsleiste />
+          <section className="patientenliste">
+            <h2>{abschnitt.name}</h2>
+            <p className="hinweis">{abschnitt.aufgabe}</p>
+            {patienten.length === 0 ? (
+              <p className="leerer-abschnitt">Zurzeit kein Patient in diesem Abschnitt.</p>
+            ) : (
+              <div className="patienten-raster">
+                {patienten.map((patient) => (
+                  <PatientKarte
+                    key={patient.id}
+                    patient={patient}
+                    onAuswahl={(patientId) => dispatch({ typ: 'patientWaehlen', patientId })}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-        {ausgewaehlt ? (
-          // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen
-          <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />
-        ) : (
-          <>
-            <Abschnittsleiste />
-            <section className="patientenliste">
-              <h2>{abschnitt.name}</h2>
-              <p className="hinweis">{abschnitt.aufgabe}</p>
-              {patienten.length === 0 ? (
-                <p className="leerer-abschnitt">Zurzeit kein Patient in diesem Abschnitt.</p>
+          {state.fahrzeuge.length > 0 && (
+            <section className="fahrzeugliste-abschnitt">
+              <h2>Fahrzeuge in diesem Abschnitt ({fahrzeuge.length})</h2>
+              {fahrzeuge.length === 0 ? (
+                <p className="leerer-abschnitt">Zurzeit kein Fahrzeug in diesem Abschnitt.</p>
               ) : (
-                <div className="patienten-raster">
-                  {patienten.map((patient) => (
-                    <PatientKarte
-                      key={patient.id}
-                      patient={patient}
-                      onAuswahl={(patientId) => dispatch({ typ: 'patientWaehlen', patientId })}
-                    />
-                  ))}
+                <div className="fahrzeugkarten">
+                  {fahrzeuge.map((fahrzeug) => {
+                    const besatzungNamen = fahrzeug.besatzung
+                      .map((id) => state.sitzung.spieler.find((s) => s.id === id)?.name)
+                      .filter(Boolean)
+                      .join(', ');
+                    const staerke = staerkemeldung(fahrzeug.besatzung, state.sitzung.spieler);
+                    const sollMaterial = BESTUECKUNG[fahrzeug.typ];
+                    const sollGesamt = Object.values(sollMaterial).reduce(
+                      (summe, menge) => summe + menge,
+                      0,
+                    );
+                    const istGesamt = Object.values(fahrzeug.material).reduce(
+                      (summe, menge) => summe + (menge ?? 0),
+                      0,
+                    );
+                    const materialDetailOffen = materialOffen.has(fahrzeug.id);
+                    return (
+                      <article key={fahrzeug.id} className="fahrzeugkarte">
+                        <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
+                        <p className="fahrzeug-staerke">Stärke {formatStaerke(staerke)}</p>
+                        <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
+                        {sollGesamt > 0 && (
+                          <>
+                            <button
+                              type="button"
+                              className="fahrzeug-material-knopf"
+                              aria-expanded={materialDetailOffen}
+                              onClick={() => materialUmschalten(fahrzeug.id)}
+                            >
+                              Material: {istGesamt} von {sollGesamt} Posten
+                            </button>
+                            {materialDetailOffen && (
+                              <dl className="fahrzeug-material-detail">
+                                {(Object.entries(sollMaterial) as [MaterialTyp, number][]).map(
+                                  ([typ, soll]) => (
+                                    <div key={typ}>
+                                      <dt>{MATERIAL_LABEL[typ]}</dt>
+                                      <dd>
+                                        {fahrzeug.material[typ] ?? 0} / {soll}
+                                      </dd>
+                                    </div>
+                                  ),
+                                )}
+                              </dl>
+                            )}
+                          </>
+                        )}
+                        <FahrzeugVerlegung fahrzeug={fahrzeug} />
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>
-
-            {state.fahrzeuge.length > 0 && (
-              <section className="fahrzeugliste-abschnitt">
-                <h2>Fahrzeuge in diesem Abschnitt ({fahrzeuge.length})</h2>
-                {fahrzeuge.length === 0 ? (
-                  <p className="leerer-abschnitt">Zurzeit kein Fahrzeug in diesem Abschnitt.</p>
-                ) : (
-                  <div className="fahrzeugkarten">
-                    {fahrzeuge.map((fahrzeug) => {
-                      const besatzungNamen = fahrzeug.besatzung
-                        .map((id) => state.sitzung.spieler.find((s) => s.id === id)?.name)
-                        .filter(Boolean)
-                        .join(', ');
-                      const staerke = staerkemeldung(fahrzeug.besatzung, state.sitzung.spieler);
-                      const sollMaterial = BESTUECKUNG[fahrzeug.typ];
-                      const sollGesamt = Object.values(sollMaterial).reduce(
-                        (summe, menge) => summe + menge,
-                        0,
-                      );
-                      const istGesamt = Object.values(fahrzeug.material).reduce(
-                        (summe, menge) => summe + (menge ?? 0),
-                        0,
-                      );
-                      const materialDetailOffen = materialOffen.has(fahrzeug.id);
-                      return (
-                        <article key={fahrzeug.id} className="fahrzeugkarte">
-                          <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
-                          <p className="fahrzeug-staerke">Stärke {formatStaerke(staerke)}</p>
-                          <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
-                          {sollGesamt > 0 && (
-                            <>
-                              <button
-                                type="button"
-                                className="fahrzeug-material-knopf"
-                                aria-expanded={materialDetailOffen}
-                                onClick={() => materialUmschalten(fahrzeug.id)}
-                              >
-                                Material: {istGesamt} von {sollGesamt} Posten
-                              </button>
-                              {materialDetailOffen && (
-                                <dl className="fahrzeug-material-detail">
-                                  {(Object.entries(sollMaterial) as [MaterialTyp, number][]).map(
-                                    ([typ, soll]) => (
-                                      <div key={typ}>
-                                        <dt>{MATERIAL_LABEL[typ]}</dt>
-                                        <dd>
-                                          {fahrzeug.material[typ] ?? 0} / {soll}
-                                        </dd>
-                                      </div>
-                                    ),
-                                  )}
-                                </dl>
-                              )}
-                            </>
-                          )}
-                          <FahrzeugVerlegung fahrzeug={fahrzeug} />
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -14,6 +14,8 @@ import { moeglicheZiele } from '../../domain/abschnitte';
 import { aktiveProbleme, sichtungOffen } from '../../domain/simulation';
 import { zeitFormat } from '../../lib/format';
 import { useSimulation } from '../../state/useSimulation';
+import { istDiagnostikAktion } from '../../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../../state/useZeitkostenStatus';
 import { KOERPERREGION_TEXT } from '../../domain/types';
 import type { Massnahmenart, Patient } from '../../domain/types';
 
@@ -52,6 +54,8 @@ type Bereich = 'diagnostik' | 'massnahmen' | 'medikamente' | 'verlegung' | 'verl
 export function Patientenansicht({ patient }: { patient: Patient }) {
   const { state, dispatch } = useSimulation();
   const [bereich, setBereich] = useState<Bereich>(null);
+  const zk = useZeitkostenStatus();
+  const zkBodycheck = zk.aktion !== null && istDiagnostikAktion(zk.aktion, patient.id, 'bodycheck');
 
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
   const anSchadensstelle = patient.abschnitt === 'schadensstelle';
@@ -202,7 +206,9 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
             <button
               type="button"
               className="bodycheck-knopf"
-              disabled={gesperrt}
+              style={zkBodycheck ? zeitkostenHintergrund(zk.anteil) : undefined}
+              disabled={gesperrt || (zk.aktion !== null && !zkBodycheck)}
+              aria-busy={zkBodycheck || undefined}
               onClick={() =>
                 dispatch({
                   typ: 'diagnostikDurchfuehren',
@@ -212,7 +218,7 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
               }
             >
               <span>Bodycheck – Ganzkörperbefund erheben</span>
-              <span className="massnahme-dauer">60 s</span>
+              <span className="massnahme-dauer">{zkBodycheck ? `noch ${zk.restSek} s` : '60 s'}</span>
             </button>
           )}
 

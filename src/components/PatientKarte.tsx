@@ -9,6 +9,8 @@ import { massnahmeGesperrtWegenQualifikation } from '../domain/qualifikation';
 import { radialispulsTastbar } from '../domain/triage';
 import { useDelegationsAnfrage } from '../state/useDelegationsAnfrage';
 import { useSimulation } from '../state/useSimulation';
+import { istMassnahmeAktion } from '../state/zeitkosten';
+import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
 import { DelegationAnfrageAuswahl } from './DelegationAnfrageAuswahl';
 import { SichtungsBadge } from './SichtungsBadge';
 import { Verlegung } from './Verlegung';
@@ -54,6 +56,8 @@ interface Props {
 export function PatientKarte({ patient, onAuswahl }: Props) {
   const { state, dispatch } = useSimulation();
   const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
+  const zk = useZeitkostenStatus();
+  const zkBeschaeftigt = zk.aktion !== null;
   const eigeneQualifikation = state.sitzung.aktiv
     ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
     : null;
@@ -167,6 +171,7 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
             !bereitsDurchgefuehrt &&
             fehlt === null;
           const anfrageOffen = offenFuer === id;
+          const zkEigen = zk.aktion !== null && istMassnahmeAktion(zk.aktion, patient.id, id);
 
           return (
             <div key={id} className="patient-karte-sofort-eintrag">
@@ -175,9 +180,15 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
                 className={`massnahme massnahme-${massnahme.art}${
                   bereitsDurchgefuehrt ? ' massnahme-erledigt' : ''
                 }`}
+                style={zkEigen ? zeitkostenHintergrund(zk.anteil) : undefined}
                 disabled={
-                  gesperrt || bereitsDurchgefuehrt || fehlt !== null || (qualifikationFehlt && !kannAnfragen)
+                  gesperrt ||
+                  bereitsDurchgefuehrt ||
+                  fehlt !== null ||
+                  (qualifikationFehlt && !kannAnfragen) ||
+                  (zkBeschaeftigt && !zkEigen)
                 }
+                aria-busy={zkEigen || undefined}
                 aria-expanded={kannAnfragen ? anfrageOffen : undefined}
                 onClick={() => {
                   if (kannAnfragen) {
@@ -189,15 +200,17 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
               >
                 <span className="massnahme-label">{massnahme.label}</span>
                 <span className="massnahme-dauer">
-                  {bereitsDurchgefuehrt
-                    ? 'durchgeführt'
-                    : fehlt
-                      ? voraussetzungKurz(fehlt)
-                      : kannAnfragen
-                        ? 'Freigabe anfragen'
-                        : qualifikationFehlt
-                          ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                          : `${massnahme.dauerSek} s`}
+                  {zkEigen
+                    ? `noch ${zk.restSek} s`
+                    : bereitsDurchgefuehrt
+                      ? 'durchgeführt'
+                      : fehlt
+                        ? voraussetzungKurz(fehlt)
+                        : kannAnfragen
+                          ? 'Freigabe anfragen'
+                          : qualifikationFehlt
+                            ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                            : `${massnahme.dauerSek} s`}
                 </span>
               </button>
 

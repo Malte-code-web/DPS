@@ -5,6 +5,9 @@ import type { FunkSignalNachricht } from './context';
 /** Kein eigener TURN-Dienst vorhanden - nur öffentliches STUN (→ ROADMAP.md, Baustein 5). */
 const ICE_SERVER = { urls: 'stun:stun.l.google.com:19302' };
 
+/** In manchen eingebetteten Vorschau-Umgebungen (Sandbox-iframe) schlicht nicht vorhanden. */
+const WEBRTC_VERFUEGBAR = typeof RTCPeerConnection !== 'undefined';
+
 export type Verbindungsstatus = 'verbindet' | 'verbunden' | 'getrennt';
 
 export interface Kanalmitglied {
@@ -34,6 +37,7 @@ export function useSprechfunk(kanal: string | null): {
   mitglieder: Kanalmitglied[];
   sprechenAktiv: boolean;
   sprechenUmschalten: () => void;
+  mikrofonFehler: string | null;
 } {
   const { state, aufFunkSignal, sendeFunkSignal } = useSimulation();
   const eigeneId = state.sitzung.eigeneId;
@@ -117,27 +121,51 @@ export function useSprechfunk(kanal: string | null): {
   }
 
   // Mikrofon einmal je Sitzung anfordern, sobald erstmals ein Kanal gewählt
-  // wird. `mikrofonBereit` ist bewusst reaktiver State (nicht nur der Ref) -
-  // der Peer-Abgleich unten muss erst starten, NACHDEM der Stream steht,
-  // sonst entsteht die allererste Verbindung ohne jede Tonspur (leeres SDP-
-  // Angebot ohne `m=audio`) und bleibt dauerhaft ohne Ton hängen.
-  const [mikrofonBereit, setMikrofonBereit] = useState(false);
+  // wird. `mikrofonAbgeschlossen` ist bewusst reaktiver State (nicht nur der
+  // Ref) und wird SOWOHL bei Erfolg als auch bei Fehlschlag gesetzt - der
+  // Peer-Abgleich unten wartet nur, bis der Versuch abgeschlossen ist, nicht
+  // bis er geglückt ist: ohne eigenes Mikrofon (Berechtigung verweigert,
+  // keine Hardware, in einer eingebetteten Vorschau ohne Mikrofon-Erlaubnis)
+  // bleibt der Empfang trotzdem möglich, nur das eigene Senden nicht. Ohne
+  // dieses Verhalten blieb die Verbindung bei einem gescheiterten
+  // Mikrofonzugriff für BEIDE Seiten für immer aus - kein Angebot wurde je
+  // erzeugt, ohne jede Fehlermeldung (→ `mikrofonFehler`).
+  const [mikrofonAbgeschlossen, setMikrofonAbgeschlossen] = useState(false);
+  const [mikrofonFehler, setMikrofonFehler] = useState<string | null>(null);
   useEffect(() => {
     if (!kanal) return;
     if (mikrofonRef.current) {
-      setMikrofonBereit(true);
+      setMikrofonAbgeschlossen(true);
+      return;
+    }
+    if (!WEBRTC_VERFUEGBAR) {
+      setMikrofonFehler('Sprachfunktion wird in dieser Umgebung nicht unterstützt.');
+      setMikrofonAbgeschlossen(true);
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMikrofonFehler('Kein Mikrofonzugriff in dieser Umgebung möglich - Empfang bleibt trotzdem möglich.');
+      setMikrofonAbgeschlossen(true);
       return;
     }
     let abgebrochen = false;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      if (abgebrochen) {
-        for (const track of stream.getTracks()) track.stop();
-        return;
-      }
-      for (const track of stream.getTracks()) track.enabled = false;
-      mikrofonRef.current = stream;
-      setMikrofonBereit(true);
-    });
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        if (abgebrochen) {
+          for (const track of stream.getTracks()) track.stop();
+          return;
+        }
+        for (const track of stream.getTracks()) track.enabled = false;
+        mikrofonRef.current = stream;
+        setMikrofonAbgeschlossen(true);
+      })
+      .catch((fehler: unknown) => {
+        if (abgebrochen) return;
+        console.error('Sprechfunk: Mikrofonzugriff fehlgeschlagen', fehler);
+        setMikrofonFehler('Mikrofonzugriff verweigert oder nicht verfügbar - Empfang bleibt trotzdem möglich.');
+        setMikrofonAbgeschlossen(true);
+      });
     return () => {
       abgebrochen = true;
     };
@@ -145,7 +173,7 @@ export function useSprechfunk(kanal: string | null): {
 
   // Peer-Verbindungen mit der aktuellen Zielliste abgleichen.
   useEffect(() => {
-    if (!eigeneId || !kanal || !mikrofonBereit) return;
+    if (!eigeneId || !kanal || !mikrofonAbgeschlossen || !WEBRTC_VERFUEGBAR) return;
     const ziele = new Set(zielSchluessel ? zielSchluessel.split(',') : []);
     for (const teilnehmerId of ziele) {
       if (!peersRef.current.has(teilnehmerId)) erzeugePeer(teilnehmerId, eigeneId);
@@ -154,7 +182,7 @@ export function useSprechfunk(kanal: string | null): {
       if (!ziele.has(teilnehmerId)) schliessePeer(teilnehmerId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eigeneId, kanal, zielSchluessel, mikrofonBereit]);
+  }, [eigeneId, kanal, zielSchluessel, mikrofonAbgeschlossen]);
 
   // Kanal verlassen (null) oder Sitzung beendet: alle Verbindungen schließen,
   // Mikrofon-Tracks stoppen.
@@ -166,7 +194,8 @@ export function useSprechfunk(kanal: string | null): {
       mikrofonRef.current = null;
     }
     setSprechenAktiv(false);
-    setMikrofonBereit(false);
+    setMikrofonAbgeschlossen(false);
+    setMikrofonFehler(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kanal]);
 
@@ -184,7 +213,7 @@ export function useSprechfunk(kanal: string | null): {
 
   // Eingehende Signalisierung: Angebot, Antwort, ICE-Kandidat.
   useEffect(() => {
-    if (!eigeneId) return;
+    if (!eigeneId || !WEBRTC_VERFUEGBAR) return;
     const hoerer = async (nachricht: FunkSignalNachricht) => {
       if (nachricht.anId !== eigeneId || nachricht.vonId === eigeneId) return;
       let peer = peersRef.current.get(nachricht.vonId);
@@ -223,5 +252,5 @@ export function useSprechfunk(kanal: string | null): {
     verbindung: verbindungen.get(m.teilnehmerId) ?? 'verbindet',
   }));
 
-  return { mitglieder, sprechenAktiv, sprechenUmschalten };
+  return { mitglieder, sprechenAktiv, sprechenUmschalten, mikrofonFehler };
 }

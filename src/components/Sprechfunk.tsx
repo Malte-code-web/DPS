@@ -27,7 +27,7 @@ export function Sprechfunk() {
   const eigenerKanal = state.rufgruppen.find((m) => m.teilnehmerId === eigeneId)?.kanal ?? null;
 
   const [offen, setOffen] = useState(false);
-  const { mitglieder, sprechenAktiv, sprechenUmschalten } = useSprechfunk(eigenerKanal);
+  const { mitglieder, sprechenAktiv, sprechenUmschalten, mikrofonFehler } = useSprechfunk(eigenerKanal);
 
   if (!state.sitzung.aktiv) return null;
 
@@ -86,11 +86,17 @@ export function Sprechfunk() {
 
           {eigenerKanal && (
             <>
+              {mikrofonFehler && (
+                <p className="hinweis hinweis-fehler" role="alert">
+                  {mikrofonFehler}
+                </p>
+              )}
               <button
                 type="button"
                 className={sprechenAktiv ? 'sprechfunk-sprechen sprechfunk-sprechen-aktiv' : 'sprechfunk-sprechen'}
                 onClick={sprechenUmschalten}
                 aria-pressed={sprechenAktiv}
+                disabled={!!mikrofonFehler}
               >
                 {sprechenAktiv ? 'Sprechen (an)' : 'Stumm'}
               </button>

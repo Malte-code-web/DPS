@@ -37,24 +37,42 @@ export const turnKonfiguriert = istTurnKonfiguriert(umgebung);
  */
 const ABRUF_TIMEOUT_MS = 5000;
 
+export interface TurnErgebnis {
+  server: RTCIceServer[];
+  /** Menschenlesbarer Grund, warum `server` leer blieb - `null` bei Erfolg (→ `ui.sprechfunk`-Diagnose). */
+  fehler: string | null;
+}
+
 /**
  * Holt TURN-Zugangsdaten von Metered.ca. Liefert bei fehlender Konfiguration,
  * einem Netzwerkfehler, einer ungültigen Antwort oder einem zu langsamen
  * Abruf (→ `ABRUF_TIMEOUT_MS`) bewusst eine leere Liste statt zu werfen oder
  * unbegrenzt zu warten - der Sprechfunk fällt dann einfach auf reines STUN
- * zurück, statt ganz zu blockieren (→ `state.sprechfunk`).
+ * zurück, statt ganz zu blockieren (→ `state.sprechfunk`). `fehler` hält
+ * fest, WARUM es leer blieb - ohne das war ein leerer STUN-Fallback von
+ * einem schlicht fehlenden `.env`-Eintrag nicht zu unterscheiden.
  */
-export async function holeTurnServer(): Promise<RTCIceServer[]> {
-  if (!turnKonfiguriert) return [];
+export async function holeTurnServer(): Promise<TurnErgebnis> {
+  if (!turnKonfiguriert) {
+    return { server: [], fehler: 'nicht konfiguriert (VITE_METERED_APP_NAME/VITE_METERED_API_KEY fehlen im Build)' };
+  }
   try {
     const antwort = await fetch(
       `https://${umgebung.appName}.metered.live/api/v1/turn/credentials?apiKey=${umgebung.apiKey}`,
       { signal: AbortSignal.timeout(ABRUF_TIMEOUT_MS) },
     );
-    if (!antwort.ok) return [];
+    if (!antwort.ok) return { server: [], fehler: `HTTP ${antwort.status} von Metered.ca` };
     const daten: unknown = await antwort.json();
-    return Array.isArray(daten) ? (daten as RTCIceServer[]) : [];
-  } catch {
-    return [];
+    if (!Array.isArray(daten)) return { server: [], fehler: 'unerwartete Antwort von Metered.ca (kein Array)' };
+    return { server: daten as RTCIceServer[], fehler: null };
+  } catch (fehler) {
+    const name = fehler instanceof Error ? fehler.name : '';
+    const text =
+      name === 'TimeoutError' || name === 'AbortError'
+        ? `Zeitüberschreitung nach ${ABRUF_TIMEOUT_MS / 1000}s`
+        : fehler instanceof Error
+          ? fehler.message
+          : 'unbekannter Fehler';
+    return { server: [], fehler: text };
   }
 }

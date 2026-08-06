@@ -234,6 +234,14 @@ welche Qualifikation an Bord).
   und empfangen wurden, aufgetretene ICE-Fehler
   (`RTCPeerConnection.onicecandidateerror`) und einen zeitgestempelten
   Verbindungsverlauf - als Text zum Kopieren, um ihn weiterzugeben.
+- ✅ **TURN-Fehlgrund in der Diagnose** (`DPS-0.7.6`) - "TURN-Server geladen:
+  nein" allein unterschied nicht zwischen "Umgebungsvariablen fehlen im
+  Build" und "Metered.ca meldet einen Fehler/ist nicht erreichbar". Genau
+  das war der reale Befund: bei zwei Handys im Mobilfunknetz zeigte die
+  Diagnose "TURN-Server geladen: nein" auf beiden Seiten, ohne erkennbaren
+  Grund - `holeTurnServer()` liefert jetzt zusätzlich einen Klartext-Grund
+  mit (fehlende `.env`-Werte, HTTP-Status, Zeitüberschreitung, ungültige
+  Antwort), sichtbar direkt in der Diagnose.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

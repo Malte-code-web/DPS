@@ -19,7 +19,9 @@ describe('Modul-Export ohne hinterlegte Zugangsdaten (Testumgebung)', () => {
     expect(turnKonfiguriert).toBe(false);
   });
 
-  it('holeTurnServer liefert ohne Konfiguration eine leere Liste, kein Netzwerkaufruf', async () => {
-    expect(await holeTurnServer()).toEqual([]);
+  it('holeTurnServer liefert ohne Konfiguration eine leere Liste mit erklärendem Fehler, kein Netzwerkaufruf', async () => {
+    const ergebnis = await holeTurnServer();
+    expect(ergebnis.server).toEqual([]);
+    expect(ergebnis.fehler).toMatch(/nicht konfiguriert/);
   });
 });

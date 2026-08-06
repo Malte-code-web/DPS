@@ -56,9 +56,11 @@ function formatZaehler(zaehler: Record<KandidatenArt, number>): string {
     .join(', ');
 }
 
-function formatDiagnose(diagnose: PeerDiagnose, turnEintraege: number): string {
+function formatDiagnose(diagnose: PeerDiagnose, turnEintraege: number, turnFehler: string | null): string {
+  const turnZeile =
+    turnEintraege > 0 ? `ja (${turnEintraege} Einträge)` : `nein${turnFehler ? ` - ${turnFehler}` : ''}`;
   const zeilen = [
-    `TURN-Server geladen: ${turnEintraege > 0 ? `ja (${turnEintraege} Einträge)` : 'nein'}`,
+    `TURN-Server geladen: ${turnZeile}`,
     `Gesendete Kandidaten: ${formatZaehler(diagnose.gesendet) || 'keine'}`,
     `Empfangene Kandidaten: ${formatZaehler(diagnose.empfangen) || 'keine'}`,
   ];
@@ -292,15 +294,24 @@ export function useSprechfunk(kanal: string | null): {
   // TURN-Zugangsdaten einmal je Sitzung nachladen (→ `net.turnAnbieter`),
   // falls konfiguriert - sonst bleibt es sofort bei reinem STUN. Ein
   // Fehlschlag beim Abruf blockiert nicht: `holeTurnServer` liefert dann
-  // einfach eine leere Liste, `iceServerRef` bleibt beim STUN-Server.
+  // einfach eine leere Liste (mit Grund, → `turnFehlerRef`), `iceServerRef`
+  // bleibt beim STUN-Server.
   const [iceServerBereit, setIceServerBereit] = useState(!turnKonfiguriert);
+  // Ohne Konfiguration wird `holeTurnServer` unten nie aufgerufen
+  // (`iceServerBereit` startet dann schon auf `true`) - der Grund muss
+  // deshalb hier vorab feststehen, sonst bliebe die Diagnose stumm.
+  const turnFehlerRef = useRef<string | null>(
+    turnKonfiguriert ? null : 'VITE_METERED_APP_NAME/VITE_METERED_API_KEY fehlen im Build',
+  );
   useEffect(() => {
     if (!kanal || iceServerBereit) return;
     let abgebrochen = false;
-    holeTurnServer().then((turnServer) => {
+    holeTurnServer().then(({ server, fehler }) => {
       if (abgebrochen) return;
-      if (turnServer.length > 0) {
-        iceServerRef.current = [STUN_SERVER, ...turnServer];
+      if (server.length > 0) {
+        iceServerRef.current = [STUN_SERVER, ...server];
+      } else {
+        turnFehlerRef.current = fehler;
       }
       setIceServerBereit(true);
     });
@@ -405,7 +416,9 @@ export function useSprechfunk(kanal: string | null): {
       teilnehmerId: m.teilnehmerId,
       name: m.teilnehmerName,
       verbindung: verbindungen.get(m.teilnehmerId) ?? 'verbindet',
-      diagnose: peer ? formatDiagnose(peer.diagnose, turnEintraege) : 'Noch keine Verbindung angelegt.',
+      diagnose: peer
+        ? formatDiagnose(peer.diagnose, turnEintraege, turnFehlerRef.current)
+        : 'Noch keine Verbindung angelegt.',
     };
   });
 

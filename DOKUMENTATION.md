@@ -971,12 +971,15 @@ Leerzeichen sind in Branchnamen nicht erlaubt, aus "DPS 0.2" wird `DPS-0.2`.
 > **Warum kein Tag?** Fachlich wäre ein Tag das bessere Werkzeug - er ist
 > unveränderlich und lässt sich nicht versehentlich weiterentwickeln. Aus der
 > Claude-Sitzung heraus scheitert `git push origin <tag>` aber mit HTTP 403,
-> und zwar für jeden Tag-Namen, annotiert wie einfach; Branch-Pushes gehen im
-> selben Moment durch. Es liegt also nicht am Namensmuster, sondern daran,
-> dass das Erstellen von Tags für diesen Zugang gesperrt ist (zu prüfen unter
-> Repository → Settings → Rules/Rulesets und → Tags). Sobald das offen ist,
-> lässt sich jederzeit auf Tags umstellen - die bestehenden Stände nachträglich
-> mit `git tag -a v0.2 DPS-0.2 -m "..."` zu taggen, kostet nichts.
+> und zwar für jeden Tag-Namen, annotiert wie einfach; Branch-Pushes (auch
+> Löschen) gehen im selben Moment durch. Ein Repo-Ruleset war nicht die
+> Ursache: Auch nach dessen Anpassung blieb der 403, und `git ls-remote --tags`
+> zeigt, dass auf diesem Repo noch nie ein Tag gepusht wurde. Die
+> GitHub-Anbindung der Claude-Sitzung kann also grundsätzlich nur auf Branches
+> schreiben, nicht auf Tags - das lässt sich in den Repo-Settings nicht
+> beheben. Deshalb bewusst Branches, auch wenn ein Tag der sauberere Rückweg
+> wäre. Wer mit eigenen GitHub-Rechten arbeitet, kann jederzeit zusätzlich
+> taggen: `git tag -a v0.2 DPS-0.2 -m "..."`.
 
 ### Welche Stelle wird hochgezählt
 
@@ -999,7 +1002,6 @@ zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
 | --- | --- |
 | `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
 | `backup-vor-modus-umbau` | vor dem Umbau auf Login + Moduswahl (aus der Zeit vor dieser Systematik) |
-| Tag `v0.1` | Patientenseite als Anhängekarte, Befundtafel als Bedienfläche |
 
 ### Ablauf für den nächsten Stand
 

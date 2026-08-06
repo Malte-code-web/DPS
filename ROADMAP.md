@@ -197,12 +197,16 @@ welche Qualifikation an Bord).
   demselben Kanal - echtes, bidirektionales Gespräch für alle Beteiligten.
   Eine Sprechen-Umschalttaste hält das Mikrofon standardmäßig stumm, wie bei
   einem echten Funkgerät. Ersetzt den ersten, kurzlebigen Text-Funkkanal
-  (`DPS-0.6`) vollständig.
-  - 💤 **Kein TURN-Server** - nur ein öffentlicher STUN-Server ist
-    eingebunden, kein eigener/bezahlter TURN-Dienst. Funktioniert in den
-    meisten Heim-/Mobilfunknetzen, kann aber in restriktiven Netzen
-    (symmetrisches NAT, manche Schul-/Firmennetze) an einzelnen
-    Verbindungen scheitern - offen dokumentiert, kein Fallback vorhanden.
+  (`DPS-0.6`) vollständig. Ein gescheiterter eigener Mikrofonzugriff
+  (Berechtigung verweigert, keine Hardware) blockiert die Verbindung nicht
+  mehr komplett - klare Fehlermeldung statt stiller Funkstille (`DPS-0.7.1`).
+- ✅ **Optionaler TURN-Server** per `.env` (Metered.ca, → `net.turnAnbieter`,
+  `DPS-0.7.2`) - nur mit STUN allein finden zwei Geräte hinter je eigenem
+  NAT (z. B. beide im Mobilfunknetz) oft keine direkte Verbindung, das war
+  der Grund für "Funkgeräte bekommen keine Verbindung" bei zwei Handys im
+  selben Mobilfunknetz. Ohne hinterlegte Zugangsdaten läuft alles
+  unverändert mit reinem STUN weiter (zuverlässig nur im selben Netz); ein
+  Fehlschlag beim Abrufen der TURN-Zugangsdaten blockiert nichts.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.
@@ -239,7 +243,7 @@ Jeder Schritt ist eigenständig nutzbar:
    Verlegung, Kapazität/Transport-Kopplung offen); **Verbrauchsgüter** ✅ fertig
    (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
 4. **Sprechfunk** ✅ fertig (echte Live-Sprachverbindung in frei wählbaren
-   Rufgruppen, kein TURN-Server vorhanden).
+   Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 
 ## Ehrliche Grenzen
 

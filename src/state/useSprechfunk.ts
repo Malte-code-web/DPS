@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { holeTurnServer, turnKonfiguriert } from '../net/turnAnbieter';
 import { useSimulation } from './useSimulation';
 import type { FunkSignalNachricht } from './context';
 
-/** Kein eigener TURN-Dienst vorhanden - nur öffentliches STUN (→ ROADMAP.md, Baustein 5). */
-const ICE_SERVER = { urls: 'stun:stun.l.google.com:19302' };
+/**
+ * Ohne TURN-Zugangsdaten (→ `net.turnAnbieter`) bleibt es bei reinem STUN -
+ * funktioniert zuverlässig nur innerhalb desselben Netzes. Zwei Geräte
+ * hinter je eigenem NAT (z. B. beide im Mobilfunknetz) finden darüber oft
+ * keine direkte Verbindung.
+ */
+const STUN_SERVER: RTCIceServer = { urls: 'stun:stun.l.google.com:19302' };
 
 /** In manchen eingebetteten Vorschau-Umgebungen (Sandbox-iframe) schlicht nicht vorhanden. */
 const WEBRTC_VERFUEGBAR = typeof RTCPeerConnection !== 'undefined';
@@ -44,6 +50,7 @@ export function useSprechfunk(kanal: string | null): {
 
   const peersRef = useRef<Map<string, Peer>>(new Map());
   const mikrofonRef = useRef<MediaStream | null>(null);
+  const iceServerRef = useRef<RTCIceServer[]>([STUN_SERVER]);
   const [sprechenAktiv, setSprechenAktiv] = useState(false);
   const [verbindungen, setVerbindungen] = useState<Map<string, Verbindungsstatus>>(new Map());
 
@@ -72,7 +79,7 @@ export function useSprechfunk(kanal: string | null): {
   }
 
   function erzeugePeer(teilnehmerId: string, eigeneId: string): Peer {
-    const verbindung = new RTCPeerConnection({ iceServers: [ICE_SERVER] });
+    const verbindung = new RTCPeerConnection({ iceServers: iceServerRef.current });
     const audio = document.createElement('audio');
     audio.autoplay = true;
     audio.style.display = 'none';
@@ -171,9 +178,29 @@ export function useSprechfunk(kanal: string | null): {
     };
   }, [kanal]);
 
+  // TURN-Zugangsdaten einmal je Sitzung nachladen (→ `net.turnAnbieter`),
+  // falls konfiguriert - sonst bleibt es sofort bei reinem STUN. Ein
+  // Fehlschlag beim Abruf blockiert nicht: `holeTurnServer` liefert dann
+  // einfach eine leere Liste, `iceServerRef` bleibt beim STUN-Server.
+  const [iceServerBereit, setIceServerBereit] = useState(!turnKonfiguriert);
+  useEffect(() => {
+    if (!kanal || iceServerBereit) return;
+    let abgebrochen = false;
+    holeTurnServer().then((turnServer) => {
+      if (abgebrochen) return;
+      if (turnServer.length > 0) {
+        iceServerRef.current = [STUN_SERVER, ...turnServer];
+      }
+      setIceServerBereit(true);
+    });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [kanal, iceServerBereit]);
+
   // Peer-Verbindungen mit der aktuellen Zielliste abgleichen.
   useEffect(() => {
-    if (!eigeneId || !kanal || !mikrofonAbgeschlossen || !WEBRTC_VERFUEGBAR) return;
+    if (!eigeneId || !kanal || !mikrofonAbgeschlossen || !iceServerBereit || !WEBRTC_VERFUEGBAR) return;
     const ziele = new Set(zielSchluessel ? zielSchluessel.split(',') : []);
     for (const teilnehmerId of ziele) {
       if (!peersRef.current.has(teilnehmerId)) erzeugePeer(teilnehmerId, eigeneId);
@@ -182,7 +209,7 @@ export function useSprechfunk(kanal: string | null): {
       if (!ziele.has(teilnehmerId)) schliessePeer(teilnehmerId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eigeneId, kanal, zielSchluessel, mikrofonAbgeschlossen]);
+  }, [eigeneId, kanal, zielSchluessel, mikrofonAbgeschlossen, iceServerBereit]);
 
   // Kanal verlassen (null) oder Sitzung beendet: alle Verbindungen schließen,
   // Mikrofon-Tracks stoppen.

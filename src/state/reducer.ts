@@ -32,6 +32,8 @@ import type {
   FahrzeugTyp,
   FahrzeugVorlage,
   Fuehrungsrolle,
+  Funkmeldung,
+  FunkmeldungKategorie,
   MassnahmeId,
   Patient,
   Qualifikation,
@@ -98,6 +100,11 @@ export interface SimulationState {
    */
   delegationsanfragen: DelegationsAnfrage[];
   /**
+   * Protokoll des Funkkanals (→ `modell.funkmeldung`, `ui.funk`) - jede
+   * Person sieht alle Einträge, wie beim echten BOS-Funk.
+   */
+  funkmeldungen: Funkmeldung[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -125,6 +132,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   fahrzeugWunsch: [],
   fahrzeuge: [],
   delegationsanfragen: [],
+  funkmeldungen: [],
   schnappschussFolge: 0,
 };
 
@@ -157,6 +165,17 @@ export type SimulationAction =
       angefragteId: string;
     }
   | { typ: 'delegationBeantworten'; id: string; angenommen: boolean }
+  | {
+      typ: 'funkmeldungSenden';
+      id: string;
+      kategorie: FunkmeldungKategorie;
+      abschnitt: Einsatzabschnitt;
+      absenderId: string;
+      absenderName: string;
+      text: string;
+      sichtungsstand?: Partial<Record<Sichtungskategorie | 'offen', number>>;
+      bezugId?: string;
+    }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
@@ -208,6 +227,8 @@ export interface Schnappschuss {
   massnahmenrechte: Massnahmenrechte;
   /** Noch nicht beantwortete Delegationsanfragen (→ `modell.delegationsanfrage`). */
   delegationsanfragen: DelegationsAnfrage[];
+  /** Protokoll des Funkkanals (→ `modell.funkmeldung`). */
+  funkmeldungen: Funkmeldung[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -231,6 +252,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     status: state.sitzung.status,
     massnahmenrechte: state.massnahmenrechte,
     delegationsanfragen: state.delegationsanfragen,
+    funkmeldungen: state.funkmeldungen,
   };
 }
 
@@ -413,6 +435,30 @@ export function simulationReducer(
             },
       );
     }
+
+    case 'funkmeldungSenden':
+      // Dedupliziert über die Meldungs-Id, falls dieselbe Nachricht (z. B.
+      // nach einer verlorenen Bestätigung, → `state.aktionsbestaetigung`)
+      // erneut ankommt.
+      if (state.funkmeldungen.some((eintrag) => eintrag.id === action.id)) return state;
+      return {
+        ...state,
+        funkmeldungen: [
+          ...state.funkmeldungen,
+          {
+            id: action.id,
+            kategorie: action.kategorie,
+            abschnitt: action.abschnitt,
+            absenderId: action.absenderId,
+            absenderName: action.absenderName,
+            text: action.text,
+            sichtungsstand: action.sichtungsstand,
+            bezugId: action.bezugId,
+            // Host-Uhr ist maßgeblich, nicht die Uhr des Absenders.
+            zeitSek: state.zeitSek,
+          },
+        ],
+      };
 
     case 'patientVerlegen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
@@ -671,6 +717,7 @@ export function simulationReducer(
         fahrzeuge: s.fahrzeuge,
         massnahmenrechte: s.massnahmenrechte,
         delegationsanfragen: s.delegationsanfragen,
+        funkmeldungen: s.funkmeldungen,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

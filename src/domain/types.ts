@@ -653,6 +653,32 @@ export interface DelegationsAnfrage {
 }
 
 /**
+ * @anker modell.funkmeldung Ein Protokolleintrag im Funkkanal
+ *
+ * Wie im echten BOS-Funk hört jede Person im Kanal jede Übertragung mit -
+ * es gibt keine private Zustellung. Nur Spieler dürfen `lagemeldung`/
+ * `anforderung` senden, nur die Übungsleitung `rueckmeldung` (→ `ui.funk`).
+ * Einmal gesendet, bleibt eine Meldung unveränderlich stehen - wie ein
+ * echter Funkspruch.
+ */
+export type FunkmeldungKategorie = 'lagemeldung' | 'anforderung' | 'rueckmeldung';
+
+export interface Funkmeldung {
+  id: string;
+  kategorie: FunkmeldungKategorie;
+  abschnitt: Einsatzabschnitt;
+  /** Zum Sendezeitpunkt eingefroren - bleibt lesbar, auch wenn die Person die Sitzung verlässt. */
+  absenderId: string;
+  absenderName: string;
+  text: string;
+  /** Nur bei 'lagemeldung': Momentaufnahme der Sichtungszahlen im gemeldeten Abschnitt. */
+  sichtungsstand?: Partial<Record<Sichtungskategorie | 'offen', number>>;
+  /** Nur bei 'rueckmeldung': Id der Meldung, auf die geantwortet wird. */
+  bezugId?: string;
+  zeitSek: number;
+}
+
+/**
  * Laufzeitzustand eines Patienten während der Simulation.
  * @anker modell.patient Alles, was sich an einem Patienten im Einsatz ändert
  */

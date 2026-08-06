@@ -261,7 +261,8 @@ export function SimulationProvider({
 
   // Nur die geteilten Scheiben bilden den Schnappschuss - lokale Navigation
   // (Patientenwahl, Abschnitt) fließt bewusst nicht ein und löst kein Senden aus.
-  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte, delegationsanfragen } = state;
+  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte, delegationsanfragen, funkmeldungen } =
+    state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
   // `folge` gehört nicht zum reinen Zustand (→ `state.schnappschuss`) - sie
@@ -279,6 +280,7 @@ export function SimulationProvider({
       status,
       massnahmenrechte,
       delegationsanfragen,
+      funkmeldungen,
     }),
     [
       phase,
@@ -292,6 +294,7 @@ export function SimulationProvider({
       status,
       massnahmenrechte,
       delegationsanfragen,
+      funkmeldungen,
     ],
   );
 

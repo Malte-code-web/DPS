@@ -834,6 +834,102 @@ describe('Delegationsanfrage (delegationAnfragen/delegationBeantworten)', () => 
   });
 });
 
+describe('Funkmeldung (funkmeldungSenden)', () => {
+  function imEinsatz(): SimulationState {
+    return simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
+        { typ: 'massnahmenrechteAbgeschlossen' },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+  }
+
+  it('trägt eine Lagemeldung mit der Uhrzeit des Hosts ein', () => {
+    const state = simulationReducer(imEinsatz(), { typ: 'tick', dtSek: 42 });
+    const nachher = simulationReducer(state, {
+      typ: 'funkmeldungSenden',
+      id: 'funk-1',
+      kategorie: 'lagemeldung',
+      abschnitt: 'schadensstelle',
+      absenderId: 's-1',
+      absenderName: 'Anna',
+      text: 'Lage unverändert',
+      sichtungsstand: { SK1: 2, offen: 1 },
+    });
+    expect(nachher.funkmeldungen).toEqual([
+      {
+        id: 'funk-1',
+        kategorie: 'lagemeldung',
+        abschnitt: 'schadensstelle',
+        absenderId: 's-1',
+        absenderName: 'Anna',
+        text: 'Lage unverändert',
+        sichtungsstand: { SK1: 2, offen: 1 },
+        bezugId: undefined,
+        zeitSek: nachher.zeitSek,
+      },
+    ]);
+    expect(nachher.funkmeldungen[0]!.zeitSek).toBe(state.zeitSek);
+  });
+
+  it('trägt dieselbe Meldungs-Id nicht doppelt ein', () => {
+    const aktion = {
+      typ: 'funkmeldungSenden' as const,
+      id: 'funk-1',
+      kategorie: 'anforderung' as const,
+      abschnitt: 'zelt_rot' as const,
+      absenderId: 's-1',
+      absenderName: 'Anna',
+      text: 'Brauchen einen weiteren RTW',
+    };
+    const zweimal = simulationReducer(simulationReducer(imEinsatz(), aktion), aktion);
+    expect(zweimal.funkmeldungen).toHaveLength(1);
+  });
+
+  it('trägt eine Rückmeldung mit Bezug auf die ursprüngliche Meldung ein', () => {
+    const angefragt = simulationReducer(imEinsatz(), {
+      typ: 'funkmeldungSenden',
+      id: 'funk-1',
+      kategorie: 'anforderung',
+      abschnitt: 'zelt_rot',
+      absenderId: 's-1',
+      absenderName: 'Anna',
+      text: 'Brauchen einen weiteren RTW',
+    });
+    const nachher = simulationReducer(angefragt, {
+      typ: 'funkmeldungSenden',
+      id: 'funk-2',
+      kategorie: 'rueckmeldung',
+      abschnitt: 'zelt_rot',
+      absenderId: 'leiter-1',
+      absenderName: 'OrgL',
+      text: 'Verstanden, ist unterwegs',
+      bezugId: 'funk-1',
+    });
+    expect(nachher.funkmeldungen).toHaveLength(2);
+    expect(nachher.funkmeldungen[1]).toMatchObject({ kategorie: 'rueckmeldung', bezugId: 'funk-1' });
+  });
+
+  it('ist Teil des Schnappschusses', () => {
+    const state = simulationReducer(imEinsatz(), {
+      typ: 'funkmeldungSenden',
+      id: 'funk-1',
+      kategorie: 'lagemeldung',
+      abschnitt: 'schadensstelle',
+      absenderId: 's-1',
+      absenderName: 'Anna',
+      text: 'Lage unverändert',
+    });
+    expect(schnappschussAus(state).funkmeldungen).toEqual(state.funkmeldungen);
+  });
+});
+
 describe('spielerAbschnittGesetzt', () => {
   function eroeffnetMitSpieler(): SimulationState {
     const host = spiele(

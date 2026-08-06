@@ -3,6 +3,7 @@ import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { DelegationBenachrichtigung } from '../components/DelegationBenachrichtigung';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
+import { Funk } from '../components/Funk';
 import { PatientKarte } from '../components/PatientKarte';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
@@ -76,6 +77,7 @@ export function EinsatzSeite() {
       )}
 
       <DelegationBenachrichtigung />
+      <Funk />
 
       {ausgewaehlt ? (
         // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen

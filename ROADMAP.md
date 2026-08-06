@@ -189,11 +189,25 @@ welche Qualifikation an Bord).
 
 ---
 
+## Baustein 5 – Funkkanal
+
+- ✅ **Strukturierte Funkmeldungen** statt freiem Chat, hierarchisch zur
+  Übungsleitung: Spieler senden `Lagemeldung` (mit automatisch angehängten
+  Sichtungszahlen des eigenen Abschnitts) oder `Anforderung`, nur die
+  Übungsleitung antwortet mit `Rückmeldung` - optional gezielt auf eine
+  Meldung bezogen. Wie im echten BOS-Funk kein Privatkanal: jede Person
+  sieht das komplette Protokoll, nur die Berechtigung zu senden
+  unterscheidet sich nach Rolle. Kostet bewusst keine Einsatzzeit.
+  - 💤 **Noch offen:** kein freier Chat zwischen allen, keine
+    Zustellbestätigung, kein Bearbeiten/Löschen gesendeter Meldungen -
+    bewusst wie ein echter Funkspruch: einmal raus, bleibt es stehen.
+
+---
+
 ## Horizont (später)
 
-Weiter denkbar, sobald die Bausteine 1–4 stehen:
+Weiter denkbar, sobald die Bausteine 1–5 stehen:
 
-- 💤 **Meldewege/Kommunikation** zwischen den Rollen.
 - 💤 **Patientenfluss** über mehrere Behandlungsplätze und Zielkliniken.
 - 💤 **Nachschub** knapper Güter.
 - 💤 **Erweitertes Debriefing:** nicht nur Sichtungskategorien, sondern auch
@@ -219,6 +233,8 @@ Jeder Schritt ist eigenständig nutzbar:
 3. **Material/Logistik** – Fahrzeuge 🟡 teilweise fertig (Zuweisung, Besatzung,
    Verlegung, Kapazität/Transport-Kopplung offen); **Verbrauchsgüter** ✅ fertig
    (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
+4. **Funkkanal** ✅ fertig (strukturierte Meldungen hierarchisch zur
+   Übungsleitung, kein freier Chat).
 
 ## Ehrliche Grenzen
 

@@ -2289,7 +2289,8 @@ button.gefahr {
 @media (prefers-reduced-motion: reduce) {
   .monitor-alarm,
   .patient-karte-alarm,
-  .delegation-toast {
+  .delegation-toast,
+  .funk-toast {
     animation: none;
   }
 }
@@ -2468,6 +2469,175 @@ button.gefahr {
 .delegation-toast-knoepfe {
   display: flex;
   gap: 0.6rem;
+}
+
+/* --- Funkkanal (→ ui.funk) ------------------------------------------ */
+
+.funk-knopf {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 56;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  box-shadow: var(--schatten);
+  font-weight: 600;
+}
+
+.funk-badge {
+  min-width: 1.3rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--akzent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.funk-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 4.5rem;
+  z-index: 56;
+  display: flex;
+  flex-direction: column;
+  width: min(26rem, calc(100vw - 2rem));
+  max-height: min(70vh, 34rem);
+  border-radius: var(--radius);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  box-shadow: var(--schatten);
+  overflow: hidden;
+}
+
+.funk-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--rand);
+}
+
+.funk-kopf h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.funk-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.funk-eintrag {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-left: 3px solid var(--akzent);
+  font-size: 0.85rem;
+}
+
+.funk-eintrag-anforderung {
+  border-left-color: var(--warn);
+}
+
+.funk-eintrag-rueckmeldung {
+  border-left-color: var(--ok);
+}
+
+.funk-eintrag-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-leise);
+}
+
+.funk-eintrag-kategorie {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.funk-eintrag-absender {
+  margin: 0.2rem 0 0.3rem;
+  font-weight: 600;
+}
+
+.funk-eintrag-bezug {
+  margin: 0 0 0.3rem;
+  color: var(--text-leise);
+  font-style: italic;
+}
+
+.funk-eintrag p {
+  margin: 0;
+}
+
+.funk-eintrag-sichtung {
+  margin-top: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-leise);
+}
+
+.funk-antworten {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.funk-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid var(--rand);
+}
+
+.funk-formular textarea {
+  resize: vertical;
+}
+
+.funk-antwort-hinweis {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+
+.funk-toast {
+  position: fixed;
+  top: 4.5rem;
+  right: 1rem;
+  z-index: 57;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-left: 3px solid var(--akzent);
+  box-shadow: var(--schatten);
+  animation: delegation-toast-ein 200ms ease-out;
+}
+
+.funk-toast p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  flex: 1;
 }
 
 /* --- Analgesie-Sammelauswahl (→ ui.analgesieauswahl) ---------------- */

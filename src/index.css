@@ -2339,7 +2339,8 @@ button.gefahr {
 
 @media (prefers-reduced-motion: reduce) {
   .monitor-alarm,
-  .patient-karte-alarm {
+  .patient-karte-alarm,
+  .delegation-toast {
     animation: none;
   }
 }
@@ -2471,38 +2472,51 @@ button.gefahr {
   color: var(--text-leise);
 }
 
-/* Overlay, damit die Anfrage unabhängig von der gerade offenen Unterseite
-   sichtbar wird - dieselbe Idee wie der Verbindungsfehler-Banner, aber als
-   echtes Modal, weil eine Antwort erwartet wird. */
-.delegation-benachrichtigung-hintergrund {
+/*
+ * Fest am unteren Bildschirmrand statt als Vollbild-Modal, unabhängig von der
+ * gerade offenen Unterseite sichtbar - ähnlich einer Push-Benachrichtigung:
+ * Sie meldet sich, blockiert aber nichts. Wer angefragt wird, kann
+ * weiterarbeiten (auch ein laufender Zeitkosten-Timer bleibt unberührt) und
+ * die Anfrage angehen, wann es passt. Oben zentriert wäre der Einsatzleiste
+ * und der Zeitkosten-Anzeige in die Quere gekommen, deshalb unten.
+ */
+.delegation-toast {
   position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: color-mix(in srgb, black 55%, transparent);
-}
-
-.delegation-benachrichtigung {
+  left: 50%;
+  bottom: 1rem;
+  translate: -50% 0;
+  z-index: 55;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  max-width: 24rem;
-  padding: 1.1rem 1.2rem;
+  gap: 0.7rem;
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 1rem 1.1rem;
   border-radius: var(--radius);
   background: var(--bg-panel-hoch);
   border: 1px solid var(--rand);
+  border-left: 3px solid var(--akzent);
+  box-shadow: var(--schatten);
+  animation: delegation-toast-ein 200ms ease-out;
 }
 
-.delegation-benachrichtigung p {
+@keyframes delegation-toast-ein {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delegation-toast p {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.4;
 }
 
-.delegation-benachrichtigung-knoepfe {
+.delegation-toast-knoepfe {
   display: flex;
   gap: 0.6rem;
 }

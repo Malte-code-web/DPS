@@ -653,29 +653,20 @@ export interface DelegationsAnfrage {
 }
 
 /**
- * @anker modell.funkmeldung Ein Protokolleintrag im Funkkanal
+ * @anker modell.rufgruppe Mitgliedschaft in einer Sprechfunk-Rufgruppe
  *
- * Wie im echten BOS-Funk hört jede Person im Kanal jede Übertragung mit -
- * es gibt keine private Zustellung. Nur Spieler dürfen `lagemeldung`/
- * `anforderung` senden, nur die Übungsleitung `rueckmeldung` (→ `ui.funk`).
- * Einmal gesendet, bleibt eine Meldung unveränderlich stehen - wie ein
- * echter Funkspruch.
+ * Wer ein Funkgerät "eingeschaltet" hat, steht mit genau einem Kanal hier -
+ * unabhängig davon, ob die Person in `sitzung.spieler` geführt wird (die
+ * Übungsleitung steht dort nicht, → `sitzung.modell`). `kanal: null` beim
+ * Wählen entfernt den eigenen Eintrag wieder (Funkgerät aus). Grundlage für
+ * den WebRTC-Mesh-Aufbau (→ `state.sprechfunk`) - wer denselben Kanal
+ * gewählt hat, verbindet sich direkt mit jedem anderen dort.
  */
-export type FunkmeldungKategorie = 'lagemeldung' | 'anforderung' | 'rueckmeldung';
-
-export interface Funkmeldung {
-  id: string;
-  kategorie: FunkmeldungKategorie;
-  abschnitt: Einsatzabschnitt;
-  /** Zum Sendezeitpunkt eingefroren - bleibt lesbar, auch wenn die Person die Sitzung verlässt. */
-  absenderId: string;
-  absenderName: string;
-  text: string;
-  /** Nur bei 'lagemeldung': Momentaufnahme der Sichtungszahlen im gemeldeten Abschnitt. */
-  sichtungsstand?: Partial<Record<Sichtungskategorie | 'offen', number>>;
-  /** Nur bei 'rueckmeldung': Id der Meldung, auf die geantwortet wird. */
-  bezugId?: string;
-  zeitSek: number;
+export interface Rufgruppenmitgliedschaft {
+  teilnehmerId: string;
+  /** Zum Wählzeitpunkt eingefroren - bleibt lesbar, auch ohne Spieler-Eintrag. */
+  teilnehmerName: string;
+  kanal: string;
 }
 
 /**

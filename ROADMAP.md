@@ -189,18 +189,23 @@ welche Qualifikation an Bord).
 
 ---
 
-## Baustein 5 – Funkkanal
+## Baustein 5 – Sprechfunk
 
-- ✅ **Strukturierte Funkmeldungen** statt freiem Chat, hierarchisch zur
-  Übungsleitung: Spieler senden `Lagemeldung` (mit automatisch angehängten
-  Sichtungszahlen des eigenen Abschnitts) oder `Anforderung`, nur die
-  Übungsleitung antwortet mit `Rückmeldung` - optional gezielt auf eine
-  Meldung bezogen. Wie im echten BOS-Funk kein Privatkanal: jede Person
-  sieht das komplette Protokoll, nur die Berechtigung zu senden
-  unterscheidet sich nach Rolle. Kostet bewusst keine Einsatzzeit.
-  - 💤 **Noch offen:** kein freier Chat zwischen allen, keine
-    Zustellbestätigung, kein Bearbeiten/Löschen gesendeter Meldungen -
-    bewusst wie ein echter Funkspruch: einmal raus, bleibt es stehen.
+- ✅ **Echte Live-Sprachverbindung (WebRTC)** in frei wählbaren Rufgruppen
+  (Kanal 1-3, Führung) statt Text: wer einen Kanal wählt, verbindet sich
+  direkt (Mesh, kein eigener Medienserver) mit jeder anderen Person auf
+  demselben Kanal - echtes, bidirektionales Gespräch für alle Beteiligten.
+  Eine Sprechen-Umschalttaste hält das Mikrofon standardmäßig stumm, wie bei
+  einem echten Funkgerät. Ersetzt den ersten, kurzlebigen Text-Funkkanal
+  (`DPS-0.6`) vollständig.
+  - 💤 **Kein TURN-Server** - nur ein öffentlicher STUN-Server ist
+    eingebunden, kein eigener/bezahlter TURN-Dienst. Funktioniert in den
+    meisten Heim-/Mobilfunknetzen, kann aber in restriktiven Netzen
+    (symmetrisches NAT, manche Schul-/Firmennetze) an einzelnen
+    Verbindungen scheitern - offen dokumentiert, kein Fallback vorhanden.
+  - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
+    kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
+    Sprache, Halten statt Umschalten für die Sprechtaste.
 
 ---
 
@@ -233,8 +238,8 @@ Jeder Schritt ist eigenständig nutzbar:
 3. **Material/Logistik** – Fahrzeuge 🟡 teilweise fertig (Zuweisung, Besatzung,
    Verlegung, Kapazität/Transport-Kopplung offen); **Verbrauchsgüter** ✅ fertig
    (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
-4. **Funkkanal** ✅ fertig (strukturierte Meldungen hierarchisch zur
-   Übungsleitung, kein freier Chat).
+4. **Sprechfunk** ✅ fertig (echte Live-Sprachverbindung in frei wählbaren
+   Rufgruppen, kein TURN-Server vorhanden).
 
 ## Ehrliche Grenzen
 

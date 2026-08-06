@@ -834,7 +834,7 @@ describe('Delegationsanfrage (delegationAnfragen/delegationBeantworten)', () => 
   });
 });
 
-describe('Funkmeldung (funkmeldungSenden)', () => {
+describe('Sprechfunk-Kanalwahl (rufgruppeWaehlen)', () => {
   function imEinsatz(): SimulationState {
     return simulationReducer(
       spiele(
@@ -850,83 +850,88 @@ describe('Funkmeldung (funkmeldungSenden)', () => {
     );
   }
 
-  it('trägt eine Lagemeldung mit der Uhrzeit des Hosts ein', () => {
-    const state = simulationReducer(imEinsatz(), { typ: 'tick', dtSek: 42 });
-    const nachher = simulationReducer(state, {
-      typ: 'funkmeldungSenden',
-      id: 'funk-1',
-      kategorie: 'lagemeldung',
-      abschnitt: 'schadensstelle',
-      absenderId: 's-1',
-      absenderName: 'Anna',
-      text: 'Lage unverändert',
-      sichtungsstand: { SK1: 2, offen: 1 },
+  it('trägt die Kanalwahl ein', () => {
+    const nachher = simulationReducer(imEinsatz(), {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-1',
     });
-    expect(nachher.funkmeldungen).toEqual([
-      {
-        id: 'funk-1',
-        kategorie: 'lagemeldung',
-        abschnitt: 'schadensstelle',
-        absenderId: 's-1',
-        absenderName: 'Anna',
-        text: 'Lage unverändert',
-        sichtungsstand: { SK1: 2, offen: 1 },
-        bezugId: undefined,
-        zeitSek: nachher.zeitSek,
-      },
-    ]);
-    expect(nachher.funkmeldungen[0]!.zeitSek).toBe(state.zeitSek);
+    expect(nachher.rufgruppen).toEqual([{ teilnehmerId: 's-1', teilnehmerName: 'Anna', kanal: 'kanal-1' }]);
   });
 
-  it('trägt dieselbe Meldungs-Id nicht doppelt ein', () => {
-    const aktion = {
-      typ: 'funkmeldungSenden' as const,
-      id: 'funk-1',
-      kategorie: 'anforderung' as const,
-      abschnitt: 'zelt_rot' as const,
-      absenderId: 's-1',
-      absenderName: 'Anna',
-      text: 'Brauchen einen weiteren RTW',
-    };
-    const zweimal = simulationReducer(simulationReducer(imEinsatz(), aktion), aktion);
-    expect(zweimal.funkmeldungen).toHaveLength(1);
+  it('ersetzt den eigenen Eintrag bei einem Kanalwechsel, statt einen zweiten anzulegen', () => {
+    const aufKanal1 = simulationReducer(imEinsatz(), {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-1',
+    });
+    const aufKanal2 = simulationReducer(aufKanal1, {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-2',
+    });
+    expect(aufKanal2.rufgruppen).toEqual([{ teilnehmerId: 's-1', teilnehmerName: 'Anna', kanal: 'kanal-2' }]);
   });
 
-  it('trägt eine Rückmeldung mit Bezug auf die ursprüngliche Meldung ein', () => {
-    const angefragt = simulationReducer(imEinsatz(), {
-      typ: 'funkmeldungSenden',
-      id: 'funk-1',
-      kategorie: 'anforderung',
-      abschnitt: 'zelt_rot',
-      absenderId: 's-1',
-      absenderName: 'Anna',
-      text: 'Brauchen einen weiteren RTW',
+  it('entfernt den eigenen Eintrag beim Verlassen (kanal: null)', () => {
+    const aufKanal1 = simulationReducer(imEinsatz(), {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-1',
     });
-    const nachher = simulationReducer(angefragt, {
-      typ: 'funkmeldungSenden',
-      id: 'funk-2',
-      kategorie: 'rueckmeldung',
-      abschnitt: 'zelt_rot',
-      absenderId: 'leiter-1',
-      absenderName: 'OrgL',
-      text: 'Verstanden, ist unterwegs',
-      bezugId: 'funk-1',
+    const verlassen = simulationReducer(aufKanal1, {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: null,
     });
-    expect(nachher.funkmeldungen).toHaveLength(2);
-    expect(nachher.funkmeldungen[1]).toMatchObject({ kategorie: 'rueckmeldung', bezugId: 'funk-1' });
+    expect(verlassen.rufgruppen).toEqual([]);
+  });
+
+  it('lässt andere Mitgliedschaften beim eigenen Wechsel unangetastet', () => {
+    const beide = simulationReducer(
+      simulationReducer(imEinsatz(), {
+        typ: 'rufgruppeWaehlen',
+        teilnehmerId: 's-1',
+        teilnehmerName: 'Anna',
+        kanal: 'kanal-1',
+      }),
+      { typ: 'rufgruppeWaehlen', teilnehmerId: 's-2', teilnehmerName: 'Ben', kanal: 'kanal-1' },
+    );
+    const annaWechselt = simulationReducer(beide, {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-2',
+    });
+    expect(annaWechselt.rufgruppen).toEqual(
+      expect.arrayContaining([{ teilnehmerId: 's-2', teilnehmerName: 'Ben', kanal: 'kanal-1' }]),
+    );
+  });
+
+  it('räumt die Kanalmitgliedschaft auf, wenn jemand die Sitzung verlässt', () => {
+    const aufKanal = simulationReducer(imEinsatz(), {
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-1',
+    });
+    const entfernt = simulationReducer(aufKanal, { typ: 'spielerEntfernt', spielerId: 's-1' });
+    expect(entfernt.rufgruppen).toEqual([]);
   });
 
   it('ist Teil des Schnappschusses', () => {
     const state = simulationReducer(imEinsatz(), {
-      typ: 'funkmeldungSenden',
-      id: 'funk-1',
-      kategorie: 'lagemeldung',
-      abschnitt: 'schadensstelle',
-      absenderId: 's-1',
-      absenderName: 'Anna',
-      text: 'Lage unverändert',
+      typ: 'rufgruppeWaehlen',
+      teilnehmerId: 's-1',
+      teilnehmerName: 'Anna',
+      kanal: 'kanal-1',
     });
-    expect(schnappschussAus(state).funkmeldungen).toEqual(state.funkmeldungen);
+    expect(schnappschussAus(state).rufgruppen).toEqual(state.rufgruppen);
   });
 });
 

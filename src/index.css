@@ -2289,8 +2289,7 @@ button.gefahr {
 @media (prefers-reduced-motion: reduce) {
   .monitor-alarm,
   .patient-karte-alarm,
-  .delegation-toast,
-  .funk-toast {
+  .delegation-toast {
     animation: none;
   }
 }
@@ -2471,16 +2470,16 @@ button.gefahr {
   gap: 0.6rem;
 }
 
-/* --- Funkkanal (→ ui.funk) ------------------------------------------ */
+/* --- Sprechfunk (→ ui.sprechfunk) ------------------------------------ */
 
-.funk-knopf {
+.sprechfunk-knopf {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
   z-index: 56;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   padding: 0.6rem 1rem;
   border-radius: 999px;
   background: var(--bg-panel-hoch);
@@ -2489,155 +2488,111 @@ button.gefahr {
   font-weight: 600;
 }
 
-.funk-badge {
-  min-width: 1.3rem;
-  padding: 0.05rem 0.35rem;
+.sprechfunk-aktiv-punkt {
+  width: 0.55rem;
+  height: 0.55rem;
   border-radius: 999px;
-  background: var(--akzent);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
+  background: var(--ok);
 }
 
-.funk-panel {
+.sprechfunk-panel {
   position: fixed;
   right: 1rem;
   bottom: 4.5rem;
   z-index: 56;
   display: flex;
   flex-direction: column;
-  width: min(26rem, calc(100vw - 2rem));
-  max-height: min(70vh, 34rem);
+  gap: 0.7rem;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(70vh, 30rem);
+  padding: 0.9rem;
   border-radius: var(--radius);
   background: var(--bg-panel-hoch);
   border: 1px solid var(--rand);
   box-shadow: var(--schatten);
-  overflow: hidden;
+  overflow-y: auto;
 }
 
-.funk-kopf {
+.sprechfunk-kopf {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid var(--rand);
 }
 
-.funk-kopf h2 {
+.sprechfunk-kopf h2 {
   margin: 0;
   font-size: 1rem;
 }
 
-.funk-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0.6rem 0.9rem;
-  overflow-y: auto;
+.sprechfunk-kanaele {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-.funk-eintrag {
-  padding: 0.5rem 0.6rem;
+.sprechfunk-kanaele button {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.sprechfunk-kanal-aktiv {
+  border-color: color-mix(in srgb, var(--akzent) 55%, transparent);
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+}
+
+.sprechfunk-sprechen {
+  padding: 0.6rem;
+  border-radius: 8px;
+  font-weight: 700;
+  background: var(--bg-panel);
+}
+
+.sprechfunk-sprechen-aktiv {
+  background: color-mix(in srgb, var(--ok) 22%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+}
+
+.sprechfunk-mitglieder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sprechfunk-mitglied {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
   border-radius: 8px;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
-  border-left: 3px solid var(--akzent);
   font-size: 0.85rem;
 }
 
-.funk-eintrag-anforderung {
-  border-left-color: var(--warn);
+.sprechfunk-status-punkt {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--text-leise);
+  flex-shrink: 0;
 }
 
-.funk-eintrag-rueckmeldung {
-  border-left-color: var(--ok);
+.sprechfunk-verbunden .sprechfunk-status-punkt {
+  background: var(--ok);
 }
 
-.funk-eintrag-kopf {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.sprechfunk-verbindet .sprechfunk-status-punkt {
+  background: var(--warn);
+}
+
+.sprechfunk-status-text {
+  margin-left: auto;
+  color: var(--text-leise);
   font-size: 0.75rem;
-  color: var(--text-leise);
-}
-
-.funk-eintrag-kategorie {
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.funk-eintrag-absender {
-  margin: 0.2rem 0 0.3rem;
-  font-weight: 600;
-}
-
-.funk-eintrag-bezug {
-  margin: 0 0 0.3rem;
-  color: var(--text-leise);
-  font-style: italic;
-}
-
-.funk-eintrag p {
-  margin: 0;
-}
-
-.funk-eintrag-sichtung {
-  margin-top: 0.3rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-leise);
-}
-
-.funk-antworten {
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
-}
-
-.funk-formular {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.7rem 0.9rem;
-  border-top: 1px solid var(--rand);
-}
-
-.funk-formular textarea {
-  resize: vertical;
-}
-
-.funk-antwort-hinweis {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-leise);
-}
-
-.funk-toast {
-  position: fixed;
-  top: 4.5rem;
-  right: 1rem;
-  z-index: 57;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  width: min(22rem, calc(100vw - 2rem));
-  padding: 0.7rem 0.9rem;
-  border-radius: var(--radius);
-  background: var(--bg-panel-hoch);
-  border: 1px solid var(--rand);
-  border-left: 3px solid var(--akzent);
-  box-shadow: var(--schatten);
-  animation: delegation-toast-ein 200ms ease-out;
-}
-
-.funk-toast p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  flex: 1;
 }
 
 /* --- Analgesie-Sammelauswahl (→ ui.analgesieauswahl) ---------------- */

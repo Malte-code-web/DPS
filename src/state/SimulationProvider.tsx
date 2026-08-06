@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import type { ReactNode } from 'react';
 import { erzeugeSitzungstransport } from '../net/transportAuswahl';
 import type { Sitzungstransport, TransportFabrik } from '../net/sitzungstransport';
-import type { SitzungsNachricht } from '../net/protokoll';
+import type { FunkSignalDaten, SitzungsNachricht } from '../net/protokoll';
 import { erzeugeId } from '../domain/sitzung';
 import {
   ladeEigeneSzenarien,
@@ -11,7 +11,7 @@ import {
   sichereMassnahmenrechte,
 } from '../lib/speicher';
 import { SimulationContext } from './context';
-import type { Zeitkostentimer } from './context';
+import type { FunkSignalNachricht, Zeitkostentimer } from './context';
 import { starteTaktgeber } from './taktgeber';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { Schnappschuss, SimulationAction } from './reducer';
@@ -115,6 +115,11 @@ export function SimulationProvider({
   >(new Map());
   const verarbeiteteNachrichtenRef = useRef<Set<string>>(new Set());
 
+  // WebRTC-Signalisierung (→ `net.funksignal`) läuft nie durch den Reducer -
+  // flüchtige Verbindungsaushandlung, kein Spielzustand. Ein `useSprechfunk`-
+  // Hook meldet sich hier direkt an, statt über `dispatch` zu gehen.
+  const signalHoererRef = useRef<Set<(nachricht: FunkSignalNachricht) => void>>(new Set());
+
   const sendeMitBestaetigung = useCallback(
     (erzeugeNachricht: (nachrichtId: string) => SitzungsNachricht, nachrichtId = erzeugeId()) => {
       const transport = transportRef.current;
@@ -186,6 +191,12 @@ export function SimulationProvider({
     const transport = transportFabrik(
       sitzung.code,
       (nachricht) => {
+        // Rollenunabhängig, vor der Host/Spieler-Verzweigung: geht direkt an
+        // die angemeldeten Hörer, nie an `dispatch`.
+        if (nachricht.typ === 'funkSignal') {
+          for (const hoerer of signalHoererRef.current) hoerer(nachricht);
+          return;
+        }
         if (rolle === 'uebungsleiter') {
           if (nachricht.typ === 'beitritt' || nachricht.typ === 'aktion') {
             // Dedupliziert: eine Wiederholung nach verlorener Bestätigung
@@ -261,7 +272,7 @@ export function SimulationProvider({
 
   // Nur die geteilten Scheiben bilden den Schnappschuss - lokale Navigation
   // (Patientenwahl, Abschnitt) fließt bewusst nicht ein und löst kein Senden aus.
-  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte, delegationsanfragen, funkmeldungen } =
+  const { patienten, fahrzeuge, zeitSek, szenario, massnahmenrechte, delegationsanfragen, rufgruppen } =
     state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -280,7 +291,7 @@ export function SimulationProvider({
       status,
       massnahmenrechte,
       delegationsanfragen,
-      funkmeldungen,
+      rufgruppen,
     }),
     [
       phase,
@@ -294,7 +305,7 @@ export function SimulationProvider({
       status,
       massnahmenrechte,
       delegationsanfragen,
-      funkmeldungen,
+      rufgruppen,
     ],
   );
 
@@ -413,9 +424,31 @@ export function SimulationProvider({
     });
   }, [ausgewaehlterAbschnitt, sitzung.aktiv, sitzung.eigeneId, dispatchRoutet]);
 
+  const aufFunkSignal = useCallback((hoerer: (nachricht: FunkSignalNachricht) => void) => {
+    signalHoererRef.current.add(hoerer);
+    return () => {
+      signalHoererRef.current.delete(hoerer);
+    };
+  }, []);
+
+  const eigeneId = sitzung.eigeneId;
+  const sendeFunkSignal = useCallback(
+    (anId: string, daten: FunkSignalDaten) => {
+      if (!eigeneId) return;
+      transportRef.current?.senden({ typ: 'funkSignal', vonId: eigeneId, anId, daten });
+    },
+    [eigeneId],
+  );
+
   const wert = useMemo(
-    () => ({ state, dispatch: dispatchMitZeitkosten, zeitkostentimer }),
-    [state, dispatchMitZeitkosten, zeitkostentimer],
+    () => ({
+      state,
+      dispatch: dispatchMitZeitkosten,
+      zeitkostentimer,
+      aufFunkSignal,
+      sendeFunkSignal,
+    }),
+    [state, dispatchMitZeitkosten, zeitkostentimer, aufFunkSignal, sendeFunkSignal],
   );
 
   return <SimulationContext value={wert}>{children}</SimulationContext>;

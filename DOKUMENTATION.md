@@ -47,7 +47,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Mehrspieler | Übungsleitung eröffnet eine Sitzung, Spieler treten per Code bei; host-autoritativ (die Übungsleitung rechnet, alle anderen rendern Schnappschüsse). Lokal über `BroadcastChannel` (mehrere Tabs, ein Gerät) oder über Supabase Realtime (echtes Cross-Device) hinter derselben Transport-Schnittstelle. Der Supabase-Transport baut eine abgebrochene Verbindung selbst neu auf (steigende Wartezeit im Hintergrund, sofort beim Zurückwechseln in den Vordergrund über `visibilitychange`) - ein in den Hintergrund geschobener Browser muss die Sitzung dadurch nicht mehr manuell neu laden. Ein eigenes Zeitlimit (10 s) fängt zusätzlich den Fall ab, dass der zugrunde liegende Websocket-Aufbau hängen bleibt, ohne dass Supabase selbst je einen Fehler meldet. Jede Aktion eines Spielers (Maßnahme, Diagnostik, Sichtung ...) sowie sein Beitritt selbst werden an den Host per Bestätigung quittiert; bleibt sie aus, wird bis zu 5-mal automatisch wiederholt - der Host wendet eine wiederholt eintreffende Nachricht dedupliziert trotzdem nur einmal an, ein Realtime-Broadcast liefert sonst ohne jede Fehlermeldung einfach nie zu. Ohne das blieb ein Beitritt spurlos verschwunden, wenn der Host ihn genau in dem Moment verpasste, etwa mitten in einer eigenen Wiederverbindung nach Hintergrund. Denselben Grund hat der alle 4 Sekunden erneut gesendete Schnappschuss: ändert sich der Zustand länger nicht mehr (z. B. Wartebereich nach einer einzelnen Besatzungszuweisung), heilt kein Simulationstakt einen verlorenen Broadcast mehr von selbst - der Neuversand schon |
 | Qualifikation | Fünf Stufen (Sanitätshelfer/-in bis Notärztin/Notarzt); die Übungsleitung stellt je Maßnahme die Mindeststufe zum Durchführen und ein Delegationsziel ein (oder „nicht delegierbar"), noch vor der Szenariowahl; jede Person wählt ihre eigene Stufe im Wartebereich - die eigene Auswahl erscheint sofort (optimistisch, ohne auf den Netzwerk-Umlauf über den Host zu warten) |
 | Delegationsanfrage | Wer eine delegierbare Maßnahme wegen fehlender Qualifikation nicht durchführen darf, kann sie trotzdem anklicken - statt gesperrt zu sein, öffnet sich eine Auswahl der durchführungsberechtigten Personen im selben Einsatzabschnitt. Die angefragte Person bekommt eine nicht blockierende Benachrichtigung am unteren Bildschirmrand (→ `ui.delegationsbenachrichtigung`) mit Annehmen/Ablehnen - kein Vollbild-Modal, die eigene Arbeit läuft währenddessen weiter; erst nach Annahme ist die Maßnahme freigegeben - gezielt nur für die anfragende Person, nicht patientenweit für alle. Ersetzt den früheren proaktiven „Freigeben"-Knopf vollständig |
-| Funkkanal | Strukturierte Meldungen statt freiem Chat, hierarchisch zur Übungsleitung (→ `ui.funk`): Spieler senden `Lagemeldung` (mit automatisch angehängten Sichtungszahlen des eigenen Abschnitts) oder `Anforderung`, nur die Übungsleitung antwortet mit `Rückmeldung`, optional gezielt auf eine Meldung bezogen. Wie beim echten BOS-Funk kein Privatkanal - jede Person sieht das komplette Protokoll, nur wer senden darf unterscheidet sich nach Rolle. Ein Knopf unten rechts öffnet das Panel, eine kurze, selbst verschwindende Benachrichtigung meldet neue Einträge - nicht blockierend, wie die Delegationsanfrage. Kostet bewusst keine Einsatzzeit, damit Kommunikation nicht ausgebremst wird |
+| Sprechfunk | Echte Live-Sprachverbindung statt Text (→ `ui.sprechfunk`), organisiert in frei wählbaren Rufgruppen (Kanal 1-3, Führung). Wer einen Kanal wählt, verbindet sich per WebRTC direkt (Mesh, kein eigener Medienserver) mit jeder anderen Person auf demselben Kanal - echtes, bidirektionales Gespräch für alle Beteiligten, nicht nur zur Übungsleitung. Eine Sprechen-Umschalttaste hält das Mikrofon standardmäßig stumm, wie bei einem echten Funkgerät. Signalisierung (Verbindungsaushandlung) läuft über denselben Transport wie alles andere, aber am Reducer vorbei - reine Zustellung zwischen zwei Personen, kein Spielzustand. Kein eigener TURN-Server vorhanden (nur öffentliches STUN) - kann in restriktiven Netzen (symmetrisches NAT, manche Schul-/Firmennetze) einzelne Verbindungen verhindern, offen dokumentiert statt verschwiegen. Ersetzt den kurzlebigen Text-Funkkanal aus `DPS-0.6` vollständig |
 | Direkter Einstieg (Startseite) | Die Startseite zeigt ausschließlich den Einstieg: ein Umschalter mit Spieler-Beitritt (Sitzungscode + Name, direkt in den Wartebereich) oder Übungsleitungs-Anmeldung - sonst nichts. Die Übungsleitungs-Rolle erfordert ein vorab im Supabase-Dashboard angelegtes Konto (E-Mail + Passwort, Supabase Auth) - Registrierung läuft bewusst nicht über die App. Ohne konfiguriertes Supabase ist der Umschalter-Reiter für die Übungsleitung gesperrt (mit erklärendem Hinweis); Spieler treten weiterhin ohne Konto per Code bei; der freie Anzeigename für die Sitzung (z. B. "OrgL Müller") wird direkt im Login-Formular mit abgefragt. Nach dem Login wählt die Übungsleitung zuerst den Modus (digital/Führung/real - nur digital ist gebaut, die anderen zeigen "in Vorbereitung"), dann folgen Maßnahmenrechte, Szenario, Fahrzeuge, Wartebereich. Ein eigenständiger Solo-Modus ohne Sitzung existiert nicht mehr - jeder Durchlauf läuft über denselben Sitzungs-Ablauf, auch wenn effektiv nur eine Person spielt. Der Szenario-Editor ("Szenarien bauen") ist über die Szenarioauswahl der Sitzung erreichbar, nicht mehr direkt von der Startseite |
 | Führung | Zweite Ebene neben der Qualifikation: TrFü/GrFü/ZgFü/OrgL RD/LNA, aufsteigender Rang (OrgL RD und LNA gleichrangig). Die Übungsleitung weist die Rolle im Wartebereich zu; ab Zugführer aufwärts (oder die Übungsleitung selbst) darf Fahrzeuge disponieren |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
@@ -649,7 +649,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_181 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -696,6 +696,7 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.notfallnarkose_liste` | [`src/domain/dosierung.ts:319`](src/domain/dosierung.ts#L319) | Die drei Induktionsmittel der Notfallnarkose-Sammelauswahl |
 | `domain.notfallnarkose_team` | [`src/domain/qualifikation.ts:121`](src/domain/qualifikation.ts#L121) | Team aus RS + NotSan + NotArzt gleichzeitig anwesend |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:5`](src/domain/qualifikation.ts#L5) | Rangfolge und Prüfung der fachlichen Qualifikation |
+| `domain.rufgruppen` | [`src/domain/rufgruppen.ts:7`](src/domain/rufgruppen.ts#L7) | Feste Kanalliste für den Sprechfunk |
 | `domain.staerkemeldung` | [`src/domain/fuehrung.ts:69`](src/domain/fuehrung.ts#L69) | Reale Stärkemeldung einer Fahrzeugbesatzung |
 
 #### einzelfaelle
@@ -749,17 +750,17 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `modell.delegationsanfrage` | [`src/domain/types.ts:641`](src/domain/types.ts#L641) | Angefragte, noch nicht beantwortete Delegation |
 | `modell.diagnostik` | [`src/domain/types.ts:595`](src/domain/types.ts#L595) | Einzelne Untersuchungen statt einer Rundumschau |
 | `modell.fahrzeug` | [`src/domain/types.ts:402`](src/domain/types.ts#L402) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:694`](src/domain/types.ts#L694) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.finalsichtung` | [`src/domain/types.ts:685`](src/domain/types.ts#L685) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
-| `modell.funkmeldung` | [`src/domain/types.ts:656`](src/domain/types.ts#L656) | Ein Protokolleintrag im Funkkanal |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:322`](src/domain/types.ts#L322) | Wo am Patienten das Problem sitzt - für das Körperschema |
 | `modell.material` | [`src/domain/types.ts:455`](src/domain/types.ts#L455) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
 | `modell.notfallnarkose` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar |
-| `modell.patient` | [`src/domain/types.ts:683`](src/domain/types.ts#L683) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patient` | [`src/domain/types.ts:674`](src/domain/types.ts#L674) | Alles, was sich an einem Patienten im Einsatz ändert |
 | `modell.patientvorlage` | [`src/domain/types.ts:559`](src/domain/types.ts#L559) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
+| `modell.rufgruppe` | [`src/domain/types.ts:656`](src/domain/types.ts#L656) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -781,8 +782,9 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `net.auswahl` | [`src/net/transportAuswahl.ts:7`](src/net/transportAuswahl.ts#L7) | Supabase, wenn konfiguriert - sonst der lokale Kanal |
+| `net.funksignal` | [`src/net/protokoll.ts:5`](src/net/protokoll.ts#L5) | Aushandlungsdaten einer WebRTC-Verbindung |
 | `net.lokal` | [`src/net/lokalerTransport.ts:5`](src/net/lokalerTransport.ts#L5) | Sitzungstransport über BroadcastChannel (ein Gerät) |
-| `net.protokoll` | [`src/net/protokoll.ts:5`](src/net/protokoll.ts#L5) | Nachrichten zwischen Übungsleiter (Host) und Spielern |
+| `net.protokoll` | [`src/net/protokoll.ts:16`](src/net/protokoll.ts#L16) | Nachrichten zwischen Übungsleiter (Host) und Spielern |
 | `net.supabase` | [`src/net/supabaseTransport.ts:6`](src/net/supabaseTransport.ts#L6) | Sitzungstransport über Supabase Realtime (Cross-Device) |
 | `net.supabaseAuth` | [`src/net/supabaseAuth.ts:4`](src/net/supabaseAuth.ts#L4) | Anmeldung der Übungsleitung über Supabase Auth |
 | `net.supabaseClient` | [`src/net/supabaseClient.ts:5`](src/net/supabaseClient.ts#L5) | Zugriff auf das Supabase-Projekt der Übungsleitung |
@@ -835,19 +837,20 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:139`](src/state/reducer.ts#L139) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:140`](src/state/reducer.ts#L140) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.phase` | [`src/state/reducer.ts:44`](src/state/reducer.ts#L44) | Die Hauptzustände der Anwendung |
+| `state.phase` | [`src/state/reducer.ts:43`](src/state/reducer.ts#L43) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:287`](src/state/reducer.ts#L287) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:208`](src/state/reducer.ts#L208) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:278`](src/state/reducer.ts#L278) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:199`](src/state/reducer.ts#L199) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.sprechfunk` | [`src/state/useSprechfunk.ts:22`](src/state/useSprechfunk.ts#L22) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:9`](src/state/zeitkosten.ts#L9) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:79`](src/state/zeitkosten.ts#L79) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:59`](src/state/reducer.ts#L59) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:58`](src/state/reducer.ts#L58) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -855,21 +858,21 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `stil.anhaengekarte` | [`src/index.css:1512`](src/index.css#L1512) | Die Karte, ihre Farbreiter und die Einfärbung |
 | `stil.bereichsseite` | [`src/index.css:1896`](src/index.css#L1896) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2378`](src/index.css#L2378) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.delegationsanfrage` | [`src/index.css:2377`](src/index.css#L2377) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:683`](src/index.css#L683) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3475`](src/index.css#L3475) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:3430`](src/index.css#L3430) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1949`](src/index.css#L1949) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:3219`](src/index.css#L3219) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3174`](src/index.css#L3174) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:610`](src/index.css#L610) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1775`](src/index.css#L1775) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3545`](src/index.css#L3545) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3500`](src/index.css#L3500) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3676`](src/index.css#L3676) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3631`](src/index.css#L3631) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -896,7 +899,7 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `test.tacstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:59`](src/state/reducer.test.ts#L59) | Belegt, dass der Reducer selbst keine Zeit mehr vorspringen lässt |
-| `test.zeitkostenabgleich` | [`src/state/zeitkosten.test.ts:192`](src/state/zeitkosten.test.ts#L192) | Ein Knopf erkennt, ob genau er gerade läuft |
+| `test.zeitkostenabgleich` | [`src/state/zeitkosten.test.ts:177`](src/state/zeitkosten.test.ts#L177) | Ein Knopf erkennt, ob genau er gerade läuft |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -921,7 +924,6 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:9`](src/components/FahrzeugVerlegung.tsx#L9) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
-| `ui.funk` | [`src/components/Funk.tsx:36`](src/components/Funk.tsx#L36) | Funkkanal: strukturierte Meldungen statt freiem Chat |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:44`](src/components/Massnahmenliste.tsx#L44) | Das einklappbare xABCDE-Akkordeon |
@@ -936,6 +938,7 @@ _178 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:7`](src/pages/SetupSeite.tsx#L7) | Szenarioauswahl für die Sitzung |
 | `ui.sofortmassnahmen` | [`src/components/Sofortmassnahmen.tsx:22`](src/components/Sofortmassnahmen.tsx#L22) | Lebensrettende Griffe, dauerhaft in der Übersicht |
+| `ui.sprechfunk` | [`src/components/Sprechfunk.tsx:14`](src/components/Sprechfunk.tsx#L14) | Sprechfunk: echte Live-Sprachverbindung in freien Rufgruppen |
 | `ui.start` | [`src/pages/StartSeite.tsx:10`](src/pages/StartSeite.tsx#L10) | Startseite: nur der Einstieg als Spieler oder Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
@@ -1019,6 +1022,7 @@ zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.7` | Sprechfunk: echte Live-Sprachverbindung (WebRTC) in frei wählbaren Rufgruppen, ersetzt den Text-Funkkanal |
 | `DPS-0.6` | Funkkanal: strukturierte Meldungen (Lagemeldung/Anforderung/Rückmeldung) hierarchisch zur Übungsleitung |
 | `DPS-0.5` | Zeitkosten-Countdown läuft im Knopf der gewählten Maßnahme statt in einer eigenen Vollbild-Anzeige |
 | `DPS-0.4` | Delegationsanfrage als nicht blockierende Benachrichtigung statt Vollbild-Modal |

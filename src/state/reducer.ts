@@ -32,11 +32,10 @@ import type {
   FahrzeugTyp,
   FahrzeugVorlage,
   Fuehrungsrolle,
-  Funkmeldung,
-  FunkmeldungKategorie,
   MassnahmeId,
   Patient,
   Qualifikation,
+  Rufgruppenmitgliedschaft,
   Sichtungskategorie,
   Szenario,
 } from '../domain/types';
@@ -100,10 +99,12 @@ export interface SimulationState {
    */
   delegationsanfragen: DelegationsAnfrage[];
   /**
-   * Protokoll des Funkkanals (→ `modell.funkmeldung`, `ui.funk`) - jede
-   * Person sieht alle Einträge, wie beim echten BOS-Funk.
+   * Wer sich in welchem Sprechfunk-Kanal befindet (→ `modell.rufgruppe`,
+   * `ui.sprechfunk`) - Grundlage für den WebRTC-Mesh-Aufbau, nicht die
+   * Sprachverbindung selbst (die läuft direkt zwischen den Clients, nicht
+   * über den Reducer).
    */
-  funkmeldungen: Funkmeldung[];
+  rufgruppen: Rufgruppenmitgliedschaft[];
   /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
@@ -132,7 +133,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   fahrzeugWunsch: [],
   fahrzeuge: [],
   delegationsanfragen: [],
-  funkmeldungen: [],
+  rufgruppen: [],
   schnappschussFolge: 0,
 };
 
@@ -165,17 +166,7 @@ export type SimulationAction =
       angefragteId: string;
     }
   | { typ: 'delegationBeantworten'; id: string; angenommen: boolean }
-  | {
-      typ: 'funkmeldungSenden';
-      id: string;
-      kategorie: FunkmeldungKategorie;
-      abschnitt: Einsatzabschnitt;
-      absenderId: string;
-      absenderName: string;
-      text: string;
-      sichtungsstand?: Partial<Record<Sichtungskategorie | 'offen', number>>;
-      bezugId?: string;
-    }
+  | { typ: 'rufgruppeWaehlen'; teilnehmerId: string; teilnehmerName: string; kanal: string | null }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
@@ -227,8 +218,8 @@ export interface Schnappschuss {
   massnahmenrechte: Massnahmenrechte;
   /** Noch nicht beantwortete Delegationsanfragen (→ `modell.delegationsanfrage`). */
   delegationsanfragen: DelegationsAnfrage[];
-  /** Protokoll des Funkkanals (→ `modell.funkmeldung`). */
-  funkmeldungen: Funkmeldung[];
+  /** Wer sich in welchem Sprechfunk-Kanal befindet (→ `modell.rufgruppe`). */
+  rufgruppen: Rufgruppenmitgliedschaft[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -252,7 +243,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     status: state.sitzung.status,
     massnahmenrechte: state.massnahmenrechte,
     delegationsanfragen: state.delegationsanfragen,
-    funkmeldungen: state.funkmeldungen,
+    rufgruppen: state.rufgruppen,
   };
 }
 
@@ -436,29 +427,21 @@ export function simulationReducer(
       );
     }
 
-    case 'funkmeldungSenden':
-      // Dedupliziert über die Meldungs-Id, falls dieselbe Nachricht (z. B.
-      // nach einer verlorenen Bestätigung, → `state.aktionsbestaetigung`)
-      // erneut ankommt.
-      if (state.funkmeldungen.some((eintrag) => eintrag.id === action.id)) return state;
+    case 'rufgruppeWaehlen': {
+      // Eigenen Eintrag immer zuerst entfernen - ein Kanalwechsel ist kein
+      // Beitritt zu einem zweiten Kanal gleichzeitig.
+      const ohneEigenen = state.rufgruppen.filter(
+        (mitglied) => mitglied.teilnehmerId !== action.teilnehmerId,
+      );
+      if (action.kanal === null) return { ...state, rufgruppen: ohneEigenen };
       return {
         ...state,
-        funkmeldungen: [
-          ...state.funkmeldungen,
-          {
-            id: action.id,
-            kategorie: action.kategorie,
-            abschnitt: action.abschnitt,
-            absenderId: action.absenderId,
-            absenderName: action.absenderName,
-            text: action.text,
-            sichtungsstand: action.sichtungsstand,
-            bezugId: action.bezugId,
-            // Host-Uhr ist maßgeblich, nicht die Uhr des Absenders.
-            zeitSek: state.zeitSek,
-          },
+        rufgruppen: [
+          ...ohneEigenen,
+          { teilnehmerId: action.teilnehmerId, teilnehmerName: action.teilnehmerName, kanal: action.kanal },
         ],
       };
+    }
 
     case 'patientVerlegen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
@@ -616,6 +599,8 @@ export function simulationReducer(
       return {
         ...state,
         sitzung: { ...state.sitzung, spieler: ohneSpieler(state.sitzung.spieler, action.spielerId) },
+        // Kein Geistermitglied im Sprechfunk-Kanal zurücklassen (→ `modell.rufgruppe`).
+        rufgruppen: state.rufgruppen.filter((mitglied) => mitglied.teilnehmerId !== action.spielerId),
       };
 
     case 'spielerQualifikationSetzen':
@@ -717,7 +702,7 @@ export function simulationReducer(
         fahrzeuge: s.fahrzeuge,
         massnahmenrechte: s.massnahmenrechte,
         delegationsanfragen: s.delegationsanfragen,
-        funkmeldungen: s.funkmeldungen,
+        rufgruppen: s.rufgruppen,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

@@ -67,21 +67,6 @@ describe('zeitkostenSek', () => {
     ).toBe(0);
   });
 
-  it('kostet eine Funkmeldung nie Zeit - Kommunikation soll nicht ausgebremst werden', () => {
-    const state = imEinsatz();
-    expect(
-      zeitkostenSek(state, {
-        typ: 'funkmeldungSenden',
-        id: 'meldung-1',
-        kategorie: 'lagemeldung',
-        abschnitt: 'schadensstelle',
-        absenderId: 's-1',
-        absenderName: 'Anna',
-        text: 'Lage unverändert',
-      }),
-    ).toBe(0);
-  });
-
   it('kostet jede Untersuchung nur beim ersten Mal', () => {
     const start = imEinsatz();
     const aktion = { typ: 'diagnostikDurchfuehren' as const, patientId: 'B-01', diagnostikId: 'bodycheck' as const };

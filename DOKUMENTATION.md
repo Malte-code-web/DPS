@@ -963,40 +963,37 @@ _172 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 ## 7b. Versionen und Rückweg
 
-Jeder abgeschlossene, geprüfte Stand wird als Branch `DPS-0.<nummer>`
-eingefroren. Eingefroren heißt: Auf diesen Branch wird nie wieder committet -
-er ist ausschließlich der Rückweg. Entwickelt wird auf dem Arbeitsbranch.
-
-Fachlich wären **Tags** hier das bessere Werkzeug (unveränderlich, nicht
-versehentlich weiterentwickelbar). Die Zugangsdaten der Claude-Sitzung dürfen
-aber nur Branches anlegen - ein `git push origin <tag>` scheitert mit HTTP 403.
-Deshalb Branches. Wer die Rechte hat, kann jederzeit zusätzlich taggen:
-`git tag -a v0.2.0 DPS-0.2 -m "..." && git push origin v0.2.0`.
-
-Auch Leerzeichen sind in Branchnamen nicht erlaubt - aus "DPS 0.2" wird
-deshalb `DPS-0.2`.
+Jeder abgeschlossene, geprüfte Stand wird als **annotiertes Tag**
+`v<major>.<minor>.<patch>` eingefroren. Ein Tag ist unveränderlich: Man kann
+nicht aus Versehen darauf weiterentwickeln, und er bezeichnet dauerhaft exakt
+denselben Commit. Ein Branch wandert dagegen mit jedem Commit weiter und taugt
+damit gerade nicht als verlässlicher Rückweg. Entwickelt wird auf dem
+Arbeitsbranch.
 
 ### Welche Stelle wird hochgezählt
 
-| Änderung | Beispiel | Von `0.2` aus |
+| Änderung | Beispiel | Von `0.2.0` aus |
 | --- | --- | --- |
-| Verhalten oder Funktion ändert sich | Zeitkosten laufen als Timer statt als Sprung; Login eingebaut | `DPS-0.3` |
-| Korrektur oder Politur, Verhalten bleibt | Kontrast angehoben, Querscrollen behoben, totes CSS entfernt | `DPS-0.2.1` |
-| Mehrere Korrekturen nacheinander | zwei Nachbesserungen am selben Stand | `DPS-0.2.1`, dann `DPS-0.2.2` |
+| Verhalten oder Funktion ändert sich | Zeitkosten laufen als Timer statt als Sprung; Login eingebaut | `v0.3.0` |
+| Korrektur oder Politur, Verhalten bleibt | Kontrast angehoben, Querscrollen behoben, totes CSS entfernt | `v0.2.1` |
+| Mehrere Korrekturen nacheinander | zwei Nachbesserungen am selben Stand | `v0.2.1`, dann `v0.2.2` |
 | Nur Text/Doku, kein Code | Quellenangabe ergänzt | gar kein neuer Stand |
 
-Die dritte Stelle taucht also nur bei Korrekturen auf; `DPS-0.2` und
-`DPS-0.2.0` wären dasselbe, deshalb gibt es nur die kurze Form. Im Zweifel die
-kleinere Stufe: Eine Nummer zu viel schadet nicht, ein zu grob
-zusammengefasster Stand nimmt den genauen Rückweg.
+Im Zweifel die kleinere Stufe: Eine Nummer zu viel schadet nicht, ein zu grob
+zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
+`package.json` läuft mit.
 
 ### Bisherige Stände
 
-| Branch/Tag | Stand |
+| Tag | Stand |
 | --- | --- |
-| `DPS-0.2` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
-| `backup-vor-modus-umbau` | vor dem Umbau auf Login + Moduswahl (aus der Zeit vor dieser Systematik) |
-| Tag `v0.1` | Patientenseite als Anhängekarte, Befundtafel als Bedienfläche |
+| `v0.2.0` | UI-Audit abgeschlossen: Kontrast (WCAG AA), Tippziele, kein Querscrollen ab 320 px; Zeitkosten als Echtzeit-Timer; Sichtung ohne Zeitkosten |
+| `v0.1` | Patientenseite als Anhängekarte, Befundtafel als Bedienfläche |
+
+Aus der Zeit vor dieser Systematik liegen zusätzlich zwei Branches herum:
+`DPS-0.2` (derselbe Stand wie `v0.2.0`, nur ohne diesen Abschnitt) und
+`backup-vor-modus-umbau` (vor dem Umbau auf Login + Moduswahl). Beide können
+gelöscht werden, sobald die Tags stehen.
 
 ### Ablauf für den nächsten Stand
 
@@ -1005,16 +1002,16 @@ Erst die Änderung fertigstellen und prüfen (`npm run typecheck`, `npm test`,
 
 ```bash
 # 1. Nummer in package.json heben und mitcommitten
-# 2. Stand einfrieren - der Branch zeigt auf genau diesen geprüften Commit
-git branch DPS-0.2.1
-git push -u origin DPS-0.2.1
+# 2. Stand einfrieren - -a erzeugt ein Tag mit Datum, Autor und Text
+git tag -a v0.2.1 -m "Kurz: was dieser Stand kann"
+git push origin v0.2.1
 
 # Alte Stände ansehen
-git branch -r                        # alle Stände
-git checkout DPS-0.2                 # nur anschauen
+git tag -l -n1                       # alle Stände mit Kurztext
+git checkout v0.2.0                  # nur anschauen
 
 # Wirklich zurückgehen: neuen Arbeitsbranch aus dem alten Stand aufmachen
-git checkout -b rueckweg-von-0.2 DPS-0.2
+git checkout -b rueckweg-von-0.2.0 v0.2.0
 ```
 
 So ist jede Versionsnummer ein Stand, der nachweislich lief.

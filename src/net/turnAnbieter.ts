@@ -30,12 +30,17 @@ const umgebung: TurnUmgebung = {
 export const turnKonfiguriert = istTurnKonfiguriert(umgebung);
 
 /**
- * Wartezeit, nach der der Abruf aufgegeben wird - ohne dieses Limit blockiert
- * ein hängender oder sehr langsamer Abruf (blockierter Domainname, lahmes
- * Netz) den gesamten Sprechfunk auf unbestimmte Zeit, obwohl reines STUN
- * für diese Verbindung eventuell völlig ausgereicht hätte.
+ * Wartezeit, nach der EIN Versuch aufgegeben wird - ohne dieses Limit
+ * blockiert ein hängender Abruf (blockierter Domainname) den gesamten
+ * Sprechfunk auf unbestimmte Zeit. Bewusst großzügig: ein Verbindungsaufbau
+ * zu einem noch nie besuchten Server dauert über Mobilfunk spürbar länger
+ * als im WLAN - ein zu knappes Limit (ursprünglich 5s) brach echte, nur
+ * langsame Verbindungen ab, bevor sie fertig waren. Safari meldet einen so
+ * abgebrochenen Abruf zudem nicht immer als erkennbaren Timeout, sondern als
+ * generischen "Load failed"-Fehler - schwer von einem echten Netzwerkfehler
+ * zu unterscheiden, ohne das Limit selbst zu erhöhen.
  */
-const ABRUF_TIMEOUT_MS = 5000;
+const ABRUF_TIMEOUT_MS = 12000;
 
 export interface TurnErgebnis {
   server: RTCIceServer[];
@@ -43,19 +48,7 @@ export interface TurnErgebnis {
   fehler: string | null;
 }
 
-/**
- * Holt TURN-Zugangsdaten von Metered.ca. Liefert bei fehlender Konfiguration,
- * einem Netzwerkfehler, einer ungültigen Antwort oder einem zu langsamen
- * Abruf (→ `ABRUF_TIMEOUT_MS`) bewusst eine leere Liste statt zu werfen oder
- * unbegrenzt zu warten - der Sprechfunk fällt dann einfach auf reines STUN
- * zurück, statt ganz zu blockieren (→ `state.sprechfunk`). `fehler` hält
- * fest, WARUM es leer blieb - ohne das war ein leerer STUN-Fallback von
- * einem schlicht fehlenden `.env`-Eintrag nicht zu unterscheiden.
- */
-export async function holeTurnServer(): Promise<TurnErgebnis> {
-  if (!turnKonfiguriert) {
-    return { server: [], fehler: 'nicht konfiguriert (VITE_METERED_APP_NAME/VITE_METERED_API_KEY fehlen im Build)' };
-  }
+async function einAbrufversuch(): Promise<TurnErgebnis> {
   try {
     const antwort = await fetch(
       `https://${umgebung.appName}.metered.live/api/v1/turn/credentials?apiKey=${umgebung.apiKey}`,
@@ -75,4 +68,26 @@ export async function holeTurnServer(): Promise<TurnErgebnis> {
           : 'unbekannter Fehler';
     return { server: [], fehler: text };
   }
+}
+
+/**
+ * Holt TURN-Zugangsdaten von Metered.ca. Liefert bei fehlender Konfiguration,
+ * einem Netzwerkfehler, einer ungültigen Antwort oder einem zu langsamen
+ * Abruf (→ `ABRUF_TIMEOUT_MS`) bewusst eine leere Liste statt zu werfen oder
+ * unbegrenzt zu warten - der Sprechfunk fällt dann einfach auf reines STUN
+ * zurück, statt ganz zu blockieren (→ `state.sprechfunk`). `fehler` hält
+ * fest, WARUM es leer blieb - ohne das war ein leerer STUN-Fallback von
+ * einem schlicht fehlenden `.env`-Eintrag nicht zu unterscheiden. Ein
+ * einzelner Fehlschlag (z. B. eine kurze Netzwerk-Unterbrechung auf dem
+ * Handy) löst genau einen zweiten Versuch aus, bevor endgültig aufgegeben
+ * wird.
+ */
+export async function holeTurnServer(): Promise<TurnErgebnis> {
+  if (!turnKonfiguriert) {
+    return { server: [], fehler: 'nicht konfiguriert (VITE_METERED_APP_NAME/VITE_METERED_API_KEY fehlen im Build)' };
+  }
+  const ersterVersuch = await einAbrufversuch();
+  if (ersterVersuch.server.length > 0) return ersterVersuch;
+  const zweiterVersuch = await einAbrufversuch();
+  return zweiterVersuch.server.length > 0 ? zweiterVersuch : ersterVersuch;
 }

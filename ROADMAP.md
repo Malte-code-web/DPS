@@ -242,6 +242,17 @@ welche Qualifikation an Bord).
   Grund - `holeTurnServer()` liefert jetzt zusätzlich einen Klartext-Grund
   mit (fehlende `.env`-Werte, HTTP-Status, Zeitüberschreitung, ungültige
   Antwort), sichtbar direkt in der Diagnose.
+- ✅ **Großzügigeres TURN-Abruf-Zeitlimit + ein Wiederholungsversuch**
+  (`DPS-0.7.7`) - die Diagnose auf echten Handys im Mobilfunknetz zeigte
+  "TURN-Server geladen: nein - Load failed". Ein direkter Aufruf derselben
+  Abruf-Adresse im Handy-Browser lieferte aber sofort die richtigen
+  Zugangsdaten - das Netz war also erreichbar, nur das eingebaute
+  Zeitlimit von 5 Sekunden war für einen Verbindungsaufbau zu einem noch
+  nie besuchten Server über Mobilfunk zu knapp bemessen (Safari meldet
+  einen so abgebrochenen Abruf zudem als unspezifisches "Load failed"
+  statt als erkennbaren Timeout). Jetzt 12 Sekunden je Versuch, dazu ein
+  zweiter Versuch bei Fehlschlag, bevor endgültig auf STUN zurückgefallen
+  wird.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

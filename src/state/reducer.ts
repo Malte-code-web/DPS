@@ -236,6 +236,7 @@ export type SimulationAction =
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
   | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
   | { typ: 'patientFreigeben'; patientId: string }
+  | { typ: 'alleVerdecktenFreigeben' }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -311,6 +312,31 @@ function mitPatient(
       patient.id === patientId ? aenderung(patient) : patient,
     ),
   };
+}
+
+/**
+ * Ein einzelner verdeckter Patient wird sichtbar (→ `modell.freigabemodus`) -
+ * gemeinsame Grundlage für `patientFreigeben` (eine Person) und
+ * `alleVerdecktenFreigeben` (Sammel-Freigabe aus dem Gesamtlagebild). Wer
+ * bereits freigegeben ist, bleibt unverändert (kein erneutes Würfeln).
+ */
+function freigebenPatient(patient: Patient, ziel: Einsatzabschnitt, zeitSek: number): Patient {
+  if (patient.abschnitt !== 'verdeckt') return patient;
+  // Materialbedarf und benötigte Kollegenanzahl werden live bei der
+  // Freigabe ausgewürfelt (→ `domain.rettung`), nicht vorab im Szenario
+  // festgelegt - dieselbe eingeklemmte Person kann in zwei Durchläufen
+  // unterschiedlich anspruchsvoll ausfallen.
+  const eingeklemmt = patient.eingeklemmtBeimStart
+    ? {
+        ...wuerfleEinklemmungsbedarf(),
+        materialBereitgestellt: false,
+        anfragendeId: null,
+        helfendeIds: [],
+        gerettet: false,
+        entdecktUmSek: zeitSek,
+      }
+    : undefined;
+  return { ...patient, abschnitt: ziel, eingeklemmt };
 }
 
 /** Wendet eine Aenderung auf genau ein Fahrzeug an - Pendant zu `mitPatient`. */
@@ -1023,24 +1049,17 @@ export function simulationReducer(
 
     case 'patientFreigeben': {
       const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
-      return mitPatient(state, action.patientId, (patient) => {
-        if (patient.abschnitt !== 'verdeckt') return patient;
-        // Materialbedarf und benötigte Kollegenanzahl werden live bei der
-        // Freigabe ausgewürfelt (→ `domain.rettung`), nicht vorab im
-        // Szenario festgelegt - dieselbe eingeklemmte Person kann in zwei
-        // Durchläufen unterschiedlich anspruchsvoll ausfallen.
-        const eingeklemmt = patient.eingeklemmtBeimStart
-          ? {
-              ...wuerfleEinklemmungsbedarf(),
-              materialBereitgestellt: false,
-              anfragendeId: null,
-              helfendeIds: [],
-              gerettet: false,
-              entdecktUmSek: state.zeitSek,
-            }
-          : undefined;
-        return { ...patient, abschnitt: ziel, eingeklemmt };
-      });
+      return mitPatient(state, action.patientId, (patient) =>
+        freigebenPatient(patient, ziel, state.zeitSek),
+      );
+    }
+
+    case 'alleVerdecktenFreigeben': {
+      const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
+      return {
+        ...state,
+        patienten: state.patienten.map((patient) => freigebenPatient(patient, ziel, state.zeitSek)),
+      };
     }
 
     case 'sitzungStarten': {

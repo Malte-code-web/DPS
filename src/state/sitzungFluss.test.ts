@@ -489,6 +489,17 @@ describe('Freigabemodus und Patientenfreigabe (→ modell.freigabemodus)', () =>
     ).toBe(true);
   });
 
+  it('gibt mit alleVerdecktenFreigeben den gesamten verdeckten Pool auf einmal frei', () => {
+    const gestartet = simulationReducer(
+      simulationReducer(eroeffnet(), { typ: 'freigabemodusSetzen', modus: 'gestaffelt' }),
+      { typ: 'sitzungStarten' },
+    );
+    expect(gestartet.patienten.every((p) => p.abschnitt === 'verdeckt')).toBe(true);
+
+    const state = simulationReducer(gestartet, { typ: 'alleVerdecktenFreigeben' });
+    expect(state.patienten.every((p) => p.abschnitt === 'ablage')).toBe(true);
+  });
+
   it('gibt Patienten zeitgesteuert über den tick-Takt frei, sobald freigabeMinuten erreicht ist', () => {
     const szenarioMitFreigabe = {
       ...busunfall,

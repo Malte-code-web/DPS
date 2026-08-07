@@ -54,6 +54,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Bindende Maßnahmen (`DPS-0.8.0.1`) | Maßnahmen mit `benoetigtTeam` (bisher nur die drei Notfallnarkose-Induktionsmittel) lösen jetzt eine echte Kollegenanfrage aus, statt nur eine Möglichkeits-Prüfung zu sein: die durchführende Person (NotArzt) startet die Maßnahme, zwei offene Anfragen (NotSan, Rettungssanitäter/-in) gehen an alle passenden, verfügbaren Personen im selben Abschnitt - als nicht blockierende Benachrichtigung wie bei der Delegationsanfrage. Erst wenn beide Rollen angenommen haben, wirkt die Maßnahme wirklich, und alle drei Beteiligten sind für die Dauer geteilt (nicht mehr nur lokal wie der bestehende Zeitkosten-Timer) als "gebunden" markiert - für andere sichtbar, nicht nur für sich selbst. Bei Narkose deckt die Bindung zusätzlich die nachfolgende Intubation mit ab (`bindetZusaetzlichSek`, 180s), da dasselbe Team bis zur gesicherten Atemwegssicherung gebunden bleibt. Live mit drei echten Clients (NotArzt + NotSan + RS) verifiziert. |
 | Rettung eingeklemmter Personen (`DPS-0.8.0.2`) | Ein Patient kann im Szenario als `eingeklemmtBeimStart` markiert sein (z. B. B-04 im Busunfall-Szenario, "im Bus eingeklemmt") - bei der eigentlichen Freigabe (sofort oder gestaffelt, → `DPS-0.8.0.0`) wird live gewürfelt, ob ein Spineboard/KED-System nötig ist (50/50) und wie viele zusätzliche Kolleg:innen (0-2) die Rettung neben der erstanfragenden Person braucht - beides steht nicht im Szenario fest, damit dieselbe Person in zwei Durchläufen unterschiedlich anspruchsvoll ausfällt. Solange nicht gerettet, sind an dieser Person nur Kommunikation und Diagnostik möglich (Bodycheck, Befundtafel) - jede körperkontakt- oder materialbasierte Maßnahme bleibt gesperrt, ebenso die Verlegung in die Eingangssichtung. Ein eigenes Panel auf der Patientenseite bietet drei unabhängige Schritte: "Unterstützung anfragen" (die erste Person übernimmt die Koordination, bindet sich vorläufig, löst bei Bedarf dieselbe Kollegenanfrage-Infrastruktur wie die Narkose aus - offen für jede passende Person im Abschnitt, nicht rollen-gebunden), Material bereitstellen (verbraucht das Spineboard/KED-System am Fahrzeug im selben Abschnitt) und - nur für Übungsleitung/Beobachter (`istRegiefuehrend()`) - "Rettung durchführen", sobald Material und genug Kolleg:innen bereitstehen (dieselbe Dauer wie die bestehende `fahrzeugrettung`-Maßnahme, 240s). Nach der Rettung werden alle Beteiligten wieder freigegeben, die Person ist ab sofort normal behandelbar. Live mit drei echten Clients verifiziert (Kollegenanfrage-Toast, Materialbereitstellung, Team-Gating, vollständige Freigabe). |
 | Regie-Panel (`DPS-0.8.0.3`) | Bündelt zwei bislang getrennte Dinge nur für Übungsleitung/Beobachter (`istRegiefuehrend()`) in einem aufklappbaren Panel (dieselbe Knopf-plus-Panel-Form wie der Sprechfunk, gegenüberliegende untere Ecke): die Ablaufsteuerung (Pause/Weiter, Tempo, Einsatz beenden - vorher immer sichtbar in der Einsatzleiste, jetzt dort nur noch ein reiner Status "läuft"/"pausiert" für alle Rollen) und ein neues Freigabe-Panel für verdeckte Patienten im gestaffelten Freigabemodus (`patientFreigeben` hatte trotz vollständigem Reducer bislang gar keine Bedienung). Der Freigabemodus selbst (sofort/gestaffelt) wird jetzt im Wartebereich vor Sitzungsstart gewählt, mit erklärendem Text zu beiden Optionen. Ein Zähler-Badge am Regie-Knopf zeigt die Zahl noch verdeckter Patienten. Live mit zwei echten Clients verifiziert: gestaffelter Start, Freigabe eines Patienten (erscheint sofort in der Ablage des Spielers), Pause/Weiter wirkt synchron. |
+| Gesamtlagebild (`DPS-0.8.0.4`) | Ersetzt für Übungsleitung/Beobachter die Abschnitt-für-Abschnitt-Ansicht als ersten Bildschirm im Einsatz - Patientenbehandlung bleibt über einen Klick auf ein Abschnitt-Kärtchen weiterhin erreichbar (Zurück-Knopf führt wieder zurück). Eine Kennzahlen-Leiste oben (Patienten gesamt mit SK-Verteilungsbalken, Kräfte im Einsatz mit gebunden/frei, Fahrzeuge vor Ort nach Typ, offene Anfragen) fasst zusammen, was sonst verstreut war. Eine Kachel je Einsatzabschnitt zeigt Patientenzahl, SK-Verteilung, anwesende Kräfte (mit Bindungs-Marker) und Fahrzeuge - hervorgehoben, wenn dort ein SK-I-Patient liegt oder jemand gebunden ist. Eine Seitenleiste bündelt vier bislang verstreute oder gar nicht existierende Übersichten: die Ablage-Freigabe (erweitert um einen Countdown zur nächsten zeitgesteuerten Freigabe und eine neue Sammel-Freigabe `alleVerdecktenFreigeben`), Gebundene Kräfte (unterscheidet eine noch werbende Anfrage von einer echten kurzen Restzeit rein anhand der vorläufigen Bindungsdauer, ohne zusätzliches Datenfeld), Offene Anfragen (Delegationen und Kollegenanfragen erstmals Regie-weit statt nur als Toast bei den Betroffenen) und Funkkanäle (wer steht gerade auf welchem Kanal). Kein neuer Datenpfad - jede Kachel liest ausschließlich bereits vorhandene Felder. Live mit drei echten Clients verifiziert: Kennzahlen, Alle-freigeben, Navigation in die Detailsicht und zurück, vollständiger Narkose-Kollegenanfrage-Zyklus (offene Anfrage → Team komplett → Bindungsanzeige mit Countdown), Funkkanal-Übersicht. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -653,7 +654,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_202 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -856,8 +857,8 @@ _195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `state.freigabemodus` | [`src/state/reducer.ts:130`](src/state/reducer.ts#L130) | Sofort sichtbar oder gestaffelt über die Ablage |
 | `state.phase` | [`src/state/reducer.ts:57`](src/state/reducer.ts#L57) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:330`](src/state/reducer.ts#L330) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:245`](src/state/reducer.ts#L245) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:356`](src/state/reducer.ts#L356) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:246`](src/state/reducer.ts#L246) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
@@ -874,19 +875,19 @@ _195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1911`](src/index.css#L1911) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2444`](src/index.css#L2444) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3661`](src/index.css#L3661) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4095`](src/index.css#L4095) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1964`](src/index.css#L1964) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:3405`](src/index.css#L3405) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3839`](src/index.css#L3839) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1790`](src/index.css#L1790) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3731`](src/index.css#L3731) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4165`](src/index.css#L4165) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3862`](src/index.css#L3862) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4296`](src/index.css#L4296) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -920,6 +921,8 @@ _195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `ui.ablagefreigabepanel` | [`src/components/AblageFreigabePanel.tsx:5`](src/components/AblageFreigabePanel.tsx#L5) | Freigabe verdeckter Patienten aus dem Gesamtlagebild |
+| `ui.abschnitteuebersicht` | [`src/components/AbschnitteUebersicht.tsx:16`](src/components/AbschnitteUebersicht.tsx#L16) | Eine Kachel je Einsatzabschnitt - Kern des Gesamtlagebilds |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
@@ -934,11 +937,15 @@ _195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:8`](src/components/Einsatzleiste.tsx#L8) | Kopfzeile: Uhr, Status, Sichtungszähler |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:20`](src/pages/EinsatzSeite.tsx#L20) | Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:21`](src/pages/EinsatzSeite.tsx#L21) | Gesamtlagebild (Regie), Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:9`](src/components/FahrzeugVerlegung.tsx#L9) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
+| `ui.funkkanaelepanel` | [`src/components/FunkkanaelePanel.tsx:5`](src/components/FunkkanaelePanel.tsx#L5) | Wer steht gerade auf welchem Kanal |
+| `ui.gebundenekraeftepanel` | [`src/components/GebundeneKraeftePanel.tsx:18`](src/components/GebundeneKraeftePanel.tsx#L18) | Übersicht aller aktuell gebundenen Kräfte |
+| `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:14`](src/pages/GesamtlagebildSeite.tsx#L14) | Regie-Startbildschirm: Kennzahlen, Abschnitte, Seitenleiste |
+| `ui.kennzahlenleiste` | [`src/components/Kennzahlenleiste.tsx:18`](src/components/Kennzahlenleiste.tsx#L18) | Vier Kacheln als Ersteindruck des Gesamtlagebilds |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.kollegenanfragebenachrichtigung` | [`src/components/KollegenanfrageBenachrichtigung.tsx:7`](src/components/KollegenanfrageBenachrichtigung.tsx#L7) | Benachrichtigung: ein Team braucht Unterstützung |
@@ -948,6 +955,7 @@ _195 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.monitor` | [`src/components/Monitor.tsx:20`](src/components/Monitor.tsx#L20) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
 | `ui.notfallnarkoseauswahl` | [`src/components/Notfallnarkoseauswahl.tsx:29`](src/components/Notfallnarkoseauswahl.tsx#L29) | Induktionsmittel wählen, dann relaxieren - erst mit vollem Team |
+| `ui.offeneanfragenpanel` | [`src/components/OffeneAnfragenPanel.tsx:5`](src/components/OffeneAnfragenPanel.tsx#L5) | Regie-weite Übersicht aller offenen Anfragen |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:34`](src/pages/uebungsleitung/PatientEditor.tsx#L34) | Formular für einen Szenario-Patienten samt Problemen |
 | `ui.patientenansicht` | [`src/pages/patient/Patientenansicht.tsx:33`](src/pages/patient/Patientenansicht.tsx#L33) | Anhängekarte plus Knöpfe - eine Ansicht für alle Abschnitte |
 | `ui.patientkarte` | [`src/components/PatientKarte.tsx:45`](src/components/PatientKarte.tsx#L45) | Kachel der Patientenliste - Einfärbung wie die Anhängekarte |
@@ -1048,6 +1056,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.4` | Gesamtlagebild: neuer Regie-Startbildschirm mit Kennzahlen-Leiste, Abschnitte-Kacheln (Patienten/SK/Kräfte/Fahrzeuge) und Seitenleiste (Ablage-Freigabe erweitert um Countdown + Sammel-Freigabe, Gebundene Kräfte, Offene Anfragen, Funkkanäle) - ersetzt die Abschnitt-für-Abschnitt-Ansicht als erster Bildschirm, Patientenbehandlung bleibt über die Kacheln erreichbar |
 | `DPS-0.8.0.3` | Regie-Panel: Ablaufsteuerung (Pause/Tempo/Einsatz beenden) und ein neues Freigabe-Panel für verdeckte Patienten in einem gemeinsamen, nur für Übungsleitung/Beobachter sichtbaren Aufklapp-Panel; Freigabemodus-Wahl in den Wartebereich verlegt; Einsatzleiste zeigt für alle Rollen nur noch den reinen Status |
 | `DPS-0.8.0.2` | Rettung eingeklemmter Personen: live gewürfelter Material-/Kollegenbedarf bei Freigabe, eigenes Panel auf der Patientenseite (Unterstützung anfragen, Material bereitstellen, Übungsleitung löst die Rettung aus), so lange gesperrt bis auf Diagnostik/Kommunikation, nutzt dieselbe Kollegenanfrage-Infrastruktur wie die Narkose |
 | `DPS-0.8.0.1` | Bindende Maßnahmen: `benoetigtTeam`-Maßnahmen (Notfallnarkose) lösen jetzt eine echte, geteilte Kollegenanfrage aus statt nur eine Möglichkeits-Prüfung zu sein - Team-Mitglieder werden für andere sichtbar "gebunden", Narkose-Bindung deckt die nachfolgende Intubation mit ab |

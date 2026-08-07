@@ -336,8 +336,8 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
-  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Gesamtlagebild (Kacheln- und
-    Kartenansicht mit Geodaten), Ereignis-Injektion
+  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Kartenansicht mit Geodaten
+    (Kacheln-Ansicht ist mit `DPS-0.8.0.4` fertig), Ereignis-Injektion
     (Fahrzeugausfall/Nachforderung/Lageänderung), private
     Spieler-Statusansicht, Debriefing-Erweiterung.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
@@ -379,6 +379,38 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit zwei echten Clients verifiziert: gestaffelter Start, Freigabe
     eines Patienten erscheint sofort in der Ablage des Spielers,
     Pause/Weiter wirkt synchron.
+- ✅ **Gesamtlagebild (`DPS-0.8.0.4`)** - Übungsleiter-Ebene, Teil 2
+  (Kacheln-Ansicht, gebilligtes Mockup vollständig umgesetzt):
+  - Neuer Regie-Startbildschirm **`GesamtlagebildSeite.tsx`** ersetzt für
+    Übungsleitung/Beobachter die Abschnitt-für-Abschnitt-Ansicht als ersten
+    Bildschirm im Einsatz - ein Kärtchen je Abschnitt wechselt weiterhin in
+    die gewohnte Detailsicht zum eigentlichen Behandeln, ein Zurück-Knopf
+    führt wieder in die Übersicht.
+  - **Kennzahlen-Leiste** (vier Kacheln: Patienten gesamt mit
+    SK-Verteilungsbalken, Kräfte im Einsatz mit gebunden/frei, Fahrzeuge vor
+    Ort nach Typ, offene Anfragen) fasst zusammen, was sonst verstreut war
+    (Sichtungszähler in der Einsatzleiste, Fahrzeuge nur je Abschnitt,
+    Anfragen nur als Toast).
+  - **Abschnitte-Kacheln**: Patientenzahl, SK-Chips, anwesende Kräfte (mit
+    Bindungs-Marker) und Fahrzeuge je Abschnitt - hervorgehoben bei einem
+    SK-I-Patienten oder einer gebundenen Kraft.
+  - **Seitenleiste** mit vier Panels, drei davon komplett neu: Ablage
+    · Freigabe (erweitert das Regie-Panel um einen Countdown zur nächsten
+    zeitgesteuerten Freigabe und eine neue Sammel-Freigabe
+    `alleVerdecktenFreigeben`), Gebundene Kräfte (unterscheidet eine noch
+    werbende Anfrage von einer echten kurzen Restzeit rein anhand der
+    vorläufigen Bindungsdauer, ohne zusätzliches Datenfeld), Offene
+    Anfragen (Delegationen und Kollegenanfragen erstmals Regie-weit statt
+    nur als Toast bei den Betroffenen) und Funkkanäle (wer steht auf
+    welchem Kanal).
+  - Kein neuer Datenpfad - jede Kachel liest ausschließlich bereits
+    vorhandene Felder.
+  - Live mit drei echten Clients verifiziert: Kennzahlen, Alle-freigeben,
+    Navigation in die Detailsicht und zurück, vollständiger
+    Narkose-Kollegenanfrage-Zyklus (offene Anfrage → Team komplett →
+    Bindungsanzeige mit Countdown), Funkkanal-Übersicht.
+  - 💤 **Noch offen:** Kartenansicht mit Geodaten als zweite, umschaltbare
+    Sicht neben den Kacheln (wartet auf die Geodaten-Datenschicht).
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -423,8 +455,9 @@ Jeder Schritt ist eigenständig nutzbar:
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel; Gesamtlagebild,
-   Ereignis-Injektion und die fünf übrigen Ebenen offen).
+   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel,
+   Gesamtlagebild-Kacheln; Kartenansicht mit Geodaten, Ereignis-Injektion
+   und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

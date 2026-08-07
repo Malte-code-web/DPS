@@ -267,6 +267,14 @@ welche Qualifikation an Bord).
   verwendeten Hostnamen - damit zeigt die nächste Diagnose entweder eine
   erfolgreiche Verbindung (falls das die Ursache war) oder den genauen
   Hostnamen zum Abgleich.
+- ✅ **TURN-Verbindung zwischen zwei Mobilfunk-Geräten bestätigt** (`DPS-0.7.9`,
+  keine Code-Änderung) - der Hostname in der Diagnose (`DPS-0.7.8`) zeigte
+  die tatsächliche Ursache sofort: ein falsch eingetragener
+  `VITE_METERED_APP_NAME` in Vercel, keine Verstümmelung, kein Zeitlimit,
+  kein Netzwerkfehler. Nach Korrektur des App-Namens in Vercel und
+  Neu-Deployment live auf zwei echten Geräten im selben Mobilfunknetz
+  getestet: Verbindung steht. Damit ist die seit `DPS-0.7.1` verfolgte
+  Fehlerkette "Funkgeräte bekommen keine Verbindung" abgeschlossen.
   - 💤 **Noch offen:** feste Kanalliste (keine Übungsleitungs-Einstellung),
     kein Sprecher-Aktivitäts-Indikator, kein Protokoll/Debriefing der
     Sprache, Halten statt Umschalten für die Sprechtaste.

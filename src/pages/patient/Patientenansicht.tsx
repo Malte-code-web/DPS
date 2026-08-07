@@ -3,6 +3,7 @@ import { Anhaengekarte } from '../../components/Anhaengekarte';
 import { Befundtafel } from '../../components/Befundtafel';
 import { Massnahmenliste } from '../../components/Massnahmenliste';
 import { Monitor } from '../../components/Monitor';
+import { RettungPanel } from '../../components/RettungPanel';
 import { Sofortmassnahmen } from '../../components/Sofortmassnahmen';
 import { Koerperschema } from '../../components/Koerperschema';
 import { Massnahmenuebersicht } from '../../components/Massnahmenuebersicht';
@@ -80,6 +81,8 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   return (
     <div className="stufe">
       <Anhaengekarte patient={patient} />
+
+      <RettungPanel patient={patient} />
 
       {anSchadensstelle && (
         <Sofortmassnahmen

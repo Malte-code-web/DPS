@@ -618,6 +618,46 @@ export interface PatientVorlage {
    * Patient verdeckt, bis die Übungsleitung ihn manuell freigibt.
    */
   freigabeMinuten?: number;
+  /**
+   * @anker modell.eingeklemmt Rettung eingeklemmter Personen - zweiteilige Freigabe
+   *
+   * Im Szenario nur ein Marker: "diese Person ist beim Entdecken eingeklemmt".
+   * Der eigentliche Rettungsbedarf (Material, Anzahl benötigter Kolleg:innen)
+   * wird erst live bei der Freigabe ausgewürfelt, nicht hier vorab
+   * festgelegt (→ `domain.rettung`, `state.reducer`, `Patient.eingeklemmt`
+   * für den Laufzeitzustand). Teil 1 (Patienten-Info + Kommunikation) ist mit
+   * der normalen Freigabe (→ `modell.freigabemodus`) schon sichtbar; volle
+   * Behandlung erst nach abgeschlossener Rettung.
+   */
+  eingeklemmtBeimStart?: boolean;
+}
+
+/**
+ * @anker modell.eingeklemmtstatus Laufzeitzustand der Rettung einer eingeklemmten Person
+ *
+ * Entsteht erst bei der Freigabe des Patienten (→ `modell.eingeklemmt`), nicht
+ * vorher. `benoetigtesMaterial`/`benoetigteKollegenAnzahl` sind das Ergebnis
+ * des Live-Würfelns zu diesem Zeitpunkt (→ `domain.rettung`).
+ * `benoetigteKollegenAnzahl` zählt zusätzliche Kolleg:innen, die die zuerst
+ * anfragende Person (`anfragendeId`) über eine Kollegenanfrage dazuholt
+ * (→ `modell.kollegenanfrage`) - beide Rollen werden bei Abschluss der
+ * Rettung wieder freigegeben. Die eigentliche Rettung führt nicht der RD
+ * durch, sondern die Feuerwehr, simuliert durch die Übungsleitung
+ * (`rettungDurchfuehren`) - erst wenn Material bereitsteht und genug
+ * Kolleg:innen zugesagt haben.
+ */
+export interface EingeklemmtStatus {
+  benoetigtesMaterial: MaterialTyp | null;
+  materialBereitgestellt: boolean;
+  benoetigteKollegenAnzahl: number;
+  /** Wer die Rettung begonnen hat - `null`, bis jemand "Unterstützung anfragen" auslöst. */
+  anfragendeId: string | null;
+  /** Zusätzliche Kolleg:innen, die eine Kollegenanfrage angenommen haben. */
+  helfendeIds: string[];
+  gerettet: boolean;
+  /** `zeitSek` bei der Freigabe - Grundlage für `rettungsdauerSek` im Debriefing. */
+  entdecktUmSek: number;
+  rettungsdauerSek?: number;
 }
 
 /**
@@ -761,6 +801,8 @@ export interface Patient extends PatientVorlage {
   /** Abkürzung für "Bodycheck erfolgt". */
   untersucht: boolean;
   verlauf: Verlaufseintrag[];
+  /** Laufzeitzustand der Rettung, nur gesetzt für Patienten mit `eingeklemmtBeimStart` nach ihrer Freigabe (→ `modell.eingeklemmtstatus`). */
+  eingeklemmt?: EingeklemmtStatus;
 }
 
 export interface Szenario {

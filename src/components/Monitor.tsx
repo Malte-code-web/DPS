@@ -27,7 +27,13 @@ interface Props {
  * (→ `ui.monitoralarm`) - dieses Feld zeigt den Alarm dagegen immer.
  */
 export function Monitor({ patient, onAnschliessen }: Props) {
-  const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  // Solange eine eingeklemmte Person noch nicht gerettet ist, sind nur
+  // Kommunikation/Diagnostik möglich, kein Monitor anschließen
+  // (→ `modell.eingeklemmtstatus`).
+  const gesperrt =
+    patient.status === 'verstorben' ||
+    patient.status === 'transportiert' ||
+    Boolean(patient.eingeklemmt && !patient.eingeklemmt.gerettet);
   const zk = useZeitkostenStatus();
   const zkBeschaeftigt = zk.aktion !== null;
 

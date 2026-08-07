@@ -2129,6 +2129,58 @@ button.gefahr {
   color: var(--ok);
 }
 
+/* --- Rettung eingeklemmter Personen: Anfrage, Material, Auslösen --- */
+
+.rettung-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--bg-panel);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--rand));
+  border-radius: var(--radius);
+  padding: 0.55rem 0.65rem;
+}
+
+.rettung-titel {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--warn);
+}
+
+.rettung-bedarf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--text-leise);
+}
+
+.rettung-bedarf .rettung-erfuellt {
+  color: var(--ok);
+}
+
+.rettung-knopf {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid var(--rand);
+  background: var(--bg-panel-hoch);
+  color: var(--text);
+  text-align: left;
+}
+
+.rettung-knopf-primaer {
+  border-color: color-mix(in srgb, var(--akzent) 55%, var(--rand));
+  color: var(--akzent);
+}
+
 /* --- Patientenmonitor: kontinuierliche Werte, Alarm bei Grenzverletzung --- */
 
 .monitor {

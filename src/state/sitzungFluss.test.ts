@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
+import type { EingeklemmtStatus } from '../domain/types';
 
 const busunfall = SZENARIEN.find((szenario) => szenario.id === 'busunfall-b31')!;
 
@@ -1101,6 +1102,260 @@ describe('Bindende Maßnahmen: Narkose (massnahmeMitTeamStarten/kollegenanfrageA
       spielerId: 'na-1',
     });
     expect(nachAnfragendemAustritt.kollegenanfragen).toEqual([]);
+  });
+});
+
+describe('Rettung eingeklemmter Personen (rettungUnterstuetzungAnfragen/rettungsmaterialBereitstellen/rettungDurchfuehren)', () => {
+  // B-04 ("Im Bus eingeklemmt...") trägt `eingeklemmtBeimStart` im Szenario.
+  const patientId = 'B-04';
+
+  function eroeffnet(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  function imEinsatzMitTeam(): SimulationState {
+    const gestartet = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
+    return [
+      { id: 'ns-1', name: 'Krüger', rolle: 'spieler' as const, qualifikation: 'notsan' as const },
+      { id: 'rs-1', name: 'Thoms', rolle: 'spieler' as const, qualifikation: 'rettungssanitaeter' as const },
+    ].reduce(
+      (zustand, spieler) => simulationReducer(zustand, { typ: 'spielerHinzugefuegt', spieler }),
+      gestartet,
+    );
+  }
+
+  /** Ersetzt den ausgewürfelten Bedarf durch feste Werte - unabhängig vom Zufall testbar. */
+  function mitBedarf(state: SimulationState, bedarf: Partial<EingeklemmtStatus>): SimulationState {
+    return {
+      ...state,
+      patienten: state.patienten.map((patient) =>
+        patient.id === patientId && patient.eingeklemmt
+          ? { ...patient, eingeklemmt: { ...patient.eingeklemmt, ...bedarf } }
+          : patient,
+      ),
+    };
+  }
+
+  it('würfelt beim Start einen Rettungsbedarf für die eingeklemmte Person aus, andere Patienten bleiben unberührt', () => {
+    const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
+    const eingeklemmter = state.patienten.find((p) => p.id === patientId)!;
+    expect(eingeklemmter.eingeklemmt).toBeDefined();
+    expect(eingeklemmter.eingeklemmt?.gerettet).toBe(false);
+    expect(eingeklemmter.eingeklemmt?.anfragendeId).toBeNull();
+    expect(eingeklemmter.eingeklemmt?.helfendeIds).toEqual([]);
+    expect(eingeklemmter.eingeklemmt?.materialBereitgestellt).toBe(false);
+    expect([null, 'kedsystem']).toContain(eingeklemmter.eingeklemmt?.benoetigtesMaterial);
+    expect(eingeklemmter.eingeklemmt?.benoetigteKollegenAnzahl).toBeGreaterThanOrEqual(0);
+    expect(eingeklemmter.eingeklemmt?.benoetigteKollegenAnzahl).toBeLessThanOrEqual(2);
+    // Ein Patient ohne `eingeklemmtBeimStart` bekommt keinen Rettungsbedarf.
+    expect(state.patienten.find((p) => p.id === 'B-01')?.eingeklemmt).toBeUndefined();
+  });
+
+  it('bleibt im gestaffelten Modus verdeckt ohne Rettungsbedarf, bis die Person freigegeben wird', () => {
+    const gestartet = simulationReducer(
+      simulationReducer(eroeffnet(), { typ: 'freigabemodusSetzen', modus: 'gestaffelt' }),
+      { typ: 'sitzungStarten' },
+    );
+    const nochVerdeckt = gestartet.patienten.find((p) => p.id === patientId)!;
+    expect(nochVerdeckt.abschnitt).toBe('verdeckt');
+    expect(nochVerdeckt.eingeklemmt).toBeUndefined();
+
+    const nachTakt = simulationReducer(gestartet, { typ: 'tick', dtSek: 300 });
+    const freigegeben = simulationReducer(nachTakt, { typ: 'patientFreigeben', patientId });
+    const eingeklemmter = freigegeben.patienten.find((p) => p.id === patientId)!;
+    expect(eingeklemmter.abschnitt).toBe('ablage');
+    expect(eingeklemmter.eingeklemmt).toBeDefined();
+    expect(eingeklemmter.eingeklemmt?.entdecktUmSek).toBe(300);
+  });
+
+  it('rettungUnterstuetzungAnfragen bindet die anfragende Person und legt bei Bedarf eine Kollegenanfrage an', () => {
+    const state = mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 2 });
+    const nachher = simulationReducer(state, {
+      typ: 'rettungUnterstuetzungAnfragen',
+      patientId,
+      anfragendeId: 'ns-1',
+    });
+    expect(nachher.patienten.find((p) => p.id === patientId)?.eingeklemmt?.anfragendeId).toBe('ns-1');
+    expect(nachher.kollegenanfragen).toHaveLength(1);
+    expect(nachher.kollegenanfragen[0]).toMatchObject({
+      grund: 'rettung',
+      patientId,
+      anfragendeId: 'ns-1',
+    });
+    const notSan = nachher.sitzung.spieler.find((s) => s.id === 'ns-1')!;
+    expect(notSan.gebundenBis).toBeGreaterThan(nachher.zeitSek);
+    expect(notSan.gebundenGrund).toContain(patientId);
+  });
+
+  it('legt keine Kollegenanfrage an, wenn niemand zusätzlich nötig ist', () => {
+    const state = mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 0 });
+    const nachher = simulationReducer(state, {
+      typ: 'rettungUnterstuetzungAnfragen',
+      patientId,
+      anfragendeId: 'ns-1',
+    });
+    expect(nachher.kollegenanfragen).toEqual([]);
+    expect(nachher.patienten.find((p) => p.id === patientId)?.eingeklemmt?.anfragendeId).toBe('ns-1');
+  });
+
+  it('lässt keine zweite Person die Koordination übernehmen', () => {
+    const state = simulationReducer(
+      mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 1 }),
+      { typ: 'rettungUnterstuetzungAnfragen', patientId, anfragendeId: 'ns-1' },
+    );
+    const nachher = simulationReducer(state, {
+      typ: 'rettungUnterstuetzungAnfragen',
+      patientId,
+      anfragendeId: 'rs-1',
+    });
+    expect(nachher).toBe(state);
+  });
+
+  it('kollegenanfrageAnnehmen (grund rettung) trägt die annehmende Person ein und entfernt die Anfrage, sobald genug Kolleg:innen da sind', () => {
+    // `benoetigteKollegenAnzahl` zählt nur zusätzliche Kolleg:innen neben der
+    // anfragenden Person - bei 1 reicht eine einzige Annahme.
+    const angefragt = simulationReducer(
+      mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 1 }),
+      { typ: 'rettungUnterstuetzungAnfragen', patientId, anfragendeId: 'ns-1' },
+    );
+    const anfrage = angefragt.kollegenanfragen[0]!;
+    const nachher = simulationReducer(angefragt, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: anfrage.id,
+      spielerId: 'rs-1',
+    });
+    expect(nachher.kollegenanfragen).toEqual([]);
+    expect(nachher.patienten.find((p) => p.id === patientId)?.eingeklemmt?.helfendeIds).toEqual(['rs-1']);
+    const rs = nachher.sitzung.spieler.find((s) => s.id === 'rs-1')!;
+    expect(rs.gebundenBis).toBeGreaterThan(nachher.zeitSek);
+  });
+
+  it('rettungsmaterialBereitstellen zieht das benötigte Material am Fahrzeug im Abschnitt ab und markiert bereitgestellt', () => {
+    const state = mitBedarf(imEinsatzMitTeam(), {
+      benoetigtesMaterial: 'kedsystem',
+      materialBereitgestellt: false,
+    });
+    const abschnitt = state.patienten.find((p) => p.id === patientId)!.abschnitt;
+    const vorher = state.fahrzeuge
+      .filter((f) => f.abschnitt === abschnitt)
+      .reduce((summe, f) => summe + (f.material.kedsystem ?? 0), 0);
+    expect(vorher).toBeGreaterThan(0);
+
+    const nachher = simulationReducer(state, {
+      typ: 'rettungsmaterialBereitstellen',
+      patientId,
+      fahrzeugId: '',
+    });
+    expect(
+      nachher.patienten.find((p) => p.id === patientId)?.eingeklemmt?.materialBereitgestellt,
+    ).toBe(true);
+    const nachherBestand = nachher.fahrzeuge
+      .filter((f) => f.abschnitt === abschnitt)
+      .reduce((summe, f) => summe + (f.material.kedsystem ?? 0), 0);
+    expect(nachherBestand).toBe(vorher - 1);
+  });
+
+  it('rettungDurchfuehren wirkt erst, wenn Material und Team bereitstehen, und gibt danach alle Beteiligten frei', () => {
+    const bereitFuerAnfrage = mitBedarf(imEinsatzMitTeam(), {
+      benoetigtesMaterial: 'kedsystem',
+      benoetigteKollegenAnzahl: 1,
+    });
+    const angefragt = simulationReducer(bereitFuerAnfrage, {
+      typ: 'rettungUnterstuetzungAnfragen',
+      patientId,
+      anfragendeId: 'ns-1',
+    });
+    const anfrage = angefragt.kollegenanfragen[0]!;
+    const mitHelfer = simulationReducer(angefragt, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: anfrage.id,
+      spielerId: 'rs-1',
+    });
+
+    // Ohne Material noch nicht möglich, obwohl das Team vollständig ist.
+    const ohneMaterial = simulationReducer(mitHelfer, { typ: 'rettungDurchfuehren', patientId });
+    expect(ohneMaterial.patienten.find((p) => p.id === patientId)?.eingeklemmt?.gerettet).toBe(false);
+
+    const mitMaterial = simulationReducer(mitHelfer, {
+      typ: 'rettungsmaterialBereitstellen',
+      patientId,
+      fahrzeugId: '',
+    });
+    const nachTakt = simulationReducer(mitMaterial, { typ: 'tick', dtSek: 120 });
+    const gerettet = simulationReducer(nachTakt, { typ: 'rettungDurchfuehren', patientId });
+    const eingeklemmter = gerettet.patienten.find((p) => p.id === patientId)!;
+    expect(eingeklemmter.eingeklemmt?.gerettet).toBe(true);
+    expect(eingeklemmter.eingeklemmt?.rettungsdauerSek).toBe(120);
+
+    // Anfragende Person und Helfer:in sind wieder frei.
+    for (const id of ['ns-1', 'rs-1']) {
+      const spieler = gerettet.sitzung.spieler.find((s) => s.id === id)!;
+      expect(spieler.gebundenBis).toBe(gerettet.zeitSek);
+      expect(spieler.gebundenGrund).toBeUndefined();
+    }
+  });
+
+  it('erlaubt die Verlegung erst nach der Rettung', () => {
+    const state = mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 0 });
+    const nochEingeklemmt = simulationReducer(state, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK1',
+      final: true,
+    });
+    const verlegungsversuch = simulationReducer(nochEingeklemmt, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'eingangssichtung',
+    });
+    expect(verlegungsversuch).toBe(nochEingeklemmt);
+
+    const gerettet = simulationReducer(nochEingeklemmt, { typ: 'rettungDurchfuehren', patientId });
+    const nachVerlegung = simulationReducer(gerettet, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'eingangssichtung',
+    });
+    expect(nachVerlegung.patienten.find((p) => p.id === patientId)?.abschnitt).toBe('eingangssichtung');
+  });
+
+  it('räumt anfragendeId/helfendeIds auf, wenn eine beteiligte Person die Sitzung verlässt', () => {
+    const angefragt = simulationReducer(
+      mitBedarf(imEinsatzMitTeam(), { benoetigtesMaterial: null, benoetigteKollegenAnzahl: 2 }),
+      { typ: 'rettungUnterstuetzungAnfragen', patientId, anfragendeId: 'ns-1' },
+    );
+    const anfrage = angefragt.kollegenanfragen[0]!;
+    const mitHelfer = simulationReducer(angefragt, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: anfrage.id,
+      spielerId: 'rs-1',
+    });
+    expect(mitHelfer.patienten.find((p) => p.id === patientId)?.eingeklemmt?.helfendeIds).toEqual(['rs-1']);
+
+    const nachAustrittHelfer = simulationReducer(mitHelfer, { typ: 'spielerEntfernt', spielerId: 'rs-1' });
+    expect(
+      nachAustrittHelfer.patienten.find((p) => p.id === patientId)?.eingeklemmt?.helfendeIds,
+    ).toEqual([]);
+    expect(
+      nachAustrittHelfer.patienten.find((p) => p.id === patientId)?.eingeklemmt?.anfragendeId,
+    ).toBe('ns-1');
+
+    const nachAustrittAnfragend = simulationReducer(nachAustrittHelfer, {
+      typ: 'spielerEntfernt',
+      spielerId: 'ns-1',
+    });
+    expect(
+      nachAustrittAnfragend.patienten.find((p) => p.id === patientId)?.eingeklemmt?.anfragendeId,
+    ).toBeNull();
   });
 });
 

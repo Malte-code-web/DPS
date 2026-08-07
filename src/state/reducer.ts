@@ -2,8 +2,9 @@ import { istVerlegungMoeglich } from '../domain/abschnitte';
 import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
-import { verbraucheMaterial } from '../domain/material';
+import { verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
+import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -206,6 +207,9 @@ export type SimulationAction =
       dosisMg?: number;
     }
   | { typ: 'kollegenanfrageAnnehmen'; anfrageId: string; spielerId: string }
+  | { typ: 'rettungUnterstuetzungAnfragen'; patientId: string; anfragendeId: string }
+  | { typ: 'rettungsmaterialBereitstellen'; patientId: string; fahrzeugId: string }
+  | { typ: 'rettungDurchfuehren'; patientId: string }
   | { typ: 'rufgruppeWaehlen'; teilnehmerId: string; teilnehmerName: string; kanal: string | null }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
@@ -538,6 +542,54 @@ export function simulationReducer(
         ? `${massnahme.label} bei ${anfrage.patientId}`
         : `Unterstützung bei ${anfrage.patientId}`;
 
+      // Rettung: die annehmende Person wird zusätzliche Hilfe
+      // (→ `modell.eingeklemmtstatus`, `rettungUnterstuetzungAnfragen`) - im
+      // Unterschied zur Narkose wirkt hier noch nichts automatisch, die
+      // Übungsleitung löst die eigentliche Rettung separat aus
+      // (`rettungDurchfuehren`), sobald genug Kolleg:innen und Material bereit sind.
+      if (anfrage.grund === 'rettung') {
+        const eingeklemmterPatient = state.patienten.find((patient) => patient.id === anfrage.patientId);
+        // Schon dabei (anfragend oder bereits als Helfer:in eingetragen)? Kein
+        // doppelter Beitritt derselben Person zum selben Team.
+        if (
+          !eingeklemmterPatient?.eingeklemmt ||
+          eingeklemmterPatient.eingeklemmt.anfragendeId === action.spielerId ||
+          eingeklemmterPatient.eingeklemmt.helfendeIds.includes(action.spielerId)
+        ) {
+          return state;
+        }
+        // `benoetigteKollegenAnzahl` zählt nur die zusätzlichen Kolleg:innen,
+        // nicht die anfragende Person selbst (→ `modell.eingeklemmtstatus`) -
+        // +1 für die gerade annehmende Person, die noch nicht in `helfendeIds` steht.
+        const genugKollegen =
+          eingeklemmterPatient.eingeklemmt.helfendeIds.length + 1 >=
+          eingeklemmterPatient.eingeklemmt.benoetigteKollegenAnzahl;
+        return {
+          ...mitPatient(state, anfrage.patientId, (patient) =>
+            patient.eingeklemmt
+              ? {
+                  ...patient,
+                  eingeklemmt: {
+                    ...patient.eingeklemmt,
+                    helfendeIds: [...patient.eingeklemmt.helfendeIds, action.spielerId],
+                  },
+                }
+              : patient,
+          ),
+          kollegenanfragen: genugKollegen
+            ? state.kollegenanfragen.filter((eintrag) => eintrag.id !== anfrage.id)
+            : state.kollegenanfragen,
+          sitzung: {
+            ...state.sitzung,
+            spieler: state.sitzung.spieler.map((spieler) =>
+              spieler.id === action.spielerId
+                ? { ...spieler, gebundenBis: state.zeitSek + VORLAEUFIGE_BINDUNG_SEK, gebundenGrund }
+                : spieler,
+            ),
+          },
+        };
+      }
+
       // Narkose: sobald keine andere Anfrage desselben Vorgangs (dieselbe
       // Person, Maßnahme, Patient - je fehlende Rolle eine eigene Anfrage,
       // → `massnahmeMitTeamStarten`) mehr unbeantwortet ist, ist das Team
@@ -615,6 +667,86 @@ export function simulationReducer(
       };
     }
 
+    case 'rettungUnterstuetzungAnfragen': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      // Nur die erste Person übernimmt die Koordination - kein Wechsel
+      // mittendrin (→ `modell.eingeklemmtstatus`).
+      if (!patient?.eingeklemmt || patient.eingeklemmt.anfragendeId !== null) return state;
+      const braucht = patient.eingeklemmt.benoetigteKollegenAnzahl > 0;
+      const gebundenGrund = `Rettung bei ${action.patientId}`;
+      return {
+        ...mitPatient(state, action.patientId, (eintrag) =>
+          eintrag.eingeklemmt
+            ? { ...eintrag, eingeklemmt: { ...eintrag.eingeklemmt, anfragendeId: action.anfragendeId } }
+            : eintrag,
+        ),
+        kollegenanfragen: braucht
+          ? [
+              ...state.kollegenanfragen,
+              {
+                id: erzeugeId(),
+                patientId: action.patientId,
+                grund: 'rettung',
+                anfragendeId: action.anfragendeId,
+                angenommenVon: [],
+              },
+            ]
+          : state.kollegenanfragen,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.anfragendeId
+              ? { ...spieler, gebundenBis: state.zeitSek + VORLAEUFIGE_BINDUNG_SEK, gebundenGrund }
+              : spieler,
+          ),
+        },
+      };
+    }
+
+    case 'rettungsmaterialBereitstellen': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      const material = patient?.eingeklemmt?.benoetigtesMaterial;
+      if (!patient?.eingeklemmt || !material || patient.eingeklemmt.materialBereitgestellt) return state;
+      return {
+        ...mitPatient(state, action.patientId, (eintrag) =>
+          eintrag.eingeklemmt
+            ? { ...eintrag, eingeklemmt: { ...eintrag.eingeklemmt, materialBereitgestellt: true } }
+            : eintrag,
+        ),
+        fahrzeuge: verbraucheMaterialTyp(state.fahrzeuge, material, patient.abschnitt),
+      };
+    }
+
+    case 'rettungDurchfuehren': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      if (!patient?.eingeklemmt || patient.eingeklemmt.gerettet) return state;
+      if (!rettungBereit(patient.eingeklemmt)) return state;
+      const { anfragendeId, helfendeIds, entdecktUmSek } = patient.eingeklemmt;
+      const beteiligteIds = [anfragendeId, ...helfendeIds].filter((id): id is string => id !== null);
+      return {
+        ...mitPatient(state, action.patientId, (eintrag) =>
+          eintrag.eingeklemmt
+            ? {
+                ...eintrag,
+                eingeklemmt: {
+                  ...eintrag.eingeklemmt,
+                  gerettet: true,
+                  rettungsdauerSek: state.zeitSek - entdecktUmSek,
+                },
+              }
+            : eintrag,
+        ),
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            beteiligteIds.includes(spieler.id)
+              ? { ...spieler, gebundenBis: state.zeitSek, gebundenGrund: undefined }
+              : spieler,
+          ),
+        },
+      };
+    }
+
     case 'rufgruppeWaehlen': {
       // Eigenen Eintrag immer zuerst entfernen - ein Kanalwechsel ist kein
       // Beitritt zu einem zweiten Kanal gleichzeitig.
@@ -636,6 +768,9 @@ export function simulationReducer(
       if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return state;
       // Ohne bestätigte Sichtung wird niemand weitergereicht.
       if (sichtungOffen(patient)) return state;
+      // Eine noch nicht gerettete, eingeklemmte Person lässt sich nicht
+      // verlegen - sie steckt physisch fest (→ `modell.eingeklemmtstatus`).
+      if (patient.eingeklemmt && !patient.eingeklemmt.gerettet) return state;
       const verlegt = mitPatient(state, action.patientId, (eintrag) =>
         verlegePatient(eintrag, action.ziel, state.zeitSek),
       );
@@ -802,6 +937,24 @@ export function simulationReducer(
             ...anfrage,
             angenommenVon: anfrage.angenommenVon.filter((id) => id !== action.spielerId),
           })),
+        // Eine laufende Rettung verliert die verlassende Person wieder -
+        // koordinierte sie selbst, kann eine andere Person neu beginnen
+        // (→ `modell.eingeklemmtstatus`).
+        patienten: state.patienten.map((patient) =>
+          patient.eingeklemmt
+            ? {
+                ...patient,
+                eingeklemmt: {
+                  ...patient.eingeklemmt,
+                  anfragendeId:
+                    patient.eingeklemmt.anfragendeId === action.spielerId
+                      ? null
+                      : patient.eingeklemmt.anfragendeId,
+                  helfendeIds: patient.eingeklemmt.helfendeIds.filter((id) => id !== action.spielerId),
+                },
+              }
+            : patient,
+        ),
       };
 
     case 'spielerQualifikationSetzen':
@@ -870,9 +1023,24 @@ export function simulationReducer(
 
     case 'patientFreigeben': {
       const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
-      return mitPatient(state, action.patientId, (patient) =>
-        patient.abschnitt === 'verdeckt' ? { ...patient, abschnitt: ziel } : patient,
-      );
+      return mitPatient(state, action.patientId, (patient) => {
+        if (patient.abschnitt !== 'verdeckt') return patient;
+        // Materialbedarf und benötigte Kollegenanzahl werden live bei der
+        // Freigabe ausgewürfelt (→ `domain.rettung`), nicht vorab im
+        // Szenario festgelegt - dieselbe eingeklemmte Person kann in zwei
+        // Durchläufen unterschiedlich anspruchsvoll ausfallen.
+        const eingeklemmt = patient.eingeklemmtBeimStart
+          ? {
+              ...wuerfleEinklemmungsbedarf(),
+              materialBereitgestellt: false,
+              anfragendeId: null,
+              helfendeIds: [],
+              gerettet: false,
+              entdecktUmSek: state.zeitSek,
+            }
+          : undefined;
+        return { ...patient, abschnitt: ziel, eingeklemmt };
+      });
     }
 
     case 'sitzungStarten': {

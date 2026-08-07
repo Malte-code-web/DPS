@@ -54,10 +54,22 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
       return VERLEGUNGSDAUER_SEK;
     }
 
+    // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung
+    // (→ `domain.massnahmen`, `fahrzeugrettung`) - beides ist im Kern derselbe
+    // Vorgang, nur diesmal durch die Feuerwehr statt den RD durchgeführt.
+    case 'rettungDurchfuehren': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      if (!patient?.eingeklemmt || patient.eingeklemmt.gerettet) return 0;
+      return RETTUNGSDAUER_SEK;
+    }
+
     default:
       return 0;
   }
 }
+
+/** Dauer der Feuerwehr-Rettung, sobald Material und Kolleg:innen bereitstehen. */
+export const RETTUNGSDAUER_SEK = MASSNAHMEN.fahrzeugrettung.dauerSek;
 
 /** Anzeigetext für den Beschäftigt-Hinweis auf anderen Knöpfen während der Wartezeit. */
 export function zeitkostenLabel(action: SimulationAction): string {
@@ -70,6 +82,8 @@ export function zeitkostenLabel(action: SimulationAction): string {
       return 'Verlegung';
     case 'fahrzeugVerlegen':
       return 'Fahrzeug verlegen';
+    case 'rettungDurchfuehren':
+      return 'Rettung';
     default:
       return '';
   }
@@ -137,4 +151,8 @@ export function istFahrzeugVerlegenAktion(
   return (
     aktion.typ === 'fahrzeugVerlegen' && aktion.fahrzeugId === fahrzeugId && aktion.ziel === ziel
   );
+}
+
+export function istRettungAktion(aktion: SimulationAction, patientId: string): boolean {
+  return aktion.typ === 'rettungDurchfuehren' && aktion.patientId === patientId;
 }

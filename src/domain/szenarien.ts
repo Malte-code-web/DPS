@@ -147,6 +147,7 @@ const busunfall: Szenario = {
       kurzbefund: 'Im Bus eingeklemmt, klagt über Schmerzen im Becken.',
       untersuchungsbefund:
         'Instabiles Becken, deutliche Schockzeichen, technische Rettung läuft.',
+      eingeklemmtBeimStart: true,
       gehfaehig: false,
       kritischeBlutung: false,
       spontanatmung: true,

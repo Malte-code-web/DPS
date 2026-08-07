@@ -36,7 +36,13 @@ export function Sofortmassnahmen({ patient, onMassnahme }: Props) {
   const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
   const zk = useZeitkostenStatus();
   const zkBeschaeftigt = zk.aktion !== null;
-  const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  // Solange eine eingeklemmte Person noch nicht gerettet ist, sind nur
+  // Kommunikation/Diagnostik möglich, keine körperkontakt-/materialbasierte
+  // Maßnahme (→ `modell.eingeklemmtstatus`).
+  const gesperrt =
+    patient.status === 'verstorben' ||
+    patient.status === 'transportiert' ||
+    Boolean(patient.eingeklemmt && !patient.eingeklemmt.gerettet);
   const eigeneQualifikation = state.sitzung.aktiv
     ? (state.sitzung.spieler.find((s) => s.id === state.sitzung.eigeneId)?.qualifikation ?? 'basis')
     : null;

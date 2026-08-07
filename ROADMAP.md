@@ -336,12 +336,30 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
-  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Rettung eingeklemmter
-    Personen (Zweiteilige Freigabe, Materialbedarf, dieselbe
-    Kollegenanfrage-Mechanik), Gesamtlagebild (Kacheln- und Kartenansicht mit
-    Geodaten), Ereignis-Injektion (Fahrzeugausfall/Nachforderung/
-    Lageänderung), Ablaufsteuerung-Verlegung in die Regie, private
-    Spieler-Statusansicht, Debriefing-Erweiterung.
+  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Gesamtlagebild (Kacheln- und
+    Kartenansicht mit Geodaten), Ereignis-Injektion
+    (Fahrzeugausfall/Nachforderung/Lageänderung), Ablaufsteuerung-Verlegung
+    in die Regie, private Spieler-Statusansicht, Debriefing-Erweiterung.
+- ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
+  Teil 2 (Rettungs-Hälfte):
+  - Ein Patient kann im Szenario `eingeklemmtBeimStart` tragen (z. B. B-04 im
+    Busunfall-Szenario) - bei der eigentlichen Freigabe (sofort oder
+    gestaffelt) wird live gewürfelt, ob ein Spineboard/KED-System nötig ist
+    (50/50) und wie viele zusätzliche Kolleg:innen (0-2) die Rettung braucht,
+    nicht im Szenario vorherbestimmt.
+  - Solange nicht gerettet, sind nur Kommunikation und Diagnostik möglich -
+    jede körperkontakt- oder materialbasierte Maßnahme sowie die Verlegung
+    bleiben gesperrt.
+  - Eigenes Panel auf der Patientenseite: "Unterstützung anfragen" (nutzt
+    dieselbe Kollegenanfrage-Infrastruktur wie die Narkose, aber offen für
+    jede passende Person statt rollen-gebunden), Material bereitstellen,
+    und - nur für Übungsleitung/Beobachter - "Rettung durchführen", sobald
+    Material und Team bereitstehen (dieselbe Dauer wie die bestehende
+    `fahrzeugrettung`-Maßnahme, 240s).
+  - Live mit drei echten Clients verifiziert: Kollegenanfrage-Toast,
+    Materialbereitstellung, Team-Gating (Rettung bleibt gesperrt, solange zu
+    wenige Kolleg:innen zugesagt haben) und vollständige Freigabe aller
+    Beteiligten nach der Rettung.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -385,8 +403,9 @@ Jeder Schritt ist eigenständig nutzbar:
 4. **Sprechfunk** ✅ fertig (echte Live-Sprachverbindung in frei wählbaren
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
-   Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal; Gesamtlagebild,
-   Bindende Maßnahmen, Ereignis-Injektion und die fünf übrigen Ebenen offen).
+   Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
+   Maßnahmen, Rettung eingeklemmter Personen; Gesamtlagebild,
+   Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

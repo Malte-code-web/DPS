@@ -2,6 +2,7 @@ import { abschnittInfo, sichtungsstelleIn } from './abschnitte';
 import { DIAGNOSTIK } from './diagnostik';
 import { DOSISREFERENZ, gewichtVon, wirkungBeiDosis } from './dosierung';
 import { MASSNAHMEN } from './massnahmen';
+import { wuerfleEinklemmungsbedarf } from './rettung';
 import type {
   DiagnostikId,
   Einsatzabschnitt,
@@ -97,6 +98,7 @@ export function patientAusVorlage(
   vorlage: PatientVorlage,
   verschlechterungFaktor = 1,
   abschnitt: Einsatzabschnitt = 'schadensstelle',
+  zeitSek = 0,
 ): Patient {
   return {
     ...vorlage,
@@ -111,6 +113,20 @@ export function patientAusVorlage(
     vitalwerte: { ...STANDARD_ZUSATZWERTE, ...vorlage.startVitalwerte },
     status: 'unbehandelt',
     abschnitt,
+    // Nur ausgewürfelt, wenn der Patient nicht verdeckt startet - „verdeckt"
+    // erhält den Bedarf erst bei der eigentlichen Freigabe (→ `patientFreigeben`
+    // im Reducer, `modell.eingeklemmtstatus`).
+    eingeklemmt:
+      vorlage.eingeklemmtBeimStart && abschnitt !== 'verdeckt'
+        ? {
+            ...wuerfleEinklemmungsbedarf(),
+            materialBereitgestellt: false,
+            anfragendeId: null,
+            helfendeIds: [],
+            gerettet: false,
+            entdecktUmSek: zeitSek,
+          }
+        : undefined,
     gesichtetAls: null,
     gesichtetUmSek: null,
     sichtungsverlauf: [],

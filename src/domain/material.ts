@@ -459,6 +459,19 @@ export function materialVerfuegbar(
 ): boolean {
   const materialTyp = MASSNAHME_MATERIAL[massnahmeId];
   if (!materialTyp) return true;
+  return materialTypVerfuegbar(materialTyp, abschnitt, fahrzeuge);
+}
+
+/**
+ * Wie `materialVerfuegbar`, aber direkt nach Materialtyp statt über eine
+ * Maßnahme aus dem Katalog - für Bedarfe, die keinen Katalogeintrag haben
+ * (→ `modell.eingeklemmt`, Rettung eingeklemmter Personen).
+ */
+export function materialTypVerfuegbar(
+  materialTyp: MaterialTyp,
+  abschnitt: Einsatzabschnitt,
+  fahrzeuge: Fahrzeug[],
+): boolean {
   if (fahrzeuge.length === 0) return true;
   return fahrzeuge
     .filter((fahrzeug) => fahrzeug.abschnitt === abschnitt)
@@ -480,6 +493,15 @@ export function verbraucheMaterial(
 ): Fahrzeug[] {
   const materialTyp = MASSNAHME_MATERIAL[massnahmeId];
   if (!materialTyp) return fahrzeuge;
+  return verbraucheMaterialTyp(fahrzeuge, materialTyp, abschnitt);
+}
+
+/** Wie `verbraucheMaterial`, aber direkt nach Materialtyp (→ `materialTypVerfuegbar`). */
+export function verbraucheMaterialTyp(
+  fahrzeuge: Fahrzeug[],
+  materialTyp: MaterialTyp,
+  abschnitt: Einsatzabschnitt,
+): Fahrzeug[] {
   const ziel = fahrzeuge.find(
     (fahrzeug) => fahrzeug.abschnitt === abschnitt && (fahrzeug.material[materialTyp] ?? 0) > 0,
   );

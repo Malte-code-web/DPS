@@ -49,7 +49,13 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
   const zkEigenGesamt =
     zk.aktion !== null && istMassnahmeAusSammlung(zk.aktion, patient.id, NOTFALLNARKOSE);
 
-  const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
+  // Solange eine eingeklemmte Person noch nicht gerettet ist, sind nur
+  // Kommunikation/Diagnostik möglich, keine körperkontakt-/materialbasierte
+  // Maßnahme (→ `modell.eingeklemmtstatus`).
+  const gesperrt =
+    patient.status === 'verstorben' ||
+    patient.status === 'transportiert' ||
+    Boolean(patient.eingeklemmt && !patient.eingeklemmt.gerettet);
   // Nur innerhalb einer Sitzung gilt die Qualifikationssperre überhaupt
   // (→ `domain.qualifikation`) - identisch zur Prüfung in Massnahmenliste.
   const eigeneQualifikation = state.sitzung.aktiv

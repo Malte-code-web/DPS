@@ -63,7 +63,12 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
     : null;
   const verstorben = patient.status === 'verstorben';
   const kategorie = verstorben ? 'EX' : patient.gesichtetAls;
-  const gesperrt = verstorben || patient.status === 'transportiert';
+  // Solange eine eingeklemmte Person noch nicht gerettet ist, sind auf der
+  // Karte keine Sofortmaßnahmen möglich (→ `modell.eingeklemmtstatus`).
+  const gesperrt =
+    verstorben ||
+    patient.status === 'transportiert' ||
+    Boolean(patient.eingeklemmt && !patient.eingeklemmt.gerettet);
   const alarmStufe = monitorPrioritaet(patient);
   const klassen = [
     'patient-karte',

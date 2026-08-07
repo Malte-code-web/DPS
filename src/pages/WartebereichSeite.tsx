@@ -91,6 +91,35 @@ export function WartebereichSeite() {
           </p>
         )}
 
+        {host && (
+          <div className="freigabemodus-wahl">
+            <span className="freigabemodus-label">Patientenfreigabe</span>
+            <label className="freigabemodus-option">
+              <input
+                type="radio"
+                name="freigabemodus"
+                checked={state.freigabemodus === 'sofort'}
+                onChange={() => dispatch({ typ: 'freigabemodusSetzen', modus: 'sofort' })}
+              />
+              <span>
+                <strong>Sofort</strong> – alle Patienten sofort an der Schadensstelle sichtbar
+              </span>
+            </label>
+            <label className="freigabemodus-option">
+              <input
+                type="radio"
+                name="freigabemodus"
+                checked={state.freigabemodus === 'gestaffelt'}
+                onChange={() => dispatch({ typ: 'freigabemodusSetzen', modus: 'gestaffelt' })}
+              />
+              <span>
+                <strong>Gestaffelt</strong> – Patienten beginnen verdeckt in einer Ablage; die Regie
+                gibt sie im Einsatz gezielt frei (manuell oder zeitgesteuert)
+              </span>
+            </label>
+          </div>
+        )}
+
         <h2>Teilnehmende ({sitzung.spieler.length})</h2>
         {sitzung.spieler.length > 0 && (
           <p className="hinweis">

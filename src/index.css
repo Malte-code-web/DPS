@@ -609,8 +609,8 @@ select {
   font-size: 0.9rem;
 }
 
-/* --- Spielersteuerung in der Einsatzleiste ------------------------ */
-.steuerung-spieler {
+/* --- Statusanzeige in der Einsatzleiste (für alle Rollen) --------- */
+.steuerung-status {
   align-items: center;
   gap: 0.8rem;
 }
@@ -2692,6 +2692,138 @@ button.gefahr {
   margin-left: auto;
   color: var(--text-leise);
   font-size: 0.75rem;
+}
+
+/* --- Regie-Panel (→ ui.regiepanel) ----------------------------------- */
+
+.regie-panel-knopf {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 56;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  box-shadow: var(--schatten);
+  font-weight: 600;
+}
+
+.regie-panel-marke {
+  min-width: 1.2rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--warn);
+  color: #1a1005;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.regie-panel {
+  position: fixed;
+  left: 1rem;
+  bottom: 4.5rem;
+  z-index: 56;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(70vh, 30rem);
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  box-shadow: var(--schatten);
+  overflow-y: auto;
+}
+
+.regie-panel-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.regie-panel-kopf h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.regie-abschnitt h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.regie-ablaufsteuerung {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.regie-freigabeliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.regie-freigabe-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  font-size: 0.85rem;
+}
+
+.regie-freigabe-name {
+  overflow-wrap: anywhere;
+}
+
+/* --- Freigabemodus-Auswahl im Wartebereich (→ ui.wartebereich) ------- */
+
+.freigabemodus-wahl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+}
+
+.freigabemodus-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.freigabemodus-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.freigabemodus-option input {
+  margin-top: 0.2rem;
 }
 
 /* --- Analgesie-Sammelauswahl (→ ui.analgesieauswahl) ---------------- */

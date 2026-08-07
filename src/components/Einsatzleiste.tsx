@@ -4,12 +4,18 @@ import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
 import type { Szenario } from '../domain/types';
 
-const GESCHWINDIGKEITEN = [1, 2, 4, 10];
-
+/**
+ * @anker ui.einsatzleiste Kopfzeile: Uhr, Status, Sichtungszähler
+ *
+ * Pause/Tempo/Einsatz-beenden stehen nicht mehr hier, sondern im Regie-Panel
+ * (→ `ui.regiepanel`) - diese Leiste zeigt für alle Rollen nur noch den
+ * reinen Status ("läuft"/"pausiert"), Spieler zusätzlich ihren eigenen
+ * Verlassen-Knopf (kein Reducer-Wechsel wie bei der Übungsleitung, die die
+ * Sitzung als Ganzes beendet statt sie zu verlassen).
+ */
 export function Einsatzleiste({ szenario }: { szenario: Szenario }) {
   const { state, dispatch } = useSimulation();
   const zaehler = zaehleSichtung(state.patienten);
-  // Uhr, Tempo und Einsatzende steuert die Übungsleitung; Spieler folgen nur.
   const spieler = state.sitzung.rolle === 'spieler';
 
   return (
@@ -30,42 +36,14 @@ export function Einsatzleiste({ szenario }: { szenario: Szenario }) {
         <div className="uhr" aria-label="Einsatzzeit">
           {zeitFormat(state.zeitSek)}
         </div>
-        {spieler ? (
-          <div className="steuerung steuerung-spieler">
-            <span className="spieler-hinweis">{state.laufend ? 'läuft' : 'pausiert'}</span>
+        <div className="steuerung steuerung-status">
+          <span className="spieler-hinweis">{state.laufend ? 'läuft' : 'pausiert'}</span>
+          {spieler && (
             <button type="button" onClick={() => dispatch({ typ: 'sitzungVerlassen' })}>
               Verlassen
             </button>
-          </div>
-        ) : (
-          <div className="steuerung">
-            <button
-              type="button"
-              className="primaer"
-              onClick={() => dispatch({ typ: 'pauseUmschalten' })}
-            >
-              {state.laufend ? 'Pause' : 'Weiter'}
-            </button>
-            <label>
-              Tempo
-              <select
-                value={state.geschwindigkeit}
-                onChange={(event) =>
-                  dispatch({ typ: 'geschwindigkeitSetzen', wert: Number(event.target.value) })
-                }
-              >
-                {GESCHWINDIGKEITEN.map((wert) => (
-                  <option key={wert} value={wert}>
-                    {wert}x
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="button" onClick={() => dispatch({ typ: 'einsatzBeenden' })}>
-              Einsatz beenden
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="einsatzleiste-rechts">

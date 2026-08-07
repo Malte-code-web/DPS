@@ -338,8 +338,8 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Anwenden nach vollständigem Team funktionieren zusammen.
   - 💤 **Noch offen (Fundament, Teil 2, Rest):** Gesamtlagebild (Kacheln- und
     Kartenansicht mit Geodaten), Ereignis-Injektion
-    (Fahrzeugausfall/Nachforderung/Lageänderung), Ablaufsteuerung-Verlegung
-    in die Regie, private Spieler-Statusansicht, Debriefing-Erweiterung.
+    (Fahrzeugausfall/Nachforderung/Lageänderung), private
+    Spieler-Statusansicht, Debriefing-Erweiterung.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
   Teil 2 (Rettungs-Hälfte):
   - Ein Patient kann im Szenario `eingeklemmtBeimStart` tragen (z. B. B-04 im
@@ -360,6 +360,25 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Materialbereitstellung, Team-Gating (Rettung bleibt gesperrt, solange zu
     wenige Kolleg:innen zugesagt haben) und vollständige Freigabe aller
     Beteiligten nach der Rettung.
+- ✅ **Regie-Panel (`DPS-0.8.0.3`)** - Übungsleiter-Ebene, Teil 2
+  (Ablaufsteuerung-Verlegung, kleinster Zuschnitt):
+  - Neues, aufklappbares **Regie-Panel** (nur Übungsleitung/Beobachter, wie
+    der Sprechfunk als Knopf-plus-Panel) bündelt zwei Dinge: die
+    Ablaufsteuerung (Pause/Weiter, Tempo, Einsatz beenden - vorher immer
+    sichtbar in der Einsatzleiste) und ein neues **Freigabe-Panel** für
+    verdeckte Patienten im gestaffelten Modus - `patientFreigeben` hatte
+    trotz vollständigem Reducer bislang keine Bedienung.
+  - Die Einsatzleiste zeigt jetzt für alle Rollen nur noch den reinen Status
+    ("läuft"/"pausiert"), die Bedienelemente sind in die Regie gewandert.
+  - Freigabemodus (sofort/gestaffelt) wird jetzt im Wartebereich vor
+    Sitzungsstart gewählt statt nur im Reducer zu existieren.
+  - Bewusst kleinster Zuschnitt statt der vollen `RegieSeite.tsx` aus der
+    ursprünglichen Planung: Gesamtlagebild und Ereignis-Panel fehlen noch die
+    nötigen Bausteine (Geodaten, Ereignis-Injektion) - kein Grund, deswegen
+    die Übungsleitung von der normalen Patientenansicht auszusperren.
+  - Live mit zwei echten Clients verifiziert: gestaffelter Start, Freigabe
+    eines Patienten erscheint sofort in der Ablage des Spielers,
+    Pause/Weiter wirkt synchron.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -404,7 +423,7 @@ Jeder Schritt ist eigenständig nutzbar:
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen; Gesamtlagebild,
+   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel; Gesamtlagebild,
    Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen

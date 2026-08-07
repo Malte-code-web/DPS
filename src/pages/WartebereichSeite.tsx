@@ -7,6 +7,7 @@ import {
   staerkemeldung,
 } from '../domain/fuehrung';
 import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
+import { beobachterCode } from '../domain/sitzung';
 import { useSimulation } from '../state/useSimulation';
 import type { Fuehrungsrolle, Qualifikation } from '../domain/types';
 
@@ -65,6 +66,17 @@ export function WartebereichSeite() {
           <span className="warte-code-label">Sitzungscode</span>
           <span className="warte-code-wert">{sitzung.code}</span>
         </div>
+
+        {host && sitzung.code && (
+          <div className="warte-code warte-code-beobachter">
+            <span className="warte-code-label">Beobachter-Code</span>
+            <span className="warte-code-wert">{beobachterCode(sitzung.code)}</span>
+            <p className="hinweis">
+              Nur gezielt weitergeben - wer diesen Code eingibt, sieht und steuert wie die
+              Übungsleitung.
+            </p>
+          </div>
+        )}
 
         {sitzung.verbindungsfehler && (
           <p className="hinweis hinweis-fehler" role="alert">

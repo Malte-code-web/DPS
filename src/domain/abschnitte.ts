@@ -19,13 +19,27 @@ export interface AbschnittInfo {
   kategorie?: Sichtungskategorie;
 }
 
-/** @anker abschnitte.liste Namen und Aufgaben der Einsatzabschnitte */
+/**
+ * @anker abschnitte.liste Namen und Aufgaben der Einsatzabschnitte
+ *
+ * `verdeckt` und `bereitstellungsraum` erscheinen hier bewusst nicht: `verdeckt`
+ * ist der Warteplatz vor der Freigabe (→ `modell.freigabemodus`), kein Ort, den
+ * eine Person auswählen können soll. `bereitstellungsraum` ist reine
+ * Fahrzeug-Infrastruktur für nachgeforderte Fahrzeuge (→ `modell.ereignis`,
+ * noch nicht verdrahtet) - Patienten landen dort nie.
+ */
 export const ABSCHNITTE: AbschnittInfo[] = [
   {
     id: 'schadensstelle',
     name: 'Schadensstelle',
     kurz: 'Schadensstelle',
     aufgabe: 'Vorsichtung und lebensrettende Sofortmaßnahmen',
+  },
+  {
+    id: 'ablage',
+    name: 'Ablage',
+    kurz: 'Ablage',
+    aufgabe: 'Vorsichtung und lebensrettende Sofortmaßnahmen (RD nicht an der Schadensstelle)',
   },
   {
     id: 'eingangssichtung',
@@ -81,7 +95,15 @@ export function abschnittInfo(id: Einsatzabschnitt): AbschnittInfo {
  * @anker abschnitte.wege Erlaubte Verlegungen - hier ändert man den Ablauf
  */
 const ZIELE: Record<Einsatzabschnitt, Einsatzabschnitt[]> = {
+  // Verlassen von `verdeckt` läuft über eine eigene Aktion (Freigabe durch die
+  // Übungsleitung, → `modell.freigabemodus`), nicht über die normale
+  // Verlegung - deshalb hier bewusst kein Ziel.
+  verdeckt: [],
   schadensstelle: ['eingangssichtung'],
+  ablage: ['eingangssichtung'],
+  // Noch nicht verdrahtet (→ Phase C/D, Geodaten/Ereignis-Injektion) - Ziel
+  // schon für die spätere Nachforderung vorgesehen.
+  bereitstellungsraum: ['schadensstelle', 'ablage', 'eingangssichtung'],
   eingangssichtung: ['zelt_rot', 'zelt_gelb', 'zelt_gruen'],
   zelt_rot: ['ausgangssichtung', 'zelt_gelb', 'zelt_gruen'],
   zelt_gelb: ['ausgangssichtung', 'zelt_rot', 'zelt_gruen'],
@@ -121,6 +143,7 @@ export function zeltFuerKategorie(kategorie: Sichtungskategorie): Einsatzabschni
 export function sichtungsstelleIn(abschnitt: Einsatzabschnitt): Sichtungsstelle {
   switch (abschnitt) {
     case 'schadensstelle':
+    case 'ablage':
       return 'vorsichtung';
     case 'eingangssichtung':
       return 'eingangssichtung';

@@ -430,6 +430,100 @@ describe('Spielerbeitritt', () => {
     expect(state.sitzung.eigenerName).toBe('Anna');
     expect(state.sitzung.aktiv).toBe(true);
   });
+
+  it('erkennt den Beobachter-Code, tritt aber demselben Kanal-Code bei (→ sitzung.beobachter)', () => {
+    const state = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'spieler' },
+      { typ: 'spielerBeitreten', code: 'K7QP2-BEOB', name: 'Beobachterin', eigeneId: 'b-1' },
+    );
+    expect(state.sitzung.rolle).toBe('beobachter');
+    expect(state.sitzung.code).toBe('K7QP2');
+  });
+});
+
+describe('Freigabemodus und Patientenfreigabe (→ modell.freigabemodus)', () => {
+  function eroeffnet(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  it('startet standardmäßig im Modus "sofort" - Patienten sofort an der Schadensstelle', () => {
+    const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
+    expect(state.freigabemodus).toBe('sofort');
+    expect(state.patienten.every((p) => p.abschnitt === 'schadensstelle')).toBe(true);
+    expect(state.ausgewaehlterAbschnitt).toBe('schadensstelle');
+  });
+
+  it('lässt im Modus "gestaffelt" alle Patienten zunächst verdeckt', () => {
+    const state = simulationReducer(
+      simulationReducer(eroeffnet(), { typ: 'freigabemodusSetzen', modus: 'gestaffelt' }),
+      { typ: 'sitzungStarten' },
+    );
+    expect(state.patienten.every((p) => p.abschnitt === 'verdeckt')).toBe(true);
+    expect(state.ausgewaehlterAbschnitt).toBe('ablage');
+  });
+
+  it('gibt einen verdeckten Patienten im gestaffelten Modus manuell in die Ablage frei', () => {
+    const gestartet = simulationReducer(
+      simulationReducer(eroeffnet(), { typ: 'freigabemodusSetzen', modus: 'gestaffelt' }),
+      { typ: 'sitzungStarten' },
+    );
+    const ersterPatientId = gestartet.patienten[0]!.id;
+    const state = simulationReducer(gestartet, {
+      typ: 'patientFreigeben',
+      patientId: ersterPatientId,
+    });
+    expect(state.patienten.find((p) => p.id === ersterPatientId)?.abschnitt).toBe('ablage');
+    // Alle übrigen bleiben verdeckt.
+    expect(
+      state.patienten.filter((p) => p.id !== ersterPatientId).every((p) => p.abschnitt === 'verdeckt'),
+    ).toBe(true);
+  });
+
+  it('gibt Patienten zeitgesteuert über den tick-Takt frei, sobald freigabeMinuten erreicht ist', () => {
+    const szenarioMitFreigabe = {
+      ...busunfall,
+      patienten: busunfall.patienten.map((vorlage, index) =>
+        index === 0 ? { ...vorlage, freigabeMinuten: 2 } : vorlage,
+      ),
+    };
+    const gestartet = simulationReducer(
+      simulationReducer(
+        spiele(
+          { typ: 'gemeinsamOeffnen' },
+          { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+          { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+          { typ: 'modusWaehlen', modus: 'digital' },
+          { typ: 'massnahmenrechteAbgeschlossen' },
+          { typ: 'szenarioFuerSitzungWaehlen', szenario: szenarioMitFreigabe },
+          { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+        ),
+        { typ: 'freigabemodusSetzen', modus: 'gestaffelt' },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+    const markierteId = szenarioMitFreigabe.patienten[0]!.id;
+
+    // Vor Ablauf der 2 Minuten bleibt der Patient verdeckt.
+    const vorAblauf = simulationReducer(gestartet, { typ: 'tick', dtSek: 90 });
+    expect(vorAblauf.patienten.find((p) => p.id === markierteId)?.abschnitt).toBe('verdeckt');
+
+    // Nach Ablauf ist er automatisch in der Ablage.
+    const nachAblauf = simulationReducer(vorAblauf, { typ: 'tick', dtSek: 30 });
+    expect(nachAblauf.patienten.find((p) => p.id === markierteId)?.abschnitt).toBe('ablage');
+    // Unmarkierte Patienten bleiben ohne manuelle Freigabe weiter verdeckt.
+    expect(
+      nachAblauf.patienten.filter((p) => p.id !== markierteId).every((p) => p.abschnitt === 'verdeckt'),
+    ).toBe(true);
+  });
 });
 
 describe('Host-autoritative Synchronisation', () => {

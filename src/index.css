@@ -513,6 +513,21 @@ select {
   color: var(--text);
 }
 
+.warte-code-beobachter {
+  margin-top: 0.6rem;
+  border-color: var(--rand);
+}
+
+.warte-code-beobachter .warte-code-wert {
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+}
+
+.warte-code-beobachter .hinweis {
+  margin: 0.3rem 0 0;
+  text-align: center;
+}
+
 .spielerliste {
   list-style: none;
   margin: 0;

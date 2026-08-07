@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { istRegiefuehrend } from '../domain/fuehrung';
 import { RUFGRUPPEN } from '../domain/rufgruppen';
 import { useSimulation } from '../state/useSimulation';
 import { useSprechfunk } from '../state/useSprechfunk';
@@ -32,6 +33,13 @@ export function Sprechfunk() {
   const { mitglieder, sprechenAktiv, sprechenUmschalten, mikrofonFehler } = useSprechfunk(eigenerKanal);
 
   if (!state.sitzung.aktiv) return null;
+
+  // Der Regie-Kanal ist nur für Übungsleitung und Beobachter wählbar
+  // (→ `domain.regiefuehrend`) - für alle anderen taucht er in der
+  // Kanalwahl gar nicht erst auf.
+  const waehlbareKanaele = RUFGRUPPEN.filter(
+    (kanal) => !kanal.nurRegie || istRegiefuehrend(state.sitzung.rolle),
+  );
 
   const kanalWaehlen = (kanal: string | null) => {
     if (!eigeneId) return;
@@ -73,7 +81,7 @@ export function Sprechfunk() {
             >
               Kein Kanal
             </button>
-            {RUFGRUPPEN.map((kanal) => (
+            {waehlbareKanaele.map((kanal) => (
               <button
                 key={kanal.id}
                 type="button"

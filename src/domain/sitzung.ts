@@ -8,7 +8,18 @@ import type { Einsatzabschnitt, Fuehrungsrolle, Qualifikation } from './types';
  * kurzen Beitrittscode und einen Status. Die eigentliche Synchronisation liegt
  * im Transport (→ `net`) und im Provider; hier stehen nur die Begriffe.
  */
-export type Rolle = 'uebungsleiter' | 'spieler';
+/**
+ * @anker sitzung.beobachter Dritte Rolle: sieht und steuert wie die Übungsleitung, tritt aber separat bei
+ *
+ * Ein Beobachter hat dieselben Rechte und dieselbe Regie-Ansicht wie die
+ * Übungsleitung (→ `domain.fuehrung`, `istRegiefuehrend`), tritt aber nicht
+ * über den normalen Sitzungscode bei - nur wer den gesondert geteilten
+ * Beobachter-Code kennt, kommt herein (→ `beobachterCode`,
+ * `codeUndRolleAus`). Unterscheidet sich von der Übungsleitung sonst nur
+ * darin, dass eigene Notizen/Bewertungen zu Teilnehmenden festgehalten werden
+ * können (spätere Version).
+ */
+export type Rolle = 'uebungsleiter' | 'spieler' | 'beobachter';
 
 export type Sitzungsstatus = 'wartet' | 'laeuft' | 'beendet';
 
@@ -104,8 +115,30 @@ export function normalisiereCode(eingabe: string): string {
   return eingabe.trim().toUpperCase().replace(/\s+/g, '');
 }
 
-export function istGueltigerCode(code: string): boolean {
-  return /^[A-Z0-9]{4,8}$/.test(normalisiereCode(code));
+const BEOBACHTER_SUFFIX = '-BEOB';
+
+/** Vom Sitzungscode abgeleiteter, gesondert zu teilender Beitrittscode für Beobachter:innen. */
+export function beobachterCode(code: string): string {
+  return `${code}${BEOBACHTER_SUFFIX}`;
+}
+
+export function istGueltigerCode(eingabe: string): boolean {
+  const code = normalisiereCode(eingabe);
+  return /^[A-Z0-9]{4,8}(-BEOB)?$/.test(code);
+}
+
+/**
+ * Löst einen eingegebenen Beitrittscode in den echten Sitzungscode (für den
+ * Transport-Kanal, → `state.provider`) und die daraus erkannte Rolle auf -
+ * der Beobachter-Code teilt sich denselben Kanal wie der normale Code, nur
+ * mit einem erkennbaren Anhang.
+ */
+export function codeUndRolleAus(eingabe: string): { code: string; rolle: 'spieler' | 'beobachter' } {
+  const normalisiert = normalisiereCode(eingabe);
+  if (normalisiert.endsWith(BEOBACHTER_SUFFIX)) {
+    return { code: normalisiert.slice(0, -BEOBACHTER_SUFFIX.length), rolle: 'beobachter' };
+  }
+  return { code: normalisiert, rolle: 'spieler' };
 }
 
 /** Fügt einen Spieler hinzu oder aktualisiert ihn (Id ist der Schlüssel). */

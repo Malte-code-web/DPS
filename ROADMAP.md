@@ -281,6 +281,57 @@ welche Qualifikation an Bord).
 
 ---
 
+## Baustein 6 – Führungsebenen
+
+Baut auf Baustein 1–5 auf: die digitale Übung bekommt eine Regie-Ebene für die
+Übungsleitung und - schrittweise - je eine eigene, gescopte Ansicht für
+Zugführer, Gruppenführer, Truppführer, OrgL RD und LNA. Diese Übung
+("Verschmelzung" aus Digitalübung und Führungsebenen) trainiert
+Menschenführung: eine Führungskraft leitet echte Mitspieler:innen an, die die
+eigentliche Behandlung durchführen - anders als eine später denkbare, hier
+bewusst zurückgestellte "reine Führungsübung", die nur den
+taktisch-strategischen Teil (Raumordnung, Ressourcenverteilung) ohne
+Menschenführung trainieren würde.
+
+**Versionsschema:** `DPS-0.8.<Ebene>.<Patch>` - die dritte Stelle wählt die
+Ebene (0 Übungsleiter, 1 Zugführer, 2 Gruppenführer, 3 Truppführer, 4 OrgL RD,
+5 LNA), die vierte bleibt wie gewohnt für reine Korrekturen. Jede Ebene und
+jeder Patch bekommt einen eigenen Rückweg-Branch.
+
+- ✅ **Fundament (`DPS-0.8.0.0`)** - Übungsleiter-Ebene, Teil 1:
+  - Neuer Einsatzabschnitt **Ablage**, ein zur Schadensstelle gleichwertiger,
+    aber eigenständiger Startpunkt (RD nicht an der Schadensstelle) - gleiche
+    Fähigkeiten (Vorsichtung, lebensrettende Sofortmaßnahmen), reine
+    Wiederverwendung der bestehenden Verlegungslogik.
+  - **Freigabemodus** (`sofort`/`gestaffelt`), von der Übungsleitung vor
+    Sitzungsstart gewählt: `sofort` entspricht dem bisherigen Verhalten, bei
+    `gestaffelt` starten alle Patienten verdeckt (neuer, für Spieler
+    unsichtbarer Zustand) und werden erst durch manuelle oder zeitgesteuerte
+    Freigabe sichtbar - Spieler beginnen dann nur mit der Einsatzmeldung, ohne
+    jede Patientenliste.
+  - Dritte Rolle **Beobachter** neben Übungsleitung und Spieler - tritt nur
+    über einen gesondert geteilten Einladungscode bei (kein offener Beitritt
+    über den normalen Sitzungscode), hat aber dieselbe Sicht und dieselben
+    Rechte wie die Übungsleitung.
+  - Rollen-gefilterter **Regie-Funkkanal**, getrennt von den normalen
+    Rufgruppen - dieselbe Sprechfunk-Infrastruktur, nur für Übungsleitung und
+    Beobachter sichtbar.
+  - 💤 **Noch offen (Fundament, Teil 2):** Gesamtlagebild (Kacheln- und
+    Kartenansicht mit Geodaten), Bindende Maßnahmen (Rettung eingeklemmter
+    Personen, Narkose mit Team-Anfrage), Ereignis-Injektion
+    (Fahrzeugausfall/Nachforderung/Lageänderung), Ablaufsteuerung-Verlegung in
+    die Regie, private Spieler-Statusansicht, Debriefing-Erweiterung.
+- 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
+  Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
+  (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
+  (taktisch-strategisch, Raumordnung) als eigenes, späteres Bauvorhaben mit
+  eigener Versionsleiter.
+
+**Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
+Material, Sprechfunk).
+
+---
+
 ## Horizont (später)
 
 Weiter denkbar, sobald die Bausteine 1–5 stehen:
@@ -312,6 +363,9 @@ Jeder Schritt ist eigenständig nutzbar:
    (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
 4. **Sprechfunk** ✅ fertig (echte Live-Sprachverbindung in frei wählbaren
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
+5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
+   Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal; Gesamtlagebild,
+   Bindende Maßnahmen, Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

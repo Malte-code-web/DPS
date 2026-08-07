@@ -43,10 +43,22 @@ export const FUEHRUNGSROLLEN: Fuehrungsrolle[] = [
 ];
 
 /**
- * Ob Fahrzeuge/Besatzung disponiert werden dürfen: die Übungsleitung immer
- * (Ersatz „bei Bedarf", → Nutzerwunsch), sonst ab Zugführer-Rang. Wie jede
- * Sperre außerhalb einer aktiven Mehrspieler-Sitzung nicht durchgesetzt
- * (→ `domain.qualifikation`).
+ * @anker domain.regiefuehrend Übungsleitung und Beobachter teilen sich Sicht und Rechte
+ *
+ * Ein Beobachter (→ `sitzung.beobachter`) hat dieselbe Regie-Ansicht und
+ * dieselben Rechte wie die Übungsleitung - überall, wo bisher gezielt auf
+ * `eigeneRolle === 'uebungsleiter'` geprüft wurde, gilt jetzt diese Prüfung
+ * statt vieler Einzeländerungen.
+ */
+export function istRegiefuehrend(rolle: Rolle | null): boolean {
+  return rolle === 'uebungsleiter' || rolle === 'beobachter';
+}
+
+/**
+ * Ob Fahrzeuge/Besatzung disponiert werden dürfen: Übungsleitung und
+ * Beobachter immer (Ersatz „bei Bedarf", → Nutzerwunsch), sonst ab
+ * Zugführer-Rang. Wie jede Sperre außerhalb einer aktiven Mehrspieler-Sitzung
+ * nicht durchgesetzt (→ `domain.qualifikation`).
  */
 export function darfFahrzeugeDisponieren(
   sitzungAktiv: boolean,
@@ -54,7 +66,7 @@ export function darfFahrzeugeDisponieren(
   eigeneFuehrungsrolle: Fuehrungsrolle | undefined,
 ): boolean {
   if (!sitzungAktiv) return true;
-  if (eigeneRolle === 'uebungsleiter') return true;
+  if (istRegiefuehrend(eigeneRolle)) return true;
   return erfuelltFuehrung(eigeneFuehrungsrolle ?? 'keine', 'zugfuehrer');
 }
 

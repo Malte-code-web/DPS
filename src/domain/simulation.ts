@@ -93,7 +93,11 @@ function skaliereVerlauf(verlauf: VitalVerlauf, faktor: number): VitalVerlauf {
  * ohne Angabe (Faktor 1) gelten die gemeinten Raten.
  * @anker sim.startzustand Womit ein Patient in den Einsatz startet
  */
-export function patientAusVorlage(vorlage: PatientVorlage, verschlechterungFaktor = 1): Patient {
+export function patientAusVorlage(
+  vorlage: PatientVorlage,
+  verschlechterungFaktor = 1,
+  abschnitt: Einsatzabschnitt = 'schadensstelle',
+): Patient {
   return {
     ...vorlage,
     probleme: vorlage.probleme.map((problem) => ({
@@ -106,7 +110,7 @@ export function patientAusVorlage(vorlage: PatientVorlage, verschlechterungFakto
     // Fehlende Zusatzwerte werden aufgefüllt - ältere Vorlagen kennen sie nicht.
     vitalwerte: { ...STANDARD_ZUSATZWERTE, ...vorlage.startVitalwerte },
     status: 'unbehandelt',
-    abschnitt: 'schadensstelle',
+    abschnitt,
     gesichtetAls: null,
     gesichtetUmSek: null,
     sichtungsverlauf: [],

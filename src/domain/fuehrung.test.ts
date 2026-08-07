@@ -5,9 +5,19 @@ import {
   darfFahrzeugeDisponieren,
   erfuelltFuehrung,
   formatStaerke,
+  istRegiefuehrend,
   staerkemeldung,
 } from './fuehrung';
 import type { Spieler } from './sitzung';
+
+describe('istRegiefuehrend', () => {
+  it('gilt für Übungsleitung und Beobachter, nicht für Spieler oder niemanden', () => {
+    expect(istRegiefuehrend('uebungsleiter')).toBe(true);
+    expect(istRegiefuehrend('beobachter')).toBe(true);
+    expect(istRegiefuehrend('spieler')).toBe(false);
+    expect(istRegiefuehrend(null)).toBe(false);
+  });
+});
 
 function spieler(id: string, fuehrungsrolle: Spieler['fuehrungsrolle']): Spieler {
   return { id, name: id, rolle: 'spieler', qualifikation: 'basis', fuehrungsrolle };
@@ -51,6 +61,11 @@ describe('darfFahrzeugeDisponieren', () => {
   it('lässt die Übungsleitung immer disponieren, unabhängig von der Führungsrolle', () => {
     expect(darfFahrzeugeDisponieren(true, 'uebungsleiter', undefined)).toBe(true);
     expect(darfFahrzeugeDisponieren(true, 'uebungsleiter', 'keine')).toBe(true);
+  });
+
+  it('lässt Beobachter wie die Übungsleitung immer disponieren', () => {
+    expect(darfFahrzeugeDisponieren(true, 'beobachter', undefined)).toBe(true);
+    expect(darfFahrzeugeDisponieren(true, 'beobachter', 'keine')).toBe(true);
   });
 
   it('lässt Spieler erst ab Zugführer disponieren', () => {

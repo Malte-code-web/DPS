@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  beobachterCode,
+  codeUndRolleAus,
   erzeugeCode,
   erzeugeId,
   istGueltigerCode,
@@ -31,6 +33,27 @@ describe('Sitzungscode', () => {
     expect(istGueltigerCode('ab')).toBe(false);
     expect(istGueltigerCode('K7-QP2!')).toBe(false);
     expect(istGueltigerCode('ABCDEFGHI')).toBe(false);
+  });
+});
+
+describe('Beobachter-Code (→ sitzung.beobachter)', () => {
+  it('hängt einen erkennbaren Anhang an den Sitzungscode', () => {
+    expect(beobachterCode('K7QP2')).toBe('K7QP2-BEOB');
+  });
+
+  it('ist als Beitrittscode gültig', () => {
+    expect(istGueltigerCode('K7QP2-BEOB')).toBe(true);
+    expect(istGueltigerCode('k7qp2-beob')).toBe(true);
+  });
+
+  it('löst einen normalen Code auf Spieler-Rolle im selben Kanal auf', () => {
+    expect(codeUndRolleAus('K7QP2')).toEqual({ code: 'K7QP2', rolle: 'spieler' });
+    expect(codeUndRolleAus('  k7qp2 ')).toEqual({ code: 'K7QP2', rolle: 'spieler' });
+  });
+
+  it('löst den Beobachter-Code auf denselben Kanal-Code, aber die Beobachter-Rolle auf', () => {
+    expect(codeUndRolleAus('K7QP2-BEOB')).toEqual({ code: 'K7QP2', rolle: 'beobachter' });
+    expect(codeUndRolleAus(beobachterCode('K7QP2'))).toEqual({ code: 'K7QP2', rolle: 'beobachter' });
   });
 });
 

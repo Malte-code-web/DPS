@@ -388,9 +388,19 @@ export interface Problem {
  * Einsatzabschnitte, die ein Patient nacheinander durchläuft:
  * Schadensstelle -> Eingangssichtung -> Behandlungsplatz (Zelt nach
  * Sichtungskategorie) -> Ausgangssichtung -> Abtransport.
+ *
+ * `verdeckt` ist kein echter Ort, sondern der Warteplatz vor der ersten
+ * Freigabe (→ `modell.freigabemodus`) - taucht bewusst nicht in `ABSCHNITTE`
+ * auf, damit er in keiner Spieler-Ansicht als Tab erscheint. `ablage` ist ein
+ * zur Schadensstelle gleichwertiger, aber eigenständiger Startpunkt (RD nicht
+ * an der Schadensstelle), `bereitstellungsraum` der Warteplatz nachgeforderter
+ * Fahrzeuge (→ `modell.ereignis`).
  */
 export type Einsatzabschnitt =
+  | 'verdeckt'
   | 'schadensstelle'
+  | 'ablage'
+  | 'bereitstellungsraum'
   | 'eingangssichtung'
   | 'zelt_rot'
   | 'zelt_gelb'
@@ -588,6 +598,16 @@ export interface PatientVorlage {
   auskultation?: string;
   /** Rhythmus im Monitoring. Fehlt er, ist es ein Sinusrhythmus. */
   ekg?: string;
+  /**
+   * @anker modell.freigabemodus Geplante automatische Freigabe im gestaffelten Modus
+   *
+   * Nur wirksam, wenn die Sitzung mit `freigabemodus: 'gestaffelt'` läuft
+   * (→ `state.reducer`): der Patient wird automatisch freigegeben, sobald die
+   * Einsatzzeit diese Minute erreicht - zusätzlich zur jederzeit möglichen
+   * manuellen Freigabe durch die Übungsleitung. Ohne gesetzten Wert bleibt der
+   * Patient verdeckt, bis die Übungsleitung ihn manuell freigibt.
+   */
+  freigabeMinuten?: number;
 }
 
 /**

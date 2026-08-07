@@ -18,6 +18,7 @@ import type { Trainingsmodus } from '../domain/modi';
 import type { Massnahmenrechte } from '../domain/massnahmenrechte';
 import {
   KEINE_SITZUNG,
+  codeUndRolleAus,
   erzeugeCode,
   erzeugeId,
   mitSpieler,
@@ -106,6 +107,16 @@ export interface SimulationState {
    */
   rufgruppen: Rufgruppenmitgliedschaft[];
   /**
+   * @anker state.freigabemodus Sofort sichtbar oder gestaffelt über die Ablage
+   *
+   * Von der Übungsleitung vor Sitzungsbeginn gewählt (→ `modell.abschnitte`):
+   * `'sofort'` erzeugt Patienten wie bisher direkt sichtbar an der
+   * Schadensstelle; `'gestaffelt'` lässt sie zunächst `verdeckt` und damit für
+   * Spieler unsichtbar, bis eine manuelle oder zeitgesteuerte Freigabe
+   * (→ `modell.freigabemodus`) sie in die Ablage bringt.
+   */
+  freigabemodus: 'sofort' | 'gestaffelt';
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -134,6 +145,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   fahrzeuge: [],
   delegationsanfragen: [],
   rufgruppen: [],
+  freigabemodus: 'sofort',
   schnappschussFolge: 0,
 };
 
@@ -190,6 +202,8 @@ export type SimulationAction =
   | { typ: 'spielerAbschnittGesetzt'; spielerId: string; abschnitt: Einsatzabschnitt }
   | { typ: 'fahrzeugBesatzungGesetzt'; fahrzeugId: string; besatzung: string[] }
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
+  | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
+  | { typ: 'patientFreigeben'; patientId: string }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -220,6 +234,8 @@ export interface Schnappschuss {
   delegationsanfragen: DelegationsAnfrage[];
   /** Wer sich in welchem Sprechfunk-Kanal befindet (→ `modell.rufgruppe`). */
   rufgruppen: Rufgruppenmitgliedschaft[];
+  /** Sofort sichtbar oder gestaffelt über die Ablage (→ `state.freigabemodus`). */
+  freigabemodus: 'sofort' | 'gestaffelt';
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -244,6 +260,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     massnahmenrechte: state.massnahmenrechte,
     delegationsanfragen: state.delegationsanfragen,
     rufgruppen: state.rufgruppen,
+    freigabemodus: state.freigabemodus,
   };
 }
 
@@ -335,12 +352,27 @@ export function simulationReducer(
       // In kleine Schritte zerlegt (→ `sim.zeitraum`): So bleibt ein großer
       // Nachhol-Takt korrekt, wenn der Übungsleiter-Tab im Hintergrund war und
       // die Uhr auf einen Schlag aufholt.
+      const neueZeitSek = state.zeitSek + action.dtSek;
+      // Zeitgesteuerte Freigabe (→ `modell.freigabemodus`): läuft nebenbei im
+      // selben Takt wie verzögert einsetzende Probleme, statt einen eigenen
+      // Mechanismus zu brauchen - eine geplante automatische Freigabe ist im
+      // Kern dieselbe Ableitung aus verstrichener Zeit wie `startetNachMin`.
+      const zielAbschnitt: Einsatzabschnitt =
+        state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
       return {
         ...state,
-        zeitSek: state.zeitSek + action.dtSek,
-        patienten: state.patienten.map((patient) =>
-          simuliereZeitraum(patient, state.zeitSek, action.dtSek),
-        ),
+        zeitSek: neueZeitSek,
+        patienten: state.patienten.map((patient) => {
+          const simuliert = simuliereZeitraum(patient, state.zeitSek, action.dtSek);
+          if (
+            simuliert.abschnitt === 'verdeckt' &&
+            simuliert.freigabeMinuten !== undefined &&
+            neueZeitSek / 60 >= simuliert.freigabeMinuten
+          ) {
+            return { ...simuliert, abschnitt: zielAbschnitt };
+          }
+          return simuliert;
+        }),
       };
     }
 
@@ -569,7 +601,11 @@ export function simulationReducer(
       };
     }
 
-    case 'spielerBeitreten':
+    case 'spielerBeitreten': {
+      // Der Beobachter-Code teilt sich denselben Transport-Kanal wie der
+      // normale Sitzungscode, nur mit erkennbarem Anhang (→ `sitzung.beobachter`) -
+      // hier wird er in echten Kanal-Code und erkannte Rolle aufgelöst.
+      const { code, rolle } = codeUndRolleAus(action.code);
       return {
         ...ANFANGSZUSTAND,
         eigeneSzenarien: state.eigeneSzenarien,
@@ -579,8 +615,8 @@ export function simulationReducer(
         phase: 'wartebereich',
         sitzung: {
           aktiv: true,
-          rolle: 'spieler',
-          code: action.code,
+          rolle,
+          code,
           eigeneId: action.eigeneId,
           eigenerName: action.name,
           spieler: [],
@@ -588,6 +624,7 @@ export function simulationReducer(
           verbindungsfehler: null,
         },
       };
+    }
 
     case 'spielerHinzugefuegt':
       return {
@@ -664,18 +701,36 @@ export function simulationReducer(
     case 'verbindungsfehlerSetzen':
       return { ...state, sitzung: { ...state.sitzung, verbindungsfehler: action.meldung } };
 
-    case 'sitzungStarten':
+    case 'freigabemodusSetzen':
+      return { ...state, freigabemodus: action.modus };
+
+    case 'patientFreigeben': {
+      const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
+      return mitPatient(state, action.patientId, (patient) =>
+        patient.abschnitt === 'verdeckt' ? { ...patient, abschnitt: ziel } : patient,
+      );
+    }
+
+    case 'sitzungStarten': {
       if (!state.szenario) return state;
+      // Sofort: wie bisher direkt an der Schadensstelle sichtbar. Gestaffelt:
+      // alle Patienten starten verdeckt (→ `modell.freigabemodus`) und werden
+      // erst durch manuelle oder zeitgesteuerte Freigabe sichtbar.
+      const startAbschnitt: Einsatzabschnitt =
+        state.freigabemodus === 'sofort' ? 'schadensstelle' : 'verdeckt';
       return {
         ...state,
         phase: 'einsatz',
         laufend: true,
         zeitSek: 0,
-        ausgewaehlterAbschnitt: 'schadensstelle',
+        ausgewaehlterAbschnitt: state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage',
         ausgewaehlterPatientId: null,
-        patienten: state.szenario.patienten.map((vorlage) => patientAusVorlage(vorlage)),
+        patienten: state.szenario.patienten.map((vorlage) =>
+          patientAusVorlage(vorlage, 1, startAbschnitt),
+        ),
         sitzung: { ...state.sitzung, status: 'laeuft' },
       };
+    }
 
     case 'sitzungVerlassen':
       return {
@@ -703,6 +758,7 @@ export function simulationReducer(
         massnahmenrechte: s.massnahmenrechte,
         delegationsanfragen: s.delegationsanfragen,
         rufgruppen: s.rufgruppen,
+        freigabemodus: s.freigabemodus,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

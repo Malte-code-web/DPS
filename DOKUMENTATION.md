@@ -50,6 +50,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Sprechfunk | Echte Live-Sprachverbindung statt Text (→ `ui.sprechfunk`), organisiert in frei wählbaren Rufgruppen (Kanal 1-3, Führung). Wer einen Kanal wählt, verbindet sich per WebRTC direkt (Mesh, kein eigener Medienserver) mit jeder anderen Person auf demselben Kanal - echtes, bidirektionales Gespräch für alle Beteiligten, nicht nur zur Übungsleitung. Eine Sprechen-Umschalttaste hält das Mikrofon standardmäßig stumm, wie bei einem echten Funkgerät. Signalisierung (Verbindungsaushandlung) läuft über denselben Transport wie alles andere, aber am Reducer vorbei - reine Zustellung zwischen zwei Personen, kein Spielzustand. Standardmäßig nur öffentliches STUN - zwei Geräte hinter je eigenem NAT (z. B. beide im Mobilfunknetz) finden darüber oft keine direkte Verbindung. Optional per `.env` (→ `net.turnAnbieter`, `VITE_METERED_APP_NAME`/`VITE_METERED_API_KEY`) ein TURN-Relay von Metered.ca nachrüstbar - ohne diese Zeilen läuft alles unverändert weiter, nur zuverlässig eben nur innerhalb desselben Netzes; ein Fehlschlag beim Abrufen der TURN-Zugangsdaten blockiert nichts, es bleibt einfach bei STUN. Der Abruf selbst wartet bis zu 12 Sekunden je Versuch (über Mobilfunk kann allein der Verbindungsaufbau zu einem neuen Server so lange dauern) und versucht es bei einem Fehlschlag genau einmal erneut, bevor endgültig auf STUN zurückgefallen wird. Bleibt eine Verbindung trotz konfiguriertem TURN-Server länger als 8 Sekunden im Status "verbindet" hängen (z. B. wenn beide Geräte im selben Mobilfunknetz stecken und scheinbar brauchbare, tatsächlich aber nicht funktionierende direkte Kandidaten geliefert bekommen), wird einmal automatisch mit erzwungenem Relay neu verhandelt, statt endlos zu warten. Jede Verbindungsaushandlungs-Nachricht (Angebot, Antwort, jeder einzelne ICE-Kandidat) wird dreifach im Abstand von 700ms verschickt, nicht nur einmal - der Transport liefert ohne Zustellgarantie (→ `net.protokoll`), und über ein Mobilfunknetz geht dabei spürbar öfter mal eine einzelne Nachricht verloren als im WLAN; eine Verhandlung mit einem Dutzend Einzelnachrichten kippt sonst schon an einer einzigen verlorenen. Erneutes Anwenden derselben Nachricht ist harmlos (Kandidaten sind idempotent, doppelte Antworten werden anhand des Verhandlungszustands verworfen). Ein gescheiterter eigener Mikrofonzugriff (Berechtigung verweigert, keine Hardware, keine Erlaubnis in einer eingebetteten Vorschau) blockiert die Verbindung ebenfalls nicht mehr komplett - die betroffene Person sieht eine klare Fehlermeldung und bleibt trotzdem empfangsbereit, nur das eigene Senden bleibt aus. Ein "Diagnose"-Knopf je Kanalmitglied zeigt geladene TURN-Einträge (samt Grund, falls keine geladen wurden - z. B. fehlende Umgebungsvariablen im Build oder ein konkreter Netzwerkfehler, jetzt inklusive des tatsächlich verwendeten Hostnamens), gesendete/empfangene ICE-Kandidatentypen (host/srflx/relay), ICE-Fehler und einen zeitgestempelten Verbindungsverlauf als Text zum Kopieren - hilft, eine gescheiterte Verbindung ohne Entwicklerkonsole zu diagnostizieren. App-Name und API-Key werden beim Einlesen aus den Umgebungsvariablen getrimmt, gegen ein unsichtbares Leerzeichen oder einen Zeilenumbruch beim Eintragen in eine Hosting-Oberfläche (z. B. Vercel) - so eine Verstümmelung zeigte sich sonst nur als unspezifisches "Load failed" ohne erkennbaren Grund. Live zwischen zwei echten Geräten im selben Mobilfunknetz bestätigt (`DPS-0.7.9`) - die Ursache war letztlich ein falsch eingetragener App-Name in Vercel, kein Code-Fehler. Ersetzt den kurzlebigen Text-Funkkanal aus `DPS-0.6` vollständig |
 | Direkter Einstieg (Startseite) | Die Startseite zeigt ausschließlich den Einstieg: ein Umschalter mit Spieler-Beitritt (Sitzungscode + Name, direkt in den Wartebereich) oder Übungsleitungs-Anmeldung - sonst nichts. Die Übungsleitungs-Rolle erfordert ein vorab im Supabase-Dashboard angelegtes Konto (E-Mail + Passwort, Supabase Auth) - Registrierung läuft bewusst nicht über die App. Ohne konfiguriertes Supabase ist der Umschalter-Reiter für die Übungsleitung gesperrt (mit erklärendem Hinweis); Spieler treten weiterhin ohne Konto per Code bei; der freie Anzeigename für die Sitzung (z. B. "OrgL Müller") wird direkt im Login-Formular mit abgefragt. Nach dem Login wählt die Übungsleitung zuerst den Modus (digital/Führung/real - nur digital ist gebaut, die anderen zeigen "in Vorbereitung"), dann folgen Maßnahmenrechte, Szenario, Fahrzeuge, Wartebereich. Ein eigenständiger Solo-Modus ohne Sitzung existiert nicht mehr - jeder Durchlauf läuft über denselben Sitzungs-Ablauf, auch wenn effektiv nur eine Person spielt. Der Szenario-Editor ("Szenarien bauen") ist über die Szenarioauswahl der Sitzung erreichbar, nicht mehr direkt von der Startseite |
 | Führung | Zweite Ebene neben der Qualifikation: TrFü/GrFü/ZgFü/OrgL RD/LNA, aufsteigender Rang (OrgL RD und LNA gleichrangig). Die Übungsleitung weist die Rolle im Wartebereich zu; ab Zugführer aufwärts (oder die Übungsleitung selbst) darf Fahrzeuge disponieren |
+| Führungsebenen: Fundament (`DPS-0.8.0.0`) | Erster Baustein einer mehrteiligen Epoche (→ ROADMAP.md, Baustein 6): die Übungsleitung wählt vor Sitzungsstart einen Freigabemodus - "sofort" (heutiges Verhalten, alle Patienten sofort an der Schadensstelle sichtbar) oder "gestaffelt" (die RD-Kräfte sind nicht an der Schadensstelle, alle Patienten beginnen verdeckt in einer neuen "Ablage" und werden erst nach und nach sichtbar). Eine Freigabe geschieht manuell durch die Übungsleitung oder zeitgesteuert über eine je Patient hinterlegte Minutenzahl - beides gleichzeitig möglich. Die Ablage hat dieselben Fähigkeiten wie die Schadensstelle (Vorsichtung, lebensrettende Sofortmaßnahmen), unterscheidet sich nur im Sichtbarkeitsmuster. Neu ist außerdem eine dritte Rolle "Beobachter" neben Übungsleitung und Spieler: tritt nur über einen gesonderten, von der Übungsleitung geteilten Einladungscode bei (Anhang `-BEOB` an den normalen Sitzungscode, derselbe Verbindungs-Kanal), hat aber überall dieselben Rechte wie die Übungsleitung (→ `istRegiefuehrend()`). Dazu ein rollen-gefilterter Sprechfunk-Kanal "Regie", der in der normalen Kanalwahl der Spieler gar nicht erst auftaucht. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -649,16 +650,16 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_186 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `abschnitte.dauer` | [`src/domain/abschnitte.ts:142`](src/domain/abschnitte.ts#L142) | Zeitkosten einer Verlegung |
-| `abschnitte.liste` | [`src/domain/abschnitte.ts:22`](src/domain/abschnitte.ts#L22) | Namen und Aufgaben der Einsatzabschnitte |
-| `abschnitte.wege` | [`src/domain/abschnitte.ts:81`](src/domain/abschnitte.ts#L81) | Erlaubte Verlegungen - hier ändert man den Ablauf |
-| `abschnitte.zeltzuordnung` | [`src/domain/abschnitte.ts:103`](src/domain/abschnitte.ts#L103) | Welche Kategorie in welches Zelt gehört |
+| `abschnitte.dauer` | [`src/domain/abschnitte.ts:165`](src/domain/abschnitte.ts#L165) | Zeitkosten einer Verlegung |
+| `abschnitte.liste` | [`src/domain/abschnitte.ts:23`](src/domain/abschnitte.ts#L23) | Namen und Aufgaben der Einsatzabschnitte |
+| `abschnitte.wege` | [`src/domain/abschnitte.ts:95`](src/domain/abschnitte.ts#L95) | Erlaubte Verlegungen - hier ändert man den Ablauf |
+| `abschnitte.zeltzuordnung` | [`src/domain/abschnitte.ts:125`](src/domain/abschnitte.ts#L125) | Welche Kategorie in welches Zelt gehört |
 
 #### auswertung
 
@@ -696,8 +697,9 @@ _182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.notfallnarkose_liste` | [`src/domain/dosierung.ts:319`](src/domain/dosierung.ts#L319) | Die drei Induktionsmittel der Notfallnarkose-Sammelauswahl |
 | `domain.notfallnarkose_team` | [`src/domain/qualifikation.ts:121`](src/domain/qualifikation.ts#L121) | Team aus RS + NotSan + NotArzt gleichzeitig anwesend |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:5`](src/domain/qualifikation.ts#L5) | Rangfolge und Prüfung der fachlichen Qualifikation |
-| `domain.rufgruppen` | [`src/domain/rufgruppen.ts:7`](src/domain/rufgruppen.ts#L7) | Feste Kanalliste für den Sprechfunk |
-| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:69`](src/domain/fuehrung.ts#L69) | Reale Stärkemeldung einer Fahrzeugbesatzung |
+| `domain.regiefuehrend` | [`src/domain/fuehrung.ts:46`](src/domain/fuehrung.ts#L46) | Übungsleitung und Beobachter teilen sich Sicht und Rechte |
+| `domain.rufgruppen` | [`src/domain/rufgruppen.ts:14`](src/domain/rufgruppen.ts#L14) | Feste Kanalliste für den Sprechfunk |
+| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:81`](src/domain/fuehrung.ts#L81) | Reale Stärkemeldung einer Fahrzeugbesatzung |
 
 #### einzelfaelle
 
@@ -746,21 +748,22 @@ _182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:386`](src/domain/types.ts#L386) | Die Stationen, die ein Patient durchläuft |
-| `modell.delegation` | [`src/domain/types.ts:629`](src/domain/types.ts#L629) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:641`](src/domain/types.ts#L641) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:595`](src/domain/types.ts#L595) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.fahrzeug` | [`src/domain/types.ts:402`](src/domain/types.ts#L402) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:685`](src/domain/types.ts#L685) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.delegation` | [`src/domain/types.ts:649`](src/domain/types.ts#L649) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:661`](src/domain/types.ts#L661) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:615`](src/domain/types.ts#L615) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.fahrzeug` | [`src/domain/types.ts:412`](src/domain/types.ts#L412) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
+| `modell.finalsichtung` | [`src/domain/types.ts:705`](src/domain/types.ts#L705) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.freigabemodus` | [`src/domain/types.ts:602`](src/domain/types.ts#L602) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:322`](src/domain/types.ts#L322) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.material` | [`src/domain/types.ts:455`](src/domain/types.ts#L455) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
+| `modell.material` | [`src/domain/types.ts:465`](src/domain/types.ts#L465) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
 | `modell.notfallnarkose` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar |
-| `modell.patient` | [`src/domain/types.ts:674`](src/domain/types.ts#L674) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:559`](src/domain/types.ts#L559) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.patient` | [`src/domain/types.ts:694`](src/domain/types.ts#L694) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:569`](src/domain/types.ts#L569) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.rufgruppe` | [`src/domain/types.ts:656`](src/domain/types.ts#L656) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.rufgruppe` | [`src/domain/types.ts:676`](src/domain/types.ts#L676) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -803,28 +806,29 @@ _182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `sim.befunde` | [`src/domain/simulation.ts:180`](src/domain/simulation.ts#L180) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
-| `sim.bewusstlos` | [`src/domain/simulation.ts:257`](src/domain/simulation.ts#L257) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
-| `sim.diagnostik` | [`src/domain/simulation.ts:349`](src/domain/simulation.ts#L349) | Eine Untersuchung deckt genau ihren Befund auf |
-| `sim.dosierung` | [`src/domain/simulation.ts:263`](src/domain/simulation.ts#L263) | Gewichtsbezogene Dosierung ersetzt die feste Wirkung |
-| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:286`](src/domain/simulation.ts#L286) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
+| `sim.befunde` | [`src/domain/simulation.ts:184`](src/domain/simulation.ts#L184) | Gehfähigkeit, Atmung und Reaktion folgen den Vitalwerten |
+| `sim.bewusstlos` | [`src/domain/simulation.ts:261`](src/domain/simulation.ts#L261) | Guedel-/Wendl-Tubus wirken nur beim Bewusstlosen |
+| `sim.diagnostik` | [`src/domain/simulation.ts:353`](src/domain/simulation.ts#L353) | Eine Untersuchung deckt genau ihren Befund auf |
+| `sim.dosierung` | [`src/domain/simulation.ts:267`](src/domain/simulation.ts#L267) | Gewichtsbezogene Dosierung ersetzt die feste Wirkung |
+| `sim.effektnurbeiproblem` | [`src/domain/simulation.ts:290`](src/domain/simulation.ts#L290) | Atemwegssicherung wirkt nur bei verlegtem Atemweg |
 | `sim.gleitkomma` | [`src/domain/simulation.ts:56`](src/domain/simulation.ts#L56) | Warum intern nicht gerundet wird - sonst verschwindet jede Änderung |
-| `sim.individualmedizin` | [`src/domain/simulation.ts:447`](src/domain/simulation.ts#L447) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
-| `sim.massnahme` | [`src/domain/simulation.ts:245`](src/domain/simulation.ts#L245) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
-| `sim.sichtungOffen` | [`src/domain/simulation.ts:396`](src/domain/simulation.ts#L396) | Steht an dieser Station noch eine Sichtung aus? |
+| `sim.individualmedizin` | [`src/domain/simulation.ts:451`](src/domain/simulation.ts#L451) | Maß für Individualmedizin - Zeit jenseits der Sofortmaßnahmen |
+| `sim.massnahme` | [`src/domain/simulation.ts:249`](src/domain/simulation.ts#L249) | Wirkung einer Maßnahme auf Probleme, Vitalwerte und Sichtungsbefunde |
+| `sim.sichtungOffen` | [`src/domain/simulation.ts:400`](src/domain/simulation.ts#L400) | Steht an dieser Station noch eine Sichtung aus? |
 | `sim.standardwerte` | [`src/domain/simulation.ts:36`](src/domain/simulation.ts#L36) | Unauffällige Vorgaben für die später ergänzten Werte |
 | `sim.startzustand` | [`src/domain/simulation.ts:94`](src/domain/simulation.ts#L94) | Womit ein Patient in den Einsatz startet |
 | `sim.tempo` | [`src/domain/simulation.ts:71`](src/domain/simulation.ts#L71) | Langsamere Verschlechterung im Alleinspiel |
-| `sim.tick` | [`src/domain/simulation.ts:155`](src/domain/simulation.ts#L155) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
-| `sim.tod` | [`src/domain/simulation.ts:133`](src/domain/simulation.ts#L133) | Ab welchen Werten ein Patient verstirbt |
-| `sim.verlegung` | [`src/domain/simulation.ts:418`](src/domain/simulation.ts#L418) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
-| `sim.zeitkosten` | [`src/domain/simulation.ts:206`](src/domain/simulation.ts#L206) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
-| `sim.zeitraum` | [`src/domain/simulation.ts:220`](src/domain/simulation.ts#L220) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
+| `sim.tick` | [`src/domain/simulation.ts:159`](src/domain/simulation.ts#L159) | Ein Simulationsschritt: Probleme wirken auf die Vitalwerte |
+| `sim.tod` | [`src/domain/simulation.ts:137`](src/domain/simulation.ts#L137) | Ab welchen Werten ein Patient verstirbt |
+| `sim.verlegung` | [`src/domain/simulation.ts:422`](src/domain/simulation.ts#L422) | Ortswechsel eines Patienten; Abtransport friert den Zustand ein |
+| `sim.zeitkosten` | [`src/domain/simulation.ts:210`](src/domain/simulation.ts#L210) | Stellschrauben für Sichtungs- und Untersuchungsdauer |
+| `sim.zeitraum` | [`src/domain/simulation.ts:224`](src/domain/simulation.ts#L224) | Längere Zeitsprünge in kleinen Schritten - für Maßnahmendauern |
 
 #### sitzung
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
+| `sitzung.beobachter` | [`src/domain/sitzung.ts:12`](src/domain/sitzung.ts#L12) | Dritte Rolle: sieht und steuert wie die Übungsleitung, tritt aber separat bei |
 | `sitzung.modell` | [`src/domain/sitzung.ts:4`](src/domain/sitzung.ts#L4) | Rollen, Spieler und Code einer gemeinsamen Sitzung |
 
 #### speicher
@@ -838,42 +842,43 @@ _182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:140`](src/state/reducer.ts#L140) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:152`](src/state/reducer.ts#L152) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.phase` | [`src/state/reducer.ts:43`](src/state/reducer.ts#L43) | Die Hauptzustände der Anwendung |
+| `state.freigabemodus` | [`src/state/reducer.ts:110`](src/state/reducer.ts#L110) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:44`](src/state/reducer.ts#L44) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:278`](src/state/reducer.ts#L278) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:199`](src/state/reducer.ts#L199) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:295`](src/state/reducer.ts#L295) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:213`](src/state/reducer.ts#L213) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:9`](src/state/zeitkosten.ts#L9) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:79`](src/state/zeitkosten.ts#L79) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:58`](src/state/reducer.ts#L58) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:59`](src/state/reducer.ts#L59) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1512`](src/index.css#L1512) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1896`](src/index.css#L1896) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2377`](src/index.css#L2377) | Kandidatenwahl und Benachrichtigung der Delegation |
-| `stil.editor` | [`src/index.css:683`](src/index.css#L683) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:3462`](src/index.css#L3462) | Die angeheftete Leiste so flach wie möglich |
+| `stil.anhaengekarte` | [`src/index.css:1527`](src/index.css#L1527) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1911`](src/index.css#L1911) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2392`](src/index.css#L2392) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:3477`](src/index.css#L3477) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1949`](src/index.css#L1949) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.ersteindruck` | [`src/index.css:1964`](src/index.css#L1964) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:3206`](src/index.css#L3206) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:3221`](src/index.css#L3221) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
-| `stil.modi` | [`src/index.css:610`](src/index.css#L610) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1775`](src/index.css#L1775) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1790`](src/index.css#L1790) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:3532`](src/index.css#L3532) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:3547`](src/index.css#L3547) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:3663`](src/index.css#L3663) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:3678`](src/index.css#L3678) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -939,13 +944,13 @@ _182 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.patientseite` | [`src/pages/PatientSeite.tsx:8`](src/pages/PatientSeite.tsx#L8) | Rahmen der Patientenseite: Navigation und Blättern |
 | `ui.setup` | [`src/pages/SetupSeite.tsx:7`](src/pages/SetupSeite.tsx#L7) | Szenarioauswahl für die Sitzung |
 | `ui.sofortmassnahmen` | [`src/components/Sofortmassnahmen.tsx:22`](src/components/Sofortmassnahmen.tsx#L22) | Lebensrettende Griffe, dauerhaft in der Übersicht |
-| `ui.sprechfunk` | [`src/components/Sprechfunk.tsx:14`](src/components/Sprechfunk.tsx#L14) | Sprechfunk: echte Live-Sprachverbindung in freien Rufgruppen |
+| `ui.sprechfunk` | [`src/components/Sprechfunk.tsx:15`](src/components/Sprechfunk.tsx#L15) | Sprechfunk: echte Live-Sprachverbindung in freien Rufgruppen |
 | `ui.start` | [`src/pages/StartSeite.tsx:10`](src/pages/StartSeite.tsx#L10) | Startseite: nur der Einstieg als Spieler oder Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:9`](src/components/Verlegung.tsx#L9) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:23`](src/pages/WartebereichSeite.tsx#L23) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
+| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 
 #### vorlagen
 
@@ -1019,10 +1024,19 @@ kleinere Stufe: Eine Nummer zu viel schadet nicht, ein zu grob
 zusammengefasster Stand nimmt den genauen Rückweg. Die Nummer in
 `package.json` läuft mit.
 
+**Vierte Stelle nur bei der Führungsebenen-Epoche (`DPS-0.8.x.y`):** Baustein 6
+(→ ROADMAP.md) baut sechs Führungsebenen nacheinander als eigenständige,
+voneinander abgrenzbare Unterschritte - die dritte Stelle wählt die Ebene
+(0 Übungsleiter, 1 Zugführer, 2 Gruppenführer, 3 Truppführer, 4 OrgL RD,
+5 LNA), die vierte bleibt wie gewohnt für reine Korrekturen innerhalb einer
+Ebene. `package.json` führt weiter nur drei Stellen (`0.8.0`), die vierte
+existiert nur in Branch-/Dokumentationsnamen.
+
 ### Bisherige Stände
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.0` | Führungsebenen, Fundament (Ebene 0 - Übungsleiter/Beobachter): Abschnitte "Ablage"/"verdeckt"/"bereitstellungsraum", Freigabemodus (sofort/gestaffelt) mit manueller und zeitgesteuerter Patientenfreigabe, dritte Rolle "Beobachter" mit eigenem Einladungscode und vollem Übungsleitungs-Rechteumfang, rollen-gefilterter Regie-Funkkanal |
 | `DPS-0.7.9` | Keine Code-Änderung: TURN-Verbindung zwischen zwei Mobilfunk-Geräten live bestätigt, nachdem der Hostname in der Diagnose (`DPS-0.7.8`) einen falsch eingetragenen `VITE_METERED_APP_NAME` in Vercel aufgedeckt hat - Fehlerkette seit `DPS-0.7.1` abgeschlossen |
 | `DPS-0.7.8` | TURN-Diagnose nennt jetzt den genauen Hostnamen im Fehlertext, App-Name/API-Key werden beim Einlesen getrimmt - fängt unsichtbare Leerzeichen/Zeilenumbrüche beim Eintragen in eine Hosting-Oberfläche ab |
 | `DPS-0.7.7` | TURN-Abruf wartet bis zu 12s statt 5s je Versuch und versucht es bei Fehlschlag einmal erneut - zu knappes Zeitlimit brach echte, nur langsame Mobilfunk-Verbindungen ab |

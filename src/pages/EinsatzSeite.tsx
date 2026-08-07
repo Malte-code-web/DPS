@@ -3,6 +3,7 @@ import { Abschnittsleiste } from '../components/Abschnittsleiste';
 import { DelegationBenachrichtigung } from '../components/DelegationBenachrichtigung';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
+import { KollegenanfrageBenachrichtigung } from '../components/KollegenanfrageBenachrichtigung';
 import { PatientKarte } from '../components/PatientKarte';
 import { Sprechfunk } from '../components/Sprechfunk';
 import { abschnittInfo } from '../domain/abschnitte';
@@ -77,6 +78,7 @@ export function EinsatzSeite() {
       )}
 
       <DelegationBenachrichtigung />
+      <KollegenanfrageBenachrichtigung />
       <Sprechfunk />
 
       {ausgewaehlt ? (

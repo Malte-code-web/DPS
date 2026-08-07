@@ -316,11 +316,32 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Rollen-gefilterter **Regie-Funkkanal**, getrennt von den normalen
     Rufgruppen - dieselbe Sprechfunk-Infrastruktur, nur für Übungsleitung und
     Beobachter sichtbar.
-  - 💤 **Noch offen (Fundament, Teil 2):** Gesamtlagebild (Kacheln- und
-    Kartenansicht mit Geodaten), Bindende Maßnahmen (Rettung eingeklemmter
-    Personen, Narkose mit Team-Anfrage), Ereignis-Injektion
-    (Fahrzeugausfall/Nachforderung/Lageänderung), Ablaufsteuerung-Verlegung in
-    die Regie, private Spieler-Statusansicht, Debriefing-Erweiterung.
+- ✅ **Bindende Maßnahmen, Narkose (`DPS-0.8.0.1`)** - Übungsleiter-Ebene,
+  Teil 2 (Narkose-Hälfte):
+  - Maßnahmen mit `benoetigtTeam` (bisher nur die drei
+    Notfallnarkose-Induktionsmittel) lösen jetzt eine echte Kollegenanfrage
+    aus, statt nur eine Möglichkeits-Prüfung zu sein
+    (`notfallnarkoseTeamVerfuegbar` gab es schon, aber ohne Wirkung). Die
+    durchführende Person (NotArzt) startet die Maßnahme, zwei offene
+    Anfragen (NotSan, Rettungssanitäter/-in) gehen an alle passenden,
+    verfügbaren Personen im selben Abschnitt.
+  - Neues, geteiltes **"gebunden"-Feld** je Spieler - anders als der
+    bisherige, rein lokale Zeitkosten-Timer für alle Clients sichtbar. Erst
+    wenn beide Rollen angenommen haben, wirkt die Maßnahme wirklich und alle
+    drei Beteiligten sind gebunden.
+  - Bindungsdauer deckt bei Narkose zusätzlich die nachfolgende Intubation
+    ab (`bindetZusaetzlichSek`, 180s) - dasselbe Team bleibt bis zur
+    gesicherten Atemwegssicherung gebunden, nicht nur für die
+    Medikamentengabe.
+  - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
+    verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
+    Anwenden nach vollständigem Team funktionieren zusammen.
+  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Rettung eingeklemmter
+    Personen (Zweiteilige Freigabe, Materialbedarf, dieselbe
+    Kollegenanfrage-Mechanik), Gesamtlagebild (Kacheln- und Kartenansicht mit
+    Geodaten), Ereignis-Injektion (Fahrzeugausfall/Nachforderung/
+    Lageänderung), Ablaufsteuerung-Verlegung in die Regie, private
+    Spieler-Statusansicht, Debriefing-Erweiterung.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung

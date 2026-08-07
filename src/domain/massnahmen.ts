@@ -321,7 +321,11 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
   // gleichzeitig anwesendes Team dreier verschiedener Qualifikationsstufen
   // (→ `benoetigtTeam`, `notfallnarkoseTeamVerfuegbar` in qualifikation.ts) -
   // eine Person allein, und sei sie noch so hoch qualifiziert, darf nicht
-  // einleiten. Die Wahl des Induktionsmittels macht real Unterschied: Wer
+  // einleiten. `bindetZusaetzlichSek` deckt die auf die Gabe folgende
+  // Intubation mit ab (→ `modell.benoetigtTeam`) - dasselbe Team bleibt bis
+  // zur gesicherten Atemwegssicherung gebunden.
+  //
+  // Die Wahl des Induktionsmittels macht real Unterschied: Wer
   // bereits hämodynamisch instabil ist, bekommt durch Propofol/Thiopental
   // (beide leicht kreislaufdepressiv) einen zusätzlichen Blutdruckabfall,
   // Esketamin dagegen wirkt sympathomimetisch und stützt den Kreislauf eher -
@@ -332,6 +336,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     id: 'propofol',
     benoetigtEinesVon: ZUGANG,
     benoetigtTeam: true,
+    bindetZusaetzlichSek: 180,
     label: 'Propofol (Notfallnarkose)',
     kategorie: 'A',
     art: 'medikament',
@@ -348,6 +353,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     id: 'thiopental',
     benoetigtEinesVon: ZUGANG,
     benoetigtTeam: true,
+    bindetZusaetzlichSek: 180,
     label: 'Thiopental (Notfallnarkose)',
     kategorie: 'A',
     art: 'medikament',
@@ -364,6 +370,7 @@ export const MASSNAHMEN: Record<MassnahmeId, Massnahme> = {
     id: 'esketamin_narkose',
     benoetigtEinesVon: ZUGANG,
     benoetigtTeam: true,
+    bindetZusaetzlichSek: 180,
     label: 'Esketamin (Notfallnarkose)',
     kategorie: 'A',
     art: 'medikament',

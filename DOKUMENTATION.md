@@ -51,6 +51,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Direkter Einstieg (Startseite) | Die Startseite zeigt ausschließlich den Einstieg: ein Umschalter mit Spieler-Beitritt (Sitzungscode + Name, direkt in den Wartebereich) oder Übungsleitungs-Anmeldung - sonst nichts. Die Übungsleitungs-Rolle erfordert ein vorab im Supabase-Dashboard angelegtes Konto (E-Mail + Passwort, Supabase Auth) - Registrierung läuft bewusst nicht über die App. Ohne konfiguriertes Supabase ist der Umschalter-Reiter für die Übungsleitung gesperrt (mit erklärendem Hinweis); Spieler treten weiterhin ohne Konto per Code bei; der freie Anzeigename für die Sitzung (z. B. "OrgL Müller") wird direkt im Login-Formular mit abgefragt. Nach dem Login wählt die Übungsleitung zuerst den Modus (digital/Führung/real - nur digital ist gebaut, die anderen zeigen "in Vorbereitung"), dann folgen Maßnahmenrechte, Szenario, Fahrzeuge, Wartebereich. Ein eigenständiger Solo-Modus ohne Sitzung existiert nicht mehr - jeder Durchlauf läuft über denselben Sitzungs-Ablauf, auch wenn effektiv nur eine Person spielt. Der Szenario-Editor ("Szenarien bauen") ist über die Szenarioauswahl der Sitzung erreichbar, nicht mehr direkt von der Startseite |
 | Führung | Zweite Ebene neben der Qualifikation: TrFü/GrFü/ZgFü/OrgL RD/LNA, aufsteigender Rang (OrgL RD und LNA gleichrangig). Die Übungsleitung weist die Rolle im Wartebereich zu; ab Zugführer aufwärts (oder die Übungsleitung selbst) darf Fahrzeuge disponieren |
 | Führungsebenen: Fundament (`DPS-0.8.0.0`) | Erster Baustein einer mehrteiligen Epoche (→ ROADMAP.md, Baustein 6): die Übungsleitung wählt vor Sitzungsstart einen Freigabemodus - "sofort" (heutiges Verhalten, alle Patienten sofort an der Schadensstelle sichtbar) oder "gestaffelt" (die RD-Kräfte sind nicht an der Schadensstelle, alle Patienten beginnen verdeckt in einer neuen "Ablage" und werden erst nach und nach sichtbar). Eine Freigabe geschieht manuell durch die Übungsleitung oder zeitgesteuert über eine je Patient hinterlegte Minutenzahl - beides gleichzeitig möglich. Die Ablage hat dieselben Fähigkeiten wie die Schadensstelle (Vorsichtung, lebensrettende Sofortmaßnahmen), unterscheidet sich nur im Sichtbarkeitsmuster. Neu ist außerdem eine dritte Rolle "Beobachter" neben Übungsleitung und Spieler: tritt nur über einen gesonderten, von der Übungsleitung geteilten Einladungscode bei (Anhang `-BEOB` an den normalen Sitzungscode, derselbe Verbindungs-Kanal), hat aber überall dieselben Rechte wie die Übungsleitung (→ `istRegiefuehrend()`). Dazu ein rollen-gefilterter Sprechfunk-Kanal "Regie", der in der normalen Kanalwahl der Spieler gar nicht erst auftaucht. |
+| Bindende Maßnahmen (`DPS-0.8.0.1`) | Maßnahmen mit `benoetigtTeam` (bisher nur die drei Notfallnarkose-Induktionsmittel) lösen jetzt eine echte Kollegenanfrage aus, statt nur eine Möglichkeits-Prüfung zu sein: die durchführende Person (NotArzt) startet die Maßnahme, zwei offene Anfragen (NotSan, Rettungssanitäter/-in) gehen an alle passenden, verfügbaren Personen im selben Abschnitt - als nicht blockierende Benachrichtigung wie bei der Delegationsanfrage. Erst wenn beide Rollen angenommen haben, wirkt die Maßnahme wirklich, und alle drei Beteiligten sind für die Dauer geteilt (nicht mehr nur lokal wie der bestehende Zeitkosten-Timer) als "gebunden" markiert - für andere sichtbar, nicht nur für sich selbst. Bei Narkose deckt die Bindung zusätzlich die nachfolgende Intubation mit ab (`bindetZusaetzlichSek`, 180s), da dasselbe Team bis zur gesicherten Atemwegssicherung gebunden bleibt. Live mit drei echten Clients (NotArzt + NotSan + RS) verifiziert. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -650,7 +651,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_186 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_189 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -738,32 +739,34 @@ _186 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `massnahmen.katalog` | [`src/domain/massnahmen.ts:5`](src/domain/massnahmen.ts#L5) | Alle Maßnahmen mit Dauer und Wirkung - hier neue ergänzen |
-| `massnahmen.sofort` | [`src/domain/massnahmen.ts:1285`](src/domain/massnahmen.ts#L1285) | Lebensrettende Griffe der Schadensstelle |
-| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:1238`](src/domain/massnahmen.ts#L1238) | Was aus der Auswahl verschwindet, aber gültig bleibt |
-| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:1307`](src/domain/massnahmen.ts#L1307) | Was vor einer Maßnahme erledigt sein muss |
-| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:1250`](src/domain/massnahmen.ts#L1250) | Gruppierung und Reihenfolge der Maßnahmengruppen |
+| `massnahmen.sofort` | [`src/domain/massnahmen.ts:1292`](src/domain/massnahmen.ts#L1292) | Lebensrettende Griffe der Schadensstelle |
+| `massnahmen.veraltet` | [`src/domain/massnahmen.ts:1245`](src/domain/massnahmen.ts#L1245) | Was aus der Auswahl verschwindet, aber gültig bleibt |
+| `massnahmen.voraussetzung` | [`src/domain/massnahmen.ts:1314`](src/domain/massnahmen.ts#L1314) | Was vor einer Maßnahme erledigt sein muss |
+| `massnahmen.xabcde` | [`src/domain/massnahmen.ts:1257`](src/domain/massnahmen.ts#L1257) | Gruppierung und Reihenfolge der Maßnahmengruppen |
 
 #### modell
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `modell.abschnitte` | [`src/domain/types.ts:386`](src/domain/types.ts#L386) | Die Stationen, die ein Patient durchläuft |
-| `modell.delegation` | [`src/domain/types.ts:649`](src/domain/types.ts#L649) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:661`](src/domain/types.ts#L661) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:615`](src/domain/types.ts#L615) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.fahrzeug` | [`src/domain/types.ts:412`](src/domain/types.ts#L412) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:705`](src/domain/types.ts#L705) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
-| `modell.freigabemodus` | [`src/domain/types.ts:602`](src/domain/types.ts#L602) | Geplante automatische Freigabe im gestaffelten Modus |
+| `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
+| `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
+| `modell.delegation` | [`src/domain/types.ts:659`](src/domain/types.ts#L659) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:671`](src/domain/types.ts#L671) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:625`](src/domain/types.ts#L625) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.fahrzeug` | [`src/domain/types.ts:422`](src/domain/types.ts#L422) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
+| `modell.finalsichtung` | [`src/domain/types.ts:739`](src/domain/types.ts#L739) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.freigabemodus` | [`src/domain/types.ts:612`](src/domain/types.ts#L612) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
+| `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
-| `modell.koerperregion` | [`src/domain/types.ts:322`](src/domain/types.ts#L322) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.material` | [`src/domain/types.ts:465`](src/domain/types.ts#L465) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
-| `modell.notfallnarkose` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar |
-| `modell.patient` | [`src/domain/types.ts:694`](src/domain/types.ts#L694) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:569`](src/domain/types.ts#L569) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.problem` | [`src/domain/types.ts:356`](src/domain/types.ts#L356) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
+| `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
+| `modell.kollegenanfrage` | [`src/domain/types.ts:686`](src/domain/types.ts#L686) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
+| `modell.material` | [`src/domain/types.ts:475`](src/domain/types.ts#L475) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
+| `modell.patient` | [`src/domain/types.ts:728`](src/domain/types.ts#L728) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:579`](src/domain/types.ts#L579) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.problem` | [`src/domain/types.ts:366`](src/domain/types.ts#L366) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.rufgruppe` | [`src/domain/types.ts:676`](src/domain/types.ts#L676) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.rufgruppe` | [`src/domain/types.ts:710`](src/domain/types.ts#L710) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -842,21 +845,21 @@ _186 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:152`](src/state/reducer.ts#L152) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:172`](src/state/reducer.ts#L172) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:110`](src/state/reducer.ts#L110) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:44`](src/state/reducer.ts#L44) | Die Hauptzustände der Anwendung |
+| `state.freigabemodus` | [`src/state/reducer.ts:129`](src/state/reducer.ts#L129) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:56`](src/state/reducer.ts#L56) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:295`](src/state/reducer.ts#L295) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:213`](src/state/reducer.ts#L213) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:326`](src/state/reducer.ts#L326) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:241`](src/state/reducer.ts#L241) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:9`](src/state/zeitkosten.ts#L9) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:79`](src/state/zeitkosten.ts#L79) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:59`](src/state/reducer.ts#L59) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:71`](src/state/reducer.ts#L71) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -925,13 +928,14 @@ _186 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.delegationsbenachrichtigung` | [`src/components/DelegationBenachrichtigung.tsx:5`](src/components/DelegationBenachrichtigung.tsx#L5) | Benachrichtigung: jemand braucht eine Freigabe |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:18`](src/pages/EinsatzSeite.tsx#L18) | Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:19`](src/pages/EinsatzSeite.tsx#L19) | Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:9`](src/components/FahrzeugVerlegung.tsx#L9) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
+| `ui.kollegenanfragebenachrichtigung` | [`src/components/KollegenanfrageBenachrichtigung.tsx:7`](src/components/KollegenanfrageBenachrichtigung.tsx#L7) | Benachrichtigung: ein Team braucht Unterstützung |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:44`](src/components/Massnahmenliste.tsx#L44) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.modus` | [`src/pages/ModusSeite.tsx:5`](src/pages/ModusSeite.tsx#L5) | Modus wählen - entscheidet, auf welche Art gespielt wird |
@@ -1036,6 +1040,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.1` | Bindende Maßnahmen: `benoetigtTeam`-Maßnahmen (Notfallnarkose) lösen jetzt eine echte, geteilte Kollegenanfrage aus statt nur eine Möglichkeits-Prüfung zu sein - Team-Mitglieder werden für andere sichtbar "gebunden", Narkose-Bindung deckt die nachfolgende Intubation mit ab |
 | `DPS-0.8.0.0` | Führungsebenen, Fundament (Ebene 0 - Übungsleiter/Beobachter): Abschnitte "Ablage"/"verdeckt"/"bereitstellungsraum", Freigabemodus (sofort/gestaffelt) mit manueller und zeitgesteuerter Patientenfreigabe, dritte Rolle "Beobachter" mit eigenem Einladungscode und vollem Übungsleitungs-Rechteumfang, rollen-gefilterter Regie-Funkkanal |
 | `DPS-0.7.9` | Keine Code-Änderung: TURN-Verbindung zwischen zwei Mobilfunk-Geräten live bestätigt, nachdem der Hostname in der Diagnose (`DPS-0.7.8`) einen falsch eingetragenen `VITE_METERED_APP_NAME` in Vercel aufgedeckt hat - Fehlerkette seit `DPS-0.7.1` abgeschlossen |
 | `DPS-0.7.8` | TURN-Diagnose nennt jetzt den genauen Hostnamen im Fehlertext, App-Name/API-Key werden beim Einlesen getrimmt - fängt unsichtbare Leerzeichen/Zeilenumbrüche beim Eintragen in eine Hosting-Oberfläche ab |

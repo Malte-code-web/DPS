@@ -48,6 +48,20 @@ export interface Spieler {
    * überhaupt navigiert hat), gilt niemand als "im selben Bereich".
    */
   aktuellerAbschnitt?: Einsatzabschnitt;
+  /**
+   * @anker modell.gebunden Für andere sichtbar mit einer bindenden Maßnahme beschäftigt
+   *
+   * Anders als der bisherige, rein lokale Zeitkosten-Timer (→ `state.provider`,
+   * nur auf dem eigenen Client sichtbar) ist das hier Teil des geteilten
+   * Zustands - andere Clients sehen, dass diese Person gerade nicht
+   * anfragbar ist. Nur bei Maßnahmen mit `benoetigtTeam` (→ `modell.benoetigtTeam`)
+   * und bei der Rettung eingeklemmter Personen gesetzt, nicht bei jeder
+   * gewöhnlichen Maßnahme. `gebundenBis` ist eine `zeitSek`-Marke, keine
+   * Echtzeit.
+   */
+  gebundenBis?: number;
+  /** Kurzer Grund für die Anzeige, z. B. "Narkose bei P7" (→ `modell.gebunden`). */
+  gebundenGrund?: string;
 }
 
 /** Der lokale Sitzungszustand eines Clients (teils geteilt, teils nur hier). */

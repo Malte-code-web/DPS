@@ -280,6 +280,7 @@ export function SimulationProvider({
     massnahmenrechte,
     delegationsanfragen,
     rufgruppen,
+    kollegenanfragen,
     freigabemodus,
   } = state;
   const spielerliste = sitzung.spieler;
@@ -300,6 +301,7 @@ export function SimulationProvider({
       massnahmenrechte,
       delegationsanfragen,
       rufgruppen,
+      kollegenanfragen,
       freigabemodus,
     }),
     [
@@ -315,6 +317,7 @@ export function SimulationProvider({
       massnahmenrechte,
       delegationsanfragen,
       rufgruppen,
+      kollegenanfragen,
       freigabemodus,
     ],
   );

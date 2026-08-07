@@ -304,15 +304,25 @@ export interface Massnahme {
    */
   nurBeiBewusstlosigkeit?: boolean;
   /**
-   * @anker modell.notfallnarkose Nur mit vollem Team durchführbar
+   * @anker modell.benoetigtTeam Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus
    *
    * Nur mit gleichzeitig anwesendem Team aus Rettungssanitäter/-in, NotSan
    * und Notärztin/Notarzt durchführbar (→ `notfallnarkoseTeamVerfuegbar` in
-   * `qualifikation.ts`) - bisher nur bei den drei Notfallnarkose-
-   * Induktionsmitteln gesetzt. Außerhalb einer Mehrspieler-Sitzung nicht
-   * durchgesetzt, wie jede andere Qualifikationssperre auch.
+   * `qualifikation.ts` für die reine Möglichkeits-Prüfung; die tatsächliche
+   * Anfrage/Bindung → `modell.gebunden`, `state.reducer`) - bisher nur bei
+   * den drei Notfallnarkose-Induktionsmitteln gesetzt. Außerhalb einer
+   * Mehrspieler-Sitzung nicht durchgesetzt, wie jede andere
+   * Qualifikationssperre auch.
    */
   benoetigtTeam?: boolean;
+  /**
+   * Zusätzliche Bindungsdauer in Sekunden, die über `dauerSek` hinaus gilt -
+   * bei den drei Notfallnarkose-Induktionsmitteln auf die Dauer der
+   * nachfolgenden Intubation gesetzt (180s), da dasselbe Team bis zur
+   * gesicherten Atemwegssicherung gebunden bleibt, nicht nur für die
+   * Medikamentengabe selbst.
+   */
+  bindetZusaetzlichSek?: number;
   /** Nicht mehr in der Auswahl, aber in alten Szenarien noch gültig. */
   veraltet?: boolean;
 }
@@ -670,6 +680,30 @@ export interface DelegationsAnfrage {
   massnahmeId: MassnahmeId;
   anfragendeId: string;
   angefragteId: string;
+}
+
+/**
+ * @anker modell.kollegenanfrage Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme
+ *
+ * Anders als eine `DelegationsAnfrage` gezielt an eine Person, ist dies eine
+ * offene Anfrage an jede verfügbare, passende Person - wer zuerst annimmt,
+ * bekommt sie (→ `modell.gebunden`). Bei Narkose (→ `modell.benoetigtTeam`)
+ * braucht es zwei getrennte Anfragen (eine je fehlender Rolle,
+ * `benoetigteQualifikation` gesetzt), bei Rettung eine offene Anfrage, die
+ * mehrere Personen annehmen können (`benoetigteQualifikation` fehlt - jede
+ * verfügbare Person zählt).
+ */
+export interface Kollegenanfrage {
+  id: string;
+  patientId: string;
+  grund: 'rettung' | 'narkose';
+  anfragendeId: string;
+  benoetigteQualifikation?: Qualifikation;
+  /** Spieler-Ids, die bereits angenommen haben - bei Narkose maximal eine. */
+  angenommenVon: string[];
+  /** Nur bei `grund: 'narkose'`: welche Maßnahme mit vollständigem Team automatisch angewendet wird. */
+  massnahmeId?: MassnahmeId;
+  dosisMg?: number;
 }
 
 /**

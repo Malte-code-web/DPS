@@ -928,6 +928,182 @@ describe('Delegationsanfrage (delegationAnfragen/delegationBeantworten)', () => 
   });
 });
 
+describe('Bindende Maßnahmen: Narkose (massnahmeMitTeamStarten/kollegenanfrageAnnehmen)', () => {
+  function imEinsatzMitTeam(): SimulationState {
+    const gestartet = simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
+        { typ: 'massnahmenrechteAbgeschlossen' },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+    return [
+      { id: 'na-1', name: 'Dr. Voss', rolle: 'spieler' as const, qualifikation: 'notarzt' as const },
+      { id: 'ns-1', name: 'Krüger', rolle: 'spieler' as const, qualifikation: 'notsan' as const },
+      { id: 'rs-1', name: 'Thoms', rolle: 'spieler' as const, qualifikation: 'rettungssanitaeter' as const },
+    ].reduce(
+      (zustand, spieler) => simulationReducer(zustand, { typ: 'spielerHinzugefuegt', spieler }),
+      gestartet,
+    );
+  }
+
+  it('legt beim Starten zwei Kollegenanfragen an (NotSan + RS) und bindet die anfragende Person vorläufig', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const nachher = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+      dosisMg: 150,
+    });
+    expect(nachher.kollegenanfragen).toHaveLength(2);
+    expect(nachher.kollegenanfragen.map((a) => a.benoetigteQualifikation).sort()).toEqual([
+      'notsan',
+      'rettungssanitaeter',
+    ]);
+    expect(nachher.kollegenanfragen.every((a) => a.grund === 'narkose')).toBe(true);
+    const notArzt = nachher.sitzung.spieler.find((s) => s.id === 'na-1')!;
+    expect(notArzt.gebundenBis).toBeGreaterThan(nachher.zeitSek);
+    // Die Maßnahme wirkt noch nicht - das Team ist erst zwei von drei.
+    expect(nachher.patienten.find((p) => p.id === patientId)?.durchgefuehrteMassnahmen).not.toContain(
+      'propofol',
+    );
+  });
+
+  it('tut nichts, wenn die Maßnahme kein Team benötigt', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const nachher = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'tourniquet',
+      anfragendeId: 'na-1',
+    });
+    expect(nachher).toBe(state);
+  });
+
+  it('bindet die erste annehmende Person, wendet die Maßnahme aber erst mit vollständigem Team an', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const gestartet = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+      dosisMg: 150,
+    });
+    const notSanAnfrage = gestartet.kollegenanfragen.find((a) => a.benoetigteQualifikation === 'notsan')!;
+    const nachErsterAnnahme = simulationReducer(gestartet, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: notSanAnfrage.id,
+      spielerId: 'ns-1',
+    });
+    expect(nachErsterAnnahme.kollegenanfragen).toHaveLength(2);
+    expect(
+      nachErsterAnnahme.kollegenanfragen.find((a) => a.id === notSanAnfrage.id)?.angenommenVon,
+    ).toEqual(['ns-1']);
+    const notSan = nachErsterAnnahme.sitzung.spieler.find((s) => s.id === 'ns-1')!;
+    expect(notSan.gebundenBis).toBeGreaterThan(nachErsterAnnahme.zeitSek);
+    expect(
+      nachErsterAnnahme.patienten.find((p) => p.id === patientId)?.durchgefuehrteMassnahmen,
+    ).not.toContain('propofol');
+  });
+
+  it('wendet die Maßnahme an, sobald das Team vollständig ist, und bindet alle drei für Dauer + Intubationszeit', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const gestartet = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+      dosisMg: 150,
+    });
+    const notSanAnfrage = gestartet.kollegenanfragen.find((a) => a.benoetigteQualifikation === 'notsan')!;
+    const rsAnfrage = gestartet.kollegenanfragen.find(
+      (a) => a.benoetigteQualifikation === 'rettungssanitaeter',
+    )!;
+    const nachBeiden = simulationReducer(
+      simulationReducer(gestartet, {
+        typ: 'kollegenanfrageAnnehmen',
+        anfrageId: notSanAnfrage.id,
+        spielerId: 'ns-1',
+      }),
+      { typ: 'kollegenanfrageAnnehmen', anfrageId: rsAnfrage.id, spielerId: 'rs-1' },
+    );
+    expect(nachBeiden.kollegenanfragen).toEqual([]);
+    expect(nachBeiden.patienten.find((p) => p.id === patientId)?.durchgefuehrteMassnahmen).toContain(
+      'propofol',
+    );
+    // dauerSek (60) + bindetZusaetzlichSek (180, deckt die Intubation ab) = 240.
+    for (const id of ['na-1', 'ns-1', 'rs-1']) {
+      const spieler = nachBeiden.sitzung.spieler.find((s) => s.id === id)!;
+      expect(spieler.gebundenBis).toBe(nachBeiden.zeitSek + 240);
+      expect(spieler.gebundenGrund).toContain('Propofol');
+    }
+  });
+
+  it('ignoriert eine doppelte Annahme derselben Person', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const gestartet = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+    });
+    const notSanAnfrage = gestartet.kollegenanfragen.find((a) => a.benoetigteQualifikation === 'notsan')!;
+    const einmal = simulationReducer(gestartet, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: notSanAnfrage.id,
+      spielerId: 'ns-1',
+    });
+    const zweimal = simulationReducer(einmal, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: notSanAnfrage.id,
+      spielerId: 'ns-1',
+    });
+    expect(zweimal).toBe(einmal);
+  });
+
+  it('räumt Kollegenanfragen der verlassenden Person auf und gibt bereits angenommene Rollen frei', () => {
+    const state = imEinsatzMitTeam();
+    const patientId = state.patienten[0]!.id;
+    const gestartet = simulationReducer(state, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+    });
+    const notSanAnfrage = gestartet.kollegenanfragen.find((a) => a.benoetigteQualifikation === 'notsan')!;
+    const angenommen = simulationReducer(gestartet, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: notSanAnfrage.id,
+      spielerId: 'ns-1',
+    });
+
+    // Die annehmende Person verlässt die Sitzung - ihre Rolle wird wieder frei.
+    const nachAustritt = simulationReducer(angenommen, { typ: 'spielerEntfernt', spielerId: 'ns-1' });
+    expect(nachAustritt.kollegenanfragen).toHaveLength(2);
+    expect(
+      nachAustritt.kollegenanfragen.find((a) => a.id === notSanAnfrage.id)?.angenommenVon,
+    ).toEqual([]);
+
+    // Die anfragende Person selbst verlässt die Sitzung - der ganze Vorgang entfällt.
+    const nachAnfragendemAustritt = simulationReducer(nachAustritt, {
+      typ: 'spielerEntfernt',
+      spielerId: 'na-1',
+    });
+    expect(nachAnfragendemAustritt.kollegenanfragen).toEqual([]);
+  });
+});
+
 describe('Sprechfunk-Kanalwahl (rufgruppeWaehlen)', () => {
   function imEinsatz(): SimulationState {
     return simulationReducer(

@@ -1,5 +1,6 @@
 import { istVerlegungMoeglich } from '../domain/abschnitte';
 import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
+import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { verbraucheMaterial } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
@@ -33,6 +34,7 @@ import type {
   FahrzeugTyp,
   FahrzeugVorlage,
   Fuehrungsrolle,
+  Kollegenanfrage,
   MassnahmeId,
   Patient,
   Qualifikation,
@@ -40,6 +42,16 @@ import type {
   Sichtungskategorie,
   Szenario,
 } from '../domain/types';
+
+/**
+ * Vorläufige Bindungsdauer in Sekunden, solange ein Team noch nicht
+ * vollständig ist: die annehmende Person hat sich committet und ist ab
+ * diesem Moment nicht mehr anderweitig anfragbar, auch wenn die eigentliche
+ * Wirkung erst mit vollständigem Team eintritt (→ `modell.gebunden`). Bewusst
+ * großzügig statt exakt - wird beim tatsächlichen Beginn der Maßnahme durch
+ * die reale Dauer ersetzt.
+ */
+const VORLAEUFIGE_BINDUNG_SEK = 3600;
 
 /** @anker state.phase Die Hauptzustände der Anwendung */
 export type Phase =
@@ -107,6 +119,13 @@ export interface SimulationState {
    */
   rufgruppen: Rufgruppenmitgliedschaft[];
   /**
+   * Noch nicht vollständig beantwortete Anfragen nach Unterstützung bei einer
+   * bindenden Maßnahme (→ `modell.kollegenanfrage`) - jeder Client filtert
+   * selbst auf die für ihn relevanten (passende Qualifikation, eigener
+   * Abschnitt, nicht selbst gebunden) heraus.
+   */
+  kollegenanfragen: Kollegenanfrage[];
+  /**
    * @anker state.freigabemodus Sofort sichtbar oder gestaffelt über die Ablage
    *
    * Von der Übungsleitung vor Sitzungsbeginn gewählt (→ `modell.abschnitte`):
@@ -145,6 +164,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   fahrzeuge: [],
   delegationsanfragen: [],
   rufgruppen: [],
+  kollegenanfragen: [],
   freigabemodus: 'sofort',
   schnappschussFolge: 0,
 };
@@ -178,6 +198,14 @@ export type SimulationAction =
       angefragteId: string;
     }
   | { typ: 'delegationBeantworten'; id: string; angenommen: boolean }
+  | {
+      typ: 'massnahmeMitTeamStarten';
+      patientId: string;
+      massnahmeId: MassnahmeId;
+      anfragendeId: string;
+      dosisMg?: number;
+    }
+  | { typ: 'kollegenanfrageAnnehmen'; anfrageId: string; spielerId: string }
   | { typ: 'rufgruppeWaehlen'; teilnehmerId: string; teilnehmerName: string; kanal: string | null }
   | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
@@ -234,6 +262,8 @@ export interface Schnappschuss {
   delegationsanfragen: DelegationsAnfrage[];
   /** Wer sich in welchem Sprechfunk-Kanal befindet (→ `modell.rufgruppe`). */
   rufgruppen: Rufgruppenmitgliedschaft[];
+  /** Noch offene Anfragen nach Unterstützung (→ `modell.kollegenanfrage`). */
+  kollegenanfragen: Kollegenanfrage[];
   /** Sofort sichtbar oder gestaffelt über die Ablage (→ `state.freigabemodus`). */
   freigabemodus: 'sofort' | 'gestaffelt';
   /**
@@ -260,6 +290,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     massnahmenrechte: state.massnahmenrechte,
     delegationsanfragen: state.delegationsanfragen,
     rufgruppen: state.rufgruppen,
+    kollegenanfragen: state.kollegenanfragen,
     freigabemodus: state.freigabemodus,
   };
 }
@@ -459,6 +490,131 @@ export function simulationReducer(
       );
     }
 
+    case 'massnahmeMitTeamStarten': {
+      // Nur für Maßnahmen mit Team-Bedarf (→ `modell.benoetigtTeam`) sinnvoll -
+      // die anfragende Person deckt die NotArzt-Rolle bereits durch die
+      // eigene Katalog-Qualifikation ab, fehlen noch NotSan und
+      // Rettungssanitäter/-in.
+      const massnahme = MASSNAHMEN[action.massnahmeId];
+      if (!massnahme?.benoetigtTeam) return state;
+      const anfragender = state.sitzung.spieler.find((spieler) => spieler.id === action.anfragendeId);
+      if (!anfragender) return state;
+      const gebundenGrundStart = `${massnahme.label} bei ${action.patientId}`;
+      const neueAnfragen: Kollegenanfrage[] = (['notsan', 'rettungssanitaeter'] as const).map(
+        (benoetigteQualifikation) => ({
+          id: erzeugeId(),
+          patientId: action.patientId,
+          grund: 'narkose',
+          anfragendeId: action.anfragendeId,
+          benoetigteQualifikation,
+          angenommenVon: [],
+          massnahmeId: action.massnahmeId,
+          dosisMg: action.dosisMg,
+        }),
+      );
+      return {
+        ...state,
+        kollegenanfragen: [...state.kollegenanfragen, ...neueAnfragen],
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.anfragendeId
+              ? {
+                  ...spieler,
+                  gebundenBis: state.zeitSek + VORLAEUFIGE_BINDUNG_SEK,
+                  gebundenGrund: gebundenGrundStart,
+                }
+              : spieler,
+          ),
+        },
+      };
+    }
+
+    case 'kollegenanfrageAnnehmen': {
+      const anfrage = state.kollegenanfragen.find((eintrag) => eintrag.id === action.anfrageId);
+      if (!anfrage || anfrage.angenommenVon.includes(action.spielerId)) return state;
+      const massnahme = anfrage.massnahmeId ? MASSNAHMEN[anfrage.massnahmeId] : undefined;
+      const gebundenGrund = massnahme
+        ? `${massnahme.label} bei ${anfrage.patientId}`
+        : `Unterstützung bei ${anfrage.patientId}`;
+
+      // Narkose: sobald keine andere Anfrage desselben Vorgangs (dieselbe
+      // Person, Maßnahme, Patient - je fehlende Rolle eine eigene Anfrage,
+      // → `massnahmeMitTeamStarten`) mehr unbeantwortet ist, ist das Team
+      // vollständig - Wirkung und echte Bindungsdauer greifen sofort, ohne
+      // weitere Bestätigung.
+      if (anfrage.grund === 'narkose' && massnahme) {
+        const selberVorgang = (eintrag: Kollegenanfrage) =>
+          eintrag.patientId === anfrage.patientId &&
+          eintrag.anfragendeId === anfrage.anfragendeId &&
+          eintrag.massnahmeId === anfrage.massnahmeId;
+        const restlicheAnfragen = state.kollegenanfragen.filter(
+          (eintrag) => eintrag.id !== anfrage.id && selberVorgang(eintrag),
+        );
+        const nochOffen = restlicheAnfragen.some((eintrag) => eintrag.angenommenVon.length === 0);
+
+        if (!nochOffen) {
+          const behandelter = state.patienten.find((patient) => patient.id === anfrage.patientId);
+          const teamIds = [
+            anfrage.anfragendeId,
+            action.spielerId,
+            ...restlicheAnfragen.flatMap((eintrag) => eintrag.angenommenVon),
+          ];
+          const dauer = massnahme.dauerSek + (massnahme.bindetZusaetzlichSek ?? 0);
+          const gebundenBis = state.zeitSek + dauer;
+          const ohneVorgang = state.kollegenanfragen.filter(
+            (eintrag) => !(eintrag.id === anfrage.id || selberVorgang(eintrag)),
+          );
+          const mitWirkung = behandelter
+            ? {
+                ...mitPatient(state, anfrage.patientId, (patient) =>
+                  wendeMassnahmeAn(patient, anfrage.massnahmeId!, state.zeitSek, anfrage.dosisMg),
+                ),
+                fahrzeuge: verbraucheMaterial(
+                  state.fahrzeuge,
+                  anfrage.massnahmeId!,
+                  behandelter.abschnitt,
+                ),
+              }
+            : state;
+          return {
+            ...mitWirkung,
+            kollegenanfragen: ohneVorgang,
+            sitzung: {
+              ...mitWirkung.sitzung,
+              spieler: mitWirkung.sitzung.spieler.map((spieler) =>
+                teamIds.includes(spieler.id) ? { ...spieler, gebundenBis, gebundenGrund } : spieler,
+              ),
+            },
+          };
+        }
+      }
+
+      // Noch nicht vollständig: Anfrage vermerkt die Annahme, die annehmende
+      // Person ist ab jetzt committet und vorläufig gebunden (→ `modell.gebunden`),
+      // auch wenn die eigentliche Wirkung noch auf den Rest des Teams wartet.
+      return {
+        ...state,
+        kollegenanfragen: state.kollegenanfragen.map((eintrag) =>
+          eintrag.id === anfrage.id
+            ? { ...eintrag, angenommenVon: [...eintrag.angenommenVon, action.spielerId] }
+            : eintrag,
+        ),
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? {
+                  ...spieler,
+                  gebundenBis: state.zeitSek + VORLAEUFIGE_BINDUNG_SEK,
+                  gebundenGrund,
+                }
+              : spieler,
+          ),
+        },
+      };
+    }
+
     case 'rufgruppeWaehlen': {
       // Eigenen Eintrag immer zuerst entfernen - ein Kanalwechsel ist kein
       // Beitritt zu einem zweiten Kanal gleichzeitig.
@@ -638,6 +794,14 @@ export function simulationReducer(
         sitzung: { ...state.sitzung, spieler: ohneSpieler(state.sitzung.spieler, action.spielerId) },
         // Kein Geistermitglied im Sprechfunk-Kanal zurücklassen (→ `modell.rufgruppe`).
         rufgruppen: state.rufgruppen.filter((mitglied) => mitglied.teilnehmerId !== action.spielerId),
+        // Anfragen der verlassenden Person entfallen ganz (→ `modell.kollegenanfrage`),
+        // eine bereits angenommene Rolle wird wieder frei für jemand anderen.
+        kollegenanfragen: state.kollegenanfragen
+          .filter((anfrage) => anfrage.anfragendeId !== action.spielerId)
+          .map((anfrage) => ({
+            ...anfrage,
+            angenommenVon: anfrage.angenommenVon.filter((id) => id !== action.spielerId),
+          })),
       };
 
     case 'spielerQualifikationSetzen':
@@ -758,6 +922,7 @@ export function simulationReducer(
         massnahmenrechte: s.massnahmenrechte,
         delegationsanfragen: s.delegationsanfragen,
         rufgruppen: s.rufgruppen,
+        kollegenanfragen: s.kollegenanfragen,
         freigabemodus: s.freigabemodus,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,

@@ -38,7 +38,7 @@ interface Props {
  * Katalogeintrag im Maßnahmen-Reiter (→ `intubation.benoetigtEinesVon`).
  */
 export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
-  const { state } = useSimulation();
+  const { state, dispatch } = useSimulation();
   const [offen, setOffen] = useState(false);
   const [gewaehlt, setGewaehlt] = useState<MassnahmeId | null>(null);
   const { offenFuer, setOffenFuer, istDelegiert, kandidatenFuer, anfragen } = useDelegationsAnfrage();
@@ -70,8 +70,34 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
     state.massnahmenrechte[massnahme.id] ??
     ({ qualifikation: massnahme.qualifikation, delegationsziel: 'basis' } as const);
 
+  // Eigene, noch offene Anfrage für dieses Induktionsmittel bei diesem
+  // Patienten - solange sie besteht, wartet die Gabe auf ein vollständiges
+  // Team (→ `modell.kollegenanfrage`, `massnahmeMitTeamStarten`).
+  const eigeneOffeneAnfrage = (massnahmeId: MassnahmeId) =>
+    state.kollegenanfragen.some(
+      (anfrage) =>
+        anfrage.grund === 'narkose' &&
+        anfrage.patientId === patient.id &&
+        anfrage.massnahmeId === massnahmeId &&
+        anfrage.anfragendeId === state.sitzung.eigeneId,
+    );
+
   const verabreichen = (massnahmeId: MassnahmeId, dosisMg: number) => {
-    onMassnahme(massnahmeId, dosisMg);
+    const massnahme = MASSNAHMEN[massnahmeId];
+    if (massnahme.benoetigtTeam && state.sitzung.eigeneId) {
+      // Wirkung und Materialverbrauch treten erst ein, wenn das Team
+      // vollständig ist (→ `state.reducer`, `kollegenanfrageAnnehmen`) - kein
+      // sofortiges `onMassnahme` wie bei jeder anderen Maßnahme.
+      dispatch({
+        typ: 'massnahmeMitTeamStarten',
+        patientId: patient.id,
+        massnahmeId,
+        anfragendeId: state.sitzung.eigeneId,
+        dosisMg,
+      });
+    } else {
+      onMassnahme(massnahmeId, dosisMg);
+    }
     setGewaehlt(null);
     // Nach Rocuronium ist die Sequenz abgeschlossen - die Intubation folgt als
     // eigene Zeile im Maßnahmen-Reiter, nicht mehr hier.
@@ -109,6 +135,7 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
             );
             const teamFehlt = Boolean(massnahme.benoetigtTeam) && !teamVerfuegbar;
             const materialFehlt = !materialVerfuegbar(massnahme.id, patient.abschnitt, state.fahrzeuge);
+            const wartetAufTeam = eigeneOffeneAnfrage(massnahme.id);
             const kannAnfragen =
               state.sitzung.aktiv &&
               qualifikationFehlt &&
@@ -125,6 +152,7 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
               fehlt !== null ||
               teamFehlt ||
               materialFehlt ||
+              wartetAufTeam ||
               (qualifikationFehlt && !kannAnfragen) ||
               (zkBeschaeftigt && !zkEigen);
             const istGewaehlt = gewaehlt === massnahme.id;
@@ -157,19 +185,21 @@ export function Notfallnarkoseauswahl({ patient, onMassnahme }: Props) {
                   <span className="massnahme-dauer">
                     {zkEigen
                       ? `noch ${zk.restSek} s`
-                      : bereitsDurchgefuehrt
-                        ? 'durchgeführt'
-                        : fehlt
-                          ? voraussetzungKurz(fehlt)
-                          : kannAnfragen
-                            ? 'Freigabe anfragen'
-                            : qualifikationFehlt
-                              ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
-                              : teamFehlt
-                                ? 'Team: RS + NotSan + Notärztin nötig'
-                                : materialFehlt
-                                  ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
-                                  : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
+                      : wartetAufTeam
+                        ? 'wartet auf Team …'
+                        : bereitsDurchgefuehrt
+                          ? 'durchgeführt'
+                          : fehlt
+                            ? voraussetzungKurz(fehlt)
+                            : kannAnfragen
+                              ? 'Freigabe anfragen'
+                              : qualifikationFehlt
+                                ? `erfordert ${QUALIFIKATION_LABEL[recht.qualifikation]}`
+                                : teamFehlt
+                                  ? 'Team: RS + NotSan + Notärztin nötig'
+                                  : materialFehlt
+                                    ? `${MATERIAL_LABEL[MASSNAHME_MATERIAL[massnahme.id]!]} alle`
+                                    : (massnahme.indikation ?? `${massnahme.dauerSek} s`)}
                   </span>
                 </button>
 

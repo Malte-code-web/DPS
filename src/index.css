@@ -2772,6 +2772,9 @@ button.gefahr {
   min-width: 0;
 }
 
+/* Bleibt wie die Einsatzleiste (→ ui.einsatzleiste) beim Scrollen der
+   Hauptfläche stehen, statt mit dem Inhalt nach oben wegzuscrollen - der
+   top-Wert liegt knapp über deren gemessener Höhe (113-120px). */
 .regie-seitenleiste {
   width: 250px;
   flex-shrink: 0;
@@ -2779,6 +2782,10 @@ button.gefahr {
   flex-direction: column;
   gap: 0.7rem;
   transition: width 0.15s ease;
+  position: sticky;
+  top: 7.5rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
 }
 
 .regie-seitenleiste-eingeklappt {

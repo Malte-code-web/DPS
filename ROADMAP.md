@@ -536,6 +536,23 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     (kein Text), Ansicht per Icon-Klick auch eingeklappt wechselbar,
     mobile Seitenleiste steht links auf gleicher Höhe wie die Hauptfläche
     statt darunter, keine Konsolenfehler.
+- ✅ **Regie-Menü bleibt beim Scrollen stehen (`DPS-0.8.0.11`)** -
+  Übungsleiter-Ebene, Teil 2 (letzte Verfeinerung des Ansichts-Menüs):
+  - Die Seitenleiste scrollte bislang mit der Hauptfläche mit - bei einer
+    langen Kacheln- oder Panel-Ansicht verschwand das Menü nach oben aus
+    dem sichtbaren Bereich.
+  - `position: sticky` hält sie jetzt wie die bereits angeheftete
+    Einsatzleiste (→ `ui.einsatzleiste`) direkt unterhalb von ihr fest,
+    während der Inhalt darunter/daneben weiterscrollt - ein `top`-Wert
+    knapp über der gemessenen Kopfzeilen-Höhe (113-120px) verhindert eine
+    Überlappung, `max-height` + `overflow-y: auto` fangen sehr niedrige
+    Bildschirme ab.
+  - Gilt unverändert für ausgeklappten und eingeklappten Zustand, Desktop
+    wie Mobil.
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine CSS-Änderung.
+  - Live verifiziert: Sidebar bleibt nach dem Scrollen sichtbar knapp
+    unter der Einsatzleiste (Desktop und Mobil), ein Menüpunkt lässt sich
+    auch nach dem Scrollen anklicken, keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung

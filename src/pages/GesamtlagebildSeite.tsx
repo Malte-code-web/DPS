@@ -8,6 +8,7 @@ import { KartenOrtePanel } from '../components/KartenOrtePanel';
 import { Kartenansicht } from '../components/Kartenansicht';
 import { Kennzahlenleiste } from '../components/Kennzahlenleiste';
 import { OffeneAnfragenPanel } from '../components/OffeneAnfragenPanel';
+import { RegieMenueIcon } from '../components/RegieMenueIcons';
 import { useSimulation } from '../state/useSimulation';
 import type { Einsatzabschnitt } from '../domain/types';
 
@@ -37,10 +38,13 @@ interface AnsichtEintrag {
  * Funkkanäle) - immer nur eine Ansicht gleichzeitig sichtbar in der
  * Hauptfläche, ein Klick im Menü wechselt sie. Anders als ein reines
  * Aufklapp-Panel bleibt das Menü auch eingeklappt vollständig erreichbar
- * (schmale Leiste mit denselben, nur kompakteren Knöpfen statt komplett
- * verschwundenem Inhalt) - ähnlich einer Activity-Bar, die immer zwischen
- * Ansichten wechseln lässt. Kein neuer Datenpfad - jede Ansicht liest
- * dieselben Felder, die anderswo schon existieren.
+ * (schmale Leiste mit denselben Knöpfen, jetzt nur noch als Icon statt
+ * komplett verschwundenem Inhalt, → `ui.regiemenueicons`) - ähnlich einer
+ * Activity-Bar, die immer zwischen Ansichten wechseln lässt. Auf schmalen
+ * Bildschirmen bleibt die Leiste am linken Rand stehen (per `order` vor
+ * die Hauptfläche gestellt) statt darunter angehängt zu werden. Kein neuer
+ * Datenpfad - jede Ansicht liest dieselben Felder, die anderswo schon
+ * existieren.
  */
 export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   const { state } = useSimulation();
@@ -133,7 +137,10 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
                 }`}
                 onClick={() => setAktiv(eintrag.id)}
               >
-                <span className="regie-menue-label">{eintrag.label}</span>
+                <span className="regie-menue-inhalt">
+                  <RegieMenueIcon ansicht={eintrag.id} />
+                  <span className="regie-menue-label">{eintrag.label}</span>
+                </span>
                 {eintrag.marke && <span className="bereich-marke">{eintrag.marke}</span>}
               </button>
             ))}

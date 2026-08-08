@@ -2782,7 +2782,7 @@ button.gefahr {
 }
 
 .regie-seitenleiste-eingeklappt {
-  width: 84px;
+  width: 56px;
 }
 
 .regie-seitenleiste-kopf {
@@ -2825,19 +2825,34 @@ button.gefahr {
   font-size: 0.85rem;
   font-weight: 600;
   text-align: left;
+  color: var(--text-leise);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius);
   width: 100%;
 }
 
-.regie-menue button.regie-menue-aktiv {
-  border-color: var(--akzent);
-  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+.regie-menue-inhalt {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
 }
 
-.regie-menue button.regie-menue-aktiv .bereich-marke {
+.regie-menue-inhalt svg {
+  flex-shrink: 0;
+}
+
+.regie-menue-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regie-menue button.regie-menue-aktiv {
   color: var(--akzent);
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
 }
 
 .regie-menue button.regie-menue-wartet .bereich-marke {
@@ -2845,18 +2860,15 @@ button.gefahr {
 }
 
 /* Eingeklappt bleibt das Menü bedienbar (schmale Leiste, jeder Knopf
-   weiterhin klickbar) statt komplett zu verschwinden - Beschriftung bricht
-   zweizeilig um, die Marke fällt aus Platzgründen weg. */
+   weiterhin klickbar) statt komplett zu verschwinden - nur noch das Icon
+   bleibt sichtbar (→ ui.regiemenueicons), Beschriftung und Marke fallen
+   aus Platzgründen weg; ein Klick wechselt weiterhin sofort die Ansicht. */
 .regie-seitenleiste-eingeklappt .regie-menue button {
-  flex-direction: column;
   justify-content: center;
-  text-align: center;
-  gap: 0.1rem;
-  padding: 0.5rem 0.3rem;
-  font-size: 0.68rem;
-  line-height: 1.2;
+  padding: 0.6rem 0.3rem;
 }
 
+.regie-seitenleiste-eingeklappt .regie-menue-label,
 .regie-seitenleiste-eingeklappt .regie-menue button .bereich-marke {
   display: none;
 }
@@ -3420,12 +3432,21 @@ button.gefahr {
     min-height: 320px;
   }
 
+  /* Die Regie-Seitenleiste bleibt auch auf schmalen Bildschirmen ein Rand-
+     Streifen links (→ ui.gesamtlagebild) statt unter den Hauptinhalt zu
+     rutschen - `order` stellt sie im Grid vor die Hauptfläche, ohne die
+     DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu ändern. */
   .gesamtlagebild-flaeche {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.6rem;
   }
 
-  .regie-seitenleiste-eingeklappt {
-    width: auto;
+  .regie-seitenleiste:not(.regie-seitenleiste-eingeklappt) {
+    width: 170px;
+  }
+
+  .regie-seitenleiste {
+    order: -1;
   }
 }
 

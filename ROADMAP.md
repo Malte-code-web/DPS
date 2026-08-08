@@ -516,6 +516,26 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     sichtbar und funktionsfähig (Ablaufsteuerung inkl. Pause/Weiter,
     Kartenansicht direkt anwählbar), keine Leerfläche rechts, keine
     Konsolenfehler.
+- ✅ **Regie-Menü: Icons + Sidebar am linken Rand auf schmalen
+  Bildschirmen (`DPS-0.8.0.10`)** - Übungsleiter-Ebene, Teil 2 (zwei
+  Verfeinerungen des Ansichts-Menüs aus `DPS-0.8.0.9`):
+  - Sieben schlichte, einfarbige Strich-Icons (neue `RegieMenueIcons.tsx`,
+    kein Icon-Set eingebunden) ersetzen den bisherigen zweizeilig
+    umbrechenden Text im eingeklappten Zustand - jeder Menüpunkt bleibt
+    damit auf einen Blick unterscheidbar, auch ohne Beschriftung;
+    ausgeklappt stehen Icon und Beschriftung nebeneinander.
+  - Die Seitenleiste bleibt auf schmalen Bildschirmen (≤980px) ein
+    Rand-Streifen links neben der Hauptfläche statt darunter zu rutschen -
+    ein `order: -1` im Grid stellt sie visuell nach vorn, ohne die
+    DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu ändern; eingeklappt
+    schrumpft sie auf eine 56px breite Icon-Leiste, die weiterhin jeden
+    Klick zum Ansicht-Wechsel entgegennimmt.
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine UI-Verfeinerung.
+  - Live verifiziert (Desktop und mobiler Viewport 390×844): alle sieben
+    Icons vorhanden, im eingeklappten Zustand nur noch Icons sichtbar
+    (kein Text), Ansicht per Icon-Klick auch eingeklappt wechselbar,
+    mobile Seitenleiste steht links auf gleicher Höhe wie die Hauptfläche
+    statt darunter, keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -562,10 +582,11 @@ Jeder Schritt ist eigenständig nutzbar:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
    Maßnahmen, Rettung eingeklemmter Personen, echte Geodaten-basierte
    Verlegungsdauer und ein Gesamtlagebild, dessen Regie-Seitenleiste als
-   Menü über alle Ansichten (Kacheln, Karte, Ablaufsteuerung, Freigabe,
-   Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt und auch
-   eingeklappt vollständig erreichbar bleibt; Ereignis-Injektion und die
-   fünf übrigen Ebenen offen).
+   Menü mit eigenen Icons über alle Ansichten (Kacheln, Karte,
+   Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
+   Funkkanäle) wirkt, auch eingeklappt vollständig erreichbar bleibt und
+   auf schmalen Bildschirmen am linken Rand steht statt darunter zu
+   rutschen; Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

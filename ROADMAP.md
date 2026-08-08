@@ -456,6 +456,25 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live verifiziert: alle fünf Bereiche öffnen/schließen korrekt,
     Ablaufsteuerung wirkt weiterhin synchron (Pause/Weiter, Tempo),
     Kartenansicht-Umschalter unverändert erreichbar, keine Konsolenfehler.
+- ✅ **Regie-Seitenleiste, ein-/ausklappbar (`DPS-0.8.0.7`)** -
+  Übungsleiter-Ebene, Teil 2 (Layout-Rückbau auf ausdrücklichen Wunsch):
+  - Löst die Bereichswahl-Tabs samt Vollbildseiten aus `DPS-0.8.0.6` wieder
+    ab: alle fünf Panels (Ablaufsteuerung, Ablage · Freigabe, Gebundene
+    Kräfte, Offene Anfragen, Funkkanäle) stehen jetzt dauerhaft gestapelt in
+    einer Seitenleiste neben der Kacheln-/Kartenansicht, jedes wieder mit
+    eigenem Kasten-Rahmen und Titel (Rückbau der in `DPS-0.8.0.6` entfernten
+    Panel-Wrapper).
+  - Ein einzelner Knopf oben in der Leiste klappt alle fünf Panels auf
+    einmal ein oder aus - eingeklappt bleibt nur ein schmaler Streifen mit
+    dem Knopf übrig, die Kacheln-/Kartenansicht nutzt dann die volle Breite.
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine Layout-Umstellung,
+    die vier Seitenleisten-Komponenten und das Ablaufsteuerung-Panel selbst
+    sind inhaltlich unverändert.
+  - Live verifiziert: alle fünf Panel-Titel sichtbar, Ein-/Ausklappen wirkt
+    sofort (Sidebar-Breite 320px → ca. 25px und zurück), Ablaufsteuerung
+    (Pause/Weiter, Tempo) funktioniert direkt in der Leiste ohne
+    zusätzlichen Klick, Kartenansicht-Umschalter unverändert erreichbar,
+    keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -502,9 +521,9 @@ Jeder Schritt ist eigenständig nutzbar:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
    Maßnahmen, Rettung eingeklemmter Personen, Gesamtlagebild mit Kacheln-
    und Kartenansicht, echte Geodaten-basierte Verlegungsdauer, Ablaufsteuerung
-   und alle Seitenleisten-Übersichten als eine konsolidierte Bereichswahl-
-   Ansicht statt eines separaten Regie-Panels; Ereignis-Injektion und die
-   fünf übrigen Ebenen offen).
+   und alle Seitenleisten-Übersichten als ein-/ausklappbare Regie-Seitenleiste
+   statt eines separaten Regie-Panels; Ereignis-Injektion und die fünf
+   übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

@@ -2754,6 +2754,57 @@ button.gefahr {
   padding: 0.2rem 0;
 }
 
+/* Hauptbereich (Kacheln/Karte) neben der ein-/ausklappbaren Regie-Seitenleiste. */
+.gesamtlagebild-flaeche {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.gesamtlagebild-haupt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.regie-seitenleiste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition: width 0.15s ease;
+}
+
+.regie-seitenleiste-eingeklappt {
+  width: fit-content;
+}
+
+.regie-seitenleiste-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.regie-seitenleiste-kopf h2 {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-leise);
+}
+
+.regie-seitenleiste-knopf {
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.35rem 0.55rem;
+}
+
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */
 .kennzahlen {
   display: grid;
@@ -2978,7 +3029,8 @@ button.gefahr {
   margin: 0;
 }
 
-/* Eigenständige Box, z. B. die Orte-Liste unter der Kartenansicht (→ ui.kartenortepanel). */
+/* Eigenständige Box, z. B. die Orte-Liste unter der Kartenansicht (→ ui.kartenortepanel)
+   oder eines der gestapelten Panels in der Regie-Seitenleiste (→ ui.gesamtlagebild). */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--rand);
@@ -3000,6 +3052,16 @@ button.gefahr {
   font-weight: 700;
   margin: 0;
   color: var(--text-leise);
+}
+
+.panel-zaehler {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
 }
 
 .pool-liste,
@@ -3331,6 +3393,14 @@ button.gefahr {
 
   .karten-rahmen {
     min-height: 320px;
+  }
+
+  .gesamtlagebild-flaeche {
+    grid-template-columns: 1fr;
+  }
+
+  .regie-seitenleiste-eingeklappt {
+    width: auto;
   }
 }
 

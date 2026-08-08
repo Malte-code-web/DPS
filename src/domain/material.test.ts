@@ -147,6 +147,16 @@ describe('materialVerfuegbar', () => {
     const fz = fahrzeug({ abschnitt: 'zelt_rot', material: { tourniquet: 4 } });
     expect(materialVerfuegbar('tourniquet', 'schadensstelle', [fz])).toBe(false);
   });
+
+  it('ist gesperrt, wenn das einzige Fahrzeug mit Bestand als ausgefallen gemeldet ist (→ modell.ereignis)', () => {
+    const fz = fahrzeug({ material: { tourniquet: 4 }, ausgefallen: true });
+    expect(materialVerfuegbar('tourniquet', 'schadensstelle', [fz])).toBe(false);
+  });
+
+  it('greift wieder auf ein ausgefallenes Fahrzeug zu, sobald es als einsatzbereit gemeldet ist', () => {
+    const fz = fahrzeug({ material: { tourniquet: 4 }, ausgefallen: false });
+    expect(materialVerfuegbar('tourniquet', 'schadensstelle', [fz])).toBe(true);
+  });
 });
 
 describe('verbraucheMaterial', () => {
@@ -180,5 +190,11 @@ describe('verbraucheMaterial', () => {
     const fz = fahrzeug({ material: { tourniquet: 0 } });
     const danach = verbraucheMaterial(verbraucheMaterial([fz], 'tourniquet', 'schadensstelle'), 'tourniquet', 'schadensstelle');
     expect(danach[0]!.material.tourniquet).toBe(0);
+  });
+
+  it('liefert kein Material mehr von einem ausgefallenen Fahrzeug (→ modell.ereignis)', () => {
+    const fz = fahrzeug({ material: { tourniquet: 4 }, ausgefallen: true });
+    const danach = verbraucheMaterial([fz], 'tourniquet', 'schadensstelle');
+    expect(danach[0]!.material.tourniquet).toBe(4);
   });
 });

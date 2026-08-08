@@ -450,7 +450,8 @@ export const MASSNAHME_MATERIAL: Partial<Record<MassnahmeId, MaterialTyp>> = {
  * verknüpften MaterialTyp immer; ohne Fahrzeuge im Spiel (Solo, oder eine
  * Sitzung ohne konfigurierte Fahrzeuge) immer (→ `domain.fuehrung`,
  * `darfFahrzeugeDisponieren` folgt demselben Bypass-Muster); sonst nur,
- * wenn mindestens ein Fahrzeug im selben Abschnitt noch Bestand hat.
+ * wenn mindestens ein nicht ausgefallenes Fahrzeug (→ `modell.ereignis`) im
+ * selben Abschnitt noch Bestand hat.
  */
 export function materialVerfuegbar(
   massnahmeId: MassnahmeId,
@@ -474,7 +475,7 @@ export function materialTypVerfuegbar(
 ): boolean {
   if (fahrzeuge.length === 0) return true;
   return fahrzeuge
-    .filter((fahrzeug) => fahrzeug.abschnitt === abschnitt)
+    .filter((fahrzeug) => fahrzeug.abschnitt === abschnitt && !fahrzeug.ausgefallen)
     .some((fahrzeug) => (fahrzeug.material[materialTyp] ?? 0) > 0);
 }
 
@@ -503,7 +504,10 @@ export function verbraucheMaterialTyp(
   abschnitt: Einsatzabschnitt,
 ): Fahrzeug[] {
   const ziel = fahrzeuge.find(
-    (fahrzeug) => fahrzeug.abschnitt === abschnitt && (fahrzeug.material[materialTyp] ?? 0) > 0,
+    (fahrzeug) =>
+      fahrzeug.abschnitt === abschnitt &&
+      !fahrzeug.ausgefallen &&
+      (fahrzeug.material[materialTyp] ?? 0) > 0,
   );
   if (!ziel) return fahrzeuge;
   return fahrzeuge.map((fahrzeug) =>

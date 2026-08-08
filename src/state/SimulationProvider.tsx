@@ -283,6 +283,7 @@ export function SimulationProvider({
     kollegenanfragen,
     freigabemodus,
     routen,
+    ausgeloesteEreignisse,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -305,6 +306,7 @@ export function SimulationProvider({
       kollegenanfragen,
       freigabemodus,
       routen,
+      ausgeloesteEreignisse,
     }),
     [
       phase,
@@ -322,6 +324,7 @@ export function SimulationProvider({
       kollegenanfragen,
       freigabemodus,
       routen,
+      ausgeloesteEreignisse,
     ],
   );
 

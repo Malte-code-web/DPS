@@ -469,6 +469,13 @@ export interface Fahrzeug extends FahrzeugVorlage {
    * ab pro Fahrzeug-Exemplar unabhängig verbraucht.
    */
   material: Partial<Record<MaterialTyp, number>>;
+  /**
+   * Von der Übungsleitung als Ereignis ausgelöster Ausfall (→ `modell.ereignis`)
+   * - Besatzung und Materialbestand bleiben zugeordnet, liefern aber kein
+   * Material mehr (→ `domain.material`), bis die Übungsleitung den Ausfall
+   * wieder aufhebt. Reine Regie-Markierung, kein automatischer Auslöser.
+   */
+  ausgefallen?: boolean;
 }
 
 /**
@@ -835,6 +842,22 @@ export interface Route extends RouteVorlage {
   status: 'frei' | 'gesperrt';
 }
 
+/**
+ * @anker modell.ereignis Von der Übungsleitung live ausgelöste Lageänderung
+ *
+ * Vordefinierte, im Szenario hinterlegte Nachzügler-Patienten (→ `ui.ereignissepanel`)
+ * - anders als der Freigabemodus (→ `modell.freigabemodus`) existieren diese
+ * Patienten bis zum Auslösen gar nicht in `state.patienten`, sondern nur als
+ * Vorlage im Szenario. Ein Ereignis lässt sich pro Sitzung nur einmal
+ * auslösen (→ `state.ausgeloesteEreignisse`).
+ */
+export interface LageereignisVorlage {
+  id: string;
+  titel: string;
+  beschreibung: string;
+  patienten: PatientVorlage[];
+}
+
 export interface Szenario {
   id: string;
   titel: string;
@@ -858,4 +881,11 @@ export interface Szenario {
     schluesselpunkte: Partial<Record<Einsatzabschnitt, GeoPosition>>;
     routen: RouteVorlage[];
   };
+  /**
+   * Vordefinierte Lageänderungen, die die Übungsleitung während der Übung
+   * live auslösen kann (→ `modell.ereignis`). Optional - ein Szenario ohne
+   * hinterlegte Ereignisse zeigt das Ereignisse-Panel weiterhin (für
+   * Fahrzeugausfall/Nachforderung), nur ohne Lageänderungs-Abschnitt.
+   */
+  ereignisse?: LageereignisVorlage[];
 }

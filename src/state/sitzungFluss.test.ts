@@ -1547,3 +1547,112 @@ describe('Verbindungsfehler des Transports', () => {
     expect(nachErholung.sitzung.verbindungsfehler).toBeNull();
   });
 });
+
+describe('Ereignis-Injektion (→ modell.ereignis)', () => {
+  function eroeffnetMitFahrzeug(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugHinzugefuegt', fahrzeugTyp: 'rtw' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  it('markiert ein Fahrzeug als ausgefallen und wieder als einsatzbereit', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const fahrzeugId = imEinsatz.fahrzeuge[0]!.id;
+
+    const ausgefallen = simulationReducer(imEinsatz, {
+      typ: 'fahrzeugAusfallSetzen',
+      fahrzeugId,
+      ausgefallen: true,
+    });
+    expect(ausgefallen.fahrzeuge[0]!.ausgefallen).toBe(true);
+    // Besatzung/Material bleiben unverändert zugeordnet, nur die Nutzbarkeit
+    // ändert sich (→ domain.material).
+    expect(ausgefallen.fahrzeuge[0]!.material).toEqual(imEinsatz.fahrzeuge[0]!.material);
+
+    const wiederEinsatzbereit = simulationReducer(ausgefallen, {
+      typ: 'fahrzeugAusfallSetzen',
+      fahrzeugId,
+      ausgefallen: false,
+    });
+    expect(wiederEinsatzbereit.fahrzeuge[0]!.ausgefallen).toBe(false);
+  });
+
+  it('fügt bei Nachforderung ein neues Fahrzeug im Bereitstellungsraum mit vollem Material hinzu', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const vorAnzahl = imEinsatz.fahrzeuge.length;
+
+    const nachfordert = simulationReducer(imEinsatz, {
+      typ: 'fahrzeugNachfordern',
+      fahrzeugTyp: 'ktw',
+    });
+    expect(nachfordert.fahrzeuge.length).toBe(vorAnzahl + 1);
+    const neues = nachfordert.fahrzeuge.at(-1)!;
+    expect(neues.typ).toBe('ktw');
+    expect(neues.abschnitt).toBe('bereitstellungsraum');
+    expect(neues.besatzung).toEqual([]);
+    expect(Object.values(neues.material).some((menge) => (menge ?? 0) > 0)).toBe(true);
+  });
+
+  it('löst eine Lageänderung aus, fügt die vordefinierten Patienten an der Schadensstelle hinzu (Freigabemodus sofort)', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const vorAnzahl = imEinsatz.patienten.length;
+    const ereignis = busunfall.ereignisse![0]!;
+
+    const ausgeloest = simulationReducer(imEinsatz, {
+      typ: 'ereignisAusloesen',
+      ereignisId: ereignis.id,
+    });
+    expect(ausgeloest.patienten.length).toBe(vorAnzahl + ereignis.patienten.length);
+    const neuePatienten = ausgeloest.patienten.slice(vorAnzahl);
+    expect(neuePatienten.map((patient) => patient.id)).toEqual(
+      ereignis.patienten.map((vorlage) => vorlage.id),
+    );
+    expect(neuePatienten.every((patient) => patient.abschnitt === 'schadensstelle')).toBe(true);
+    expect(ausgeloest.ausgeloesteEreignisse).toEqual([ereignis.id]);
+  });
+
+  it('landet in der Ablage statt an der Schadensstelle, wenn gestaffelt gewählt wurde', () => {
+    const gestaffelt = simulationReducer(eroeffnetMitFahrzeug(), {
+      typ: 'freigabemodusSetzen',
+      modus: 'gestaffelt',
+    });
+    const imEinsatz = simulationReducer(gestaffelt, { typ: 'sitzungStarten' });
+    const vorAnzahl = imEinsatz.patienten.length;
+    const ereignis = busunfall.ereignisse![0]!;
+
+    const ausgeloest = simulationReducer(imEinsatz, {
+      typ: 'ereignisAusloesen',
+      ereignisId: ereignis.id,
+    });
+    const neuePatienten = ausgeloest.patienten.slice(vorAnzahl);
+    expect(neuePatienten.every((patient) => patient.abschnitt === 'ablage')).toBe(true);
+  });
+
+  it('lässt sich nicht doppelt auslösen', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const ereignis = busunfall.ereignisse![0]!;
+
+    const einmal = simulationReducer(imEinsatz, { typ: 'ereignisAusloesen', ereignisId: ereignis.id });
+    const zweimal = simulationReducer(einmal, { typ: 'ereignisAusloesen', ereignisId: ereignis.id });
+    expect(zweimal.patienten.length).toBe(einmal.patienten.length);
+    expect(zweimal.ausgeloesteEreignisse).toEqual([ereignis.id]);
+  });
+
+  it('nimmt ausgeloesteEreignisse in den Schnappschuss auf', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const ereignis = busunfall.ereignisse![0]!;
+    const ausgeloest = simulationReducer(imEinsatz, {
+      typ: 'ereignisAusloesen',
+      ereignisId: ereignis.id,
+    });
+    const schnappschuss = schnappschussAus(ausgeloest);
+    expect(schnappschuss.ausgeloesteEreignisse).toEqual([ereignis.id]);
+  });
+});

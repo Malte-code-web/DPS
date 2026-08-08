@@ -3292,6 +3292,99 @@ button.gefahr {
   flex-shrink: 0;
 }
 
+/* --- Ereignisse (→ ui.ereignissepanel) -------------------------------- */
+
+.ereignis-abschnitt {
+  margin-top: 0.9rem;
+}
+
+.ereignis-abschnitt:first-of-type {
+  margin-top: 0;
+}
+
+.ereignis-abschnitt h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-leise);
+  margin: 0 0 0.5rem;
+}
+
+.ereignis-fahrzeugliste,
+.ereignis-lageliste {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ereignis-fahrzeugzeile,
+.ereignis-lagezeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+}
+
+.ereignis-fahrzeugname {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ereignis-ausgefallen-marke,
+.fahrzeug-ausgefallen-marke {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+}
+
+.ereignis-nachforderung-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ereignis-lagetext {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ereignis-lagetext span {
+  font-size: 0.72rem;
+  color: var(--text-leise);
+}
+
+.btn-warnend {
+  background: var(--warn);
+  color: #1a1305;
+  border: none;
+  border-radius: 7px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-warnend:hover {
+  filter: brightness(1.08);
+}
+
+.btn-warnend:disabled {
+  opacity: 0.55;
+  filter: none;
+}
+
 /* --- Kartenansicht (→ ui.kartenansicht) ------------------------------ */
 
 .karten-rahmen {

@@ -63,6 +63,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Regie-Menü: Icons + Sidebar am linken Rand auf schmalen Bildschirmen (`DPS-0.8.0.10`) | Zwei Verfeinerungen des Ansichts-Menüs aus `DPS-0.8.0.9`: Erstens ersetzen sieben schlichte, einfarbige Strich-Icons (`RegieMenueIcons.tsx`, kein Icon-Set eingebunden) den bisherigen zweizeilig umbrechenden Text im eingeklappten Zustand - jeder Menüpunkt bleibt damit auf einen Blick unterscheidbar, auch ohne Beschriftung; ausgeklappt stehen Icon und Beschriftung nebeneinander. Zweitens bleibt die Seitenleiste auf schmalen Bildschirmen (≤980px) ein Rand-Streifen links neben der Hauptfläche statt darunter zu rutschen - ein `order: -1` im Grid stellt sie visuell nach vorn, ohne die DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu ändern; eingeklappt schrumpft sie auf eine 56px breite Icon-Leiste, die weiterhin jeden Klick zum Ansicht-Wechsel entgegennimmt. Kein neuer Datenpfad, reine UI-Verfeinerung. Live verifiziert (Desktop und mobiler Viewport 390×844): alle sieben Icons vorhanden, im eingeklappten Zustand nur noch Icons sichtbar (kein Text), Ansicht per Icon-Klick auch eingeklappt wechselbar, mobile Seitenleiste steht links auf gleicher Höhe wie die Hauptfläche statt darunter, keine Konsolenfehler. |
 | Regie-Menü bleibt beim Scrollen stehen (`DPS-0.8.0.11`) | Die Seitenleiste scrollte bislang mit der Hauptfläche mit - bei einer langen Kacheln- oder Panel-Ansicht verschwand das Menü nach oben aus dem sichtbaren Bereich. Jetzt bleibt sie wie die bereits angeheftete Einsatzleiste (`position: sticky`) direkt unterhalb von ihr stehen, während der Inhalt darunter/daneben scrollt - ein `top`-Wert knapp über der gemessenen Kopfzeilen-Höhe verhindert eine Überlappung, `max-height`+`overflow-y: auto` fangen sehr niedrige Bildschirme ab. Gilt unverändert für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil. Kein neuer Datenpfad, reine CSS-Änderung. Live verifiziert: Sidebar bleibt nach dem Scrollen sichtbar knapp unter der Einsatzleiste (Desktop und Mobil), ein Menüpunkt lässt sich auch nach dem Scrollen anklicken, keine Konsolenfehler. |
 | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile (`DPS-0.8.0.12`) | Auf Wunsch (mit annotiertem Screenshot präzisiert) zieht die Sichtungskategorien-Übersicht (SK I-EX + Offen) aus der Einsatzleiste aus und bekommt eine eigene, ganz oben angeheftete Zeile über die volle Breite (`.sichtungsleiste`) - darunter bleibt die Einsatzleiste mit Titel, Lagemeldung und Uhr angeheftet, beide Zeilen zusammen `position: sticky`. Pause/Tempo/Einsatz-beenden (Ablaufsteuerung) stehen wieder hier statt im Ansichts-Menü - nur für Übungsleitung/Beobachter, Spieler sehen weiterhin nur den reinen Status und ihren Verlassen-Knopf. Das Ansichts-Menü hat dadurch nur noch sechs statt sieben Punkte (kein „Ablaufsteuerung“ mehr), `AblaufsteuerungPanel.tsx` entfällt vollständig. Die `top`-Offsets der angehefteten Elemente (Einsatzleiste, Verbindungsfehler-Hinweis, Regie-Menü) sind bewusst in `px` statt `rem` gesetzt, weil die Seite eine von 16px abweichende Root-Schriftgröße (15px) verwendet - mit `rem` hätte es je nach Basis zu Überlappungen kommen können. Kein neuer Datenpfad, reine Layout-Umstellung. Live verifiziert (Desktop und Mobil, mit erzwungenem Scrollen): keine Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen anklickbar, keine Konsolenfehler. |
+| Ereignis-Injektion (`DPS-0.8.0.13`) | Erster der drei noch offenen "Fundament, Teil 2"-Punkte: ein neuer Bereich "Ereignisse" im Ansichts-Menü (nur Übungsleitung/Beobachter) bündelt drei live auslösbare Ereignisse. **Fahrzeugausfall** markiert ein vorhandenes Fahrzeug als ausgefallen - Besatzung und Material bleiben zugeordnet, liefern aber kein Material mehr (`verbraucheMaterialTyp`/`materialTypVerfuegbar` schließen es aus), bis die Übungsleitung den Ausfall wieder aufhebt. **Nachforderung** fügt ein neues Fahrzeug hinzu, das im Bereitstellungsraum eintrifft (bislang reine, extra dafür vorgesehene Fahrzeug-Infrastruktur ohne Funktion) und von dort per normaler Fahrzeugverlegung mit echter, geodatenbasierter Anfahrtszeit weiter muss. **Lageänderung** setzt vordefinierte Nachzügler-Patienten aus dem Szenario frei (`Szenario.ereignisse`) - anders als die gestaffelte Freigabe existieren diese bis zum Auslösen gar nicht in `state.patienten`, sondern nur als Vorlage; sie landen je nach Freigabemodus an der Schadensstelle oder in der Ablage, jedes Ereignis ist nur einmal auslösbar. Für Busunfall B31 ein Beispiel-Ereignis ("Zweiter Unfall am Bus") mit zwei neuen, gegen tacSTART geprüften Patienten hinterlegt. Kein Reducer-Eingriff in bestehende Abläufe - alle drei Ereignisse sind reine Ergänzungen ohne Rollenprüfung im Reducer selbst (wie die übrigen Regie-Werkzeuge). Live verifiziert: Fahrzeugausfall-Umschalten in beide Richtungen mit sichtbarer Marke, Nachforderung erscheint in der Fahrzeugliste, Lageänderung erhöht die Patientenzahl korrekt und sperrt sich nach dem Auslösen, keine Konsolenfehler. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -662,7 +663,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -763,27 +764,28 @@ _207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
 | `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
-| `modell.delegation` | [`src/domain/types.ts:699`](src/domain/types.ts#L699) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:711`](src/domain/types.ts#L711) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:665`](src/domain/types.ts#L665) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.eingeklemmt` | [`src/domain/types.ts:622`](src/domain/types.ts#L622) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
-| `modell.eingeklemmtstatus` | [`src/domain/types.ts:636`](src/domain/types.ts#L636) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.delegation` | [`src/domain/types.ts:706`](src/domain/types.ts#L706) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:718`](src/domain/types.ts#L718) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:672`](src/domain/types.ts#L672) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.eingeklemmt` | [`src/domain/types.ts:629`](src/domain/types.ts#L629) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
+| `modell.eingeklemmtstatus` | [`src/domain/types.ts:643`](src/domain/types.ts#L643) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.ereignis` | [`src/domain/types.ts:846`](src/domain/types.ts#L846) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:422`](src/domain/types.ts#L422) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:779`](src/domain/types.ts#L779) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
-| `modell.freigabemodus` | [`src/domain/types.ts:612`](src/domain/types.ts#L612) | Geplante automatische Freigabe im gestaffelten Modus |
+| `modell.finalsichtung` | [`src/domain/types.ts:786`](src/domain/types.ts#L786) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.freigabemodus` | [`src/domain/types.ts:619`](src/domain/types.ts#L619) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
-| `modell.geoposition` | [`src/domain/types.ts:808`](src/domain/types.ts#L808) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
+| `modell.geoposition` | [`src/domain/types.ts:815`](src/domain/types.ts#L815) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.kollegenanfrage` | [`src/domain/types.ts:726`](src/domain/types.ts#L726) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
-| `modell.material` | [`src/domain/types.ts:475`](src/domain/types.ts#L475) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
-| `modell.patient` | [`src/domain/types.ts:768`](src/domain/types.ts#L768) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:579`](src/domain/types.ts#L579) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.kollegenanfrage` | [`src/domain/types.ts:733`](src/domain/types.ts#L733) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
+| `modell.material` | [`src/domain/types.ts:482`](src/domain/types.ts#L482) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
+| `modell.patient` | [`src/domain/types.ts:775`](src/domain/types.ts#L775) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:586`](src/domain/types.ts#L586) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:366`](src/domain/types.ts#L366) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.route` | [`src/domain/types.ts:815`](src/domain/types.ts#L815) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
-| `modell.rufgruppe` | [`src/domain/types.ts:750`](src/domain/types.ts#L750) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.route` | [`src/domain/types.ts:822`](src/domain/types.ts#L822) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
+| `modell.rufgruppe` | [`src/domain/types.ts:757`](src/domain/types.ts#L757) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
@@ -862,14 +864,14 @@ _207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:183`](src/state/reducer.ts#L183) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:190`](src/state/reducer.ts#L190) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
 | `state.freigabemodus` | [`src/state/reducer.ts:132`](src/state/reducer.ts#L132) | Sofort sichtbar oder gestaffelt über die Ablage |
 | `state.phase` | [`src/state/reducer.ts:59`](src/state/reducer.ts#L59) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:369`](src/state/reducer.ts#L369) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:256`](src/state/reducer.ts#L256) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:382`](src/state/reducer.ts#L382) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.schnappschuss` | [`src/state/reducer.ts:266`](src/state/reducer.ts#L266) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
@@ -886,19 +888,19 @@ _207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1922`](src/index.css#L1922) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2455`](src/index.css#L2455) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4304`](src/index.css#L4304) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4397`](src/index.css#L4397) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1975`](src/index.css#L1975) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4048`](src/index.css#L4048) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:4141`](src/index.css#L4141) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1801`](src/index.css#L1801) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4376`](src/index.css#L4376) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4469`](src/index.css#L4469) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4507`](src/index.css#L4507) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4600`](src/index.css#L4600) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -949,13 +951,14 @@ _207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:11`](src/components/Einsatzleiste.tsx#L11) | Kopfzeile: Sichtungszähler, Uhr, Status, Ablaufsteuerung |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:20`](src/pages/EinsatzSeite.tsx#L20) | Gesamtlagebild (Regie), Abschnittsliste oder Patientenseite |
+| `ui.ereignissepanel` | [`src/components/EreignissePanel.tsx:5`](src/components/EreignissePanel.tsx#L5) | Ereignis-Injektion: Fahrzeugausfall, Nachforderung, Lageänderung |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:10`](src/components/FahrzeugVerlegung.tsx#L10) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.funkkanaelepanel` | [`src/components/FunkkanaelePanel.tsx:5`](src/components/FunkkanaelePanel.tsx#L5) | Wer steht gerade auf welchem Kanal |
 | `ui.gebundenekraeftepanel` | [`src/components/GebundeneKraeftePanel.tsx:18`](src/components/GebundeneKraeftePanel.tsx#L18) | Übersicht aller aktuell gebundenen Kräfte |
-| `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:28`](src/pages/GesamtlagebildSeite.tsx#L28) | Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü |
+| `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:29`](src/pages/GesamtlagebildSeite.tsx#L29) | Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü |
 | `ui.kartenansicht` | [`src/components/Kartenansicht.tsx:28`](src/components/Kartenansicht.tsx#L28) | Schematische Kartenansicht als zweite Sicht auf dieselbe Lage |
 | `ui.kartenortepanel` | [`src/components/KartenOrtePanel.tsx:8`](src/components/KartenOrtePanel.tsx#L8) | Entfernungen der Kartenansicht als Liste in der Seitenleiste |
 | `ui.kennzahlenleiste` | [`src/components/Kennzahlenleiste.tsx:18`](src/components/Kennzahlenleiste.tsx#L18) | Vier Kacheln als Ersteindruck des Gesamtlagebilds |
@@ -1069,6 +1072,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.13` | Ereignis-Injektion: neuer Ansichts-Punkt "Ereignisse" (Übungsleitung/Beobachter) mit drei Ereignistypen - Fahrzeugausfall (reversibel, Fahrzeug liefert kein Material mehr, Besatzung bleibt zugeordnet), Nachforderung (neues Fahrzeug trifft unbesetzt im Bereitstellungsraum ein, muss verlegt werden), Lageänderung (setzt vorab im Szenario hinterlegte, tacSTART-geprüfte Nachzügler-Patienten frei, je Ereignis nur einmal auslösbar) |
 | `DPS-0.8.0.12` | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile: eigene volle-Breite Zeile für die Sichtungskategorien ganz oben, Pause/Tempo/Einsatz-beenden zurück in der Einsatzleiste statt im Ansichts-Menü (jetzt nur noch sechs Punkte) |
 | `DPS-0.8.0.11` | Regie-Menü bleibt beim Scrollen stehen: `position: sticky` direkt unter der Einsatzleiste statt mit der Hauptfläche mitzuscrollen, gilt für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil |
 | `DPS-0.8.0.10` | Regie-Menü: Icons statt Text im eingeklappten Zustand, Seitenleiste bleibt auf schmalen Bildschirmen (≤980px) am linken Rand statt unter den Hauptinhalt zu rutschen |

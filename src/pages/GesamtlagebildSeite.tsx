@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AblageFreigabePanel } from '../components/AblageFreigabePanel';
 import { AbschnitteUebersicht } from '../components/AbschnitteUebersicht';
+import { EreignissePanel } from '../components/EreignissePanel';
 import { FunkkanaelePanel } from '../components/FunkkanaelePanel';
 import { GebundeneKraeftePanel } from '../components/GebundeneKraeftePanel';
 import { KartenOrtePanel } from '../components/KartenOrtePanel';
@@ -15,7 +16,7 @@ interface Props {
   onAbschnittWaehlen: (abschnitt: Einsatzabschnitt) => void;
 }
 
-type AnsichtId = 'kacheln' | 'karte' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
+type AnsichtId = 'kacheln' | 'karte' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk' | 'ereignisse';
 
 interface AnsichtEintrag {
   id: AnsichtId;
@@ -32,9 +33,10 @@ interface AnsichtEintrag {
  * Kärtchen je Abschnitt öffnet weiterhin die gewohnte Detailsicht
  * (→ `ui.einsatzseite`) zum eigentlichen Behandeln.
  *
- * Die Seitenleiste wirkt als Menü über alle sechs Ansichten (Kacheln,
- * Karte, Freigabe, Gebundene Kräfte, Offene Anfragen, Funkkanäle) - immer
- * nur eine Ansicht gleichzeitig sichtbar in der Hauptfläche, ein Klick im
+ * Die Seitenleiste wirkt als Menü über alle sieben Ansichten (Kacheln,
+ * Karte, Freigabe, Gebundene Kräfte, Offene Anfragen, Funkkanäle,
+ * Ereignisse) - immer nur eine Ansicht gleichzeitig sichtbar in der
+ * Hauptfläche, ein Klick im
  * Menü wechselt sie. Ablaufsteuerung (Pause/Tempo/Einsatz beenden) steht
  * nicht mehr hier, sondern wieder in der Einsatzleiste
  * (→ `ui.einsatzleiste`). Anders als ein reines Aufklapp-Panel bleibt das
@@ -59,6 +61,7 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   ).length;
   const anfragenAnzahl = state.delegationsanfragen.length + state.kollegenanfragen.length;
   const funkAnzahl = state.rufgruppen.length;
+  const ausgefalleneAnzahl = state.fahrzeuge.filter((fahrzeug) => fahrzeug.ausgefallen).length;
 
   const eintraege: AnsichtEintrag[] = [
     { id: 'kacheln', label: 'Kacheln' },
@@ -81,6 +84,12 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
       wartet: anfragenAnzahl > 0,
     },
     { id: 'funk', label: 'Funkkanäle', marke: funkAnzahl > 0 ? String(funkAnzahl) : 'niemand' },
+    {
+      id: 'ereignisse',
+      label: 'Ereignisse',
+      marke: ausgefalleneAnzahl > 0 ? `${ausgefalleneAnzahl} ausgefallen` : 'bereit',
+      wartet: ausgefalleneAnzahl > 0,
+    },
   ];
 
   return (
@@ -100,6 +109,7 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
           {aktiv === 'gebunden' && <GebundeneKraeftePanel />}
           {aktiv === 'anfragen' && <OffeneAnfragenPanel />}
           {aktiv === 'funk' && <FunkkanaelePanel />}
+          {aktiv === 'ereignisse' && <EreignissePanel />}
         </div>
 
         <aside

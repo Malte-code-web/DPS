@@ -431,6 +431,93 @@ const busunfall: Szenario = {
       { id: 'r-ausgang-transport', von: 'ausgangssichtung', nach: 'transport', distanzMeter: 60, sperraufschlagSek: 45 },
     ],
   },
+  // Von der Übungsleitung live auslösbare Lageänderung (→ `modell.ereignis`,
+  // `ui.ereignissepanel`) - existiert bis zum Auslösen nicht in der Übung,
+  // taucht also nicht in `patienten` oben auf. Vitalwerte gegen tacSTART
+  // geprüft wie die übrigen Patienten (→ `szenarien.liste`).
+  ereignisse: [
+    {
+      id: 'zweiter-unfall',
+      titel: 'Zweiter Unfall am Bus',
+      beschreibung:
+        'Ein PKW ist auf der Unfallstelle in den stehenden Bus gefahren - zwei weitere Verletzte gemeldet.',
+      patienten: [
+        {
+          id: 'B-11',
+          name: 'Tom Reinke',
+          alter: 34,
+          geschlecht: 'm',
+          gewicht: 82,
+          kurzbefund: 'PKW-Fahrer, steigt selbst aus, hält sich den Nacken.',
+          untersuchungsbefund:
+            'Schleudertrauma der Halswirbelsäule nach Auffahrunfall, Druckschmerz im Nacken, keine neurologischen Ausfälle.',
+          gehfaehig: true,
+          kritischeBlutung: false,
+          spontanatmung: true,
+          befolgtAufforderungen: true,
+          startVitalwerte: {
+            atemfrequenz: 18,
+            herzfrequenz: 92,
+            systolischerRR: 128,
+            spo2: 98,
+            gcs: 15,
+            rekapzeit: 1.5,
+            schmerz: 4,
+          },
+          probleme: [
+            {
+              id: 'hws-distorsion',
+              offensichtlich: true,
+              koerperregion: 'hals',
+              label: 'HWS-Distorsion',
+              beschreibung:
+                'Nackenschmerzen und Bewegungseinschränkung nach Auffahrunfall, keine Kraft-/Gefühlsstörung.',
+              behandeltDurch: ['immobilisation'],
+              verlauf: { herzfrequenz: 1, schmerz: 0.05 },
+            },
+          ],
+          erwarteteSK: 'SK3',
+        },
+        {
+          id: 'B-12',
+          name: 'Frauke Lindt',
+          alter: 45,
+          geschlecht: 'w',
+          gewicht: 70,
+          kurzbefund:
+            'PKW-Beifahrerin, sitzt eingeklemmt im Fußraum, klagt über starke Schmerzen im Unterschenkel.',
+          untersuchungsbefund:
+            'Geschlossene Unterschenkelfraktur rechts durch Anprall am Armaturenbrett, Fehlstellung sichtbar, keine kritische Blutung.',
+          gehfaehig: false,
+          kritischeBlutung: false,
+          spontanatmung: true,
+          befolgtAufforderungen: true,
+          startVitalwerte: {
+            atemfrequenz: 22,
+            herzfrequenz: 108,
+            systolischerRR: 118,
+            spo2: 96,
+            gcs: 15,
+            rekapzeit: 2,
+            schmerz: 7,
+          },
+          probleme: [
+            {
+              id: 'fraktur-unterschenkel',
+              offensichtlich: true,
+              koerperregion: 'bein_rechts',
+              label: 'Geschlossene Unterschenkelfraktur',
+              beschreibung:
+                'Sichtbare Fehlstellung des rechten Unterschenkels, zunehmende Schwellung, starke Schmerzen.',
+              behandeltDurch: ['immobilisation'],
+              verlauf: { herzfrequenz: 3, schmerz: 0.1, systolischerRR: -1 },
+            },
+          ],
+          erwarteteSK: 'SK2',
+        },
+      ],
+    },
+  ],
 };
 
 const wohnungsbrand: Szenario = {

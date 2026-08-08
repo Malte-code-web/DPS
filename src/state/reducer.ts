@@ -146,6 +146,12 @@ export interface SimulationState {
    */
   routen: Route[];
   /**
+   * IDs bereits ausgelöster Lageänderungen (→ `modell.ereignis`) - verhindert
+   * doppeltes Auslösen und blendet den Auslösen-Knopf im Ereignisse-Panel
+   * (→ `ui.ereignissepanel`) danach aus.
+   */
+  ausgeloesteEreignisse: string[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -177,6 +183,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   kollegenanfragen: [],
   freigabemodus: 'sofort',
   routen: [],
+  ausgeloesteEreignisse: [],
   schnappschussFolge: 0,
 };
 
@@ -247,6 +254,9 @@ export type SimulationAction =
   | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
   | { typ: 'patientFreigeben'; patientId: string }
   | { typ: 'alleVerdecktenFreigeben' }
+  | { typ: 'fahrzeugAusfallSetzen'; fahrzeugId: string; ausgefallen: boolean }
+  | { typ: 'fahrzeugNachfordern'; fahrzeugTyp: FahrzeugTyp }
+  | { typ: 'ereignisAusloesen'; ereignisId: string }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -283,6 +293,8 @@ export interface Schnappschuss {
   freigabemodus: 'sofort' | 'gestaffelt';
   /** Wege zwischen Einsatzabschnitten mit echter Distanz (→ `modell.route`). */
   routen: Route[];
+  /** IDs bereits ausgelöster Lageänderungen (→ `modell.ereignis`). */
+  ausgeloesteEreignisse: string[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -310,6 +322,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     kollegenanfragen: state.kollegenanfragen,
     freigabemodus: state.freigabemodus,
     routen: state.routen,
+    ausgeloesteEreignisse: state.ausgeloesteEreignisse,
   };
 }
 
@@ -918,7 +931,7 @@ export function simulationReducer(
         modus: 'digital',
         phase: 'wartebereich',
         szenario: state.szenario,
-        fahrzeuge: state.fahrzeugWunsch.map(fahrzeugAusVorlage),
+        fahrzeuge: state.fahrzeugWunsch.map((vorlage) => fahrzeugAusVorlage(vorlage)),
         sitzung: {
           aktiv: true,
           rolle: 'uebungsleiter',
@@ -1076,6 +1089,50 @@ export function simulationReducer(
       };
     }
 
+    // Ereignis-Injektion (→ `modell.ereignis`): drei von der Übungsleitung
+    // live auslösbare Ereignisse - Fahrzeugausfall, Nachforderung und
+    // Lageänderung. Reine Regie-Werkzeuge ohne eigene Rollenprüfung im
+    // Reducer (wie die übrigen Regie-Aktionen bleibt das Gate im UI, → `ui.ereignissepanel`).
+
+    case 'fahrzeugAusfallSetzen':
+      return mitFahrzeug(state, action.fahrzeugId, (fahrzeug) => ({
+        ...fahrzeug,
+        ausgefallen: action.ausgefallen,
+      }));
+
+    case 'fahrzeugNachfordern':
+      // Trifft zunächst im Bereitstellungsraum ein (→ `abschnitte.wege`) -
+      // von dort per normaler Fahrzeugverlegung mit echter, geodatenbasierter
+      // Anfahrtszeit weiter (→ `domain.geodaten`), sobald Besatzung zugewiesen ist.
+      return {
+        ...state,
+        fahrzeuge: [
+          ...state.fahrzeuge,
+          fahrzeugAusVorlage({ id: erzeugeId(), typ: action.fahrzeugTyp }, 'bereitstellungsraum'),
+        ],
+      };
+
+    case 'ereignisAusloesen': {
+      if (!state.szenario || state.ausgeloesteEreignisse.includes(action.ereignisId)) return state;
+      const ereignis = state.szenario.ereignisse?.find((eintrag) => eintrag.id === action.ereignisId);
+      if (!ereignis) return state;
+      // Dieselbe Landestelle wie eine reguläre Freigabe (→ `modell.freigabemodus`)
+      // - in einer Lage ohne RD an der Schadensstelle kommen auch Nachzügler
+      // zunächst in der Ablage an.
+      const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
+      const faktor = state.alleine ? SOLO_VERSCHLECHTERUNG_FAKTOR : 1;
+      return {
+        ...state,
+        patienten: [
+          ...state.patienten,
+          ...ereignis.patienten.map((vorlage) =>
+            patientAusVorlage(vorlage, faktor, ziel, state.zeitSek),
+          ),
+        ],
+        ausgeloesteEreignisse: [...state.ausgeloesteEreignisse, action.ereignisId],
+      };
+    }
+
     case 'sitzungStarten': {
       if (!state.szenario) return state;
       // Sofort: wie bisher direkt an der Schadensstelle sichtbar. Gestaffelt:
@@ -1127,6 +1184,7 @@ export function simulationReducer(
         kollegenanfragen: s.kollegenanfragen,
         freigabemodus: s.freigabemodus,
         routen: s.routen,
+        ausgeloesteEreignisse: s.ausgeloesteEreignisse,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

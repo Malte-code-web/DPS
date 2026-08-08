@@ -336,9 +336,7 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
-  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Ereignis-Injektion
-    (Fahrzeugausfall/Nachforderung/Lageänderung - Kacheln- und Kartenansicht
-    sind mit `DPS-0.8.0.4`/`DPS-0.8.0.5` fertig), private
+  - 💤 **Noch offen (Fundament, Teil 2, Rest):** private
     Spieler-Statusansicht, Debriefing-Erweiterung.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
   Teil 2 (Rettungs-Hälfte):
@@ -579,6 +577,35 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf
     funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen
     anklickbar, keine Konsolenfehler.
+- ✅ **Ereignis-Injektion (`DPS-0.8.0.13`)** - Übungsleiter-Ebene, Teil 2
+  (letzter offener Punkt aus dem Fundament, Teil 2, `DPS-0.8.0.1`):
+  - Neuer siebter Punkt **„Ereignisse"** im Ansichts-Menü, nur für
+    Übungsleitung/Beobachter, mit drei Ereignistypen.
+  - **Fahrzeugausfall:** ein Knopf je Fahrzeug markiert es als ausgefallen
+    (`Fahrzeug.ausgefallen`) - Besatzung und Materialbestand bleiben
+    zugeordnet, das Fahrzeug liefert aber kein Material mehr
+    (→ `domain.material`), bis die Übungsleitung den Ausfall wieder aufhebt.
+    Reine Regie-Markierung, jederzeit umkehrbar.
+  - **Nachforderung:** ein Knopf je Fahrzeugtyp erzeugt ein neues, unbesetztes
+    Fahrzeug mit voller Materialausstattung im Bereitstellungsraum (bislang
+    nur als Zielabschnitt für Verlegungen vorgesehen, jetzt auch als
+    Startpunkt) - muss von dort wie jedes andere Fahrzeug verlegt werden,
+    echte Geodaten-basierte Fahrzeit inklusive.
+  - **Lageänderung:** löst vorab im Szenario hinterlegte, bislang komplett
+    unsichtbare Nachzügler-Patienten aus (neues `Szenario.ereignisse`-Feld,
+    → `modell.ereignis`) - anders als die bestehende
+    verdeckt/gestaffelt-Freigabe existieren diese Patienten vor dem Auslösen
+    gar nicht in `state.patienten`. Landen je nach Freigabemodus an der
+    Schadensstelle (sofort) oder in der Ablage (gestaffelt), pro Ereignis nur
+    einmal auslösbar. Für den Busunfall zwei neue, gegen `tacstartAbweichung`
+    geprüfte Patienten (B-11 SK3, B-12 SK2) hinterlegt.
+  - Kein neuer Zeitkosten-Eintrag nötig (fällt wie jede unbekannte Aktion auf
+    `0` zurück).
+  - Live verifiziert: Fahrzeugausfall in beide Richtungen (Marke
+    erscheint/verschwindet), Nachforderung erzeugt sichtbar ein neues
+    Fahrzeug, Lageänderung erhöht „Patienten gesamt" und die neuen Patienten
+    erscheinen an der Schadensstelle, Knopf danach deaktiviert - keine
+    Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -630,8 +657,10 @@ Jeder Schritt ist eigenständig nutzbar:
    Icons über die übrigen sechs Ansichten (Kacheln, Karte, Freigabe,
    Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt, auch eingeklappt
    vollständig erreichbar bleibt und auf schmalen Bildschirmen am linken
-   Rand steht statt darunter zu rutschen; Ereignis-Injektion und die fünf
-   übrigen Ebenen offen).
+   Rand steht statt darunter zu rutschen, sowie Ereignis-Injektion
+   (Fahrzeugausfall, Nachforderung, Lageänderung); private
+   Spieler-Statusansicht, Debriefing-Erweiterung und die fünf übrigen
+   Ebenen offen).
 
 ## Ehrliche Grenzen
 

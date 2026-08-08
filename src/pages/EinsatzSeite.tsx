@@ -148,7 +148,14 @@ export function EinsatzSeite() {
                     const materialDetailOffen = materialOffen.has(fahrzeug.id);
                     return (
                       <article key={fahrzeug.id} className="fahrzeugkarte">
-                        <h3>{FAHRZEUGTYP_INFO[fahrzeug.typ].label}</h3>
+                        <h3>
+                          {FAHRZEUGTYP_INFO[fahrzeug.typ].label}
+                          {fahrzeug.ausgefallen && (
+                            <span className="fahrzeug-ausgefallen-marke" title="Als ausgefallen gemeldet">
+                              ausgefallen
+                            </span>
+                          )}
+                        </h3>
                         <p className="fahrzeug-staerke">Stärke {formatStaerke(staerke)}</p>
                         <p className="hinweis">{besatzungNamen || 'keine Besatzung'}</p>
                         {sollGesamt > 0 && (

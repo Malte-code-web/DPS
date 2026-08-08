@@ -17,6 +17,13 @@ interface Props {
 
 type AnsichtId = 'kacheln' | 'karte' | 'ablauf' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
 
+interface AnsichtEintrag {
+  id: AnsichtId;
+  label: string;
+  marke?: string;
+  wartet?: boolean;
+}
+
 /**
  * @anker ui.gesamtlagebild Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü
  *
@@ -25,12 +32,15 @@ type AnsichtId = 'kacheln' | 'karte' | 'ablauf' | 'freigabe' | 'gebunden' | 'anf
  * Kärtchen je Abschnitt öffnet weiterhin die gewohnte Detailsicht
  * (→ `ui.einsatzseite`) zum eigentlichen Behandeln.
  *
- * Eine ein-/ausklappbare Seitenleiste wirkt als Menü über alle sieben
- * Ansichten (Kacheln, Karte, Ablaufsteuerung, Freigabe, Gebundene Kräfte,
- * Offene Anfragen, Funkkanäle) - immer nur eine Ansicht gleichzeitig
- * sichtbar in der Hauptfläche, ein Klick im Menü wechselt sie. Kein neuer
- * Datenpfad - jede Ansicht liest dieselben Felder, die anderswo schon
- * existieren.
+ * Die Seitenleiste wirkt als Menü über alle sieben Ansichten (Kacheln,
+ * Karte, Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
+ * Funkkanäle) - immer nur eine Ansicht gleichzeitig sichtbar in der
+ * Hauptfläche, ein Klick im Menü wechselt sie. Anders als ein reines
+ * Aufklapp-Panel bleibt das Menü auch eingeklappt vollständig erreichbar
+ * (schmale Leiste mit denselben, nur kompakteren Knöpfen statt komplett
+ * verschwundenem Inhalt) - ähnlich einer Activity-Bar, die immer zwischen
+ * Ansichten wechseln lässt. Kein neuer Datenpfad - jede Ansicht liest
+ * dieselben Felder, die anderswo schon existieren.
  */
 export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   const { state } = useSimulation();
@@ -44,6 +54,30 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   ).length;
   const anfragenAnzahl = state.delegationsanfragen.length + state.kollegenanfragen.length;
   const funkAnzahl = state.rufgruppen.length;
+
+  const eintraege: AnsichtEintrag[] = [
+    { id: 'kacheln', label: 'Kacheln' },
+    ...(hatGeodaten ? [{ id: 'karte' as const, label: 'Karte' }] : []),
+    { id: 'ablauf', label: 'Ablaufsteuerung', marke: state.laufend ? 'läuft' : 'pausiert' },
+    {
+      id: 'freigabe',
+      label: 'Freigabe',
+      marke: verdecktAnzahl > 0 ? `${verdecktAnzahl} wartend` : 'alle frei',
+      wartet: verdecktAnzahl > 0,
+    },
+    {
+      id: 'gebunden',
+      label: 'Gebundene Kräfte',
+      marke: gebundenAnzahl > 0 ? String(gebundenAnzahl) : 'niemand',
+    },
+    {
+      id: 'anfragen',
+      label: 'Offene Anfragen',
+      marke: anfragenAnzahl > 0 ? String(anfragenAnzahl) : 'keine',
+      wartet: anfragenAnzahl > 0,
+    },
+    { id: 'funk', label: 'Funkkanäle', marke: funkAnzahl > 0 ? String(funkAnzahl) : 'niemand' },
+  ];
 
   return (
     <div className="gesamtlagebild">
@@ -81,86 +115,29 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
               {eingeklappt ? '◂' : '▸'}
             </button>
           </div>
-          {!eingeklappt && (
-            <nav className="regie-menue" role="tablist" aria-orientation="vertical" aria-label="Ansicht wählen">
+          <nav
+            className="regie-menue"
+            role="tablist"
+            aria-orientation="vertical"
+            aria-label="Ansicht wählen"
+          >
+            {eintraege.map((eintrag) => (
               <button
+                key={eintrag.id}
                 type="button"
                 role="tab"
-                aria-selected={aktiv === 'kacheln'}
-                className={aktiv === 'kacheln' ? 'regie-menue-aktiv' : ''}
-                onClick={() => setAktiv('kacheln')}
-              >
-                Kacheln
-              </button>
-              {hatGeodaten && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={aktiv === 'karte'}
-                  className={aktiv === 'karte' ? 'regie-menue-aktiv' : ''}
-                  onClick={() => setAktiv('karte')}
-                >
-                  Karte
-                </button>
-              )}
-              <button
-                type="button"
-                role="tab"
-                aria-selected={aktiv === 'ablauf'}
-                className={aktiv === 'ablauf' ? 'regie-menue-aktiv' : ''}
-                onClick={() => setAktiv('ablauf')}
-              >
-                Ablaufsteuerung
-                <span className="bereich-marke">{state.laufend ? 'läuft' : 'pausiert'}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={aktiv === 'freigabe'}
-                className={`${aktiv === 'freigabe' ? 'regie-menue-aktiv' : ''}${
-                  verdecktAnzahl > 0 ? ' regie-menue-wartet' : ''
+                aria-selected={aktiv === eintrag.id}
+                title={eintrag.label}
+                className={`${aktiv === eintrag.id ? 'regie-menue-aktiv' : ''}${
+                  eintrag.wartet ? ' regie-menue-wartet' : ''
                 }`}
-                onClick={() => setAktiv('freigabe')}
+                onClick={() => setAktiv(eintrag.id)}
               >
-                Freigabe
-                <span className="bereich-marke">
-                  {verdecktAnzahl > 0 ? `${verdecktAnzahl} wartend` : 'alle frei'}
-                </span>
+                <span className="regie-menue-label">{eintrag.label}</span>
+                {eintrag.marke && <span className="bereich-marke">{eintrag.marke}</span>}
               </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={aktiv === 'gebunden'}
-                className={aktiv === 'gebunden' ? 'regie-menue-aktiv' : ''}
-                onClick={() => setAktiv('gebunden')}
-              >
-                Gebundene Kräfte
-                <span className="bereich-marke">{gebundenAnzahl > 0 ? gebundenAnzahl : 'niemand'}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={aktiv === 'anfragen'}
-                className={`${aktiv === 'anfragen' ? 'regie-menue-aktiv' : ''}${
-                  anfragenAnzahl > 0 ? ' regie-menue-wartet' : ''
-                }`}
-                onClick={() => setAktiv('anfragen')}
-              >
-                Offene Anfragen
-                <span className="bereich-marke">{anfragenAnzahl > 0 ? anfragenAnzahl : 'keine'}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={aktiv === 'funk'}
-                className={aktiv === 'funk' ? 'regie-menue-aktiv' : ''}
-                onClick={() => setAktiv('funk')}
-              >
-                Funkkanäle
-                <span className="bereich-marke">{funkAnzahl > 0 ? funkAnzahl : 'niemand'}</span>
-              </button>
-            </nav>
-          )}
+            ))}
+          </nav>
         </aside>
       </div>
     </div>

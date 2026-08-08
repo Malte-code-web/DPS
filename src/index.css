@@ -2754,11 +2754,13 @@ button.gefahr {
   padding: 0.2rem 0;
 }
 
-/* Hauptfläche (immer nur eine Ansicht sichtbar) neben der ein-/ausklappbaren
-   Regie-Seitenleiste, die als Menü über alle Ansichten dient. */
+/* Hauptfläche (immer nur eine Ansicht sichtbar) neben der Regie-Seitenleiste,
+   die als Menü über alle Ansichten dient. Die Leiste liefert ihre eigene
+   Breite (`auto`-Spalte) - eingeklappt bleibt sie eine schmale, aber
+   vollständig bedienbare Leiste statt zu verschwinden (→ ui.gesamtlagebild). */
 .gesamtlagebild-flaeche {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.9rem;
   align-items: start;
 }
@@ -2771,6 +2773,8 @@ button.gefahr {
 }
 
 .regie-seitenleiste {
+  width: 250px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
@@ -2778,7 +2782,7 @@ button.gefahr {
 }
 
 .regie-seitenleiste-eingeklappt {
-  width: fit-content;
+  width: 84px;
 }
 
 .regie-seitenleiste-kopf {
@@ -2824,6 +2828,7 @@ button.gefahr {
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius);
+  width: 100%;
 }
 
 .regie-menue button.regie-menue-aktiv {
@@ -2837,6 +2842,23 @@ button.gefahr {
 
 .regie-menue button.regie-menue-wartet .bereich-marke {
   color: var(--warn);
+}
+
+/* Eingeklappt bleibt das Menü bedienbar (schmale Leiste, jeder Knopf
+   weiterhin klickbar) statt komplett zu verschwinden - Beschriftung bricht
+   zweizeilig um, die Marke fällt aus Platzgründen weg. */
+.regie-seitenleiste-eingeklappt .regie-menue button {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 0.1rem;
+  padding: 0.5rem 0.3rem;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.regie-seitenleiste-eingeklappt .regie-menue button .bereich-marke {
+  display: none;
 }
 
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */

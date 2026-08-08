@@ -497,6 +497,25 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     aus der Hauptfläche), Ablaufsteuerung (Pause/Weiter, Tempo) funktioniert
     innerhalb der gewählten Ansicht, Ein-/Ausklappen wirkt sofort, keine
     Konsolenfehler.
+- ✅ **Regie-Menü bleibt eingeklappt erreichbar (`DPS-0.8.0.9`)** -
+  Übungsleiter-Ebene, Teil 2 (Klarstellung: Activity-Bar-Muster statt
+  Verschwinden):
+  - Der Ein-/Ausklapp-Knopf aus `DPS-0.8.0.8` ließ das Menü beim Einklappen
+    komplett verschwinden - jetzt bleibt es als schmale, aber vollständig
+    bedienbare Leiste bestehen, ähnlich der Activity-Bar in vielen
+    IDE-/Desktop-Apps: dieselben sieben Knöpfe bleiben sichtbar und
+    anklickbar, nur die Beschriftung bricht auf zwei Zeilen um und die
+    Status-Marke fällt aus Platzgründen weg.
+  - Jede Ansicht ist damit jederzeit mit einem Klick erreichbar, ohne das
+    Menü erst wieder ausklappen zu müssen.
+  - Die Grid-Spalte der Seitenleiste folgt jetzt ihrer tatsächlichen Breite
+    (`auto` statt fest `320px`) - eingeklappt bleibt keine leere Fläche
+    mehr übrig, die Hauptfläche nutzt den gewonnenen Platz sofort.
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine Layout-Umstellung.
+  - Live verifiziert: alle sieben Knöpfe bleiben im eingeklappten Zustand
+    sichtbar und funktionsfähig (Ablaufsteuerung inkl. Pause/Weiter,
+    Kartenansicht direkt anwählbar), keine Leerfläche rechts, keine
+    Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -543,9 +562,10 @@ Jeder Schritt ist eigenständig nutzbar:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
    Maßnahmen, Rettung eingeklemmter Personen, echte Geodaten-basierte
    Verlegungsdauer und ein Gesamtlagebild, dessen Regie-Seitenleiste als
-   ein-/ausklappbares Menü über alle Ansichten (Kacheln, Karte,
-   Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
-   Funkkanäle) wirkt; Ereignis-Injektion und die fünf übrigen Ebenen offen).
+   Menü über alle Ansichten (Kacheln, Karte, Ablaufsteuerung, Freigabe,
+   Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt und auch
+   eingeklappt vollständig erreichbar bleibt; Ereignis-Injektion und die
+   fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

@@ -56,13 +56,12 @@ const RASTER_SCHRITT_M = 5;
  * der Direktbau als Rückfall erhalten (dieselbe Blast-Radius-Begrenzung wie
  * bei `domain.zugfuehrungaktiv`).
  *
- * Ein Schalter "Mikromanagement" durchbricht diese Kette bewusst: sitzt
- * mindestens ein Gruppenführer in der Sitzung, entscheidet der Zugführer
- * trotzdem selbst, ob er wie vorgesehen einen Befehl gibt oder ausnahmsweise
- * direkt baut - reine Client-Vorliebe (`useState`, kein Sync-Feld), immer
- * mit "Aus" (Befehl geben) beginnend, damit Auftragstaktik der Normalfall
- * bleibt und Mikromanagement eine bewusste Ausnahme ist statt ein
- * vergessener Zustand.
+ * Sitzt mindestens ein Gruppenführer in der Sitzung, entscheidet der
+ * Zugführer nach jeder Standortwahl neu, ob er wie vorgesehen einen Befehl
+ * gibt oder ausnahmsweise selbst baut ("Mikromanagement") - keine feste
+ * Betriebsart, sondern eine bewusste Wahl pro Zelt, damit Auftragstaktik der
+ * Normalfall bleibt, ohne die grundsätzliche Möglichkeit zum Eingreifen zu
+ * verbauen.
  */
 export function Baufeld() {
   const { state, dispatch } = useSimulation();
@@ -79,7 +78,12 @@ export function Baufeld() {
     xM: number;
     yM: number;
   } | null>(null);
-  const [mikromanagement, setMikromanagement] = useState(false);
+  const [entscheidung, setEntscheidung] = useState<{
+    abschnitt: ZeltAbschnitt;
+    typ: ZeltTypId;
+    xM: number;
+    yM: number;
+  } | null>(null);
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
   const zkBeschaeftigt = zk.aktion !== null;
@@ -121,7 +125,7 @@ export function Baufeld() {
 
   const platzieren = (xM: number, yM: number) => {
     if (!platzierModus) return;
-    if (gruppenfuehrerListe.length === 0 || mikromanagement) {
+    if (gruppenfuehrerListe.length === 0) {
       dispatch({
         typ: 'zeltPlatzieren',
         id: erzeugeId(),
@@ -134,24 +138,42 @@ export function Baufeld() {
       setPlatzierModus(null);
       return;
     }
+    setEntscheidung({ abschnitt: platzierModus.abschnitt, typ: platzierModus.typ, xM, yM });
+    setPlatzierModus(null);
+  };
+
+  const selbstBauen = () => {
+    if (!entscheidung) return;
+    dispatch({
+      typ: 'zeltPlatzieren',
+      id: erzeugeId(),
+      zeltTyp: entscheidung.typ,
+      abschnitt: entscheidung.abschnitt,
+      xM: entscheidung.xM,
+      yM: entscheidung.yM,
+      spielerId: state.sitzung.eigeneId ?? undefined,
+    });
+    setEntscheidung(null);
+  };
+
+  const befehlWaehlen = () => {
+    if (!entscheidung) return;
     if (gruppenfuehrerListe.length === 1) {
-      const zugfuehrerId = state.sitzung.eigeneId ?? '';
-      const gruppenfuehrerId = gruppenfuehrerListe[0]!.id;
       dispatch({
         typ: 'zeltBefehlErteilen',
         id: erzeugeId(),
-        zeltTyp: platzierModus.typ,
-        abschnitt: platzierModus.abschnitt,
-        xM,
-        yM,
-        zugfuehrerId,
-        gruppenfuehrerId,
+        zeltTyp: entscheidung.typ,
+        abschnitt: entscheidung.abschnitt,
+        xM: entscheidung.xM,
+        yM: entscheidung.yM,
+        zugfuehrerId: state.sitzung.eigeneId ?? '',
+        gruppenfuehrerId: gruppenfuehrerListe[0]!.id,
       });
-      setPlatzierModus(null);
+      setEntscheidung(null);
       return;
     }
-    setZielAuswahl({ abschnitt: platzierModus.abschnitt, typ: platzierModus.typ, xM, yM });
-    setPlatzierModus(null);
+    setZielAuswahl(entscheidung);
+    setEntscheidung(null);
   };
 
   const farbenInBearbeitung = new Set([
@@ -279,17 +301,6 @@ export function Baufeld() {
         </ul>
       )}
 
-      {gruppenfuehrerListe.length > 0 && (
-        <label className="baufeld-mikromanagement">
-          <input
-            type="checkbox"
-            checked={mikromanagement}
-            onChange={(event) => setMikromanagement(event.target.checked)}
-          />
-          Mikromanagement: Zelte selbst bauen statt Befehl an Gruppenführer
-        </label>
-      )}
-
       {platzierModus ? (
         <button
           type="button"
@@ -299,6 +310,23 @@ export function Baufeld() {
         >
           Platzierung abbrechen
         </button>
+      ) : entscheidung ? (
+        <div className="panel zelttyp-auswahl">
+          <div className="panel-titel">
+            <h2>Wie bauen?</h2>
+          </div>
+          <div className="baufeld-ziel-knoepfe">
+            <button type="button" onClick={befehlWaehlen}>
+              Befehl an Gruppenführer geben
+            </button>
+            <button type="button" onClick={selbstBauen}>
+              Selbst bauen (Mikromanagement)
+            </button>
+          </div>
+          <button type="button" className="zelttyp-abbrechen" onClick={() => setEntscheidung(null)}>
+            Abbrechen
+          </button>
+        </div>
       ) : zielAuswahl ? (
         <div className="panel zelttyp-auswahl">
           <div className="panel-titel">

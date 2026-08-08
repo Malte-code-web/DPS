@@ -752,28 +752,31 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Gruppenführer bekommt die Benachrichtigung, führt aus → nach Ablauf der
     Bauzeit (10-fache Geschwindigkeit) erscheint das Zelt im Baufeld,
     keine Konsolenfehler.
-- ✅ **Mikromanagement-Schalter im Baufeld (`DPS-0.8.1.3`)** - Zugführer-Ebene,
-  Teil 4, kleine Ergänzung zu `DPS-0.8.1.2` auf ausdrücklichen Wunsch: die
+- ✅ **Mikromanagement im Baufeld (`DPS-0.8.1.3`)** - Zugführer-Ebene, Teil 4,
+  kleine Ergänzung zu `DPS-0.8.1.2` auf ausdrücklichen Wunsch: die
   Auftragstaktik-Kette (Zugführer befiehlt, Gruppenführer baut) soll der
-  Normalfall bleiben, der Zugführer aber jederzeit selbst eingreifen können,
-  wenn er es für nötig hält - genau die reale Spannung zwischen Delegation
-  und Mikromanagement, die Auftragstaktik als Führungsprinzip bewusst
-  einschränkt:
-  - Neuer Schalter "Mikromanagement" in `Baufeld.tsx` (→ `ui.baufeld.befehl`) -
-    sichtbar, sobald mindestens ein Gruppenführer in der Sitzung sitzt.
-    Reine Client-Vorliebe (`useState`, kein Sync-Feld, kein neues
-    Reducer-Feld), startet immer auf "Aus", damit Auftragstaktik der
-    bewusste Normalfall bleibt statt eines vergessenen Zustands.
-  - Ist der Schalter aktiv, baut der Zugführer trotz vorhandenem
-    Gruppenführer direkt selbst (derselbe Pfad wie der bisherige
-    Kein-Gruppenführer-Rückfall) - kein Befehl, keine Benachrichtigung beim
-    Gruppenführer. Ausgeschaltet bleibt exakt das aus `DPS-0.8.1.2` bekannte
-    Verhalten unangetastet.
-  - Live mit drei echten Clients verifiziert: Schalter aktiviert → Zelt
-    entsteht direkt beim Zugführer, Gruppenführer bekommt keine
-    Benachrichtigung; Schalter deaktiviert → zweites Zelt löst wie gehabt
-    einen Befehl mit Benachrichtigung beim Gruppenführer aus, keine
-    Konsolenfehler.
+  Normalfall bleiben, der Zugführer aber die grundsätzliche Möglichkeit
+  haben, selbst einzugreifen, wenn er es für nötig hält - genau die reale
+  Spannung zwischen Delegation und Mikromanagement, die Auftragstaktik als
+  Führungsprinzip bewusst einschränkt. Bewusst **kein** Schalter oder
+  fester Modus (erste Fassung, per Nutzer-Korrektur verworfen), sondern
+  eine Entscheidung pro Platzierung:
+  - Sitzt mindestens ein Gruppenführer in der Sitzung, fragt `Baufeld.tsx`
+    (→ `ui.baufeld.befehl`) nach jeder Standortwahl "Wie bauen?" mit zwei
+    Knöpfen - "Befehl an Gruppenführer geben" oder "Selbst bauen
+    (Mikromanagement)". Keine gespeicherte Präferenz (kein neues
+    State-/Reducer-Feld) - jede Platzierung ist eine bewusste Einzelwahl,
+    Auftragstaktik bleibt der unmarkierte Normalfall.
+  - "Selbst bauen" nutzt denselben Pfad wie der bisherige
+    Kein-Gruppenführer-Rückfall - kein Befehl, keine Benachrichtigung beim
+    Gruppenführer. "Befehl an Gruppenführer geben" verhält sich exakt wie
+    das aus `DPS-0.8.1.2` bekannte Verhalten (bei mehreren Gruppenführern
+    weiterhin mit Zielperson-Auswahl).
+  - Live mit drei echten Clients verifiziert: Entscheidung erscheint nach
+    jeder Standortwahl; "Selbst bauen" gewählt → Zelt entsteht direkt beim
+    Zugführer, Gruppenführer bekommt keine Benachrichtigung; "Befehl geben"
+    beim zweiten Zelt gewählt → wie gehabt eine Benachrichtigung beim
+    Gruppenführer, keine Konsolenfehler.
 - 💤 **Noch offen (Zugführer-Ebene, Teil 5):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.

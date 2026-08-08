@@ -6,6 +6,7 @@ import {
   erfuelltFuehrung,
   formatStaerke,
   istRegiefuehrend,
+  istZugfuehrend,
   staerkemeldung,
 } from './fuehrung';
 import type { Spieler } from './sitzung';
@@ -16,6 +17,26 @@ describe('istRegiefuehrend', () => {
     expect(istRegiefuehrend('beobachter')).toBe(true);
     expect(istRegiefuehrend('spieler')).toBe(false);
     expect(istRegiefuehrend(null)).toBe(false);
+  });
+});
+
+describe('istZugfuehrend', () => {
+  it('gilt nur für Spieler mit der Führungsrolle zugfuehrer, exakt getroffen', () => {
+    expect(istZugfuehrend('spieler', 'zugfuehrer')).toBe(true);
+    expect(istZugfuehrend('spieler', 'gruppenfuehrer')).toBe(false);
+    expect(istZugfuehrend('spieler', 'keine')).toBe(false);
+    expect(istZugfuehrend('spieler', undefined)).toBe(false);
+  });
+
+  it('höhere Ränge (OrgL RD/LNA) erben die Zugführer-Ansicht nicht', () => {
+    expect(istZugfuehrend('spieler', 'orgl_rd')).toBe(false);
+    expect(istZugfuehrend('spieler', 'lna')).toBe(false);
+  });
+
+  it('gilt nicht für Übungsleitung/Beobachter, auch nicht mit Führungsrolle', () => {
+    expect(istZugfuehrend('uebungsleiter', 'zugfuehrer')).toBe(false);
+    expect(istZugfuehrend('beobachter', 'zugfuehrer')).toBe(false);
+    expect(istZugfuehrend(null, 'zugfuehrer')).toBe(false);
   });
 });
 

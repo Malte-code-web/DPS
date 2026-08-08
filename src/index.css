@@ -2892,6 +2892,42 @@ button.gefahr {
   display: none;
 }
 
+/* --- Zugführer-Ansicht (→ ui.zugfuehrerseite) -------------------------- */
+
+.zugfuehrerseite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.zf-abfrage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.zf-abfrage-leiste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.zf-abfrage-knopf {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-leise);
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.zf-abfrage-knopf.zf-abfrage-aktiv {
+  color: var(--akzent);
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+}
+
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */
 .kennzahlen {
   display: grid;

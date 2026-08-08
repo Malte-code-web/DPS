@@ -8,16 +8,17 @@ import { PatientKarte } from '../components/PatientKarte';
 import { Sprechfunk } from '../components/Sprechfunk';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
-import { formatStaerke, istRegiefuehrend, staerkemeldung } from '../domain/fuehrung';
+import { formatStaerke, istRegiefuehrend, istZugfuehrend, staerkemeldung } from '../domain/fuehrung';
 import { BESTUECKUNG, MATERIAL_LABEL } from '../domain/material';
 import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { GesamtlagebildSeite } from './GesamtlagebildSeite';
 import { PatientSeite } from './PatientSeite';
+import { ZugfuehrerSeite } from './ZugfuehrerSeite';
 import type { Einsatzabschnitt, MaterialTyp } from '../domain/types';
 
-/** @anker ui.einsatzseite Gesamtlagebild (Regie), Abschnittsliste oder Patientenseite */
+/** @anker ui.einsatzseite Gesamtlagebild (Regie), Zugführer-Übersicht, Abschnittsliste oder Patientenseite */
 export function EinsatzSeite() {
   const { state, dispatch } = useSimulation();
   const szenario = state.szenario;
@@ -25,9 +26,14 @@ export function EinsatzSeite() {
     (patient) => patient.id === state.ausgewaehlterPatientId,
   );
   const regiefuehrend = istRegiefuehrend(state.sitzung.rolle);
-  // Nur für die Regie: Startbildschirm ist das Gesamtlagebild
-  // (→ `ui.gesamtlagebild`), ein Abschnitt-Kärtchen wechselt in die gewohnte
-  // Detailsicht darunter. Spieler kennen diese Umschaltung nicht.
+  const eigeneFuehrungsrolle = state.sitzung.spieler.find(
+    (spieler) => spieler.id === state.sitzung.eigeneId,
+  )?.fuehrungsrolle;
+  const zugfuehrend = istZugfuehrend(state.sitzung.rolle, eigeneFuehrungsrolle);
+  // Für Regie und Zugführer: Startbildschirm ist eine Übersicht
+  // (→ `ui.gesamtlagebild`, `ui.zugfuehrerseite`), ein Abschnitt-Kärtchen
+  // wechselt in die gewohnte Detailsicht darunter. Andere Spieler kennen
+  // diese Umschaltung nicht.
   const [uebersicht, setUebersicht] = useState(true);
   const [materialOffen, setMaterialOffen] = useState<Set<string>>(() => new Set());
   const materialUmschalten = (fahrzeugId: string) =>
@@ -94,14 +100,21 @@ export function EinsatzSeite() {
             setUebersicht(false);
           }}
         />
+      ) : !ausgewaehlt && zugfuehrend && uebersicht ? (
+        <ZugfuehrerSeite
+          onAbschnittWaehlen={(zielAbschnitt: Einsatzabschnitt) => {
+            dispatch({ typ: 'abschnittWaehlen', abschnitt: zielAbschnitt });
+            setUebersicht(false);
+          }}
+        />
       ) : ausgewaehlt ? (
         // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen
         <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />
       ) : (
         <>
-          {regiefuehrend && (
+          {(regiefuehrend || zugfuehrend) && (
             <button type="button" className="zurueck-gesamtlagebild" onClick={() => setUebersicht(true)}>
-              &larr; Gesamtlagebild
+              &larr; {regiefuehrend ? 'Gesamtlagebild' : 'Übersicht'}
             </button>
           )}
           <Abschnittsleiste />

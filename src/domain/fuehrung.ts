@@ -55,6 +55,26 @@ export function istRegiefuehrend(rolle: Rolle | null): boolean {
 }
 
 /**
+ * @anker domain.zugfuehrend Der Zugführer leitet den Abschnitt Medizinische Rettung
+ *
+ * Bewusste Abweichung vom realen Vorbild: im MANV-Konzept Kreis Steinfurt
+ * führt dort das System LNA/OrgL RD, der Zugführer leitet nur Bereitstellungsraum
+ * und Rettungsmittelhalteplatz. Für dieses Übungskonzept übernimmt der
+ * Zugführer stattdessen die Leitung der gesamten Patientenkette - die erste
+ * echte Führungsstufe nach der reinen Regie-Ebene (→ `ui.zugfuehrerseite`).
+ * Exakter Rollentreffer, kein `erfuelltFuehrung`-Rangvergleich: OrgL RD und
+ * LNA bekommen später ihre eigenen, fachlich spezialisierten Ansichten,
+ * statt diese hier zu erben. Übungsleitung/Beobachter haben ohnehin schon
+ * die volle Regie-Sicht (→ `istRegiefuehrend`).
+ */
+export function istZugfuehrend(
+  rolle: Rolle | null,
+  fuehrungsrolle: Fuehrungsrolle | undefined,
+): boolean {
+  return rolle === 'spieler' && fuehrungsrolle === 'zugfuehrer';
+}
+
+/**
  * Ob Fahrzeuge/Besatzung disponiert werden dürfen: Übungsleitung und
  * Beobachter immer (Ersatz „bei Bedarf", → Nutzerwunsch), sonst ab
  * Zugführer-Rang. Wie jede Sperre außerhalb einer aktiven Mehrspieler-Sitzung

@@ -660,11 +660,43 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     sichten je einen anderen Patienten - jede Person sieht in "Mein Einsatz"
     ausschließlich die eigene Zeile, nie die der anderen Person, keine
     Konsolenfehler.
-- 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
-  Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
-  (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
-  (taktisch-strategisch, Raumordnung) als eigenes, späteres Bauvorhaben mit
-  eigener Versionsleiter.
+- ✅ **Zugführer-Ansicht (`DPS-0.8.1.0`)** - Zugführer-Ebene, Teil 1 (erster
+  Baustein nach einer Recherche in FwDV 100 und dem MANV-Konzept Kreis
+  Steinfurt - real führt der Zugführer dort nur Bereitstellungsraum und
+  Rettungsmittelhalteplatz, die Leitung des EA Medizinische Rettung liegt
+  beim System LNA/OrgL RD; für dieses Übungskonzept übernimmt der Zugführer
+  bewusst abweichend die Leitung des gesamten Abschnitts Medizinische
+  Rettung):
+  - Neue Hilfsfunktion `istZugfuehrend()` (→ `domain.zugfuehrend`) - exakter
+    Rollentreffer (`fuehrungsrolle === 'zugfuehrer'`), kein Rangvergleich wie
+    bei `darfFahrzeugeDisponieren`: OrgL RD und LNA sollen diese Ansicht
+    später nicht einfach erben, sondern eigene, fachlich spezialisierte
+    Ebenen bekommen (`DPS-0.8.4.x`/`DPS-0.8.5.x`).
+  - Neue `ZugfuehrerSeite.tsx` ersetzt für einen Zugführer die normale
+    Abschnittsliste als Startbildschirm, angelehnt an das Gesamtlagebild der
+    Regie, aber bewusst schlanker: Kartenansicht bleibt direkt sichtbar (ohne
+    Geodaten eine neue kartenlose Kacheln-Rückfallebene
+    `AbschnitteKurzuebersicht.tsx` ohne die dort sonst passiv sichtbare
+    Kräfte-/Fahrzeugliste), aber keine dauerhafte Kennzahlenleiste.
+  - Fahrzeuge, Kräfte und Kennzahlen muss der Zugführer stattdessen bewusst
+    abfragen: drei neue Knöpfe blenden `FahrzeugStatusPanel.tsx`/
+    `KraefteStatusPanel.tsx`/die wiederverwendete `Kennzahlenleiste.tsx` erst
+    nach Klick ein - reine `useState`-Sichtbarkeitssteuerung, keine
+    Zeitkosten, keine neue Reducer-Aktion.
+  - Live mit zwei echten Clients verifiziert: Übungsleitung weist die
+    Führungsrolle Zugführer zu, der Zugführer-Client sieht sofort die neue
+    Ansicht statt der normalen Abschnittsliste, alle drei Abfrage-Knöpfe
+    blenden ihren Inhalt erst nach Klick ein, keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 2):** Einsatzabschnitte eröffnen
+  (`DPS-0.8.1.1`, alle Abschnitte inkl. Ablage/Bereitstellungsraum starten
+  geschlossen und werden erst als Verlegungsziel gültig, sobald der
+  Zugführer sie eröffnet), Kräfte/Patienten weich zuweisen (`DPS-0.8.1.2`,
+  Benachrichtigung statt Hard-Lock), Bereitstellungsraum/
+  Rettungsmittelhalteplatz + Transporte freigeben (`DPS-0.8.1.3`).
+- 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
+  Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
+  die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,
+  späteres Bauvorhaben mit eigener Versionsleiter.
 
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).

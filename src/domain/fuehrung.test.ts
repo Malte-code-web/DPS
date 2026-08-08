@@ -8,6 +8,7 @@ import {
   istRegiefuehrend,
   istZugfuehrend,
   staerkemeldung,
+  zugfuehrungAktiv,
 } from './fuehrung';
 import type { Spieler } from './sitzung';
 
@@ -96,6 +97,26 @@ describe('darfFahrzeugeDisponieren', () => {
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'zugfuehrer')).toBe(true);
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'orgl_rd')).toBe(true);
     expect(darfFahrzeugeDisponieren(true, 'spieler', 'lna')).toBe(true);
+  });
+});
+
+describe('zugfuehrungAktiv', () => {
+  it('greift nicht außerhalb einer aktiven Sitzung', () => {
+    expect(zugfuehrungAktiv(false, [spieler('anna', 'zugfuehrer')])).toBe(false);
+  });
+
+  it('greift nicht, solange niemand Zugführer oder höher ist', () => {
+    expect(zugfuehrungAktiv(true, [spieler('anna', 'gruppenfuehrer'), spieler('bert', 'keine')])).toBe(
+      false,
+    );
+    expect(zugfuehrungAktiv(true, [])).toBe(false);
+  });
+
+  it('greift, sobald jemand Zugführer oder höher ist', () => {
+    expect(zugfuehrungAktiv(true, [spieler('anna', 'gruppenfuehrer'), spieler('bert', 'zugfuehrer')])).toBe(
+      true,
+    );
+    expect(zugfuehrungAktiv(true, [spieler('anna', 'orgl_rd')])).toBe(true);
   });
 });
 

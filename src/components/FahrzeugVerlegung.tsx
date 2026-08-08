@@ -1,6 +1,7 @@
 import { moeglicheZiele } from '../domain/abschnitte';
-import { darfFahrzeugeDisponieren } from '../domain/fuehrung';
+import { darfFahrzeugeDisponieren, zugfuehrungAktiv } from '../domain/fuehrung';
 import { verlegungsdauerSek } from '../domain/geodaten';
+import { istAbschnittEroeffnet } from '../domain/zelte';
 import { useSimulation } from '../state/useSimulation';
 import { istFahrzeugVerlegenAktion } from '../state/zeitkosten';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -12,13 +13,18 @@ import type { Fahrzeug } from '../domain/types';
  * Wie `ui.verlegung` für Patienten, aber ohne Sichtungssperre (Fahrzeuge
  * werden nicht gesichtet) und zusätzlich gesperrt für alle unterhalb der
  * Führungsrolle Zugführer (→ `darfFahrzeugeDisponieren`) - Übungsleitung
- * ausgenommen.
+ * ausgenommen. Noch nicht eröffnete Abschnitte (→ `domain.istAbschnittEroeffnet`)
+ * erscheinen erst gar nicht als Ziel, sobald in der Sitzung ein Zugführer
+ * mitspielt (→ `domain.zugfuehrungaktiv`).
  */
 export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
   const { state, dispatch } = useSimulation();
   const zk = useZeitkostenStatus();
   const zkBeschaeftigt = zk.aktion !== null;
-  const ziele = moeglicheZiele(fahrzeug.abschnitt);
+  const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
+  const ziele = moeglicheZiele(fahrzeug.abschnitt).filter(
+    (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.eroeffneteAbschnitte, state.zeltPlatzierungen),
+  );
   const eigeneFuehrungsrolle = state.sitzung.spieler.find(
     (s) => s.id === state.sitzung.eigeneId,
   )?.fuehrungsrolle;
@@ -28,7 +34,7 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
     eigeneFuehrungsrolle,
   );
 
-  if (ziele.length === 0) {
+  if (moeglicheZiele(fahrzeug.abschnitt).length === 0) {
     return <p className="hinweis">Das Fahrzeug hat den Behandlungsplatz verlassen.</p>;
   }
 
@@ -36,6 +42,9 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
     <div className="verlegung">
       {gesperrt && (
         <p className="hinweis">Nur Übungsleitung oder Zugführer und höher dürfen verlegen.</p>
+      )}
+      {!gesperrt && gateAktiv && ziele.length === 0 && (
+        <p className="hinweis">Der Zugführer hat noch keinen weiteren Abschnitt eröffnet.</p>
       )}
       {ziele.map((ziel) => {
         const zkEigen =

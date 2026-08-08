@@ -687,11 +687,49 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Führungsrolle Zugführer zu, der Zugführer-Client sieht sofort die neue
     Ansicht statt der normalen Abschnittsliste, alle drei Abfrage-Knöpfe
     blenden ihren Inhalt erst nach Klick ein, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 2):** Einsatzabschnitte eröffnen
-  (`DPS-0.8.1.1`, alle Abschnitte inkl. Ablage/Bereitstellungsraum starten
-  geschlossen und werden erst als Verlegungsziel gültig, sobald der
-  Zugführer sie eröffnet), Kräfte/Patienten weich zuweisen (`DPS-0.8.1.2`,
-  Benachrichtigung statt Hard-Lock), Bereitstellungsraum/
+- ✅ **Baufeld: Zeltplatzierung (`DPS-0.8.1.1`)** - Zugführer-Ebene, Teil 2
+  (aus einer einfachen "Abschnitt öffnen/schließen"-Sperre bewusst zu einer
+  echten räumlichen Führungsentscheidung ausgebaut, auf ausdrücklichen
+  Wunsch: der Zugführer soll auf der Lagekarte bestimmen, wo welches Zelt
+  steht, mit realen Maßen, damit ein zu großes Zelt sichtbar Platz für
+  Fahrzeuge kostet):
+  - Recherchierte reale Zeltgrößen (DRK-Konzept "Behandlungsplatz 50"
+    Rheinland-Pfalz): SG20 (5,00×4,74 m, 23,7 m², Richtwert ≤ 6 SK I) bis
+    SG50 (10,00×5,64 m, 56,4 m²), 2 m Mindestabstand zwischen Zelten
+    (→ `domain.zelte`, `ZELTTYPEN`).
+  - Neues, eigenständiges `Baufeld` (→ `ui.baufeld`) in echten lokalen
+    Metern - bewusst NICHT auf der bestehenden `Kartenansicht.tsx`
+    aufgebaut, deren Lat/Lon-Koordinaten nachweislich nicht mit den dort
+    gezeigten `Route.distanzMeter` übereinstimmen (bis zu 54 % Abweichung
+    bei busunfall-b31). Läuft dadurch auch für Szenarien ganz ohne
+    `geodaten`. Größe wählen, dann eine freie Rasterzelle antippen (kein
+    Drag) - eine Platzierung ersetzt automatisch ein vorhandenes Zelt
+    derselben Farbe.
+  - Der Aufbau kostet echte Zeit (`ZELTTYPEN.aufbauSek`, 5-15 Minuten
+    größenabhängig) als echter Countdown wie jede andere zeitkostende
+    Handlung (→ `state.zeitkosten`) - während er läuft, bleiben weitere
+    Platzierungen gesperrt.
+  - Geteiltes Flächenbudget (`STANDARD_BAUFELD` = Kreis-Steinfurt-Wert
+    40×50 m = 2.000 m², Zelte und Fahrzeuge zusammen) - eine weiche
+    Warnung bei knappem Platz, kein Hard-Block (`verfuegbareFlaecheQm`).
+  - Die Zeltplatzierung fungiert zugleich als "Abschnitt eröffnen" für die
+    drei Behandlungs-Zelte; die übrigen fünf Abschnitte (Ablage,
+    Bereitstellungsraum, Eingangssichtung, Ausgangssichtung, Transport)
+    haben einen einfachen Eröffnen-Knopf ohne Flächenmodell -
+    Schadensstelle ist vom Szenario vorgegeben und bleibt immer offen
+    (→ `domain.istAbschnittEroeffnet`).
+  - Sperre nur in der UI (`Verlegung.tsx`/`FahrzeugVerlegung.tsx`, wie
+    `darfFahrzeugeDisponieren`), und nur wenn in der Sitzung tatsächlich
+    ein Zugführer mitspielt (→ `domain.zugfuehrungaktiv`) - ohne aktiven
+    Zugführer bleibt alles wie bisher ungegatet, die ~450 bestehenden
+    Tests bleiben unangetastet.
+  - Live mit zwei echten Clients verifiziert: Zeltplatzierung mit
+    sichtbarem Countdown (bei 10-facher Geschwindigkeit real
+    durchlaufen), fertiges Zelt erscheint maßstabsgetreu im Baufeld, ein
+    Patient kann erst nach Eröffnung des Zielabschnitts dorthin verlegt
+    werden (beide Richtungen geprüft), keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 3):** Kräfte/Patienten weich
+  zuweisen (`DPS-0.8.1.2`, Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben (`DPS-0.8.1.3`).
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);

@@ -5,7 +5,8 @@ import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
-import { routenAusSzenario } from '../domain/geodaten';
+import { geoPunktName, routenAusSzenario } from '../domain/geodaten';
+import { STANDARD_BAUFELD, platzierungGueltig } from '../domain/zelte';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -39,6 +40,7 @@ import type {
   Kollegenanfrage,
   MassnahmeId,
   Patient,
+  PlatzierterZelt,
   Qualifikation,
   Route,
   Rufgruppenmitgliedschaft,
@@ -46,6 +48,8 @@ import type {
   SpielerProtokollEintrag,
   Szenario,
   Verlaufseintrag,
+  ZeltAbschnitt,
+  ZeltTypId,
 } from '../domain/types';
 
 /**
@@ -174,6 +178,18 @@ export interface SimulationState {
    */
   spielerProtokoll: SpielerProtokollEintrag[];
   /**
+   * Vom Zugführer platzierte Zeltgrößen im Baufeld (→ `modell.platziertezelt`,
+   * `ui.baufeld`) - eine Platzierung pro Farbe (Rot/Gelb/Grün).
+   */
+  zeltPlatzierungen: PlatzierterZelt[];
+  /**
+   * Vom Zugführer geöffnete Abschnitte ohne eigenes Zeltmodell (Ablage,
+   * Bereitstellungsraum, Eingangssichtung, Ausgangssichtung, Transport) -
+   * Schadensstelle ist vom Szenario vorgegeben und immer offen, die drei
+   * Zelte laufen über `zeltPlatzierungen` (→ `domain.istAbschnittEroeffnet`).
+   */
+  eroeffneteAbschnitte: Einsatzabschnitt[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -208,6 +224,8 @@ export const ANFANGSZUSTAND: SimulationState = {
   ausgeloesteEreignisse: [],
   regieProtokoll: [],
   spielerProtokoll: [],
+  zeltPlatzierungen: [],
+  eroeffneteAbschnitte: [],
   schnappschussFolge: 0,
 };
 
@@ -294,6 +312,17 @@ export type SimulationAction =
   | { typ: 'fahrzeugAusfallSetzen'; fahrzeugId: string; ausgefallen: boolean }
   | { typ: 'fahrzeugNachfordern'; fahrzeugTyp: FahrzeugTyp }
   | { typ: 'ereignisAusloesen'; ereignisId: string }
+  | {
+      typ: 'zeltPlatzieren';
+      id: string;
+      zeltTyp: ZeltTypId;
+      abschnitt: ZeltAbschnitt;
+      xM: number;
+      yM: number;
+      spielerId?: string;
+    }
+  | { typ: 'zeltEntfernen'; id: string }
+  | { typ: 'abschnittEroeffnen'; abschnitt: Einsatzabschnitt }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -336,6 +365,10 @@ export interface Schnappschuss {
   regieProtokoll: Verlaufseintrag[];
   /** Private Statusansicht je Spieler für "Mein Einsatz" (→ `state.spielerprotokoll`). */
   spielerProtokoll: SpielerProtokollEintrag[];
+  /** Platzierte Zeltgrößen im Baufeld (→ `modell.platziertezelt`). */
+  zeltPlatzierungen: PlatzierterZelt[];
+  /** Geöffnete Nicht-Zelt-Abschnitte (→ `domain.istAbschnittEroeffnet`). */
+  eroeffneteAbschnitte: Einsatzabschnitt[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -366,6 +399,8 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     ausgeloesteEreignisse: state.ausgeloesteEreignisse,
     regieProtokoll: state.regieProtokoll,
     spielerProtokoll: state.spielerProtokoll,
+    zeltPlatzierungen: state.zeltPlatzierungen,
+    eroeffneteAbschnitte: state.eroeffneteAbschnitte,
   };
 }
 
@@ -1328,6 +1363,56 @@ export function simulationReducer(
       return protokolliereRegie(naechster, `Lageänderung ausgelöst: „${ereignis.titel}".`);
     }
 
+    case 'zeltPlatzieren': {
+      const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      if (
+        !platzierungGueltig(
+          { typ: action.zeltTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+          state.zeltPlatzierungen,
+          baufeld,
+        )
+      ) {
+        return state;
+      }
+      const platziert: PlatzierterZelt = {
+        id: action.id,
+        typ: action.zeltTyp,
+        abschnitt: action.abschnitt,
+        xM: action.xM,
+        yM: action.yM,
+        platziertVonSpielerId: action.spielerId,
+      };
+      const naechster = {
+        ...state,
+        zeltPlatzierungen: [
+          ...state.zeltPlatzierungen.filter((zelt) => zelt.abschnitt !== action.abschnitt),
+          platziert,
+        ],
+      };
+      return protokolliereRegie(
+        naechster,
+        `${action.zeltTyp}-Zelt für ${geoPunktName(action.abschnitt)} aufgestellt.`,
+      );
+    }
+
+    case 'zeltEntfernen': {
+      return {
+        ...state,
+        zeltPlatzierungen: state.zeltPlatzierungen.filter((zelt) => zelt.id !== action.id),
+      };
+    }
+
+    case 'abschnittEroeffnen': {
+      if (state.eroeffneteAbschnitte.includes(action.abschnitt)) return state;
+      return protokolliereRegie(
+        {
+          ...state,
+          eroeffneteAbschnitte: [...state.eroeffneteAbschnitte, action.abschnitt],
+        },
+        `${geoPunktName(action.abschnitt)} eröffnet.`,
+      );
+    }
+
     case 'sitzungStarten': {
       if (!state.szenario) return state;
       // Sofort: wie bisher direkt an der Schadensstelle sichtbar. Gestaffelt:
@@ -1383,6 +1468,8 @@ export function simulationReducer(
         ausgeloesteEreignisse: s.ausgeloesteEreignisse,
         regieProtokoll: s.regieProtokoll,
         spielerProtokoll: s.spielerProtokoll,
+        zeltPlatzierungen: s.zeltPlatzierungen,
+        eroeffneteAbschnitte: s.eroeffneteAbschnitte,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

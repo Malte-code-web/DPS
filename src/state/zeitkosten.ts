@@ -3,7 +3,8 @@ import { DIAGNOSTIK } from '../domain/diagnostik';
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { sichtungOffen } from '../domain/simulation';
-import type { DiagnostikId, Einsatzabschnitt, MassnahmeId } from '../domain/types';
+import { STANDARD_BAUFELD, ZELTTYPEN, platzierungGueltig } from '../domain/zelte';
+import type { DiagnostikId, Einsatzabschnitt, MassnahmeId, ZeltTypId } from '../domain/types';
 import type { SimulationAction, SimulationState } from './reducer';
 
 /**
@@ -55,6 +56,17 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
       return verlegungsdauerSek(state.routen, fahrzeug.abschnitt, action.ziel);
     }
 
+    case 'zeltPlatzieren': {
+      const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      const gueltig = platzierungGueltig(
+        { typ: action.zeltTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+        state.zeltPlatzierungen,
+        baufeld,
+      );
+      if (!gueltig) return 0;
+      return ZELTTYPEN[action.zeltTyp].aufbauSek;
+    }
+
     // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung
     // (→ `domain.massnahmen`, `fahrzeugrettung`) - beides ist im Kern derselbe
     // Vorgang, nur diesmal durch die Feuerwehr statt den RD durchgeführt.
@@ -83,6 +95,8 @@ export function zeitkostenLabel(action: SimulationAction): string {
       return 'Verlegung';
     case 'fahrzeugVerlegen':
       return 'Fahrzeug verlegen';
+    case 'zeltPlatzieren':
+      return `${ZELTTYPEN[action.zeltTyp].bezeichnung}-Zelt aufbauen`;
     case 'rettungDurchfuehren':
       return 'Rettung';
     default:
@@ -156,4 +170,8 @@ export function istFahrzeugVerlegenAktion(
 
 export function istRettungAktion(aktion: SimulationAction, patientId: string): boolean {
   return aktion.typ === 'rettungDurchfuehren' && aktion.patientId === patientId;
+}
+
+export function istZeltPlatzierenAktion(aktion: SimulationAction, zeltTyp: ZeltTypId): boolean {
+  return aktion.typ === 'zeltPlatzieren' && aktion.zeltTyp === zeltTyp;
 }

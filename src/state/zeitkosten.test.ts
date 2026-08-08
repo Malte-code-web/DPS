@@ -3,6 +3,7 @@ import { DIAGNOSTIK, DIAGNOSTIK_LISTE, VOLLSTAENDIGE_DIAGNOSTIK_SEK } from '../d
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { SZENARIEN } from '../domain/szenarien';
+import { ZELTTYPEN } from '../domain/zelte';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import {
   istDiagnostikAktion,
@@ -10,6 +11,7 @@ import {
   istMassnahmeAktion,
   istMassnahmeAusSammlung,
   istPatientVerlegenAktion,
+  istZeltPlatzierenAktion,
   zeitkostenLabel,
   zeitkostenSek,
 } from './zeitkosten';
@@ -114,6 +116,51 @@ describe('zeitkostenSek', () => {
     ).toBe(0);
   });
 
+  it('kostet den Zeltaufbau je nach Größe - größere Zelte dauern länger', () => {
+    const state = imEinsatz();
+    const sg20 = zeitkostenSek(state, {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+    });
+    const sg50 = zeitkostenSek(state, {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-2',
+      zeltTyp: 'SG50',
+      abschnitt: 'zelt_gelb',
+      xM: 20,
+      yM: 20,
+    });
+    expect(sg20).toBe(ZELTTYPEN.SG20.aufbauSek);
+    expect(sg50).toBe(ZELTTYPEN.SG50.aufbauSek);
+    expect(sg50).toBeGreaterThan(sg20);
+  });
+
+  it('kostet nichts bei einer ungültigen Zeltplatzierung (Überlappung)', () => {
+    const start = imEinsatz();
+    const mitRot = simulationReducer(start, {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+    });
+    expect(
+      zeitkostenSek(mitRot, {
+        typ: 'zeltPlatzieren',
+        id: 'zelt-2',
+        zeltTyp: 'SG20',
+        abschnitt: 'zelt_gelb',
+        xM: 1,
+        yM: 1,
+      }),
+    ).toBe(0);
+  });
+
   it('kostet für alle anderen Aktionen nichts, z. B. reine Navigation', () => {
     const state = imEinsatz();
     expect(zeitkostenSek(state, { typ: 'patientWaehlen', patientId: 'B-01' })).toBe(0);
@@ -173,6 +220,16 @@ describe('zeitkostenLabel', () => {
     expect(
       zeitkostenLabel({ typ: 'diagnostikDurchfuehren', patientId: 'B-01', diagnostikId: 'bodycheck' }),
     ).toBe(DIAGNOSTIK.bodycheck.label);
+    expect(
+      zeitkostenLabel({
+        typ: 'zeltPlatzieren',
+        id: 'zelt-1',
+        zeltTyp: 'SG30',
+        abschnitt: 'zelt_rot',
+        xM: 0,
+        yM: 0,
+      }),
+    ).toBe(`${ZELTTYPEN.SG30.bezeichnung}-Zelt aufbauen`);
   });
 });
 
@@ -219,5 +276,19 @@ describe('Zeitkosten-Abgleich', () => {
     expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_rot')).toBe(true);
     expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_gruen')).toBe(false);
     expect(istFahrzeugVerlegenAktion(aktion, 'f-2', 'zelt_rot')).toBe(false);
+  });
+
+  it('istZeltPlatzierenAktion erkennt nur exakt den Zelttyp', () => {
+    const aktion = {
+      typ: 'zeltPlatzieren' as const,
+      id: 'zelt-1',
+      zeltTyp: 'SG40' as const,
+      abschnitt: 'zelt_rot' as const,
+      xM: 0,
+      yM: 0,
+    };
+    expect(istZeltPlatzierenAktion(aktion, 'SG40')).toBe(true);
+    expect(istZeltPlatzierenAktion(aktion, 'SG20')).toBe(false);
+    expect(istZeltPlatzierenAktion({ typ: 'patientWaehlen', patientId: 'B-01' }, 'SG40')).toBe(false);
   });
 });

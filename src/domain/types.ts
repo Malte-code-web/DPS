@@ -438,6 +438,9 @@ export type FahrzeugTyp =
   | 'elw2'
   | 'gw_log';
 
+/** Reale Zeltgrößen eines Behandlungsplatzes, DRK-Konzept "Behandlungsplatz 50" (→ `domain.zelte`). */
+export type ZeltTypId = 'SG20' | 'SG30' | 'SG40' | 'SG50';
+
 /** Statische Vorlage - Teil eines `Szenario`, vor Sitzungsbeginn bearbeitbar. */
 export interface FahrzeugVorlage {
   id: string;
@@ -859,6 +862,27 @@ export interface Route extends RouteVorlage {
   status: 'frei' | 'gesperrt';
 }
 
+/** Die drei Behandlungs-Zelte, für die der Zugführer eine Zeltgröße platziert (→ `domain.zelte`). */
+export type ZeltAbschnitt = 'zelt_rot' | 'zelt_gelb' | 'zelt_gruen';
+
+/**
+ * @anker modell.platziertezelt Vom Zugführer gewählte Zeltgröße und Position im Baufeld
+ *
+ * Ersetzt die feste, im Szenario vorgegebene Zeltposition durch eine echte
+ * Führungsentscheidung zur Laufzeit (→ `ui.baufeld`) - eine Platzierung pro
+ * Farbe, eine neue ersetzt eine vorhandene für dieselbe Farbe statt sich zu
+ * addieren.
+ */
+export interface PlatzierterZelt {
+  id: string;
+  typ: ZeltTypId;
+  abschnitt: ZeltAbschnitt;
+  /** Position der linken oberen Ecke im Baufeld, in Metern (→ `domain.zelte`). */
+  xM: number;
+  yM: number;
+  platziertVonSpielerId?: string;
+}
+
 /**
  * @anker modell.ereignis Von der Übungsleitung live ausgelöste Lageänderung
  *
@@ -898,6 +922,15 @@ export interface Szenario {
     schluesselpunkte: Partial<Record<Einsatzabschnitt, GeoPosition>>;
     routen: RouteVorlage[];
   };
+  /**
+   * Reale Gesamtfläche des Behandlungsplatzes in Metern, in der der
+   * Zugführer Zelte platziert (→ `ui.baufeld`). Optional - ohne Angabe gilt
+   * `STANDARD_BAUFELD` (→ `domain.zelte`), abgeleitet aus dem
+   * MANV-Konzept Kreis Steinfurt (BHP-B-50-Modul, 40×50 m). Unabhängig von
+   * `geodaten` nutzbar, damit auch Szenarien ohne Lat/Lon-Koordinaten eine
+   * definierte Fläche zum Bauen haben.
+   */
+  baufeld?: { breiteM: number; tiefeM: number };
   /**
    * Vordefinierte Lageänderungen, die die Übungsleitung während der Übung
    * live auslösen kann (→ `modell.ereignis`). Optional - ein Szenario ohne

@@ -67,6 +67,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Debriefing-Erweiterung (`DPS-0.8.0.14`) | Letzter der drei "Fundament, Teil 2"-Punkte: das Debriefing zeigt jetzt nicht mehr nur Sichtungskategorien, sondern auch Ressourceneinsatz und Führungsentscheidungen (wörtlich der offene ROADMAP-Punkt). **Ressourceneinsatz** ist rein abgeleitet, ohne neuen State: `berechneMaterialverbrauch` vergleicht je Fahrzeug die Bestückung, mit der sein Typ immer startet (`materialAusVorlage`, unabhängig davon, wann es ins Spiel kam - auch eine Nachforderung aus `DPS-0.8.0.13`), mit dem aktuellen Bestand und summiert die Differenz je Materialtyp über alle Fahrzeuge (nur tatsächlich verbrauchte Typen, absteigend sortiert) - dazu zwei neue Kennzahlen-Kacheln (Fahrzeuge im Einsatz, davon ausgefallen). **Führungsentscheidungen** sind dagegen ein neues, nur wachsendes Protokollfeld `state.regieProtokoll` (wiederverwendet denselben `Verlaufseintrag`-Zeilentyp wie `Patient.verlauf`, nur auf Sitzungsebene): eine Zeile je Pause/Weiter, Tempoänderung, Einzel- und Sammelfreigabe, Fahrzeugausfall, Nachforderung, Lageänderung sowie Start/Ende der Übung - über einen neuen `protokolliereRegie`-Helfer im Reducer, geteilt über den bestehenden Schnappschuss-Mechanismus. Beide Auswertungen erscheinen als neue Abschnitte im Debriefing, nur wenn es etwas zu zeigen gibt (keine Fahrzeuge/kein Protokoll → Abschnitt bleibt weg). Live verifiziert: nach Pause/Weiter, Tempo ×4, Fahrzeugausfall, Nachforderung und einer ausgelösten Lageänderung zeigt das Debriefing acht chronologisch korrekte Protokollzeilen und die richtige Fahrzeug-Kennzahl (2 im Einsatz, 1 ausgefallen), keine Konsolenfehler. |
 | Private Spieler-Statusansicht "Mein Einsatz" (`DPS-0.8.0.15`) | Letzter offener Punkt aus "Fundament, Teil 2": eine neue, private Debriefing-Sektion "Mein Einsatz" zeigt jeder Person nur ihre eigenen Handlungen - auf Wunsch, damit ein Spieler nachvollziehen kann, was er genau gemacht hat. Da der Reducer bislang bei Maßnahme/Diagnostik/Sichtung/Verlegung keine Spieler-Zuordnung führte (nur teambasierte Aktionen wie Kollegenanfrage/Delegation/Rettung kannten schon eine Spieler-ID), war dafür eine echte Reducer-Erweiterung nötig statt nur einer UI-Änderung. Neues Feld `state.spielerProtokoll: SpielerProtokollEintrag[]` (spielerId, patientId, zeitSek, text), gefüllt über zwei neue Helfer: `protokolliereSpieler` für explizite Texte (Rettungskette) und `uebernimmVerlaufInSpielerprotokoll`, der den ohnehin schon an `patient.verlauf` angehängten Text unverändert übernimmt (`diagnostikDurchfuehren`, `patientSichten`, `massnahmeDurchfuehren`, `patientVerlegen`) statt ihn zu duplizieren - erkennt über einen Längenvergleich von `verlauf` vorher/nachher, ob überhaupt etwas passiert ist (kein Eintrag bei bereits durchgeführter Diagnostik). Team-Aktionen kreditieren alle Beteiligten mit derselben Zeile: eine abgeschlossene Notfallnarkose alle drei (anfragende Person + beide Team-Mitglieder), eine abgeschlossene Rettung anfragende Person und alle Helfer:innen. Die fünf betroffenen Aktionen bekamen dafür ein optionales `spielerId`-Feld (`state.sitzung.eigeneId`, im Einzelspiel `undefined` - dort protokolliert der Reducer bewusst nichts, die Haupttabelle deckt dort ohnehin schon alles ab), das an allen acht UI-Dispatch-Stellen (`Patientenansicht.tsx`, `Anhaengekarte.tsx`, `Verlegung.tsx`, `PatientKarte.tsx`, `RettungPanel.tsx`) mitgegeben wird. Die Debriefing-Seite filtert `spielerProtokoll` beim Lesen auf die eigene `sitzung.eigeneId` - keine getrennte Speicherung je Spieler, jede Person sieht dieselbe geteilte Liste, nur anders gefiltert. Live mit zwei echten Clients verifiziert: Übungsleitung sichtet Patient B-01, Spieler sichtet Patient B-02 - jede Person sieht in "Mein Einsatz" ausschließlich die eigene Zeile mit korrektem Patientenbezug, nie die der anderen Person, keine Konsolenfehler. |
 | Zugführer-Ansicht (`DPS-0.8.1.0`) | Erster Baustein der zweiten Führungsebenen-Epoche (→ ROADMAP.md, Baustein 6): eine neue Rolle im bestehenden `Fuehrungsrolle`-Modell bekommt jetzt eine eigene Ansicht. Vorarbeit dazu war eine Recherche in FwDV 100 und dem MANV-Konzept Kreis Steinfurt - real führt dort der Zugführer nur Bereitstellungsraum und Rettungsmittelhalteplatz, die Leitung des EA Medizinische Rettung liegt beim System LNA/OrgL RD. Für dieses Übungskonzept übernimmt der Zugführer bewusst abweichend die Leitung des gesamten Abschnitts Medizinische Rettung (→ `domain.zugfuehrend`, `istZugfuehrend()`) - exakter Rollentreffer statt Rangvergleich, damit OrgL RD/LNA diese Ansicht später nicht einfach erben, sondern eigene, fachlich spezialisierte Ebenen bekommen. Ein Zugführer sieht beim Betreten des Einsatzes statt der normalen Abschnittsliste eine neue, bewusst schlankere `ZugfuehrerSeite.tsx`: Kartenansicht (oder ohne Geodaten eine kartenlose Kacheln-Rückfallebene ohne die sonst passiv sichtbare Kräfte-/Fahrzeugliste, → `ui.abschnittekurzuebersicht`) bleibt direkt sichtbar, aber anders als beim vollen Gesamtlagebild der Regie keine dauerhafte Kennzahlenleiste. Fahrzeuge, Kräfte und Kennzahlen muss der Zugführer stattdessen aktiv abfragen - drei Knöpfe blenden den jeweiligen Stand sofort ein (reine `useState`-Steuerung, keine Zeitkosten, keine neue Reducer-Aktion), passend zur realen Meldepflicht einer Führungskraft, sich das Lagebild aktiv zu verschaffen statt es automatisch vorgesetzt zu bekommen. Live mit zwei Clients verifiziert: Übungsleitung weist die Führungsrolle Zugführer zu, der Zugführer-Client sieht sofort die neue Ansicht statt der normalen Abschnittsliste, alle drei Abfrage-Knöpfe blenden ihren Inhalt erst nach Klick ein. |
+| Baufeld: Zeltplatzierung (`DPS-0.8.1.1`) | Zweiter Baustein der Zugführer-Ebene: der Zugführer bestimmt jetzt selbst, wo welche Zeltgröße steht, statt dass ein Szenario feste Zeltpositionen vorgibt. Reale Zeltgrößen nach dem DRK-Konzept "Behandlungsplatz 50" - SG20 (5,00×4,74 m, 23,7 m², Richtwert ≤ 6 SK I) bis SG50 (10,00×5,64 m, 56,4 m²), 2 m Mindestabstand zwischen Zelten (→ `domain.zelte`). Ein neues, eigenständiges `Baufeld` (→ `ui.baufeld`) zeichnet die Fläche maßstabsgetreu in echten Metern - bewusst getrennt von der bestehenden, nur schematischen `Kartenansicht` (deren Lat/Lon-Koordinaten nachweislich nicht mit den dort gezeigten Entfernungen übereinstimmen), damit die Platzierung auch für Szenarien ganz ohne Geodaten funktioniert. Größe wählen (SG20-50), dann eine freie, farblich als gültig/ungültig markierte Rasterzelle antippen - kein Drag nötig. Der Aufbau kostet echte Zeit (`aufbauSek`, größenabhängig 5-15 Minuten) als echter Countdown wie jede andere zeitkostende Handlung. Das Baufeld hat eine reale Gesamtfläche (Kreis-Steinfurt-Wert: 40×50 m = 2.000 m², für Zelte **und** Fahrzeuge zusammen, → `STANDARD_BAUFELD`) - verbrauchen die Zelte zu viel davon, warnt eine weiche Hinweiszeile vor knappem Platz für Fahrzeuge, ohne etwas zu sperren. Das Platzieren eines Zelts fungiert zugleich als "Abschnitt eröffnen" für die drei Behandlungs-Zelte; die übrigen Abschnitte (Ablage, Bereitstellungsraum, Eingangssichtung, Ausgangssichtung, Transport) haben einen einfachen Eröffnen-Knopf ohne Flächenmodell - Schadensstelle ist vom Szenario vorgegeben und bleibt immer offen (→ `domain.istAbschnittEroeffnet`). Ein nicht eröffneter Abschnitt erscheint für Patienten/Fahrzeuge erst gar nicht als Verlegungsziel, sobald in der Sitzung ein Zugführer mitspielt (→ `domain.zugfuehrungaktiv`) - ohne aktiven Zugführer bleibt alles wie zuvor ungegatet, die ~450 bestehenden Tests bleiben unangetastet. Live mit zwei Clients verifiziert: Zeltplatzierung mit sichtbarem Countdown ("SG 20-Zelt ... wird aufgebaut - noch X s", bei 10-facher Geschwindigkeit real durchlaufen), das fertige Zelt erscheint maßstabsgetreu im Baufeld, ein Patient kann erst nach Eröffnung des Zielabschnitts dorthin verlegt werden (beide Richtungen geprüft), keine Konsolenfehler. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -666,7 +667,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_226 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -707,6 +708,7 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.fuehrung` | [`src/domain/fuehrung.ts:5`](src/domain/fuehrung.ts#L5) | Rangfolge und Prüfung der Führungsrolle |
 | `domain.geodaten` | [`src/domain/geodaten.ts:19`](src/domain/geodaten.ts#L19) | Verlegungsdauer aus echter Distanz statt Pauschale |
 | `domain.gewicht` | [`src/domain/dosierung.ts:337`](src/domain/dosierung.ts#L337) | Körpergewicht - hinterlegt oder geschätzt |
+| `domain.istAbschnittEroeffnet` | [`src/domain/zelte.ts:172`](src/domain/zelte.ts#L172) | Ob ein Abschnitt als Verlegungsziel gilt |
 | `domain.manvstufen` | [`src/domain/manvStufen.ts:4`](src/domain/manvStufen.ts#L4) | MANV-Stufen des Kreises Steinfurt -> kumulativer Fahrzeugbestand |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
 | `domain.massnahmerecht` | [`src/domain/qualifikation.ts:30`](src/domain/qualifikation.ts#L30) | Wer eine Maßnahme durchführen darf, und an wen sie delegiert werden kann |
@@ -714,12 +716,16 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.notfallnarkose` | [`src/domain/massnahmen.ts:318`](src/domain/massnahmen.ts#L318) | Team aus RS + NotSan + NotArzt nötig |
 | `domain.notfallnarkose_liste` | [`src/domain/dosierung.ts:319`](src/domain/dosierung.ts#L319) | Die drei Induktionsmittel der Notfallnarkose-Sammelauswahl |
 | `domain.notfallnarkose_team` | [`src/domain/qualifikation.ts:121`](src/domain/qualifikation.ts#L121) | Team aus RS + NotSan + NotArzt gleichzeitig anwesend |
+| `domain.platzierungGueltig` | [`src/domain/zelte.ts:117`](src/domain/zelte.ts#L117) | Zelt passt ins Baufeld und überschneidet kein anderes |
 | `domain.qualifikation` | [`src/domain/qualifikation.ts:5`](src/domain/qualifikation.ts#L5) | Rangfolge und Prüfung der fachlichen Qualifikation |
 | `domain.regiefuehrend` | [`src/domain/fuehrung.ts:46`](src/domain/fuehrung.ts#L46) | Übungsleitung und Beobachter teilen sich Sicht und Rechte |
 | `domain.rettung` | [`src/domain/rettung.ts:4`](src/domain/rettung.ts#L4) | Rettung eingeklemmter Personen - live gewürfelter Bedarf |
 | `domain.rufgruppen` | [`src/domain/rufgruppen.ts:14`](src/domain/rufgruppen.ts#L14) | Feste Kanalliste für den Sprechfunk |
-| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:101`](src/domain/fuehrung.ts#L101) | Reale Stärkemeldung einer Fahrzeugbesatzung |
+| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:116`](src/domain/fuehrung.ts#L116) | Reale Stärkemeldung einer Fahrzeugbesatzung |
+| `domain.verfuegbareFlaecheQm` | [`src/domain/zelte.ts:152`](src/domain/zelte.ts#L152) | Geteiltes Flächenbudget: Zelte und Fahrzeuge teilen sich das Baufeld |
+| `domain.zelte` | [`src/domain/zelte.ts:4`](src/domain/zelte.ts#L4) | Reale Zeltgrößen und Flächenlogik für den Behandlungsplatz |
 | `domain.zugfuehrend` | [`src/domain/fuehrung.ts:58`](src/domain/fuehrung.ts#L58) | Der Zugführer leitet den Abschnitt Medizinische Rettung |
+| `domain.zugfuehrungaktiv` | [`src/domain/fuehrung.ts:94`](src/domain/fuehrung.ts#L94) | Ob die Eröffnen-Sperre für Abschnitte überhaupt greift |
 
 #### einzelfaelle
 
@@ -769,30 +775,31 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
 | `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
-| `modell.delegation` | [`src/domain/types.ts:723`](src/domain/types.ts#L723) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:735`](src/domain/types.ts#L735) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:689`](src/domain/types.ts#L689) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.eingeklemmt` | [`src/domain/types.ts:646`](src/domain/types.ts#L646) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
-| `modell.eingeklemmtstatus` | [`src/domain/types.ts:660`](src/domain/types.ts#L660) | Laufzeitzustand der Rettung einer eingeklemmten Person |
-| `modell.ereignis` | [`src/domain/types.ts:863`](src/domain/types.ts#L863) | Von der Übungsleitung live ausgelöste Lageänderung |
+| `modell.delegation` | [`src/domain/types.ts:726`](src/domain/types.ts#L726) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:738`](src/domain/types.ts#L738) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:692`](src/domain/types.ts#L692) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.eingeklemmt` | [`src/domain/types.ts:649`](src/domain/types.ts#L649) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
+| `modell.eingeklemmtstatus` | [`src/domain/types.ts:663`](src/domain/types.ts#L663) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.ereignis` | [`src/domain/types.ts:887`](src/domain/types.ts#L887) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:422`](src/domain/types.ts#L422) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:803`](src/domain/types.ts#L803) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
-| `modell.freigabemodus` | [`src/domain/types.ts:636`](src/domain/types.ts#L636) | Geplante automatische Freigabe im gestaffelten Modus |
+| `modell.finalsichtung` | [`src/domain/types.ts:806`](src/domain/types.ts#L806) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.freigabemodus` | [`src/domain/types.ts:639`](src/domain/types.ts#L639) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
-| `modell.geoposition` | [`src/domain/types.ts:832`](src/domain/types.ts#L832) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
+| `modell.geoposition` | [`src/domain/types.ts:835`](src/domain/types.ts#L835) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.kollegenanfrage` | [`src/domain/types.ts:750`](src/domain/types.ts#L750) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
-| `modell.material` | [`src/domain/types.ts:482`](src/domain/types.ts#L482) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
-| `modell.patient` | [`src/domain/types.ts:792`](src/domain/types.ts#L792) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:603`](src/domain/types.ts#L603) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.kollegenanfrage` | [`src/domain/types.ts:753`](src/domain/types.ts#L753) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
+| `modell.material` | [`src/domain/types.ts:485`](src/domain/types.ts#L485) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
+| `modell.patient` | [`src/domain/types.ts:795`](src/domain/types.ts#L795) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:606`](src/domain/types.ts#L606) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.platziertezelt` | [`src/domain/types.ts:869`](src/domain/types.ts#L869) | Vom Zugführer gewählte Zeltgröße und Position im Baufeld |
 | `modell.problem` | [`src/domain/types.ts:366`](src/domain/types.ts#L366) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.route` | [`src/domain/types.ts:839`](src/domain/types.ts#L839) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
-| `modell.rufgruppe` | [`src/domain/types.ts:774`](src/domain/types.ts#L774) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.route` | [`src/domain/types.ts:842`](src/domain/types.ts#L842) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
+| `modell.rufgruppe` | [`src/domain/types.ts:777`](src/domain/types.ts#L777) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
-| `modell.spielerprotokoll` | [`src/domain/types.ts:585`](src/domain/types.ts#L585) | Eine Zeile in der privaten Statusansicht eines Spielers |
+| `modell.spielerprotokoll` | [`src/domain/types.ts:588`](src/domain/types.ts#L588) | Eine Zeile in der privaten Statusansicht eines Spielers |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
 #### modi
@@ -870,45 +877,45 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:214`](src/state/reducer.ts#L214) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:232`](src/state/reducer.ts#L232) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:134`](src/state/reducer.ts#L134) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:61`](src/state/reducer.ts#L61) | Die Hauptzustände der Anwendung |
+| `state.freigabemodus` | [`src/state/reducer.ts:138`](src/state/reducer.ts#L138) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:65`](src/state/reducer.ts#L65) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:495`](src/state/reducer.ts#L495) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.regieprotokoll` | [`src/state/reducer.ts:157`](src/state/reducer.ts#L157) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
-| `state.schnappschuss` | [`src/state/reducer.ts:303`](src/state/reducer.ts#L303) | Der geteilte, host-autoritative Ausschnitt des Zustands |
-| `state.spielerprotokoll` | [`src/state/reducer.ts:168`](src/state/reducer.ts#L168) | Private Statusansicht: was genau hat wer getan |
+| `state.reducer` | [`src/state/reducer.ts:530`](src/state/reducer.ts#L530) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.regieprotokoll` | [`src/state/reducer.ts:161`](src/state/reducer.ts#L161) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
+| `state.schnappschuss` | [`src/state/reducer.ts:332`](src/state/reducer.ts#L332) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.spielerprotokoll` | [`src/state/reducer.ts:172`](src/state/reducer.ts#L172) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
-| `state.zeitkosten` | [`src/state/zeitkosten.ts:10`](src/state/zeitkosten.ts#L10) | Wie lange eine Handlung den Handelnden bindet |
-| `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:94`](src/state/zeitkosten.ts#L94) | Erkennt den eigenen Knopf im laufenden Timer |
+| `state.zeitkosten` | [`src/state/zeitkosten.ts:11`](src/state/zeitkosten.ts#L11) | Wie lange eine Handlung den Handelnden bindet |
+| `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:108`](src/state/zeitkosten.ts#L108) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:76`](src/state/reducer.ts#L76) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:80`](src/state/reducer.ts#L80) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1538`](src/index.css#L1538) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1922`](src/index.css#L1922) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2455`](src/index.css#L2455) | Kandidatenwahl und Benachrichtigung der Delegation |
-| `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4442`](src/index.css#L4442) | Die angeheftete Leiste so flach wie möglich |
-| `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1975`](src/index.css#L1975) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4186`](src/index.css#L4186) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
-| `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
-| `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1801`](src/index.css#L1801) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4514`](src/index.css#L4514) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.anhaengekarte` | [`src/index.css:1545`](src/index.css#L1545) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1929`](src/index.css#L1929) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2462`](src/index.css#L2462) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.editor` | [`src/index.css:705`](src/index.css#L705) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:4597`](src/index.css#L4597) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einstieg` | [`src/index.css:428`](src/index.css#L428) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
+| `stil.ersteindruck` | [`src/index.css:1982`](src/index.css#L1982) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.fehlergrenze` | [`src/index.css:154`](src/index.css#L154) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
+| `stil.hover` | [`src/index.css:4341`](src/index.css#L4341) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.massnahmenrechte` | [`src/index.css:338`](src/index.css#L338) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
+| `stil.mehrspieler` | [`src/index.css:425`](src/index.css#L425) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
+| `stil.modi` | [`src/index.css:632`](src/index.css#L632) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1808`](src/index.css#L1808) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.sk-farbe` | [`src/index.css:220`](src/index.css#L220) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
+| `stil.telefon` | [`src/index.css:4669`](src/index.css#L4669) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4645`](src/index.css#L4645) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4800`](src/index.css#L4800) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -935,7 +942,7 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `test.tacstart` | [`src/domain/triage.test.ts:42`](src/domain/triage.test.ts#L42) | Jeder Zweig des Sichtungsalgorithmus inklusive Grenzwerte |
 | `test.tubus` | [`src/domain/simulation.test.ts:281`](src/domain/simulation.test.ts#L281) | Guedel- und Wendl-Tubus werden nur vom Bewusstlosen toleriert |
 | `test.zeitkosten` | [`src/state/reducer.test.ts:59`](src/state/reducer.test.ts#L59) | Belegt, dass der Reducer selbst keine Zeit mehr vorspringen lässt |
-| `test.zeitkostenabgleich` | [`src/state/zeitkosten.test.ts:180`](src/state/zeitkosten.test.ts#L180) | Ein Knopf erkennt, ob genau er gerade läuft |
+| `test.zeitkostenabgleich` | [`src/state/zeitkosten.test.ts:237`](src/state/zeitkosten.test.ts#L237) | Ein Knopf erkennt, ob genau er gerade läuft |
 | `test.zeitverlauf` | [`src/domain/simulation.test.ts:137`](src/domain/simulation.test.ts#L137) | Verschlechterung, Todesfaelle und Latenzzeiten |
 
 #### ui
@@ -950,6 +957,7 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
+| `ui.baufeld` | [`src/components/Baufeld.tsx:26`](src/components/Baufeld.tsx#L26) | Der Zugführer platziert echte Zeltgrößen im Baufeld |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:15`](src/components/Befundtafel.tsx#L15) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
@@ -964,7 +972,7 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
 | `ui.fahrzeugstatuspanel` | [`src/components/FahrzeugStatusPanel.tsx:7`](src/components/FahrzeugStatusPanel.tsx#L7) | Fahrzeugstand je Abschnitt, nur nach Abfrage sichtbar |
-| `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:10`](src/components/FahrzeugVerlegung.tsx#L10) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
+| `ui.fahrzeugverlegung` | [`src/components/FahrzeugVerlegung.tsx:11`](src/components/FahrzeugVerlegung.tsx#L11) | Fahrzeuge zwischen Abschnitten verlegen - nur mit Zugführer-Rang |
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.funkkanaelepanel` | [`src/components/FunkkanaelePanel.tsx:5`](src/components/FunkkanaelePanel.tsx#L5) | Wer steht gerade auf welchem Kanal |
 | `ui.gebundenekraeftepanel` | [`src/components/GebundeneKraeftePanel.tsx:18`](src/components/GebundeneKraeftePanel.tsx#L18) | Übersicht aller aktuell gebundenen Kräfte |
@@ -996,9 +1004,10 @@ _218 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
-| `ui.verlegung` | [`src/components/Verlegung.tsx:10`](src/components/Verlegung.tsx#L10) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
+| `ui.verlegung` | [`src/components/Verlegung.tsx:12`](src/components/Verlegung.tsx#L12) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
-| `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:24`](src/pages/ZugfuehrerSeite.tsx#L24) | Startbildschirm des Zugführers: schlanker als das Gesamtlagebild |
+| `ui.zelttypauswahl` | [`src/components/ZeltTypAuswahl.tsx:14`](src/components/ZeltTypAuswahl.tsx#L14) | Größenauswahl für ein neues Zelt |
+| `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:40`](src/pages/ZugfuehrerSeite.tsx#L40) | Startbildschirm des Zugführers: schlanker als das Gesamtlagebild |
 
 #### vorlagen
 
@@ -1084,6 +1093,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.1.1` | Baufeld: Zeltplatzierung mit realen DRK-Zeltgrößen (SG20-50, → `domain.zelte`), maßstabsgetreu in einem neuen, von der lat/lon-Kartenansicht unabhängigen Baufeld; echter Zeit-Countdown beim Aufbau; geteiltes Flächenbudget mit Fahrzeugen (weiche Warnung); Zeltplatzierung fungiert als Abschnitt-Eröffnung für die drei Zelte, einfacher Eröffnen-Knopf für die übrigen fünf Abschnitte (Schadensstelle bleibt immer offen) |
 | `DPS-0.8.1.0` | Zugführer-Ansicht: neue `ZugfuehrerSeite.tsx` (Karte/Kacheln-Rückfallebene ohne passive Kräfte-/Fahrzeugliste, plus drei Abfrage-Knöpfe Fahrzeuge/Kräfte/Kennzahlen) für Spieler mit Führungsrolle Zugführer (`istZugfuehrend()`, exakter Rollentreffer), erster Baustein der Zugführer-Epoche (`DPS-0.8.1.x`) |
 | `DPS-0.8.0.15` | Private Spieler-Statusansicht "Mein Einsatz": neue Debriefing-Sektion mit den eigenen Handlungen einer Person - neues `state.spielerProtokoll`, gefüllt aus fünf Reducer-Aktionen (Diagnostik/Sichtung/Maßnahme/Verlegung/Rettungsmaterial) plus Team-Abschlüssen (Narkose, Rettung), gefiltert nach `sitzung.eigeneId` beim Lesen |
 | `DPS-0.8.0.14` | Debriefing-Erweiterung: Ressourceneinsatz (Materialverbrauch je Typ aus der Differenz zur Fahrzeug-Bestückung, Fahrzeuge-im-Einsatz/ausgefallen-Kennzahlen) und Führungsentscheidungen (neues, nur wachsendes `state.regieProtokoll` - Pause/Weiter, Tempo, Freigaben, Fahrzeugausfall/Nachforderung/Lageänderung, Start/Ende) als zwei neue Debriefing-Abschnitte |

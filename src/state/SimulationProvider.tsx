@@ -286,6 +286,8 @@ export function SimulationProvider({
     ausgeloesteEreignisse,
     regieProtokoll,
     spielerProtokoll,
+    zeltPlatzierungen,
+    eroeffneteAbschnitte,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -311,6 +313,8 @@ export function SimulationProvider({
       ausgeloesteEreignisse,
       regieProtokoll,
       spielerProtokoll,
+      zeltPlatzierungen,
+      eroeffneteAbschnitte,
     }),
     [
       phase,
@@ -331,6 +335,8 @@ export function SimulationProvider({
       ausgeloesteEreignisse,
       regieProtokoll,
       spielerProtokoll,
+      zeltPlatzierungen,
+      eroeffneteAbschnitte,
     ],
   );
 

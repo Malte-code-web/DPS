@@ -90,6 +90,21 @@ export function darfFahrzeugeDisponieren(
   return erfuelltFuehrung(eigeneFuehrungsrolle ?? 'keine', 'zugfuehrer');
 }
 
+/**
+ * @anker domain.zugfuehrungaktiv Ob die Eröffnen-Sperre für Abschnitte überhaupt greift
+ *
+ * Dieselbe Blast-Radius-Begrenzung wie `darfFahrzeugeDisponieren`: ohne
+ * aktive Sitzung oder ohne jemanden mit der Führungsrolle Zugführer (oder
+ * höher, → `erfuelltFuehrung`) bleibt eine Verlegung wie bisher ungegatet -
+ * dadurch bleiben Alleinspiel und die ~430 bestehenden Tests unangetastet,
+ * nur eine Sitzung mit echtem Zugführer prüft `istAbschnittEroeffnet`
+ * (→ `domain.zelte`) wirklich.
+ */
+export function zugfuehrungAktiv(sitzungAktiv: boolean, spieler: Spieler[]): boolean {
+  if (!sitzungAktiv) return false;
+  return spieler.some((eintrag) => erfuelltFuehrung(eintrag.fuehrungsrolle ?? 'keine', 'zugfuehrer'));
+}
+
 export interface Staerke {
   fuehrungskraefte: number;
   unterfuehrer: number;

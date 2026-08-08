@@ -752,7 +752,29 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Gruppenführer bekommt die Benachrichtigung, führt aus → nach Ablauf der
     Bauzeit (10-fache Geschwindigkeit) erscheint das Zelt im Baufeld,
     keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 4):** Kräfte/Patienten weich
+- ✅ **Mikromanagement-Schalter im Baufeld (`DPS-0.8.1.3`)** - Zugführer-Ebene,
+  Teil 4, kleine Ergänzung zu `DPS-0.8.1.2` auf ausdrücklichen Wunsch: die
+  Auftragstaktik-Kette (Zugführer befiehlt, Gruppenführer baut) soll der
+  Normalfall bleiben, der Zugführer aber jederzeit selbst eingreifen können,
+  wenn er es für nötig hält - genau die reale Spannung zwischen Delegation
+  und Mikromanagement, die Auftragstaktik als Führungsprinzip bewusst
+  einschränkt:
+  - Neuer Schalter "Mikromanagement" in `Baufeld.tsx` (→ `ui.baufeld.befehl`) -
+    sichtbar, sobald mindestens ein Gruppenführer in der Sitzung sitzt.
+    Reine Client-Vorliebe (`useState`, kein Sync-Feld, kein neues
+    Reducer-Feld), startet immer auf "Aus", damit Auftragstaktik der
+    bewusste Normalfall bleibt statt eines vergessenen Zustands.
+  - Ist der Schalter aktiv, baut der Zugführer trotz vorhandenem
+    Gruppenführer direkt selbst (derselbe Pfad wie der bisherige
+    Kein-Gruppenführer-Rückfall) - kein Befehl, keine Benachrichtigung beim
+    Gruppenführer. Ausgeschaltet bleibt exakt das aus `DPS-0.8.1.2` bekannte
+    Verhalten unangetastet.
+  - Live mit drei echten Clients verifiziert: Schalter aktiviert → Zelt
+    entsteht direkt beim Zugführer, Gruppenführer bekommt keine
+    Benachrichtigung; Schalter deaktiviert → zweites Zelt löst wie gehabt
+    einen Befehl mit Benachrichtigung beim Gruppenführer aus, keine
+    Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 5):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

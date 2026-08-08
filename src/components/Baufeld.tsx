@@ -55,6 +55,14 @@ const RASTER_SCHRITT_M = 5;
  * Zugführer eine Zielperson. Ohne jeden Gruppenführer in der Sitzung bleibt
  * der Direktbau als Rückfall erhalten (dieselbe Blast-Radius-Begrenzung wie
  * bei `domain.zugfuehrungaktiv`).
+ *
+ * Ein Schalter "Mikromanagement" durchbricht diese Kette bewusst: sitzt
+ * mindestens ein Gruppenführer in der Sitzung, entscheidet der Zugführer
+ * trotzdem selbst, ob er wie vorgesehen einen Befehl gibt oder ausnahmsweise
+ * direkt baut - reine Client-Vorliebe (`useState`, kein Sync-Feld), immer
+ * mit "Aus" (Befehl geben) beginnend, damit Auftragstaktik der Normalfall
+ * bleibt und Mikromanagement eine bewusste Ausnahme ist statt ein
+ * vergessener Zustand.
  */
 export function Baufeld() {
   const { state, dispatch } = useSimulation();
@@ -71,6 +79,7 @@ export function Baufeld() {
     xM: number;
     yM: number;
   } | null>(null);
+  const [mikromanagement, setMikromanagement] = useState(false);
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
   const zkBeschaeftigt = zk.aktion !== null;
@@ -112,7 +121,7 @@ export function Baufeld() {
 
   const platzieren = (xM: number, yM: number) => {
     if (!platzierModus) return;
-    if (gruppenfuehrerListe.length === 0) {
+    if (gruppenfuehrerListe.length === 0 || mikromanagement) {
       dispatch({
         typ: 'zeltPlatzieren',
         id: erzeugeId(),
@@ -268,6 +277,17 @@ export function Baufeld() {
             );
           })}
         </ul>
+      )}
+
+      {gruppenfuehrerListe.length > 0 && (
+        <label className="baufeld-mikromanagement">
+          <input
+            type="checkbox"
+            checked={mikromanagement}
+            onChange={(event) => setMikromanagement(event.target.checked)}
+          />
+          Mikromanagement: Zelte selbst bauen statt Befehl an Gruppenführer
+        </label>
       )}
 
       {platzierModus ? (

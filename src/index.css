@@ -3696,6 +3696,16 @@ button.gefahr {
   margin-bottom: 0.6rem;
 }
 
+.baufeld-mikromanagement {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-leise);
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+}
+
 .zelttyp-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

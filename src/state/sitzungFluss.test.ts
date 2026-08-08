@@ -2097,3 +2097,160 @@ describe('Baufeld: Zeltplatzierung und Abschnitte eröffnen (→ ui.baufeld)', (
     expect(schnappschuss.eroeffneteAbschnitte).toEqual(['ablage']);
   });
 });
+
+describe('Zeltbefehl: Zugführer befiehlt, Gruppenführer führt aus (→ modell.zeltbefehl)', () => {
+  function eroeffnetMitGruppenfuehrer(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    return simulationReducer(basis, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-1',
+        name: 'Gruppenführer Gruber',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+  }
+
+  it('erteilt einen Befehl bei gültiger Fläche und protokolliert ihn', () => {
+    const state = eroeffnetMitGruppenfuehrer();
+    const befohlen = simulationReducer(state, {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(befohlen.zeltBefehle).toEqual([
+      {
+        id: 'befehl-1',
+        typ: 'SG20',
+        abschnitt: 'zelt_rot',
+        xM: 0,
+        yM: 0,
+        zugfuehrerId: 'leiter-1',
+        gruppenfuehrerId: 'gruppe-1',
+      },
+    ]);
+    expect(befohlen.regieProtokoll.at(-1)?.text).toContain('Gruppenführer Gruber');
+    // Noch kein echtes Zelt, nur der Auftrag.
+    expect(befohlen.zeltPlatzierungen).toEqual([]);
+  });
+
+  it('lehnt einen Befehl mit ungültiger Fläche ab, ohne den State zu ändern', () => {
+    const mitRot = simulationReducer(eroeffnetMitGruppenfuehrer(), {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-rot',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+    });
+    const versuch = simulationReducer(mitRot, {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_gelb',
+      xM: 1,
+      yM: 1,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(versuch).toBe(mitRot);
+  });
+
+  it('ersetzt einen offenen Befehl derselben Farbe statt ihn zu addieren', () => {
+    const einBefehl = simulationReducer(eroeffnetMitGruppenfuehrer(), {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const zweiterBefehl = simulationReducer(einBefehl, {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-2',
+      zeltTyp: 'SG50',
+      abschnitt: 'zelt_rot',
+      xM: 20,
+      yM: 20,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(zweiterBefehl.zeltBefehle).toHaveLength(1);
+    expect(zweiterBefehl.zeltBefehle[0]?.id).toBe('befehl-2');
+  });
+
+  it('lehnt einen Befehl ab, ohne ein Zelt zu errichten', () => {
+    const befohlen = simulationReducer(eroeffnetMitGruppenfuehrer(), {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const abgelehnt = simulationReducer(befohlen, { typ: 'zeltBefehlAblehnen', id: 'befehl-1' });
+    expect(abgelehnt.zeltBefehle).toEqual([]);
+    expect(abgelehnt.zeltPlatzierungen).toEqual([]);
+  });
+
+  it('führt einen Befehl aus: zeltPlatzieren mit befehlId errichtet das Zelt und räumt den Befehl ab', () => {
+    const befohlen = simulationReducer(eroeffnetMitGruppenfuehrer(), {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const ausgefuehrt = simulationReducer(befohlen, {
+      typ: 'zeltPlatzieren',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      spielerId: 'gruppe-1',
+      befehlId: 'befehl-1',
+    });
+    expect(ausgefuehrt.zeltBefehle).toEqual([]);
+    expect(ausgefuehrt.zeltPlatzierungen).toEqual([
+      { id: 'befehl-1', typ: 'SG20', abschnitt: 'zelt_rot', xM: 0, yM: 0, platziertVonSpielerId: 'gruppe-1' },
+    ]);
+  });
+
+  it('überträgt zeltBefehle in den Schnappschuss', () => {
+    const befohlen = simulationReducer(eroeffnetMitGruppenfuehrer(), {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      zeltTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const schnappschuss = schnappschussAus(befohlen);
+    expect(schnappschuss.zeltBefehle).toEqual(befohlen.zeltBefehle);
+  });
+});

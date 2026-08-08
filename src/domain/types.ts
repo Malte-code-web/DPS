@@ -884,6 +884,26 @@ export interface PlatzierterZelt {
 }
 
 /**
+ * @anker modell.zeltbefehl Auftrag des Zugführers an einen Gruppenführer, ein Zelt zu bauen
+ *
+ * Auftragstaktik statt Direktbau: der Zugführer legt Zeltgröße und Position
+ * im Baufeld fest (→ `ui.baufeld`), die tatsächliche Ausführung - inklusive
+ * der echten Bauzeit (→ `domain.zelte`, `ZELTTYPEN.aufbauSek`) - liegt beim
+ * angesprochenen Gruppenführer (→ `ui.zeltbefehlbenachrichtigung`). Ohne
+ * einen Gruppenführer in der Sitzung baut der Zugführer weiterhin direkt
+ * (→ `ui.baufeld`, Blast-Radius-Begrenzung wie bei `domain.zugfuehrungaktiv`).
+ */
+export interface ZeltBefehl {
+  id: string;
+  typ: ZeltTypId;
+  abschnitt: ZeltAbschnitt;
+  xM: number;
+  yM: number;
+  zugfuehrerId: string;
+  gruppenfuehrerId: string;
+}
+
+/**
  * @anker modell.ereignis Von der Übungsleitung live ausgelöste Lageänderung
  *
  * Vordefinierte, im Szenario hinterlegte Nachzügler-Patienten (→ `ui.ereignissepanel`)

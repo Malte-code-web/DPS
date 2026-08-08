@@ -728,9 +728,33 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     durchlaufen), fertiges Zelt erscheint maßstabsgetreu im Baufeld, ein
     Patient kann erst nach Eröffnung des Zielabschnitts dorthin verlegt
     werden (beide Richtungen geprüft), keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 3):** Kräfte/Patienten weich
-  zuweisen (`DPS-0.8.1.2`, Benachrichtigung statt Hard-Lock),
-  Rettungsmittelhalteplatz + Transporte freigeben (`DPS-0.8.1.3`).
+- ✅ **Zeltbefehl: Auftragstaktik statt Direktbau (`DPS-0.8.1.2`)** -
+  Zugführer-Ebene, Teil 3 (auf ausdrücklichen Wunsch: nicht der Zugführer
+  baut die Zelte im Baufeld, sondern befiehlt den Bau einem Gruppenführer -
+  genau das reale Führungsprinzip Auftragstaktik aus der FwDV-100-Recherche
+  zu `DPS-0.8.1.0`, Befehl gibt Ziel vor, Ausführung liegt bei der
+  unterstellten Kraft):
+  - Neuer `ZeltBefehl` (→ `modell.zeltbefehl`): der Zugführer legt wie
+    gehabt Zeltgröße und Position im Baufeld fest (→ `ui.baufeld`); sitzt
+    mindestens ein Gruppenführer in der Sitzung, löst das statt einer
+    direkten Platzierung einen Befehl aus - bei mehreren Gruppenführern
+    wählt der Zugführer eine Zielperson.
+  - Neue `ZeltBefehlBenachrichtigung.tsx` (→ `ui.zeltbefehlbenachrichtigung`,
+    gleiches nicht blockierendes Toast-Muster wie die bestehende
+    Delegationsanfrage) mit "Befehl ausführen"/"Ablehnen" beim
+    angesprochenen Gruppenführer - erst die Ausführung löst die echte
+    `zeltPlatzieren`-Aktion mitsamt Bau-Countdown aus, jetzt bei der
+    ausführenden statt der befehlenden Person.
+  - Ohne jeden Gruppenführer in der Sitzung baut der Zugführer weiterhin
+    direkt (Blast-Radius-Begrenzung wie bei `domain.zugfuehrungaktiv`) -
+    Solospiel und kleine Sitzungen bleiben unangetastet.
+  - Live mit drei echten Clients verifiziert: Zugführer platziert ein Zelt →
+    Gruppenführer bekommt die Benachrichtigung, führt aus → nach Ablauf der
+    Bauzeit (10-fache Geschwindigkeit) erscheint das Zelt im Baufeld,
+    keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 4):** Kräfte/Patienten weich
+  zuweisen (Benachrichtigung statt Hard-Lock),
+  Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,

@@ -42,6 +42,19 @@ const RASTER_SCHRITT_M = 5;
  * wie jede andere zeitkostende Handlung im echten Countdown, nicht sofort
  * sichtbar. Solange er läuft, bleiben weitere Platzierungen gesperrt
  * (dieselbe `zkBeschaeftigt`-Konvention wie in `ui.verlegung`).
+ *
+ * @anker ui.baufeld.befehl Auftragstaktik statt Direktbau, wenn ein Gruppenführer mitspielt
+ *
+ * Sitzt in der Sitzung mindestens eine Person mit der Führungsrolle
+ * Gruppenführer, baut der Zugführer nicht mehr selbst: Größe und Ort werden
+ * wie gehabt festgelegt, aber statt `zeltPlatzieren` löst das einen Befehl
+ * aus (→ `modell.zeltbefehl`), den der Gruppenführer über eine eigene
+ * Benachrichtigung annehmen muss (→ `ui.zeltbefehlbenachrichtigung`) - erst
+ * dann läuft der echte Bau-Countdown, jetzt bei der ausführenden Person statt
+ * beim befehlenden Zugführer. Bei mehreren Gruppenführern wählt der
+ * Zugführer eine Zielperson. Ohne jeden Gruppenführer in der Sitzung bleibt
+ * der Direktbau als Rückfall erhalten (dieselbe Blast-Radius-Begrenzung wie
+ * bei `domain.zugfuehrungaktiv`).
  */
 export function Baufeld() {
   const { state, dispatch } = useSimulation();
@@ -52,9 +65,22 @@ export function Baufeld() {
     abschnitt: ZeltAbschnitt;
     typ: ZeltTypId;
   } | null>(null);
+  const [zielAuswahl, setZielAuswahl] = useState<{
+    abschnitt: ZeltAbschnitt;
+    typ: ZeltTypId;
+    xM: number;
+    yM: number;
+  } | null>(null);
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
   const zkBeschaeftigt = zk.aktion !== null;
+
+  const gruppenfuehrerListe = state.sitzung.spieler.filter(
+    (spieler) => spieler.rolle === 'spieler' && spieler.fuehrungsrolle === 'gruppenfuehrer',
+  );
+  const eigeneBefehle = state.zeltBefehle.filter(
+    (befehl) => befehl.zugfuehrerId === state.sitzung.eigeneId,
+  );
 
   const verfuegbareQm = verfuegbareFlaecheQm(baufeld, zelte, state.fahrzeuge.length);
   const knapp = verfuegbareQm < FAHRZEUG_FLAECHENBEDARF_QM;
@@ -69,23 +95,61 @@ export function Baufeld() {
     }
   }
 
+  const befehlErteilenAn = (gruppenfuehrerId: string) => {
+    if (!zielAuswahl) return;
+    dispatch({
+      typ: 'zeltBefehlErteilen',
+      id: erzeugeId(),
+      zeltTyp: zielAuswahl.typ,
+      abschnitt: zielAuswahl.abschnitt,
+      xM: zielAuswahl.xM,
+      yM: zielAuswahl.yM,
+      zugfuehrerId: state.sitzung.eigeneId ?? '',
+      gruppenfuehrerId,
+    });
+    setZielAuswahl(null);
+  };
+
   const platzieren = (xM: number, yM: number) => {
     if (!platzierModus) return;
-    dispatch({
-      typ: 'zeltPlatzieren',
-      id: erzeugeId(),
-      zeltTyp: platzierModus.typ,
-      abschnitt: platzierModus.abschnitt,
-      xM,
-      yM,
-      spielerId: state.sitzung.eigeneId ?? undefined,
-    });
+    if (gruppenfuehrerListe.length === 0) {
+      dispatch({
+        typ: 'zeltPlatzieren',
+        id: erzeugeId(),
+        zeltTyp: platzierModus.typ,
+        abschnitt: platzierModus.abschnitt,
+        xM,
+        yM,
+        spielerId: state.sitzung.eigeneId ?? undefined,
+      });
+      setPlatzierModus(null);
+      return;
+    }
+    if (gruppenfuehrerListe.length === 1) {
+      const zugfuehrerId = state.sitzung.eigeneId ?? '';
+      const gruppenfuehrerId = gruppenfuehrerListe[0]!.id;
+      dispatch({
+        typ: 'zeltBefehlErteilen',
+        id: erzeugeId(),
+        zeltTyp: platzierModus.typ,
+        abschnitt: platzierModus.abschnitt,
+        xM,
+        yM,
+        zugfuehrerId,
+        gruppenfuehrerId,
+      });
+      setPlatzierModus(null);
+      return;
+    }
+    setZielAuswahl({ abschnitt: platzierModus.abschnitt, typ: platzierModus.typ, xM, yM });
     setPlatzierModus(null);
   };
 
-  const nochOffeneFarben = ZELT_FARBEN.filter(
-    (eintrag) => !zelte.some((zelt) => zelt.abschnitt === eintrag.abschnitt),
-  );
+  const farbenInBearbeitung = new Set([
+    ...zelte.map((zelt) => zelt.abschnitt),
+    ...state.zeltBefehle.map((befehl) => befehl.abschnitt),
+  ]);
+  const nochOffeneFarben = ZELT_FARBEN.filter((eintrag) => !farbenInBearbeitung.has(eintrag.abschnitt));
 
   return (
     <div className="baufeld-block">
@@ -184,6 +248,28 @@ export function Baufeld() {
         </p>
       )}
 
+      {eigeneBefehle.length > 0 && (
+        <ul className="baufeld-befehle-liste">
+          {eigeneBefehle.map((befehl) => {
+            const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === befehl.gruppenfuehrerId);
+            return (
+              <li key={befehl.id} className="baufeld-befehl-zeile">
+                <span>
+                  Befehl an {gruppenfuehrer?.name ?? 'Gruppenführer'}: {ZELTTYPEN[befehl.typ].bezeichnung}
+                  -Zelt für {abschnittInfo(befehl.abschnitt).name} - wartet auf Ausführung
+                </span>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ typ: 'zeltBefehlAblehnen', id: befehl.id })}
+                >
+                  Zurückziehen
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       {platzierModus ? (
         <button
           type="button"
@@ -193,6 +279,26 @@ export function Baufeld() {
         >
           Platzierung abbrechen
         </button>
+      ) : zielAuswahl ? (
+        <div className="panel zelttyp-auswahl">
+          <div className="panel-titel">
+            <h2>Befehl an wen?</h2>
+          </div>
+          <div className="baufeld-ziel-knoepfe">
+            {gruppenfuehrerListe.map((gruppenfuehrer) => (
+              <button
+                type="button"
+                key={gruppenfuehrer.id}
+                onClick={() => befehlErteilenAn(gruppenfuehrer.id)}
+              >
+                {gruppenfuehrer.name}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="zelttyp-abbrechen" onClick={() => setZielAuswahl(null)}>
+            Abbrechen
+          </button>
+        </div>
       ) : (
         !zkZelt &&
         nochOffeneFarben.length > 0 && (

@@ -6,6 +6,7 @@ import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { KollegenanfrageBenachrichtigung } from '../components/KollegenanfrageBenachrichtigung';
 import { PatientKarte } from '../components/PatientKarte';
 import { Sprechfunk } from '../components/Sprechfunk';
+import { ZeltBefehlBenachrichtigung } from '../components/ZeltBefehlBenachrichtigung';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
 import { formatStaerke, istRegiefuehrend, istZugfuehrend, staerkemeldung } from '../domain/fuehrung';
@@ -91,6 +92,7 @@ export function EinsatzSeite() {
 
       <DelegationBenachrichtigung />
       <KollegenanfrageBenachrichtigung />
+      <ZeltBefehlBenachrichtigung />
       <Sprechfunk />
 
       {!ausgewaehlt && regiefuehrend && uebersicht ? (

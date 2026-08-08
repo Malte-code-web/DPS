@@ -3665,6 +3665,37 @@ button.gefahr {
   color: var(--text-leise);
 }
 
+.baufeld-befehle-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.baufeld-befehl-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--bg-panel-hoch);
+  border-radius: 7px;
+  font-size: 0.78rem;
+}
+
+.baufeld-befehl-zeile button {
+  flex-shrink: 0;
+}
+
+.baufeld-ziel-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
 .zelttyp-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

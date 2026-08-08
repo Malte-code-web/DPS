@@ -1,20 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
   FAHRZEUG_FLAECHENBEDARF_QM,
+  FLAECHENTYPEN,
   STANDARD_BAUFELD,
   ZELTTYPEN,
   ZELT_MINDESTABSTAND_M,
   belegteZeltFlaecheQm,
+  groesseVon,
   istAbschnittEroeffnet,
   platzierungGueltig,
   ueberlapptMitAbstand,
   verfuegbareFlaecheQm,
-} from './zelte';
-import type { PlatzierterZelt } from './types';
+} from './flaechen';
+import type { PlatzierteFlaeche } from './types';
 
 const BAUFELD = { breiteM: 40, tiefeM: 50 };
 
-function zelt(abschnitt: PlatzierterZelt['abschnitt'], xM: number, yM: number, typ: PlatzierterZelt['typ'] = 'SG20'): PlatzierterZelt {
+function flaeche(
+  abschnitt: PlatzierteFlaeche['abschnitt'],
+  xM: number,
+  yM: number,
+  typ: PlatzierteFlaeche['typ'] = 'SG20',
+): PlatzierteFlaeche {
   return { id: `${abschnitt}-${xM}-${yM}`, typ, abschnitt, xM, yM };
 }
 
@@ -40,8 +47,18 @@ describe('ueberlapptMitAbstand', () => {
   });
 });
 
+describe('groesseVon', () => {
+  it('findet ein Zelt im ZELTTYPEN-Katalog', () => {
+    expect(groesseVon('SG20')).toBe(ZELTTYPEN.SG20);
+  });
+
+  it('findet eine Fläche im FLAECHENTYPEN-Katalog', () => {
+    expect(groesseVon('FL_M')).toBe(FLAECHENTYPEN.FL_M);
+  });
+});
+
 describe('platzierungGueltig', () => {
-  it('lehnt eine Platzierung außerhalb des Baufelds ab', () => {
+  it('lehnt eine Platzierung außerhalb des Baufelds ab, wenn die Grenze geprüft wird', () => {
     expect(
       platzierungGueltig({ typ: 'SG20', abschnitt: 'zelt_rot', xM: -1, yM: 0 }, [], BAUFELD),
     ).toBe(false);
@@ -50,40 +67,68 @@ describe('platzierungGueltig', () => {
     ).toBe(false);
   });
 
+  it('erlaubt eine Platzierung außerhalb des Baufelds, wenn die Grenze nicht geprüft wird', () => {
+    expect(
+      platzierungGueltig(
+        { typ: 'FL_S', abschnitt: 'ablage', xM: 500, yM: 500 },
+        [],
+        BAUFELD,
+        false,
+      ),
+    ).toBe(true);
+  });
+
   it('erlaubt eine freie Platzierung im Baufeld', () => {
     expect(
       platzierungGueltig({ typ: 'SG20', abschnitt: 'zelt_rot', xM: 0, yM: 0 }, [], BAUFELD),
     ).toBe(true);
   });
 
-  it('lehnt eine Platzierung ab, die ein anderes Zelt überschneidet', () => {
-    const bestehende = [zelt('zelt_gelb', 0, 0)];
+  it('lehnt eine Platzierung ab, die eine andere Fläche überschneidet', () => {
+    const bestehende = [flaeche('zelt_gelb', 0, 0)];
     expect(
       platzierungGueltig({ typ: 'SG20', abschnitt: 'zelt_rot', xM: 2, yM: 2 }, bestehende, BAUFELD),
     ).toBe(false);
   });
 
-  it('ignoriert ein bestehendes Zelt derselben Farbe (wird ersetzt statt addiert)', () => {
-    const bestehende = [zelt('zelt_rot', 0, 0)];
+  it('ignoriert eine bestehende Fläche desselben Abschnitts (wird ersetzt statt addiert)', () => {
+    const bestehende = [flaeche('zelt_rot', 0, 0)];
     expect(
       platzierungGueltig({ typ: 'SG20', abschnitt: 'zelt_rot', xM: 0, yM: 0 }, bestehende, BAUFELD),
     ).toBe(true);
+  });
+
+  it('prüft die Überschneidung weiterhin, auch wenn die Grenze nicht geprüft wird', () => {
+    const bestehende = [flaeche('ablage', 100, 100, 'FL_M')];
+    expect(
+      platzierungGueltig(
+        { typ: 'FL_M', abschnitt: 'bereitstellungsraum', xM: 101, yM: 101 },
+        bestehende,
+        BAUFELD,
+        false,
+      ),
+    ).toBe(false);
   });
 });
 
 describe('belegteZeltFlaecheQm / verfuegbareFlaecheQm', () => {
   it('summiert die reale Fläche der platzierten Zelte', () => {
-    const zelte = [zelt('zelt_rot', 0, 0, 'SG20'), zelt('zelt_gelb', 10, 0, 'SG30')];
-    expect(belegteZeltFlaecheQm(zelte)).toBeCloseTo(ZELTTYPEN.SG20.flaecheQm + ZELTTYPEN.SG30.flaecheQm);
+    const flaechen = [flaeche('zelt_rot', 0, 0, 'SG20'), flaeche('zelt_gelb', 10, 0, 'SG30')];
+    expect(belegteZeltFlaecheQm(flaechen)).toBeCloseTo(ZELTTYPEN.SG20.flaecheQm + ZELTTYPEN.SG30.flaecheQm);
+  });
+
+  it('summiert auch reine Flächen ohne Zeltprodukt', () => {
+    const flaechen = [flaeche('ablage', 0, 0, 'FL_S')];
+    expect(belegteZeltFlaecheQm(flaechen)).toBeCloseTo(FLAECHENTYPEN.FL_S.flaecheQm);
   });
 
   it('zieht Zelt- und Fahrzeugfläche vom Baufeld ab', () => {
-    const zelte = [zelt('zelt_rot', 0, 0, 'SG20')];
+    const flaechen = [flaeche('zelt_rot', 0, 0, 'SG20')];
     const erwartet =
       STANDARD_BAUFELD.breiteM * STANDARD_BAUFELD.tiefeM -
       ZELTTYPEN.SG20.flaecheQm -
       2 * FAHRZEUG_FLAECHENBEDARF_QM;
-    expect(verfuegbareFlaecheQm(STANDARD_BAUFELD, zelte, 2)).toBeCloseTo(erwartet);
+    expect(verfuegbareFlaecheQm(STANDARD_BAUFELD, flaechen, 2)).toBeCloseTo(erwartet);
   });
 
   it('kann negativ werden, wenn die Fläche überzogen ist - keine Sperre, nur ein Rechenwert', () => {
@@ -94,19 +139,21 @@ describe('belegteZeltFlaecheQm / verfuegbareFlaecheQm', () => {
 
 describe('istAbschnittEroeffnet', () => {
   it('gilt Schadensstelle immer als eröffnet, unabhängig vom State', () => {
-    expect(istAbschnittEroeffnet('schadensstelle', [], [])).toBe(true);
+    expect(istAbschnittEroeffnet('schadensstelle', [])).toBe(true);
   });
 
   it('gilt ein Zelt-Abschnitt als eröffnet, sobald ein Zelt dafür platziert ist', () => {
-    expect(istAbschnittEroeffnet('zelt_rot', [], [])).toBe(false);
-    expect(istAbschnittEroeffnet('zelt_rot', [], [zelt('zelt_rot', 0, 0)])).toBe(true);
-    // Ein Zelt einer anderen Farbe eröffnet nicht mit.
-    expect(istAbschnittEroeffnet('zelt_gelb', [], [zelt('zelt_rot', 0, 0)])).toBe(false);
+    expect(istAbschnittEroeffnet('zelt_rot', [])).toBe(false);
+    expect(istAbschnittEroeffnet('zelt_rot', [flaeche('zelt_rot', 0, 0)])).toBe(true);
+    // Ein Zelt eines anderen Abschnitts eröffnet nicht mit.
+    expect(istAbschnittEroeffnet('zelt_gelb', [flaeche('zelt_rot', 0, 0)])).toBe(false);
   });
 
-  it('nutzt eroeffneteAbschnitte für die übrigen Abschnitte', () => {
-    expect(istAbschnittEroeffnet('ablage', [], [])).toBe(false);
-    expect(istAbschnittEroeffnet('ablage', ['ablage'], [])).toBe(true);
-    expect(istAbschnittEroeffnet('bereitstellungsraum', ['ablage'], [])).toBe(false);
+  it('gilt auch für die fünf erweiterten Abschnitte, sobald eine Fläche platziert ist', () => {
+    expect(istAbschnittEroeffnet('ablage', [])).toBe(false);
+    expect(istAbschnittEroeffnet('ablage', [flaeche('ablage', 0, 0, 'FL_S')])).toBe(true);
+    expect(istAbschnittEroeffnet('bereitstellungsraum', [flaeche('ablage', 0, 0, 'FL_S')])).toBe(
+      false,
+    );
   });
 });

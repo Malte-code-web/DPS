@@ -777,7 +777,55 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Zugführer, Gruppenführer bekommt keine Benachrichtigung; "Befehl geben"
     beim zweiten Zelt gewählt → wie gehabt eine Benachrichtigung beim
     Gruppenführer, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 5):** Kräfte/Patienten weich
+- ✅ **Lagekarte, Teil 1: Datenmodell (`DPS-0.8.1.4`)** - auf ausdrücklichen
+  Wunsch: eine echte, maßstabsgetreue Karte (OpenStreetMap) statt der
+  bisherigen schematischen Kartenansicht/des abstrakten Baufelds, mit
+  exakter Standortplatzierung für alle Einsatzabschnitte statt nur der drei
+  Behandlungszelte - Ein-/Ausgangssichtung dürfen jetzt ebenfalls als Zelt
+  ausgeführt werden. Dieser erste Teil landet nur das (größere, risikoreichere)
+  Datenmodell, noch hinter der bisherigen Baufeld-Oberfläche, bevor Teil 2
+  die echte Kartenkomponente baut:
+  - `ZeltAbschnitt` (3 Farben) → `FlaechenAbschnitt` (8 Abschnitte: die drei
+    Zelte plus Ablage, Bereitstellungsraum, Ein-/Ausgangssichtung,
+    Transport) - `PlatzierterZelt`→`PlatzierteFlaeche`,
+    `ZeltBefehl`→`FlaechenBefehl`, `domain/zelte.ts`→`domain/flaechen.ts`
+    (→ `domain.flaechen`). Neuer, zu `ZELTTYPEN` paralleler Katalog
+    `FLAECHENTYPEN` (kleine/mittlere/große markierte Fläche ohne reales
+    Zeltprodukt, kurze Aufbauzeit) - "nicht jede Lage braucht ein echtes
+    Zelt, aber eine definierte Fläche", das Prinzip aus der ursprünglichen
+    Baufeld-Recherche. Ein-/Ausgangssichtung dürfen aus beiden Katalogen
+    wählen, die übrigen drei Nicht-Zelt-Abschnitte nur aus `FLAECHENTYPEN`.
+  - `platzierungGueltig` bekommt einen `pruefeGrenzen`-Parameter (Standard
+    `true`) - nur die drei Behandlungszelte werden gegen die enge
+    Baufeld-Grenze geprüft, die übrigen fünf Abschnitte liegen oft weit
+    außerhalb davon irgendwo auf der echten Einsatzstelle.
+  - `Szenario.geodaten.ursprung` (neu): ein einziger Referenzpunkt, von dem
+    aus die gesamte Einsatzstelle in Metern gemessen wird (→
+    `domain.geodaten.projektion`, `geoZuLokalM`/`lokalMZuGeo`) - ersetzt
+    zwei bisher unabhängige Koordinatensysteme (Baufeld-Meter vs.
+    Kartenansicht-Lat/Lon) durch eines, behebt damit die ursprünglich
+    gemessene Diskrepanz (bis zu 54 % Abweichung) grundsätzlich.
+  - `RouteVorlage.distanzMeter` wird optional - ohne Angabe berechnet
+    `routenAusSzenario` die echte Distanz aus den Koordinaten der
+    Schlüsselpunkte (→ `domain.geodaten.haversine`) statt sie von Hand zu
+    pflegen; ein manueller Override bleibt für echte Abweichungen (z. B.
+    eine Umleitung) möglich.
+  - Die bisherige `eroeffneteAbschnitte`-Liste samt `abschnittEroeffnen`-
+    Aktion entfällt - alle acht Abschnitte laufen jetzt über dieselbe
+    Flächen-Platzierung wie zuvor nur die drei Zelte.
+  - 467 Tests grün (13 neue: `groesseVon`, `pruefeGrenzen`, Haversine-
+    Berechnung/-Override, Platzierung auf den fünf erweiterten
+    Abschnitten), live verifiziert (alle acht Abschnitte platzierbar,
+    Eingangssichtung zeigt beide Kataloge, Ablage nur Flächen, Aufbau-
+    Countdown korrekt beschriftet, keine Konsolenfehler).
+- 💤 **Noch offen (Zugführer-Ebene, Teil 6):** Lagekarte, Teil 2 - die echte
+  Kartenkomponente (React-Leaflet + OpenStreetMap-Kacheln, taktische
+  Symbole aus der Bibliothek `taktische-zeichen`), die `Kartenansicht.tsx`
+  und `Baufeld.tsx` ersetzt.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 7):** Lagekarte, Teil 3 - echte
+  Geodaten für die fünf Szenarien, die aktuell noch keine haben
+  (`wohnungsbrand` und die vier Einzelfälle).
+- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

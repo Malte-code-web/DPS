@@ -6,7 +6,7 @@ import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../do
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
 import { geoPunktName, routenAusSzenario } from '../domain/geodaten';
-import { STANDARD_BAUFELD, platzierungGueltig } from '../domain/zelte';
+import { STANDARD_BAUFELD, platzierungGueltig } from '../domain/flaechen';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -36,11 +36,14 @@ import type {
   Fahrzeug,
   FahrzeugTyp,
   FahrzeugVorlage,
+  FlaechenAbschnitt,
+  FlaechenBefehl,
+  FlaechenTypId,
   Fuehrungsrolle,
   Kollegenanfrage,
   MassnahmeId,
   Patient,
-  PlatzierterZelt,
+  PlatzierteFlaeche,
   Qualifikation,
   Route,
   Rufgruppenmitgliedschaft,
@@ -48,8 +51,6 @@ import type {
   SpielerProtokollEintrag,
   Szenario,
   Verlaufseintrag,
-  ZeltAbschnitt,
-  ZeltBefehl,
   ZeltTypId,
 } from '../domain/types';
 
@@ -179,23 +180,20 @@ export interface SimulationState {
    */
   spielerProtokoll: SpielerProtokollEintrag[];
   /**
-   * Vom Zugführer platzierte Zeltgrößen im Baufeld (→ `modell.platziertezelt`,
-   * `ui.baufeld`) - eine Platzierung pro Farbe (Rot/Gelb/Grün).
+   * Vom Zugführer platzierte Zelte/Flächen auf der Einsatzstelle (→
+   * `modell.platzierteflaeche`, `ui.lagekarte`) - eine Platzierung pro
+   * Abschnitt (die drei Behandlungszelte plus Ablage, Bereitstellungsraum,
+   * Ein-/Ausgangssichtung, Transport). Schadensstelle ist vom Szenario
+   * vorgegeben und immer offen (→ `domain.istAbschnittEroeffnet`).
    */
-  zeltPlatzierungen: PlatzierterZelt[];
+  flaechen: PlatzierteFlaeche[];
   /**
-   * Vom Zugführer geöffnete Abschnitte ohne eigenes Zeltmodell (Ablage,
-   * Bereitstellungsraum, Eingangssichtung, Ausgangssichtung, Transport) -
-   * Schadensstelle ist vom Szenario vorgegeben und immer offen, die drei
-   * Zelte laufen über `zeltPlatzierungen` (→ `domain.istAbschnittEroeffnet`).
+   * Offene Befehle des Zugführers an einen Gruppenführer, eine Fläche zu
+   * bauen (→ `modell.flaechenbefehl`) - ein Befehl pro Abschnitt,
+   * verschwindet, sobald die Fläche tatsächlich errichtet oder der Befehl
+   * abgelehnt wurde.
    */
-  eroeffneteAbschnitte: Einsatzabschnitt[];
-  /**
-   * Offene Befehle des Zugführers an einen Gruppenführer, ein Zelt zu bauen
-   * (→ `modell.zeltbefehl`) - ein Befehl pro Farbe, verschwindet, sobald das
-   * Zelt tatsächlich errichtet oder der Befehl abgelehnt wurde.
-   */
-  zeltBefehle: ZeltBefehl[];
+  flaechenBefehle: FlaechenBefehl[];
   /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
@@ -231,9 +229,8 @@ export const ANFANGSZUSTAND: SimulationState = {
   ausgeloesteEreignisse: [],
   regieProtokoll: [],
   spielerProtokoll: [],
-  zeltPlatzierungen: [],
-  eroeffneteAbschnitte: [],
-  zeltBefehle: [],
+  flaechen: [],
+  flaechenBefehle: [],
   schnappschussFolge: 0,
 };
 
@@ -323,27 +320,26 @@ export type SimulationAction =
   | {
       typ: 'zeltPlatzieren';
       id: string;
-      zeltTyp: ZeltTypId;
-      abschnitt: ZeltAbschnitt;
+      flaechenTyp: ZeltTypId | FlaechenTypId;
+      abschnitt: FlaechenAbschnitt;
       xM: number;
       yM: number;
       spielerId?: string;
-      /** Gesetzt, wenn diese Platzierung einen Befehl erfüllt (→ `modell.zeltbefehl`). */
+      /** Gesetzt, wenn diese Platzierung einen Befehl erfüllt (→ `modell.flaechenbefehl`). */
       befehlId?: string;
     }
   | { typ: 'zeltEntfernen'; id: string }
   | {
       typ: 'zeltBefehlErteilen';
       id: string;
-      zeltTyp: ZeltTypId;
-      abschnitt: ZeltAbschnitt;
+      flaechenTyp: ZeltTypId | FlaechenTypId;
+      abschnitt: FlaechenAbschnitt;
       xM: number;
       yM: number;
       zugfuehrerId: string;
       gruppenfuehrerId: string;
     }
   | { typ: 'zeltBefehlAblehnen'; id: string }
-  | { typ: 'abschnittEroeffnen'; abschnitt: Einsatzabschnitt }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -386,12 +382,10 @@ export interface Schnappschuss {
   regieProtokoll: Verlaufseintrag[];
   /** Private Statusansicht je Spieler für "Mein Einsatz" (→ `state.spielerprotokoll`). */
   spielerProtokoll: SpielerProtokollEintrag[];
-  /** Platzierte Zeltgrößen im Baufeld (→ `modell.platziertezelt`). */
-  zeltPlatzierungen: PlatzierterZelt[];
-  /** Geöffnete Nicht-Zelt-Abschnitte (→ `domain.istAbschnittEroeffnet`). */
-  eroeffneteAbschnitte: Einsatzabschnitt[];
-  /** Offene Zelt-Befehle des Zugführers an einen Gruppenführer (→ `modell.zeltbefehl`). */
-  zeltBefehle: ZeltBefehl[];
+  /** Platzierte Zelte/Flächen auf der Einsatzstelle (→ `modell.platzierteflaeche`). */
+  flaechen: PlatzierteFlaeche[];
+  /** Offene Flächen-Befehle des Zugführers an einen Gruppenführer (→ `modell.flaechenbefehl`). */
+  flaechenBefehle: FlaechenBefehl[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -422,9 +416,8 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     ausgeloesteEreignisse: state.ausgeloesteEreignisse,
     regieProtokoll: state.regieProtokoll,
     spielerProtokoll: state.spielerProtokoll,
-    zeltPlatzierungen: state.zeltPlatzierungen,
-    eroeffneteAbschnitte: state.eroeffneteAbschnitte,
-    zeltBefehle: state.zeltBefehle,
+    flaechen: state.flaechen,
+    flaechenBefehle: state.flaechenBefehle,
   };
 }
 
@@ -1389,18 +1382,23 @@ export function simulationReducer(
 
     case 'zeltPlatzieren': {
       const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      const pruefeGrenzen =
+        action.abschnitt === 'zelt_rot' ||
+        action.abschnitt === 'zelt_gelb' ||
+        action.abschnitt === 'zelt_gruen';
       if (
         !platzierungGueltig(
-          { typ: action.zeltTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
-          state.zeltPlatzierungen,
+          { typ: action.flaechenTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+          state.flaechen,
           baufeld,
+          pruefeGrenzen,
         )
       ) {
         return state;
       }
-      const platziert: PlatzierterZelt = {
+      const platziert: PlatzierteFlaeche = {
         id: action.id,
-        typ: action.zeltTyp,
+        typ: action.flaechenTyp,
         abschnitt: action.abschnitt,
         xM: action.xM,
         yM: action.yM,
@@ -1408,43 +1406,48 @@ export function simulationReducer(
       };
       const naechster = {
         ...state,
-        zeltPlatzierungen: [
-          ...state.zeltPlatzierungen.filter((zelt) => zelt.abschnitt !== action.abschnitt),
+        flaechen: [
+          ...state.flaechen.filter((flaeche) => flaeche.abschnitt !== action.abschnitt),
           platziert,
         ],
-        // Erfüllt einen wartenden Befehl (→ `modell.zeltbefehl`), falls diese
+        // Erfüllt einen wartenden Befehl (→ `modell.flaechenbefehl`), falls diese
         // Platzierung dessen Ausführung war - sonst bleibt die Liste unverändert.
-        zeltBefehle: action.befehlId
-          ? state.zeltBefehle.filter((befehl) => befehl.id !== action.befehlId)
-          : state.zeltBefehle,
+        flaechenBefehle: action.befehlId
+          ? state.flaechenBefehle.filter((befehl) => befehl.id !== action.befehlId)
+          : state.flaechenBefehle,
       };
       return protokolliereRegie(
         naechster,
-        `${action.zeltTyp}-Zelt für ${geoPunktName(action.abschnitt)} aufgestellt.`,
+        `${action.flaechenTyp}-Fläche für ${geoPunktName(action.abschnitt)} aufgestellt.`,
       );
     }
 
     case 'zeltEntfernen': {
       return {
         ...state,
-        zeltPlatzierungen: state.zeltPlatzierungen.filter((zelt) => zelt.id !== action.id),
+        flaechen: state.flaechen.filter((flaeche) => flaeche.id !== action.id),
       };
     }
 
     case 'zeltBefehlErteilen': {
       const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      const pruefeGrenzen =
+        action.abschnitt === 'zelt_rot' ||
+        action.abschnitt === 'zelt_gelb' ||
+        action.abschnitt === 'zelt_gruen';
       if (
         !platzierungGueltig(
-          { typ: action.zeltTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
-          state.zeltPlatzierungen,
+          { typ: action.flaechenTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+          state.flaechen,
           baufeld,
+          pruefeGrenzen,
         )
       ) {
         return state;
       }
-      const befehl: ZeltBefehl = {
+      const befehl: FlaechenBefehl = {
         id: action.id,
-        typ: action.zeltTyp,
+        typ: action.flaechenTyp,
         abschnitt: action.abschnitt,
         xM: action.xM,
         yM: action.yM,
@@ -1455,33 +1458,22 @@ export function simulationReducer(
       return protokolliereRegie(
         {
           ...state,
-          // Ein neuer Befehl für dieselbe Farbe ersetzt einen noch offenen -
+          // Ein neuer Befehl für denselben Abschnitt ersetzt einen noch offenen -
           // derselbe "ersetzt statt addiert"-Grundsatz wie bei `zeltPlatzieren`.
-          zeltBefehle: [
-            ...state.zeltBefehle.filter((eintrag) => eintrag.abschnitt !== action.abschnitt),
+          flaechenBefehle: [
+            ...state.flaechenBefehle.filter((eintrag) => eintrag.abschnitt !== action.abschnitt),
             befehl,
           ],
         },
-        `Befehl an ${gruppenfuehrer?.name ?? 'Gruppenführer'}: ${action.zeltTyp}-Zelt für ${geoPunktName(action.abschnitt)} bauen.`,
+        `Befehl an ${gruppenfuehrer?.name ?? 'Gruppenführer'}: ${action.flaechenTyp}-Fläche für ${geoPunktName(action.abschnitt)} bauen.`,
       );
     }
 
     case 'zeltBefehlAblehnen': {
       return {
         ...state,
-        zeltBefehle: state.zeltBefehle.filter((befehl) => befehl.id !== action.id),
+        flaechenBefehle: state.flaechenBefehle.filter((befehl) => befehl.id !== action.id),
       };
-    }
-
-    case 'abschnittEroeffnen': {
-      if (state.eroeffneteAbschnitte.includes(action.abschnitt)) return state;
-      return protokolliereRegie(
-        {
-          ...state,
-          eroeffneteAbschnitte: [...state.eroeffneteAbschnitte, action.abschnitt],
-        },
-        `${geoPunktName(action.abschnitt)} eröffnet.`,
-      );
     }
 
     case 'sitzungStarten': {
@@ -1539,9 +1531,8 @@ export function simulationReducer(
         ausgeloesteEreignisse: s.ausgeloesteEreignisse,
         regieProtokoll: s.regieProtokoll,
         spielerProtokoll: s.spielerProtokoll,
-        zeltPlatzierungen: s.zeltPlatzierungen,
-        eroeffneteAbschnitte: s.eroeffneteAbschnitte,
-        zeltBefehle: s.zeltBefehle,
+        flaechen: s.flaechen,
+        flaechenBefehle: s.flaechenBefehle,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

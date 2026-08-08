@@ -3,8 +3,8 @@ import { DIAGNOSTIK } from '../domain/diagnostik';
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { sichtungOffen } from '../domain/simulation';
-import { STANDARD_BAUFELD, ZELTTYPEN, platzierungGueltig } from '../domain/zelte';
-import type { DiagnostikId, Einsatzabschnitt, MassnahmeId, ZeltTypId } from '../domain/types';
+import { STANDARD_BAUFELD, groesseVon, platzierungGueltig } from '../domain/flaechen';
+import type { DiagnostikId, Einsatzabschnitt, FlaechenTypId, MassnahmeId, ZeltTypId } from '../domain/types';
 import type { SimulationAction, SimulationState } from './reducer';
 
 /**
@@ -58,13 +58,18 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
 
     case 'zeltPlatzieren': {
       const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      const pruefeGrenzen =
+        action.abschnitt === 'zelt_rot' ||
+        action.abschnitt === 'zelt_gelb' ||
+        action.abschnitt === 'zelt_gruen';
       const gueltig = platzierungGueltig(
-        { typ: action.zeltTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
-        state.zeltPlatzierungen,
+        { typ: action.flaechenTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+        state.flaechen,
         baufeld,
+        pruefeGrenzen,
       );
       if (!gueltig) return 0;
-      return ZELTTYPEN[action.zeltTyp].aufbauSek;
+      return groesseVon(action.flaechenTyp).aufbauSek;
     }
 
     // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung
@@ -96,7 +101,7 @@ export function zeitkostenLabel(action: SimulationAction): string {
     case 'fahrzeugVerlegen':
       return 'Fahrzeug verlegen';
     case 'zeltPlatzieren':
-      return `${ZELTTYPEN[action.zeltTyp].bezeichnung}-Zelt aufbauen`;
+      return `${groesseVon(action.flaechenTyp).bezeichnung} aufbauen`;
     case 'rettungDurchfuehren':
       return 'Rettung';
     default:
@@ -172,6 +177,9 @@ export function istRettungAktion(aktion: SimulationAction, patientId: string): b
   return aktion.typ === 'rettungDurchfuehren' && aktion.patientId === patientId;
 }
 
-export function istZeltPlatzierenAktion(aktion: SimulationAction, zeltTyp: ZeltTypId): boolean {
-  return aktion.typ === 'zeltPlatzieren' && aktion.zeltTyp === zeltTyp;
+export function istZeltPlatzierenAktion(
+  aktion: SimulationAction,
+  flaechenTyp: ZeltTypId | FlaechenTypId,
+): boolean {
+  return aktion.typ === 'zeltPlatzieren' && aktion.flaechenTyp === flaechenTyp;
 }

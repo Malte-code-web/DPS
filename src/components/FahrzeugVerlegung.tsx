@@ -1,7 +1,7 @@
 import { moeglicheZiele } from '../domain/abschnitte';
 import { darfFahrzeugeDisponieren, zugfuehrungAktiv } from '../domain/fuehrung';
 import { verlegungsdauerSek } from '../domain/geodaten';
-import { istAbschnittEroeffnet } from '../domain/zelte';
+import { istAbschnittEroeffnet } from '../domain/flaechen';
 import { useSimulation } from '../state/useSimulation';
 import { istFahrzeugVerlegenAktion } from '../state/zeitkosten';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -23,7 +23,7 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
   const zkBeschaeftigt = zk.aktion !== null;
   const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
   const ziele = moeglicheZiele(fahrzeug.abschnitt).filter(
-    (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.eroeffneteAbschnitte, state.zeltPlatzierungen),
+    (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.flaechen),
   );
   const eigeneFuehrungsrolle = state.sitzung.spieler.find(
     (s) => s.id === state.sitzung.eigeneId,

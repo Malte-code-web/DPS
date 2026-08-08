@@ -6,8 +6,6 @@ import { KartenOrtePanel } from '../components/KartenOrtePanel';
 import { Kartenansicht } from '../components/Kartenansicht';
 import { Kennzahlenleiste } from '../components/Kennzahlenleiste';
 import { KraefteStatusPanel } from '../components/KraefteStatusPanel';
-import { geoPunktName } from '../domain/geodaten';
-import { istAbschnittEroeffnet } from '../domain/zelte';
 import { useSimulation } from '../state/useSimulation';
 import type { Einsatzabschnitt } from '../domain/types';
 
@@ -24,19 +22,6 @@ const ABFRAGEN: { id: AbfrageId; label: string }[] = [
 ];
 
 /**
- * Abschnitte ohne eigenes Zeltmodell - Schadensstelle ist vom Szenario
- * vorgegeben und bleibt immer offen (→ `domain.istAbschnittEroeffnet`), die
- * drei Zelte laufen über das Baufeld.
- */
-const NICHT_ZELT_ABSCHNITTE: Einsatzabschnitt[] = [
-  'ablage',
-  'bereitstellungsraum',
-  'eingangssichtung',
-  'ausgangssichtung',
-  'transport',
-];
-
-/**
  * @anker ui.zugfuehrerseite Startbildschirm des Zugführers: schlanker als das Gesamtlagebild
  *
  * Für dieses Übungskonzept übernimmt der Zugführer die Leitung des gesamten
@@ -48,12 +33,11 @@ const NICHT_ZELT_ABSCHNITTE: Einsatzabschnitt[] = [
  * einzige Weg in die Abschnitt-Detailsicht - `Kartenansicht` selbst nimmt
  * (wie schon im Gesamtlagebild der Regie) keinen Klick zum Wechseln entgegen,
  * sie steht bei vorhandenen Geodaten nur zusätzlich obendrüber, nicht
- * anstelle der Kacheln. Direkt darunter platziert der Zugführer die drei
- * Behandlungs-Zelte maßstabsgetreu im Baufeld (→ `ui.baufeld`) - das
- * "Eröffnen" dieser drei Abschnitte läuft über die Platzierung selbst; die
- * übrigen fünf Abschnitte (Ablage, Bereitstellungsraum, Eingangssichtung,
- * Ausgangssichtung, Transport) haben einen einfachen Eröffnen-Knopf ohne
- * Flächenmodell, Schadensstelle ist vom Szenario vorgegeben und immer offen
+ * anstelle der Kacheln. Direkt darunter platziert der Zugführer im Baufeld
+ * (→ `ui.baufeld`) maßstabsgetreu alle acht Abschnitte - die drei
+ * Behandlungszelte plus Ablage, Bereitstellungsraum, Ein-/Ausgangssichtung,
+ * Transport; das "Eröffnen" eines Abschnitts läuft über die Platzierung
+ * selbst, Schadensstelle ist vom Szenario vorgegeben und immer offen
  * (→ `domain.istAbschnittEroeffnet`). Fahrzeuge, Kräfte und Kennzahlen muss
  * der Zugführer bewusst abfragen: ein Klick auf einen der drei Knöpfe blendet
  * den jeweiligen Stand sofort ein (reine `useState`-Steuerung, keine
@@ -62,7 +46,7 @@ const NICHT_ZELT_ABSCHNITTE: Einsatzabschnitt[] = [
  * automatisch vorgesetzt zu bekommen.
  */
 export function ZugfuehrerSeite({ onAbschnittWaehlen }: Props) {
-  const { state, dispatch } = useSimulation();
+  const { state } = useSimulation();
   const [abfrage, setAbfrage] = useState<AbfrageId | null>(null);
   const hatGeodaten = Boolean(state.szenario?.geodaten);
 
@@ -76,30 +60,6 @@ export function ZugfuehrerSeite({ onAbschnittWaehlen }: Props) {
       )}
 
       <Baufeld />
-
-      <div className="baufeld-block">
-        <p className="abschnitt-eyebrow">Weitere Abschnitte</p>
-        <ul className="abschnitte-oeffnen-liste">
-          {NICHT_ZELT_ABSCHNITTE.map((abschnitt) => {
-            const offen = istAbschnittEroeffnet(abschnitt, state.eroeffneteAbschnitte, state.zeltPlatzierungen);
-            return (
-              <li key={abschnitt} className="abschnitt-oeffnen-zeile">
-                <span>{geoPunktName(abschnitt)}</span>
-                {offen ? (
-                  <span className="abschnitt-oeffnen-status">offen</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => dispatch({ typ: 'abschnittEroeffnen', abschnitt })}
-                  >
-                    Eröffnen
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
 
       <AbschnitteKurzuebersicht onAbschnittWaehlen={onAbschnittWaehlen} />
 

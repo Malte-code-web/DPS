@@ -2,7 +2,7 @@ import { moeglicheZiele, zeltFuerKategorie } from '../domain/abschnitte';
 import { zugfuehrungAktiv } from '../domain/fuehrung';
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { sichtungOffen } from '../domain/simulation';
-import { istAbschnittEroeffnet } from '../domain/zelte';
+import { istAbschnittEroeffnet } from '../domain/flaechen';
 import { useSimulation } from '../state/useSimulation';
 import { istPatientVerlegenAktion } from '../state/zeitkosten';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -28,7 +28,7 @@ export function Verlegung({ patient }: { patient: Patient }) {
   const zkBeschaeftigt = zk.aktion !== null;
   const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
   const ziele = moeglicheZiele(patient.abschnitt).filter(
-    (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.eroeffneteAbschnitte, state.zeltPlatzierungen),
+    (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.flaechen),
   );
   const verstorben = patient.status === 'verstorben';
   const wartetAufSichtung = sichtungOffen(patient);

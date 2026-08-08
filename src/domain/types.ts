@@ -438,8 +438,11 @@ export type FahrzeugTyp =
   | 'elw2'
   | 'gw_log';
 
-/** Reale Zeltgrößen eines Behandlungsplatzes, DRK-Konzept "Behandlungsplatz 50" (→ `domain.zelte`). */
+/** Reale Zeltgrößen eines Behandlungsplatzes, DRK-Konzept "Behandlungsplatz 50" (→ `domain.flaechen`). */
 export type ZeltTypId = 'SG20' | 'SG30' | 'SG40' | 'SG50';
+
+/** Markierte/abgesperrte Fläche ohne reales Zeltprodukt dahinter (→ `domain.flaechen`, `FLAECHENTYPEN`). */
+export type FlaechenTypId = 'FL_S' | 'FL_M' | 'FL_L';
 
 /** Statische Vorlage - Teil eines `Szenario`, vor Sitzungsbeginn bearbeitbar. */
 export interface FahrzeugVorlage {
@@ -841,62 +844,82 @@ export interface GeoPosition {
 /**
  * @anker modell.route Weg zwischen zwei Einsatzabschnitten mit echter Distanz
  *
- * `distanzMeter` ist eine bewusst gewählte, plausible Schätzung je Szenario -
- * anders als die sorgfältig ausgewertete Fahrzeug-/Material-Bestückung gibt
- * es dafür keine reale Quelle (→ `domain.geodaten`). `sperraufschlagSek`
- * wirkt nur als fester Zeitaufschlag bei `status: 'gesperrt'`, nie als
- * Blockade - dieselbe "verzögert, nicht blockiert"-Linie wie überall sonst
- * in der Simulation.
+ * `distanzMeter` ist ein optionaler manueller Override - ohne Angabe wird die
+ * echte Distanz aus den Koordinaten der beiden Schlüsselpunkte berechnet
+ * (→ `domain.geodaten`, `haversineMeter`). Ein Override lohnt sich nur, wenn
+ * der reale Weg spürbar vom direkten Luftlinienabstand abweicht (z. B. eine
+ * Umleitung um eine gesperrte Straße). `sperraufschlagSek` wirkt nur als
+ * fester Zeitaufschlag bei `status: 'gesperrt'`, nie als Blockade - dieselbe
+ * "verzögert, nicht blockiert"-Linie wie überall sonst in der Simulation.
  */
 export interface RouteVorlage {
   id: string;
   von: Einsatzabschnitt;
   nach: Einsatzabschnitt;
-  distanzMeter: number;
+  distanzMeter?: number;
   sperraufschlagSek: number;
   /** Startet die Route gesperrt, statt frei (→ `modell.freigabemodus`-ähnliches Muster). */
   gesperrtBeimStart?: boolean;
 }
 
 export interface Route extends RouteVorlage {
+  /** Immer belegt - `routenAusSzenario` berechnet fehlende Werte per `haversineMeter`. */
+  distanzMeter: number;
   status: 'frei' | 'gesperrt';
 }
 
-/** Die drei Behandlungs-Zelte, für die der Zugführer eine Zeltgröße platziert (→ `domain.zelte`). */
-export type ZeltAbschnitt = 'zelt_rot' | 'zelt_gelb' | 'zelt_gruen';
+/**
+ * Die acht Abschnitte, für die der Zugführer eine Zeltgröße oder eine reine
+ * Fläche platziert (→ `domain.flaechen`) - Schadensstelle ist vom Szenario
+ * vorgegeben und immer offen, `verdeckt` ist kein realer Ort.
+ */
+export type FlaechenAbschnitt =
+  | 'ablage'
+  | 'bereitstellungsraum'
+  | 'eingangssichtung'
+  | 'zelt_rot'
+  | 'zelt_gelb'
+  | 'zelt_gruen'
+  | 'ausgangssichtung'
+  | 'transport';
 
 /**
- * @anker modell.platziertezelt Vom Zugführer gewählte Zeltgröße und Position im Baufeld
+ * @anker modell.platzierteflaeche Vom Zugführer gewählte Zelt- oder Flächengröße und Position
  *
- * Ersetzt die feste, im Szenario vorgegebene Zeltposition durch eine echte
- * Führungsentscheidung zur Laufzeit (→ `ui.baufeld`) - eine Platzierung pro
- * Farbe, eine neue ersetzt eine vorhandene für dieselbe Farbe statt sich zu
- * addieren.
+ * Ersetzt die feste, im Szenario vorgegebene Position durch eine echte
+ * Führungsentscheidung zur Laufzeit (→ `ui.lagekarte`) - eine Platzierung pro
+ * Abschnitt, eine neue ersetzt eine vorhandene für denselben Abschnitt statt
+ * sich zu addieren. `typ` ist entweder ein reales Zeltprodukt (`ZeltTypId`)
+ * oder eine reine markierte Fläche (`FlaechenTypId`) - nicht jede Lage
+ * braucht ein echtes Zelt, aber eine definierte Fläche.
  */
-export interface PlatzierterZelt {
+export interface PlatzierteFlaeche {
   id: string;
-  typ: ZeltTypId;
-  abschnitt: ZeltAbschnitt;
-  /** Position der linken oberen Ecke im Baufeld, in Metern (→ `domain.zelte`). */
+  typ: ZeltTypId | FlaechenTypId;
+  abschnitt: FlaechenAbschnitt;
+  /**
+   * Position der linken oberen Ecke, in Metern relativ zu
+   * `Szenario.geodaten.ursprung` (→ `domain.geodaten`).
+   */
   xM: number;
   yM: number;
   platziertVonSpielerId?: string;
 }
 
 /**
- * @anker modell.zeltbefehl Auftrag des Zugführers an einen Gruppenführer, ein Zelt zu bauen
+ * @anker modell.flaechenbefehl Auftrag des Zugführers an einen Gruppenführer, eine Fläche zu bauen
  *
- * Auftragstaktik statt Direktbau: der Zugführer legt Zeltgröße und Position
- * im Baufeld fest (→ `ui.baufeld`), die tatsächliche Ausführung - inklusive
- * der echten Bauzeit (→ `domain.zelte`, `ZELTTYPEN.aufbauSek`) - liegt beim
- * angesprochenen Gruppenführer (→ `ui.zeltbefehlbenachrichtigung`). Ohne
- * einen Gruppenführer in der Sitzung baut der Zugführer weiterhin direkt
- * (→ `ui.baufeld`, Blast-Radius-Begrenzung wie bei `domain.zugfuehrungaktiv`).
+ * Auftragstaktik statt Direktbau: der Zugführer legt Größe und Position fest
+ * (→ `ui.lagekarte`), die tatsächliche Ausführung - inklusive der echten
+ * Bauzeit (→ `domain.flaechen`, `aufbauSek`) - liegt beim angesprochenen
+ * Gruppenführer (→ `ui.zeltbefehlbenachrichtigung`). Ohne einen Gruppenführer
+ * in der Sitzung baut der Zugführer weiterhin direkt (→ `ui.lagekarte`,
+ * Blast-Radius-Begrenzung wie bei `domain.zugfuehrungaktiv`).
  */
-export interface ZeltBefehl {
+export interface FlaechenBefehl {
   id: string;
-  typ: ZeltTypId;
-  abschnitt: ZeltAbschnitt;
+  typ: ZeltTypId | FlaechenTypId;
+  abschnitt: FlaechenAbschnitt;
   xM: number;
   yM: number;
   zugfuehrerId: string;
@@ -933,22 +956,33 @@ export interface Szenario {
    */
   fahrzeuge?: FahrzeugVorlage[];
   /**
-   * Koordinaten und Wege der Schlüsselpunkte, Grundlage der Kartenansicht
-   * (→ `ui.kartenansicht`) und der echten Verlegungsdauer
-   * (→ `domain.geodaten`). Optional - ein Szenario ohne Geodaten funktioniert
-   * unverändert mit der pauschalen `VERLEGUNGSDAUER_SEK`.
+   * Koordinaten und Wege der Schlüsselpunkte, Grundlage der Lagekarte
+   * (→ `ui.lagekarte`) und der echten Verlegungsdauer (→ `domain.geodaten`).
+   * Optional - ein Szenario ohne Geodaten funktioniert unverändert mit der
+   * pauschalen `VERLEGUNGSDAUER_SEK`.
    */
   geodaten?: {
     schluesselpunkte: Partial<Record<Einsatzabschnitt, GeoPosition>>;
     routen: RouteVorlage[];
+    /**
+     * Referenzpunkt, von dem aus `PlatzierteFlaeche.xM/yM` gemessen werden
+     * (→ `domain.geodaten`, `geoZuLokalM`/`lokalMZuGeo`) - ein einziges
+     * Koordinatensystem für die gesamte Einsatzstelle statt eines vom
+     * Baufeld getrennten. Ohne Angabe gilt `schluesselpunkte.schadensstelle`.
+     */
+    ursprung?: GeoPosition;
   };
   /**
    * Reale Gesamtfläche des Behandlungsplatzes in Metern, in der der
-   * Zugführer Zelte platziert (→ `ui.baufeld`). Optional - ohne Angabe gilt
-   * `STANDARD_BAUFELD` (→ `domain.zelte`), abgeleitet aus dem
-   * MANV-Konzept Kreis Steinfurt (BHP-B-50-Modul, 40×50 m). Unabhängig von
-   * `geodaten` nutzbar, damit auch Szenarien ohne Lat/Lon-Koordinaten eine
-   * definierte Fläche zum Bauen haben.
+   * Zugführer die drei Behandlungszelte platziert (→ `ui.lagekarte`).
+   * Optional - ohne Angabe gilt `STANDARD_BAUFELD` (→ `domain.flaechen`),
+   * abgeleitet aus dem MANV-Konzept Kreis Steinfurt (BHP-B-50-Modul,
+   * 40×50 m). Das Rechteck beginnt bei `geodaten.ursprung` (bzw. dessen
+   * Fallback) - derselben Nullstelle wie alle übrigen Flächen der
+   * Einsatzstelle. Die übrigen fünf Abschnitte (Ablage, Bereitstellungsraum,
+   * Ein-/Ausgangssichtung, Transport) werden nicht gegen diese Grenze
+   * geprüft (→ `domain.flaechen`, `platzierungGueltig`, `pruefeGrenzen`),
+   * da sie oft weit außerhalb des engen Zelt-Baufelds liegen.
    */
   baufeld?: { breiteM: number; tiefeM: number };
   /**

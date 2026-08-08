@@ -3,7 +3,7 @@ import { DIAGNOSTIK, DIAGNOSTIK_LISTE, VOLLSTAENDIGE_DIAGNOSTIK_SEK } from '../d
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { SZENARIEN } from '../domain/szenarien';
-import { ZELTTYPEN } from '../domain/zelte';
+import { ZELTTYPEN } from '../domain/flaechen';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import {
   istDiagnostikAktion,
@@ -121,7 +121,7 @@ describe('zeitkostenSek', () => {
     const sg20 = zeitkostenSek(state, {
       typ: 'zeltPlatzieren',
       id: 'zelt-1',
-      zeltTyp: 'SG20',
+      flaechenTyp: 'SG20',
       abschnitt: 'zelt_rot',
       xM: 0,
       yM: 0,
@@ -129,7 +129,7 @@ describe('zeitkostenSek', () => {
     const sg50 = zeitkostenSek(state, {
       typ: 'zeltPlatzieren',
       id: 'zelt-2',
-      zeltTyp: 'SG50',
+      flaechenTyp: 'SG50',
       abschnitt: 'zelt_gelb',
       xM: 20,
       yM: 20,
@@ -144,7 +144,7 @@ describe('zeitkostenSek', () => {
     const mitRot = simulationReducer(start, {
       typ: 'zeltPlatzieren',
       id: 'zelt-1',
-      zeltTyp: 'SG20',
+      flaechenTyp: 'SG20',
       abschnitt: 'zelt_rot',
       xM: 0,
       yM: 0,
@@ -153,7 +153,7 @@ describe('zeitkostenSek', () => {
       zeitkostenSek(mitRot, {
         typ: 'zeltPlatzieren',
         id: 'zelt-2',
-        zeltTyp: 'SG20',
+        flaechenTyp: 'SG20',
         abschnitt: 'zelt_gelb',
         xM: 1,
         yM: 1,
@@ -224,12 +224,12 @@ describe('zeitkostenLabel', () => {
       zeitkostenLabel({
         typ: 'zeltPlatzieren',
         id: 'zelt-1',
-        zeltTyp: 'SG30',
+        flaechenTyp: 'SG30',
         abschnitt: 'zelt_rot',
         xM: 0,
         yM: 0,
       }),
-    ).toBe(`${ZELTTYPEN.SG30.bezeichnung}-Zelt aufbauen`);
+    ).toBe(`${ZELTTYPEN.SG30.bezeichnung} aufbauen`);
   });
 });
 
@@ -282,7 +282,7 @@ describe('Zeitkosten-Abgleich', () => {
     const aktion = {
       typ: 'zeltPlatzieren' as const,
       id: 'zelt-1',
-      zeltTyp: 'SG40' as const,
+      flaechenTyp: 'SG40' as const,
       abschnitt: 'zelt_rot' as const,
       xM: 0,
       yM: 0,

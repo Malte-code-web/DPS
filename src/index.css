@@ -4135,6 +4135,15 @@ tbody tr:last-child td {
   color: var(--text-leise);
 }
 
+/* --- Debriefing-Erweiterung: Ressourceneinsatz + Führungsentscheidungen (→ ui.debriefing) --- */
+
+.debriefing-regieprotokoll .protokoll {
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+}
+
 /* --- Hover ------------------------------------------------------- */
 
 /*

@@ -64,6 +64,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Regie-Menü bleibt beim Scrollen stehen (`DPS-0.8.0.11`) | Die Seitenleiste scrollte bislang mit der Hauptfläche mit - bei einer langen Kacheln- oder Panel-Ansicht verschwand das Menü nach oben aus dem sichtbaren Bereich. Jetzt bleibt sie wie die bereits angeheftete Einsatzleiste (`position: sticky`) direkt unterhalb von ihr stehen, während der Inhalt darunter/daneben scrollt - ein `top`-Wert knapp über der gemessenen Kopfzeilen-Höhe verhindert eine Überlappung, `max-height`+`overflow-y: auto` fangen sehr niedrige Bildschirme ab. Gilt unverändert für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil. Kein neuer Datenpfad, reine CSS-Änderung. Live verifiziert: Sidebar bleibt nach dem Scrollen sichtbar knapp unter der Einsatzleiste (Desktop und Mobil), ein Menüpunkt lässt sich auch nach dem Scrollen anklicken, keine Konsolenfehler. |
 | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile (`DPS-0.8.0.12`) | Auf Wunsch (mit annotiertem Screenshot präzisiert) zieht die Sichtungskategorien-Übersicht (SK I-EX + Offen) aus der Einsatzleiste aus und bekommt eine eigene, ganz oben angeheftete Zeile über die volle Breite (`.sichtungsleiste`) - darunter bleibt die Einsatzleiste mit Titel, Lagemeldung und Uhr angeheftet, beide Zeilen zusammen `position: sticky`. Pause/Tempo/Einsatz-beenden (Ablaufsteuerung) stehen wieder hier statt im Ansichts-Menü - nur für Übungsleitung/Beobachter, Spieler sehen weiterhin nur den reinen Status und ihren Verlassen-Knopf. Das Ansichts-Menü hat dadurch nur noch sechs statt sieben Punkte (kein „Ablaufsteuerung“ mehr), `AblaufsteuerungPanel.tsx` entfällt vollständig. Die `top`-Offsets der angehefteten Elemente (Einsatzleiste, Verbindungsfehler-Hinweis, Regie-Menü) sind bewusst in `px` statt `rem` gesetzt, weil die Seite eine von 16px abweichende Root-Schriftgröße (15px) verwendet - mit `rem` hätte es je nach Basis zu Überlappungen kommen können. Kein neuer Datenpfad, reine Layout-Umstellung. Live verifiziert (Desktop und Mobil, mit erzwungenem Scrollen): keine Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen anklickbar, keine Konsolenfehler. |
 | Ereignis-Injektion (`DPS-0.8.0.13`) | Erster der drei noch offenen "Fundament, Teil 2"-Punkte: ein neuer Bereich "Ereignisse" im Ansichts-Menü (nur Übungsleitung/Beobachter) bündelt drei live auslösbare Ereignisse. **Fahrzeugausfall** markiert ein vorhandenes Fahrzeug als ausgefallen - Besatzung und Material bleiben zugeordnet, liefern aber kein Material mehr (`verbraucheMaterialTyp`/`materialTypVerfuegbar` schließen es aus), bis die Übungsleitung den Ausfall wieder aufhebt. **Nachforderung** fügt ein neues Fahrzeug hinzu, das im Bereitstellungsraum eintrifft (bislang reine, extra dafür vorgesehene Fahrzeug-Infrastruktur ohne Funktion) und von dort per normaler Fahrzeugverlegung mit echter, geodatenbasierter Anfahrtszeit weiter muss. **Lageänderung** setzt vordefinierte Nachzügler-Patienten aus dem Szenario frei (`Szenario.ereignisse`) - anders als die gestaffelte Freigabe existieren diese bis zum Auslösen gar nicht in `state.patienten`, sondern nur als Vorlage; sie landen je nach Freigabemodus an der Schadensstelle oder in der Ablage, jedes Ereignis ist nur einmal auslösbar. Für Busunfall B31 ein Beispiel-Ereignis ("Zweiter Unfall am Bus") mit zwei neuen, gegen tacSTART geprüften Patienten hinterlegt. Kein Reducer-Eingriff in bestehende Abläufe - alle drei Ereignisse sind reine Ergänzungen ohne Rollenprüfung im Reducer selbst (wie die übrigen Regie-Werkzeuge). Live verifiziert: Fahrzeugausfall-Umschalten in beide Richtungen mit sichtbarer Marke, Nachforderung erscheint in der Fahrzeugliste, Lageänderung erhöht die Patientenzahl korrekt und sperrt sich nach dem Auslösen, keine Konsolenfehler. |
+| Debriefing-Erweiterung (`DPS-0.8.0.14`) | Letzter der drei "Fundament, Teil 2"-Punkte: das Debriefing zeigt jetzt nicht mehr nur Sichtungskategorien, sondern auch Ressourceneinsatz und Führungsentscheidungen (wörtlich der offene ROADMAP-Punkt). **Ressourceneinsatz** ist rein abgeleitet, ohne neuen State: `berechneMaterialverbrauch` vergleicht je Fahrzeug die Bestückung, mit der sein Typ immer startet (`materialAusVorlage`, unabhängig davon, wann es ins Spiel kam - auch eine Nachforderung aus `DPS-0.8.0.13`), mit dem aktuellen Bestand und summiert die Differenz je Materialtyp über alle Fahrzeuge (nur tatsächlich verbrauchte Typen, absteigend sortiert) - dazu zwei neue Kennzahlen-Kacheln (Fahrzeuge im Einsatz, davon ausgefallen). **Führungsentscheidungen** sind dagegen ein neues, nur wachsendes Protokollfeld `state.regieProtokoll` (wiederverwendet denselben `Verlaufseintrag`-Zeilentyp wie `Patient.verlauf`, nur auf Sitzungsebene): eine Zeile je Pause/Weiter, Tempoänderung, Einzel- und Sammelfreigabe, Fahrzeugausfall, Nachforderung, Lageänderung sowie Start/Ende der Übung - über einen neuen `protokolliereRegie`-Helfer im Reducer, geteilt über den bestehenden Schnappschuss-Mechanismus. Beide Auswertungen erscheinen als neue Abschnitte im Debriefing, nur wenn es etwas zu zeigen gibt (keine Fahrzeuge/kein Protokoll → Abschnitt bleibt weg). Live verifiziert: nach Pause/Weiter, Tempo ×4, Fahrzeugausfall, Nachforderung und einer ausgelösten Lageänderung zeigt das Debriefing acht chronologisch korrekte Protokollzeilen und die richtige Fahrzeug-Kennzahl (2 im Einsatz, 1 ausgefallen), keine Konsolenfehler. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -663,7 +664,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_211 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -678,8 +679,9 @@ _209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `auswertung.debriefing` | [`src/lib/auswertung.ts:63`](src/lib/auswertung.ts#L63) | Eine Auswertungszeile je Patient |
-| `auswertung.kennzahlen` | [`src/lib/auswertung.ts:97`](src/lib/auswertung.ts#L97) | Die Zahlen über der Debriefing-Tabelle |
+| `auswertung.debriefing` | [`src/lib/auswertung.ts:64`](src/lib/auswertung.ts#L64) | Eine Auswertungszeile je Patient |
+| `auswertung.kennzahlen` | [`src/lib/auswertung.ts:98`](src/lib/auswertung.ts#L98) | Die Zahlen über der Debriefing-Tabelle |
+| `auswertung.ressourcen` | [`src/lib/auswertung.ts:135`](src/lib/auswertung.ts#L135) | Materialverbrauch für die Debriefing-Erweiterung |
 
 #### diagnostik
 
@@ -864,21 +866,22 @@ _209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:190`](src/state/reducer.ts#L190) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:203`](src/state/reducer.ts#L203) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:132`](src/state/reducer.ts#L132) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:59`](src/state/reducer.ts#L59) | Die Hauptzustände der Anwendung |
+| `state.freigabemodus` | [`src/state/reducer.ts:133`](src/state/reducer.ts#L133) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:60`](src/state/reducer.ts#L60) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:382`](src/state/reducer.ts#L382) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.schnappschuss` | [`src/state/reducer.ts:266`](src/state/reducer.ts#L266) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:409`](src/state/reducer.ts#L409) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.regieprotokoll` | [`src/state/reducer.ts:156`](src/state/reducer.ts#L156) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
+| `state.schnappschuss` | [`src/state/reducer.ts:279`](src/state/reducer.ts#L279) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:10`](src/state/zeitkosten.ts#L10) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:94`](src/state/zeitkosten.ts#L94) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:74`](src/state/reducer.ts#L74) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:75`](src/state/reducer.ts#L75) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -888,19 +891,19 @@ _209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1922`](src/index.css#L1922) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2455`](src/index.css#L2455) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4397`](src/index.css#L4397) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4406`](src/index.css#L4406) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1975`](src/index.css#L1975) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4141`](src/index.css#L4141) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:4150`](src/index.css#L4150) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1801`](src/index.css#L1801) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4469`](src/index.css#L4469) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4478`](src/index.css#L4478) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4600`](src/index.css#L4600) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4609`](src/index.css#L4609) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -944,7 +947,7 @@ _209 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:15`](src/components/Befundtafel.tsx#L15) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
-| `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:30`](src/pages/DebriefingSeite.tsx#L30) | Auswertung nach dem Einsatz |
+| `ui.debriefing` | [`src/pages/DebriefingSeite.tsx:31`](src/pages/DebriefingSeite.tsx#L31) | Auswertung nach dem Einsatz |
 | `ui.delegationsanfrage` | [`src/components/DelegationAnfrageAuswahl.tsx:11`](src/components/DelegationAnfrageAuswahl.tsx#L11) | Popover: wen um Freigabe fragen? |
 | `ui.delegationsbenachrichtigung` | [`src/components/DelegationBenachrichtigung.tsx:5`](src/components/DelegationBenachrichtigung.tsx#L5) | Benachrichtigung: jemand braucht eine Freigabe |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
@@ -1072,6 +1075,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.14` | Debriefing-Erweiterung: Ressourceneinsatz (Materialverbrauch je Typ aus der Differenz zur Fahrzeug-Bestückung, Fahrzeuge-im-Einsatz/ausgefallen-Kennzahlen) und Führungsentscheidungen (neues, nur wachsendes `state.regieProtokoll` - Pause/Weiter, Tempo, Freigaben, Fahrzeugausfall/Nachforderung/Lageänderung, Start/Ende) als zwei neue Debriefing-Abschnitte |
 | `DPS-0.8.0.13` | Ereignis-Injektion: neuer Ansichts-Punkt "Ereignisse" (Übungsleitung/Beobachter) mit drei Ereignistypen - Fahrzeugausfall (reversibel, Fahrzeug liefert kein Material mehr, Besatzung bleibt zugeordnet), Nachforderung (neues Fahrzeug trifft unbesetzt im Bereitstellungsraum ein, muss verlegt werden), Lageänderung (setzt vorab im Szenario hinterlegte, tacSTART-geprüfte Nachzügler-Patienten frei, je Ereignis nur einmal auslösbar) |
 | `DPS-0.8.0.12` | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile: eigene volle-Breite Zeile für die Sichtungskategorien ganz oben, Pause/Tempo/Einsatz-beenden zurück in der Einsatzleiste statt im Ansichts-Menü (jetzt nur noch sechs Punkte) |
 | `DPS-0.8.0.11` | Regie-Menü bleibt beim Scrollen stehen: `position: sticky` direkt unter der Einsatzleiste statt mit der Hauptfläche mitzuscrollen, gilt für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil |

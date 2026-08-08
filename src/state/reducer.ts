@@ -1,5 +1,5 @@
 import { istVerlegungMoeglich } from '../domain/abschnitte';
-import { fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
+import { FAHRZEUGTYP_INFO, fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
@@ -44,6 +44,7 @@ import type {
   Rufgruppenmitgliedschaft,
   Sichtungskategorie,
   Szenario,
+  Verlaufseintrag,
 } from '../domain/types';
 
 /**
@@ -152,6 +153,17 @@ export interface SimulationState {
    */
   ausgeloesteEreignisse: string[];
   /**
+   * @anker state.regieprotokoll Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung
+   *
+   * Zeitgestempelte Zeile je Ablaufsteuerung (Pause/Weiter, Tempo), Freigabe
+   * und Ereignis-Injektion (→ `modell.ereignis`) - wächst nur, wird nie
+   * bearbeitet oder gelöscht. Nutzt denselben Zeileneintrag wie
+   * `Patient.verlauf` (→ `Verlaufseintrag`), nur auf Sitzungsebene statt je
+   * Patient. Rein informativ für das Debriefing (→ `ui.debriefing`), ohne
+   * Rückwirkung auf die Simulation.
+   */
+  regieProtokoll: Verlaufseintrag[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -184,6 +196,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   freigabemodus: 'sofort',
   routen: [],
   ausgeloesteEreignisse: [],
+  regieProtokoll: [],
   schnappschussFolge: 0,
 };
 
@@ -295,6 +308,8 @@ export interface Schnappschuss {
   routen: Route[];
   /** IDs bereits ausgelöster Lageänderungen (→ `modell.ereignis`). */
   ausgeloesteEreignisse: string[];
+  /** Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung (→ `state.regieprotokoll`). */
+  regieProtokoll: Verlaufseintrag[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -323,6 +338,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     freigabemodus: state.freigabemodus,
     routen: state.routen,
     ausgeloesteEreignisse: state.ausgeloesteEreignisse,
+    regieProtokoll: state.regieProtokoll,
   };
 }
 
@@ -376,6 +392,17 @@ function mitFahrzeug(
     fahrzeuge: state.fahrzeuge.map((fahrzeug) =>
       fahrzeug.id === fahrzeugId ? aenderung(fahrzeug) : fahrzeug,
     ),
+  };
+}
+
+/**
+ * Hängt eine Zeile an `regieProtokoll` an (→ `state.regieprotokoll`) - reine
+ * Anhänge-Funktion, nie rückwirkend verändert.
+ */
+function protokolliereRegie(state: SimulationState, text: string): SimulationState {
+  return {
+    ...state,
+    regieProtokoll: [...state.regieProtokoll, { zeitSek: state.zeitSek, text }],
   };
 }
 
@@ -465,10 +492,16 @@ export function simulationReducer(
     }
 
     case 'pauseUmschalten':
-      return { ...state, laufend: !state.laufend };
+      return protokolliereRegie(
+        { ...state, laufend: !state.laufend },
+        state.laufend ? 'Übung pausiert.' : 'Übung fortgesetzt.',
+      );
 
     case 'geschwindigkeitSetzen':
-      return { ...state, geschwindigkeit: action.wert };
+      return protokolliereRegie(
+        { ...state, geschwindigkeit: action.wert },
+        `Tempo auf ×${action.wert} gesetzt.`,
+      );
 
     case 'patientWaehlen':
       return { ...state, ausgewaehlterPatientId: action.patientId };
@@ -836,7 +869,10 @@ export function simulationReducer(
       return { ...state, ausgewaehlterAbschnitt: action.abschnitt, ausgewaehlterPatientId: null };
 
     case 'einsatzBeenden':
-      return { ...state, phase: 'debriefing', laufend: false, ausgewaehlterPatientId: null };
+      return protokolliereRegie(
+        { ...state, phase: 'debriefing', laufend: false, ausgewaehlterPatientId: null },
+        'Übung beendet.',
+      );
 
     case 'zurueckZumSetup':
       // sitzung bleibt erhalten: Eine Übungsleitung, die aus dem Debriefing
@@ -1076,17 +1112,19 @@ export function simulationReducer(
 
     case 'patientFreigeben': {
       const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
-      return mitPatient(state, action.patientId, (patient) =>
+      const naechster = mitPatient(state, action.patientId, (patient) =>
         freigebenPatient(patient, ziel, state.zeitSek),
       );
+      return protokolliereRegie(naechster, `Patient ${action.patientId} freigegeben.`);
     }
 
     case 'alleVerdecktenFreigeben': {
       const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
-      return {
+      const naechster = {
         ...state,
         patienten: state.patienten.map((patient) => freigebenPatient(patient, ziel, state.zeitSek)),
       };
+      return protokolliereRegie(naechster, 'Alle verdeckten Patienten auf einmal freigegeben.');
     }
 
     // Ereignis-Injektion (→ `modell.ereignis`): drei von der Übungsleitung
@@ -1094,23 +1132,37 @@ export function simulationReducer(
     // Lageänderung. Reine Regie-Werkzeuge ohne eigene Rollenprüfung im
     // Reducer (wie die übrigen Regie-Aktionen bleibt das Gate im UI, → `ui.ereignissepanel`).
 
-    case 'fahrzeugAusfallSetzen':
-      return mitFahrzeug(state, action.fahrzeugId, (fahrzeug) => ({
-        ...fahrzeug,
+    case 'fahrzeugAusfallSetzen': {
+      const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
+      const naechster = mitFahrzeug(state, action.fahrzeugId, (eintrag) => ({
+        ...eintrag,
         ausgefallen: action.ausgefallen,
       }));
+      if (!fahrzeug) return naechster;
+      const label =
+        FAHRZEUGTYP_INFO[fahrzeug.typ].label + (fahrzeug.kennung ? ` (${fahrzeug.kennung})` : '');
+      return protokolliereRegie(
+        naechster,
+        action.ausgefallen ? `${label} als ausgefallen gemeldet.` : `${label} wieder einsatzbereit gemeldet.`,
+      );
+    }
 
-    case 'fahrzeugNachfordern':
+    case 'fahrzeugNachfordern': {
       // Trifft zunächst im Bereitstellungsraum ein (→ `abschnitte.wege`) -
       // von dort per normaler Fahrzeugverlegung mit echter, geodatenbasierter
       // Anfahrtszeit weiter (→ `domain.geodaten`), sobald Besatzung zugewiesen ist.
-      return {
+      const naechster = {
         ...state,
         fahrzeuge: [
           ...state.fahrzeuge,
           fahrzeugAusVorlage({ id: erzeugeId(), typ: action.fahrzeugTyp }, 'bereitstellungsraum'),
         ],
       };
+      return protokolliereRegie(
+        naechster,
+        `Nachforderung: ${FAHRZEUGTYP_INFO[action.fahrzeugTyp].label} angefordert.`,
+      );
+    }
 
     case 'ereignisAusloesen': {
       if (!state.szenario || state.ausgeloesteEreignisse.includes(action.ereignisId)) return state;
@@ -1121,7 +1173,7 @@ export function simulationReducer(
       // zunächst in der Ablage an.
       const ziel: Einsatzabschnitt = state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
       const faktor = state.alleine ? SOLO_VERSCHLECHTERUNG_FAKTOR : 1;
-      return {
+      const naechster = {
         ...state,
         patienten: [
           ...state.patienten,
@@ -1131,6 +1183,7 @@ export function simulationReducer(
         ],
         ausgeloesteEreignisse: [...state.ausgeloesteEreignisse, action.ereignisId],
       };
+      return protokolliereRegie(naechster, `Lageänderung ausgelöst: „${ereignis.titel}".`);
     }
 
     case 'sitzungStarten': {
@@ -1140,19 +1193,20 @@ export function simulationReducer(
       // erst durch manuelle oder zeitgesteuerte Freigabe sichtbar.
       const startAbschnitt: Einsatzabschnitt =
         state.freigabemodus === 'sofort' ? 'schadensstelle' : 'verdeckt';
-      return {
+      const naechster = {
         ...state,
-        phase: 'einsatz',
+        phase: 'einsatz' as const,
         laufend: true,
         zeitSek: 0,
-        ausgewaehlterAbschnitt: state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage',
+        ausgewaehlterAbschnitt: (state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage') as Einsatzabschnitt,
         ausgewaehlterPatientId: null,
         patienten: state.szenario.patienten.map((vorlage) =>
           patientAusVorlage(vorlage, 1, startAbschnitt),
         ),
         routen: routenAusSzenario(state.szenario),
-        sitzung: { ...state.sitzung, status: 'laeuft' },
+        sitzung: { ...state.sitzung, status: 'laeuft' as const },
       };
+      return protokolliereRegie(naechster, 'Übung gestartet.');
     }
 
     case 'sitzungVerlassen':
@@ -1185,6 +1239,7 @@ export function simulationReducer(
         freigabemodus: s.freigabemodus,
         routen: s.routen,
         ausgeloesteEreignisse: s.ausgeloesteEreignisse,
+        regieProtokoll: s.regieProtokoll,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

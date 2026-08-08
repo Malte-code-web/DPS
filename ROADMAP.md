@@ -337,7 +337,7 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
   - 💤 **Noch offen (Fundament, Teil 2, Rest):** private
-    Spieler-Statusansicht, Debriefing-Erweiterung.
+    Spieler-Statusansicht.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
   Teil 2 (Rettungs-Hälfte):
   - Ein Patient kann im Szenario `eingeklemmtBeimStart` tragen (z. B. B-04 im
@@ -606,6 +606,30 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Fahrzeug, Lageänderung erhöht „Patienten gesamt" und die neuen Patienten
     erscheinen an der Schadensstelle, Knopf danach deaktiviert - keine
     Konsolenfehler.
+- ✅ **Debriefing-Erweiterung (`DPS-0.8.0.14`)** - Übungsleiter-Ebene, Teil 2
+  (letzter Punkt aus dem Fundament, Teil 2, wörtlich der bisherige
+  Horizont-Punkt „Ressourceneinsatz und Führungsentscheidungen"):
+  - **Ressourceneinsatz** ohne neuen State: `berechneMaterialverbrauch`
+    vergleicht je Fahrzeug die Bestückung, mit der sein Typ immer startet
+    (`materialAusVorlage`, unabhängig vom Eintreffzeitpunkt - auch eine
+    Nachforderung aus `DPS-0.8.0.13`), mit dem aktuellen Bestand und summiert
+    die Differenz je Materialtyp über alle Fahrzeuge (nur tatsächlich
+    verbrauchte Typen, absteigend sortiert) - dazu zwei neue Kennzahlen
+    (Fahrzeuge im Einsatz, davon ausgefallen).
+  - **Führungsentscheidungen** dagegen als neues, nur wachsendes
+    Protokollfeld `state.regieProtokoll` (derselbe `Verlaufseintrag`-Zeilentyp
+    wie `Patient.verlauf`, nur auf Sitzungsebene) - eine Zeile je Pause/Weiter,
+    Tempoänderung, Einzel-/Sammelfreigabe, Fahrzeugausfall, Nachforderung,
+    Lageänderung sowie Start/Ende der Übung, über einen neuen
+    `protokolliereRegie`-Helfer im Reducer, geteilt über den bestehenden
+    Schnappschuss.
+  - Beide Auswertungen erscheinen als neue Debriefing-Abschnitte, nur wenn es
+    etwas zu zeigen gibt (keine Fahrzeuge/kein Protokoll → Abschnitt bleibt
+    weg) - kein Eingriff in bestehende Abläufe.
+  - Live verifiziert: nach Pause/Weiter, Tempo ×4, Fahrzeugausfall,
+    Nachforderung und einer ausgelösten Lageänderung zeigt das Debriefing acht
+    chronologisch korrekte Protokollzeilen und die richtige
+    Fahrzeug-Kennzahl (2 im Einsatz, 1 ausgefallen), keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -623,8 +647,10 @@ Weiter denkbar, sobald die Bausteine 1–5 stehen:
 
 - 💤 **Patientenfluss** über mehrere Behandlungsplätze und Zielkliniken.
 - 💤 **Nachschub** knapper Güter.
-- 💤 **Erweitertes Debriefing:** nicht nur Sichtungskategorien, sondern auch
-  Ressourceneinsatz und Führungsentscheidungen.
+- 💤 **Debriefing weiter ausbauen:** die Grundform (Materialverbrauch,
+  Fahrzeug-Kennzahlen, Führungsentscheidungs-Zeitleiste) ist mit
+  `DPS-0.8.0.14` fertig - denkbar bliebe z. B. eine Aufschlüsselung nach
+  Einsatzabschnitt oder nach handelnder Person statt nur Sitzungs-weit.
 - 💤 **Persistenz/Export** der Ergebnisse (PDF/CSV).
 - 💤 **Serverseitiger Takt.** Löst die Bindung „Übungsleitungs-Tab muss offen
   bleiben" auf – entweder ein dauerhaft laufender Rechendienst (braucht echtes
@@ -658,9 +684,9 @@ Jeder Schritt ist eigenständig nutzbar:
    Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt, auch eingeklappt
    vollständig erreichbar bleibt und auf schmalen Bildschirmen am linken
    Rand steht statt darunter zu rutschen, sowie Ereignis-Injektion
-   (Fahrzeugausfall, Nachforderung, Lageänderung); private
-   Spieler-Statusansicht, Debriefing-Erweiterung und die fünf übrigen
-   Ebenen offen).
+   (Fahrzeugausfall, Nachforderung, Lageänderung) und die Debriefing-
+   Erweiterung um Ressourceneinsatz und Führungsentscheidungen; private
+   Spieler-Statusansicht und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

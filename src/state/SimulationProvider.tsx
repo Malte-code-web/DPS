@@ -284,6 +284,7 @@ export function SimulationProvider({
     freigabemodus,
     routen,
     ausgeloesteEreignisse,
+    regieProtokoll,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -307,6 +308,7 @@ export function SimulationProvider({
       freigabemodus,
       routen,
       ausgeloesteEreignisse,
+      regieProtokoll,
     }),
     [
       phase,
@@ -325,6 +327,7 @@ export function SimulationProvider({
       freigabemodus,
       routen,
       ausgeloesteEreignisse,
+      regieProtokoll,
     ],
   );
 

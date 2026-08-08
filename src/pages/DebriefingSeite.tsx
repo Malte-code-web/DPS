@@ -1,5 +1,6 @@
 import { SichtungsBadge } from '../components/SichtungsBadge';
-import { berechneKennzahlen, erstelleDebriefing } from '../lib/auswertung';
+import { MATERIAL_LABEL } from '../domain/material';
+import { berechneKennzahlen, berechneMaterialverbrauch, erstelleDebriefing } from '../lib/auswertung';
 import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
 import type { Sichtungsbewertung } from '../domain/triage';
@@ -33,6 +34,8 @@ export function DebriefingSeite() {
   const szenario = state.szenario;
   const zeilen = erstelleDebriefing(state.patienten);
   const kennzahlen = berechneKennzahlen(zeilen);
+  const materialverbrauch = berechneMaterialverbrauch(state.fahrzeuge);
+  const ausgefalleneFahrzeuge = state.fahrzeuge.filter((fahrzeug) => fahrzeug.ausgefallen).length;
 
   return (
     <main className="debriefing">
@@ -147,6 +150,56 @@ export function DebriefingSeite() {
           </tbody>
         </table>
       </section>
+
+      {state.fahrzeuge.length > 0 && (
+        <section className="debriefing-ressourcen">
+          <h2>Ressourceneinsatz</h2>
+          <div className="kennzahlen">
+            <div className="kennzahl">
+              <span className="kennzahl-wert">{state.fahrzeuge.length}</span>
+              <span className="kennzahl-label">Fahrzeuge im Einsatz</span>
+            </div>
+            <div className={`kennzahl${ausgefalleneFahrzeuge > 0 ? ' kennzahl-warnung' : ''}`}>
+              <span className="kennzahl-wert">{ausgefalleneFahrzeuge}</span>
+              <span className="kennzahl-label">davon ausgefallen</span>
+            </div>
+          </div>
+          {materialverbrauch.length > 0 && (
+            <div className="debriefing-tabelle">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Verbraucht</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materialverbrauch.map((zeile) => (
+                    <tr key={zeile.typ}>
+                      <td>{MATERIAL_LABEL[zeile.typ]}</td>
+                      <td>{zeile.verbraucht}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {state.regieProtokoll.length > 0 && (
+        <section className="debriefing-regieprotokoll">
+          <h2>Führungsentscheidungen</h2>
+          <ol className="protokoll">
+            {state.regieProtokoll.map((eintrag, index) => (
+              <li key={index}>
+                <time>{zeitFormat(eintrag.zeitSek)}</time>
+                <span>{eintrag.text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <section className="setup-hinweise">
         <h2>Auswertungshinweise</h2>

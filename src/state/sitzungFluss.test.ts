@@ -1656,3 +1656,95 @@ describe('Ereignis-Injektion (→ modell.ereignis)', () => {
     expect(schnappschuss.ausgeloesteEreignisse).toEqual([ereignis.id]);
   });
 });
+
+describe('Führungsentscheidungs-Protokoll (→ state.regieprotokoll)', () => {
+  function eroeffnetMitFahrzeug(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugHinzugefuegt', fahrzeugTyp: 'rtw' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  it('schreibt beim Start und beim Beenden der Übung je eine Zeile', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    expect(imEinsatz.regieProtokoll).toEqual([{ zeitSek: 0, text: 'Übung gestartet.' }]);
+
+    const beendet = simulationReducer(imEinsatz, { typ: 'einsatzBeenden' });
+    expect(beendet.regieProtokoll.map((eintrag) => eintrag.text)).toEqual([
+      'Übung gestartet.',
+      'Übung beendet.',
+    ]);
+  });
+
+  it('protokolliert Pause/Weiter und eine Tempoänderung', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const pausiert = simulationReducer(imEinsatz, { typ: 'pauseUmschalten' });
+    const fortgesetzt = simulationReducer(pausiert, { typ: 'pauseUmschalten' });
+    const schneller = simulationReducer(fortgesetzt, { typ: 'geschwindigkeitSetzen', wert: 4 });
+
+    expect(schneller.regieProtokoll.slice(1).map((eintrag) => eintrag.text)).toEqual([
+      'Übung pausiert.',
+      'Übung fortgesetzt.',
+      'Tempo auf ×4 gesetzt.',
+    ]);
+  });
+
+  it('protokolliert Einzel- und Sammelfreigabe im gestaffelten Modus', () => {
+    const gestaffelt = simulationReducer(eroeffnetMitFahrzeug(), {
+      typ: 'freigabemodusSetzen',
+      modus: 'gestaffelt',
+    });
+    const imEinsatz = simulationReducer(gestaffelt, { typ: 'sitzungStarten' });
+    const erstePatientId = imEinsatz.patienten[0]!.id;
+
+    const einzelnFreigegeben = simulationReducer(imEinsatz, {
+      typ: 'patientFreigeben',
+      patientId: erstePatientId,
+    });
+    const alleFreigegeben = simulationReducer(einzelnFreigegeben, { typ: 'alleVerdecktenFreigeben' });
+
+    expect(alleFreigegeben.regieProtokoll.slice(1).map((eintrag) => eintrag.text)).toEqual([
+      `Patient ${erstePatientId} freigegeben.`,
+      'Alle verdeckten Patienten auf einmal freigegeben.',
+    ]);
+  });
+
+  it('protokolliert Fahrzeugausfall, Nachforderung und Lageänderung mit sprechendem Text', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const fahrzeugId = imEinsatz.fahrzeuge[0]!.id;
+    const ereignis = busunfall.ereignisse![0]!;
+
+    const ausgefallen = simulationReducer(imEinsatz, {
+      typ: 'fahrzeugAusfallSetzen',
+      fahrzeugId,
+      ausgefallen: true,
+    });
+    const nachgefordert = simulationReducer(ausgefallen, {
+      typ: 'fahrzeugNachfordern',
+      fahrzeugTyp: 'ktw',
+    });
+    const ausgeloest = simulationReducer(nachgefordert, {
+      typ: 'ereignisAusloesen',
+      ereignisId: ereignis.id,
+    });
+
+    const texte = ausgeloest.regieProtokoll.slice(1).map((eintrag) => eintrag.text);
+    expect(texte[0]).toContain('als ausgefallen gemeldet.');
+    expect(texte[1]).toBe('Nachforderung: KTW angefordert.');
+    expect(texte[2]).toContain(ereignis.titel);
+  });
+
+  it('ist Teil des Schnappschusses und wächst nur an', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const pausiert = simulationReducer(imEinsatz, { typ: 'pauseUmschalten' });
+
+    expect(schnappschussAus(pausiert).regieProtokoll).toEqual(pausiert.regieProtokoll);
+    expect(pausiert.regieProtokoll.length).toBe(imEinsatz.regieProtokoll.length + 1);
+  });
+});

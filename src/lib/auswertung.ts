@@ -1,4 +1,5 @@
 import { abschnittInfo } from "../domain/abschnitte";
+import { materialAusVorlage } from "../domain/material";
 import {
   gebundeneZeitSek,
   individualmedizinZeitSek,
@@ -6,7 +7,7 @@ import {
 } from "../domain/simulation";
 import { bewerteSichtung, sichtungNachTacstart } from "../domain/triage";
 import type { Sichtungsbewertung } from "../domain/triage";
-import type { Patient, Sichtungskategorie } from "../domain/types";
+import type { Fahrzeug, MaterialTyp, Patient, Sichtungskategorie } from "../domain/types";
 
 export type Zaehlschluessel = Sichtungskategorie | "offen";
 
@@ -123,4 +124,34 @@ export function berechneKennzahlen(zeilen: Debriefingzeile[]): Kennzahlen {
       0,
     ),
   };
+}
+
+export interface Materialverbrauchszeile {
+  typ: MaterialTyp;
+  verbraucht: number;
+}
+
+/**
+ * @anker auswertung.ressourcen Materialverbrauch für die Debriefing-Erweiterung
+ *
+ * Es gibt keinen mitgeführten Verbrauchs-Zähler (→ `domain.material` zieht
+ * Bestand direkt ab) - der Verbrauch ergibt sich stattdessen aus der
+ * Differenz zwischen der Bestückung, mit der ein Fahrzeug seines Typs immer
+ * startet (`materialAusVorlage`, unabhängig davon, wann es ins Spiel kam -
+ * auch eine Nachforderung, → `modell.ereignis`), und seinem aktuellen
+ * Bestand. Nur Typen mit tatsächlichem Verbrauch, absteigend sortiert.
+ */
+export function berechneMaterialverbrauch(fahrzeuge: Fahrzeug[]): Materialverbrauchszeile[] {
+  const verbrauch = new Map<MaterialTyp, number>();
+  for (const fahrzeug of fahrzeuge) {
+    const start = materialAusVorlage(fahrzeug.typ);
+    for (const [typ, menge] of Object.entries(start) as [MaterialTyp, number][]) {
+      const aktuell = fahrzeug.material[typ] ?? 0;
+      verbrauch.set(typ, (verbrauch.get(typ) ?? 0) + (menge - aktuell));
+    }
+  }
+  return [...verbrauch.entries()]
+    .filter(([, menge]) => menge > 0)
+    .map(([typ, verbraucht]) => ({ typ, verbraucht }))
+    .sort((a, b) => b.verbraucht - a.verbraucht);
 }

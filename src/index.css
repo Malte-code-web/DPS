@@ -2754,7 +2754,8 @@ button.gefahr {
   padding: 0.2rem 0;
 }
 
-/* Hauptbereich (Kacheln/Karte) neben der ein-/ausklappbaren Regie-Seitenleiste. */
+/* Hauptfläche (immer nur eine Ansicht sichtbar) neben der ein-/ausklappbaren
+   Regie-Seitenleiste, die als Menü über alle Ansichten dient. */
 .gesamtlagebild-flaeche {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -2803,6 +2804,39 @@ button.gefahr {
   font-size: 0.9rem;
   line-height: 1;
   padding: 0.35rem 0.55rem;
+}
+
+.regie-menue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.regie-menue button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.regie-menue button.regie-menue-aktiv {
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+}
+
+.regie-menue button.regie-menue-aktiv .bereich-marke {
+  color: var(--akzent);
+}
+
+.regie-menue button.regie-menue-wartet .bereich-marke {
+  color: var(--warn);
 }
 
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */
@@ -3206,37 +3240,6 @@ button.gefahr {
 }
 
 /* --- Kartenansicht (→ ui.kartenansicht) ------------------------------ */
-
-.lagebild-kopf {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.umschalter {
-  align-self: flex-start;
-  display: inline-flex;
-  background: var(--bg-panel);
-  border: 1px solid var(--rand);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.umschalter button {
-  border: none;
-  background: transparent;
-  color: var(--text-leise);
-  font-size: 0.76rem;
-  font-weight: 700;
-  padding: 0.35rem 1rem;
-  border-radius: 999px;
-  letter-spacing: 0.02em;
-}
-
-.umschalter button.aktiv {
-  background: var(--akzent);
-  color: #fff;
-}
 
 .karten-rahmen {
   background: #0c1017;

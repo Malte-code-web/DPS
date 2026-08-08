@@ -475,6 +475,28 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     (Pause/Weiter, Tempo) funktioniert direkt in der Leiste ohne
     zusätzlichen Klick, Kartenansicht-Umschalter unverändert erreichbar,
     keine Konsolenfehler.
+- ✅ **Regie-Seitenleiste als Ansichts-Menü (`DPS-0.8.0.8`)** -
+  Übungsleiter-Ebene, Teil 2 (Klarstellung: "Sidebar wie ein Menü"):
+  - Löst das gestapelte Seitenleisten-Layout aus `DPS-0.8.0.7` ab: die
+    Seitenleiste ist jetzt ein echtes Menü über alle sieben Ansichten
+    (Kacheln, Karte, Ablaufsteuerung, Ablage · Freigabe, Gebundene Kräfte,
+    Offene Anfragen, Funkkanäle) - immer nur eine Ansicht gleichzeitig in
+    der Hauptfläche sichtbar, ein Klick im Menü wechselt sie.
+  - Der bisherige eigenständige Kacheln/Karte-Umschalter oben entfällt -
+    Kacheln und Karte sind jetzt die ersten beiden Menüpunkte (Karte nur,
+    wenn das Szenario Geodaten mitbringt).
+  - Jeder Menüpunkt trägt weiterhin dieselbe Status-Marke wie zuvor die
+    Panel-Badges (läuft/pausiert, wartend-Zähler, gebundene Kräfte, offene
+    Anfragen, belegte Kanäle) - auch für nicht ausgewählte Ansichten auf
+    einen Blick sichtbar.
+  - Derselbe Ein-/Ausklapp-Knopf wie in `DPS-0.8.0.7` blendet jetzt das
+    komplette Menü aus, die Hauptfläche nutzt dann die volle Breite.
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine Layout-Umstellung.
+  - Live verifiziert: alle sieben Menüpunkte vorhanden, Klick auf einen
+    Punkt zeigt ausschließlich dessen Ansicht (alle anderen verschwinden
+    aus der Hauptfläche), Ablaufsteuerung (Pause/Weiter, Tempo) funktioniert
+    innerhalb der gewählten Ansicht, Ein-/Ausklappen wirkt sofort, keine
+    Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -519,11 +541,11 @@ Jeder Schritt ist eigenständig nutzbar:
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen, Gesamtlagebild mit Kacheln-
-   und Kartenansicht, echte Geodaten-basierte Verlegungsdauer, Ablaufsteuerung
-   und alle Seitenleisten-Übersichten als ein-/ausklappbare Regie-Seitenleiste
-   statt eines separaten Regie-Panels; Ereignis-Injektion und die fünf
-   übrigen Ebenen offen).
+   Maßnahmen, Rettung eingeklemmter Personen, echte Geodaten-basierte
+   Verlegungsdauer und ein Gesamtlagebild, dessen Regie-Seitenleiste als
+   ein-/ausklappbares Menü über alle Ansichten (Kacheln, Karte,
+   Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
+   Funkkanäle) wirkt; Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

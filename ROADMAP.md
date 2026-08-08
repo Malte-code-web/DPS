@@ -436,6 +436,26 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live verifiziert: Kartenansicht mit allen neun Markern, gesperrte Route
     sichtbar als Linie und Label, Orte-Liste in der Seitenleiste, echte
     (statt pauschale) Verlegungsdauer in der Patientenansicht.
+- ✅ **Gesamtlagebild als eine Ansicht (`DPS-0.8.0.6`)** - Übungsleiter-Ebene,
+  Teil 2 (rein strukturelle Zusammenführung):
+  - Das schwebende **Regie-Panel** (`DPS-0.8.0.3`) entfällt vollständig -
+    Ablaufsteuerung und die vier Seitenleisten-Panels aus dem Gesamtlagebild
+    (`DPS-0.8.0.4`) sind jetzt fünf gleichberechtigte Bereiche einer
+    **Bereichswahl**-Leiste unterhalb der Kacheln/Karte, im selben
+    Tab-plus-Vollbild-Muster wie die Patientenansicht (Klick auf einen
+    Reiter öffnet eine Vollbildseite mit "← Zurück", Escape schließt
+    ebenfalls).
+  - Jeder Reiter trägt dieselbe Zähler-Marke wie zuvor die Panel-Badges
+    (verdeckte Patienten, gebundene Kräfte, offene Anfragen, belegte
+    Kanäle) - die vier Seitenleisten-Komponenten selbst sind unverändert,
+    nur ohne eigenen Kasten-Rahmen (den liefert jetzt die Bereichsseite
+    einheitlich).
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine UI-Umstrukturierung
+    auf ausdrücklichen Wunsch, dieselbe Bereichs-Umschaltung wie in der
+    Spieler-Ansicht auch für die Regie zu verwenden.
+  - Live verifiziert: alle fünf Bereiche öffnen/schließen korrekt,
+    Ablaufsteuerung wirkt weiterhin synchron (Pause/Weiter, Tempo),
+    Kartenansicht-Umschalter unverändert erreichbar, keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -480,9 +500,11 @@ Jeder Schritt ist eigenständig nutzbar:
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel, Gesamtlagebild
-   mit Kacheln- und Kartenansicht, echte Geodaten-basierte Verlegungsdauer;
-   Ereignis-Injektion und die fünf übrigen Ebenen offen).
+   Maßnahmen, Rettung eingeklemmter Personen, Gesamtlagebild mit Kacheln-
+   und Kartenansicht, echte Geodaten-basierte Verlegungsdauer, Ablaufsteuerung
+   und alle Seitenleisten-Übersichten als eine konsolidierte Bereichswahl-
+   Ansicht statt eines separaten Regie-Panels; Ereignis-Injektion und die
+   fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

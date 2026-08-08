@@ -5,7 +5,6 @@ import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
 import { KollegenanfrageBenachrichtigung } from '../components/KollegenanfrageBenachrichtigung';
 import { PatientKarte } from '../components/PatientKarte';
-import { RegiePanel } from '../components/RegiePanel';
 import { Sprechfunk } from '../components/Sprechfunk';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
@@ -86,7 +85,6 @@ export function EinsatzSeite() {
 
       <DelegationBenachrichtigung />
       <KollegenanfrageBenachrichtigung />
-      <RegiePanel />
       <Sprechfunk />
 
       {!ausgewaehlt && regiefuehrend && uebersicht ? (

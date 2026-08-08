@@ -2694,72 +2694,7 @@ button.gefahr {
   font-size: 0.75rem;
 }
 
-/* --- Regie-Panel (→ ui.regiepanel) ----------------------------------- */
-
-.regie-panel-knopf {
-  position: fixed;
-  left: 1rem;
-  bottom: 1rem;
-  z-index: 56;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: 999px;
-  background: var(--bg-panel-hoch);
-  border: 1px solid var(--rand);
-  box-shadow: var(--schatten);
-  font-weight: 600;
-}
-
-.regie-panel-marke {
-  min-width: 1.2rem;
-  padding: 0.05rem 0.35rem;
-  border-radius: 999px;
-  background: var(--warn);
-  color: #1a1005;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-align: center;
-}
-
-.regie-panel {
-  position: fixed;
-  left: 1rem;
-  bottom: 4.5rem;
-  z-index: 56;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  width: min(22rem, calc(100vw - 2rem));
-  max-height: min(70vh, 30rem);
-  padding: 0.9rem;
-  border-radius: var(--radius);
-  background: var(--bg-panel-hoch);
-  border: 1px solid var(--rand);
-  box-shadow: var(--schatten);
-  overflow-y: auto;
-}
-
-.regie-panel-kopf {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.regie-panel-kopf h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.regie-abschnitt h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-leise);
-}
+/* --- Ablaufsteuerung als Regie-Bereich (→ ui.ablaufsteuerungpanel) --- */
 
 .regie-ablaufsteuerung {
   display: flex;
@@ -2767,31 +2702,6 @@ button.gefahr {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.85rem;
-}
-
-.regie-freigabeliste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.regie-freigabe-zeile {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 8px;
-  background: var(--bg-panel);
-  border: 1px solid var(--rand);
-  font-size: 0.85rem;
-}
-
-.regie-freigabe-name {
-  overflow-wrap: anywhere;
 }
 
 /* --- Freigabemodus-Auswahl im Wartebereich (→ ui.wartebereich) ------- */
@@ -2896,14 +2806,6 @@ button.gefahr {
 .sk-balken span {
   display: block;
   height: 100%;
-}
-
-/* Arbeitsfläche: Abschnitte-Grid links, Seitenleiste rechts. */
-.arbeitsflaeche {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 0.9rem;
-  align-items: start;
 }
 
 .abschnitt-eyebrow {
@@ -3076,11 +2978,12 @@ button.gefahr {
   margin: 0;
 }
 
-/* Seitenleiste: vier Panels untereinander. */
-.seitenleiste {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
+/* Eigenständige Box, z. B. die Orte-Liste unter der Kartenansicht (→ ui.kartenortepanel). */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 0.85rem 0.9rem;
 }
 
 .panel-titel {
@@ -3097,16 +3000,6 @@ button.gefahr {
   font-weight: 700;
   margin: 0;
   color: var(--text-leise);
-}
-
-.panel-zaehler {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 14%, transparent);
-  padding: 0.05rem 0.5rem;
-  border-radius: 999px;
-  font-variant-numeric: tabular-nums;
 }
 
 .pool-liste,
@@ -3432,10 +3325,6 @@ button.gefahr {
 }
 
 @media (max-width: 980px) {
-  .arbeitsflaeche {
-    grid-template-columns: 1fr;
-  }
-
   .kennzahlen {
     grid-template-columns: repeat(2, 1fr);
   }

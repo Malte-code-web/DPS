@@ -7,9 +7,10 @@ import type { Szenario } from '../domain/types';
 /**
  * @anker ui.einsatzleiste Kopfzeile: Uhr, Status, Sichtungszähler
  *
- * Pause/Tempo/Einsatz-beenden stehen nicht mehr hier, sondern im Regie-Panel
- * (→ `ui.regiepanel`) - diese Leiste zeigt für alle Rollen nur noch den
- * reinen Status ("läuft"/"pausiert"), Spieler zusätzlich ihren eigenen
+ * Pause/Tempo/Einsatz-beenden stehen nicht mehr hier, sondern im Bereich
+ * "Ablaufsteuerung" des Gesamtlagebilds (→ `ui.gesamtlagebild`) - diese
+ * Leiste zeigt für alle Rollen nur noch den reinen Status
+ * ("läuft"/"pausiert"), Spieler zusätzlich ihren eigenen
  * Verlassen-Knopf (kein Reducer-Wechsel wie bei der Übungsleitung, die die
  * Sitzung als Ganzes beendet statt sie zu verlassen).
  */

@@ -8,7 +8,8 @@ import { useSimulation } from '../state/useSimulation';
  * Kanal-Zugehörigkeit selbst reicht der Regie) - reine Übersicht über
  * `state.rufgruppen`, dieselbe Kanal-Zugehörigkeit, die jede Person auch im
  * eigenen Sprechfunk-Panel (→ `ui.sprechfunk`) sieht, hier nur gebündelt für
- * alle Kanäle auf einmal.
+ * alle Kanäle auf einmal. Reiner Inhalt ohne eigenen Titel/Rahmen - läuft als
+ * Bereich im Gesamtlagebild (→ `ui.regiebereichsseite`).
  */
 export function FunkkanaelePanel() {
   const { state } = useSimulation();
@@ -18,23 +19,18 @@ export function FunkkanaelePanel() {
     mitglieder: state.rufgruppen.filter((mitglied) => mitglied.kanal === kanal.id),
   })).filter((eintrag) => eintrag.mitglieder.length > 0);
 
+  if (kanaeleMitMitgliedern.length === 0) {
+    return <p className="hinweis hinweis-knapp">Niemand auf einem Kanal.</p>;
+  }
+
   return (
-    <div className="panel">
-      <div className="panel-titel">
-        <h2>Funkkanäle</h2>
-      </div>
-      {kanaeleMitMitgliedern.length === 0 ? (
-        <p className="hinweis hinweis-knapp">Niemand auf einem Kanal.</p>
-      ) : (
-        <ul className="funk-liste">
-          {kanaeleMitMitgliedern.map(({ kanal, mitglieder }) => (
-            <li key={kanal.id} className="funk-zeile">
-              <span>{mitglieder.map((mitglied) => mitglied.teilnehmerName).join(', ')}</span>
-              <span className="funk-kanal">{kanal.name}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <ul className="funk-liste">
+      {kanaeleMitMitgliedern.map(({ kanal, mitglieder }) => (
+        <li key={kanal.id} className="funk-zeile">
+          <span>{mitglieder.map((mitglied) => mitglied.teilnehmerName).join(', ')}</span>
+          <span className="funk-kanal">{kanal.name}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

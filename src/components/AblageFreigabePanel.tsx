@@ -4,10 +4,10 @@ import { useSimulation } from '../state/useSimulation';
 /**
  * @anker ui.ablagefreigabepanel Freigabe verdeckter Patienten aus dem Gesamtlagebild
  *
- * Reicherere Fassung derselben Freigabe wie im Regie-Panel (→ `ui.regiepanel`)
- * - hier zusätzlich mit Countdown zur nächsten zeitgesteuerten Freigabe
- * (→ `modell.freigabemodus`) und einer Sammel-Freigabe für den ganzen
- * verdeckten Pool auf einmal (`alleVerdecktenFreigeben`).
+ * Countdown zur nächsten zeitgesteuerten Freigabe (→ `modell.freigabemodus`)
+ * und eine Sammel-Freigabe für den ganzen verdeckten Pool auf einmal
+ * (`alleVerdecktenFreigeben`). Reiner Inhalt ohne eigenen Titel/Rahmen - läuft
+ * als Bereich im Gesamtlagebild (→ `ui.regiebereichsseite`).
  */
 export function AblageFreigabePanel() {
   const { state, dispatch } = useSimulation();
@@ -20,56 +20,50 @@ export function AblageFreigabePanel() {
     .filter((restSek) => restSek > 0)
     .sort((a, b) => a - b)[0];
 
+  if (state.freigabemodus === 'sofort') {
+    return (
+      <p className="hinweis hinweis-knapp">
+        Freigabemodus „sofort" – alle Patienten waren von Beginn an sichtbar.
+      </p>
+    );
+  }
+
+  if (verdeckt.length === 0) {
+    return <p className="hinweis hinweis-knapp">Alle Patienten sind freigegeben.</p>;
+  }
+
   return (
-    <div className="panel">
-      <div className="panel-titel">
-        <h2>Ablage · Freigabe</h2>
-        {verdeckt.length > 0 && <span className="panel-zaehler">{verdeckt.length} wartend</span>}
-      </div>
-      {state.freigabemodus === 'sofort' ? (
-        <p className="hinweis hinweis-knapp">
-          Freigabemodus „sofort" – alle Patienten waren von Beginn an sichtbar.
-        </p>
-      ) : verdeckt.length === 0 ? (
-        <p className="hinweis hinweis-knapp">Alle Patienten sind freigegeben.</p>
-      ) : (
-        <>
-          <ul className="pool-liste">
-            {verdeckt.map((patient) => (
-              <li key={patient.id} className="pool-zeile">
-                <span className="pool-info">
-                  <b>{patient.name}</b>
-                  <span>
-                    {patient.geschlecht === 'w' ? 'weibl.' : patient.geschlecht === 'm' ? 'männl.' : 'divers'},{' '}
-                    {patient.alter} J. · {patient.kurzbefund}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className="btn-freigeben"
-                  onClick={() => dispatch({ typ: 'patientFreigeben', patientId: patient.id })}
-                >
-                  Freigeben
-                </button>
-              </li>
-            ))}
-          </ul>
-          <div className="pool-fuss">
-            <span>
-              {naechsteFreigabeSek !== undefined
-                ? `Nächste automatische Freigabe in ${zeitFormat(naechsteFreigabeSek)}`
-                : 'Keine zeitgesteuerte Freigabe hinterlegt'}
+    <>
+      <ul className="pool-liste">
+        {verdeckt.map((patient) => (
+          <li key={patient.id} className="pool-zeile">
+            <span className="pool-info">
+              <b>{patient.name}</b>
+              <span>
+                {patient.geschlecht === 'w' ? 'weibl.' : patient.geschlecht === 'm' ? 'männl.' : 'divers'},{' '}
+                {patient.alter} J. · {patient.kurzbefund}
+              </span>
             </span>
             <button
               type="button"
-              className="btn-nebenlinie"
-              onClick={() => dispatch({ typ: 'alleVerdecktenFreigeben' })}
+              className="btn-freigeben"
+              onClick={() => dispatch({ typ: 'patientFreigeben', patientId: patient.id })}
             >
-              Alle freigeben
+              Freigeben
             </button>
-          </div>
-        </>
-      )}
-    </div>
+          </li>
+        ))}
+      </ul>
+      <div className="pool-fuss">
+        <span>
+          {naechsteFreigabeSek !== undefined
+            ? `Nächste automatische Freigabe in ${zeitFormat(naechsteFreigabeSek)}`
+            : 'Keine zeitgesteuerte Freigabe hinterlegt'}
+        </span>
+        <button type="button" className="btn-nebenlinie" onClick={() => dispatch({ typ: 'alleVerdecktenFreigeben' })}>
+          Alle freigeben
+        </button>
+      </div>
+    </>
   );
 }

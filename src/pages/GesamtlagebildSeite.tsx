@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { AblageFreigabePanel } from '../components/AblageFreigabePanel';
-import { AblaufsteuerungPanel } from '../components/AblaufsteuerungPanel';
 import { AbschnitteUebersicht } from '../components/AbschnitteUebersicht';
 import { FunkkanaelePanel } from '../components/FunkkanaelePanel';
 import { GebundeneKraeftePanel } from '../components/GebundeneKraeftePanel';
@@ -16,7 +15,7 @@ interface Props {
   onAbschnittWaehlen: (abschnitt: Einsatzabschnitt) => void;
 }
 
-type AnsichtId = 'kacheln' | 'karte' | 'ablauf' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
+type AnsichtId = 'kacheln' | 'karte' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
 
 interface AnsichtEintrag {
   id: AnsichtId;
@@ -33,13 +32,15 @@ interface AnsichtEintrag {
  * Kärtchen je Abschnitt öffnet weiterhin die gewohnte Detailsicht
  * (→ `ui.einsatzseite`) zum eigentlichen Behandeln.
  *
- * Die Seitenleiste wirkt als Menü über alle sieben Ansichten (Kacheln,
- * Karte, Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
- * Funkkanäle) - immer nur eine Ansicht gleichzeitig sichtbar in der
- * Hauptfläche, ein Klick im Menü wechselt sie. Anders als ein reines
- * Aufklapp-Panel bleibt das Menü auch eingeklappt vollständig erreichbar
- * (schmale Leiste mit denselben Knöpfen, jetzt nur noch als Icon statt
- * komplett verschwundenem Inhalt, → `ui.regiemenueicons`) - ähnlich einer
+ * Die Seitenleiste wirkt als Menü über alle sechs Ansichten (Kacheln,
+ * Karte, Freigabe, Gebundene Kräfte, Offene Anfragen, Funkkanäle) - immer
+ * nur eine Ansicht gleichzeitig sichtbar in der Hauptfläche, ein Klick im
+ * Menü wechselt sie. Ablaufsteuerung (Pause/Tempo/Einsatz beenden) steht
+ * nicht mehr hier, sondern wieder in der Einsatzleiste
+ * (→ `ui.einsatzleiste`). Anders als ein reines Aufklapp-Panel bleibt das
+ * Menü auch eingeklappt vollständig erreichbar (schmale Leiste mit
+ * denselben Knöpfen, jetzt nur noch als Icon statt komplett
+ * verschwundenem Inhalt, → `ui.regiemenueicons`) - ähnlich einer
  * Activity-Bar, die immer zwischen Ansichten wechseln lässt. Auf schmalen
  * Bildschirmen bleibt die Leiste am linken Rand stehen (per `order` vor
  * die Hauptfläche gestellt) statt darunter angehängt zu werden. Kein neuer
@@ -62,7 +63,6 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   const eintraege: AnsichtEintrag[] = [
     { id: 'kacheln', label: 'Kacheln' },
     ...(hatGeodaten ? [{ id: 'karte' as const, label: 'Karte' }] : []),
-    { id: 'ablauf', label: 'Ablaufsteuerung', marke: state.laufend ? 'läuft' : 'pausiert' },
     {
       id: 'freigabe',
       label: 'Freigabe',
@@ -96,7 +96,6 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
               <KartenOrtePanel />
             </>
           )}
-          {aktiv === 'ablauf' && <AblaufsteuerungPanel />}
           {aktiv === 'freigabe' && <AblageFreigabePanel />}
           {aktiv === 'gebunden' && <GebundeneKraeftePanel />}
           {aktiv === 'anfragen' && <OffeneAnfragenPanel />}

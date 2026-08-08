@@ -1071,7 +1071,23 @@ button.gefahr {
   font-weight: 600;
 }
 
-/* --- Einsatzleiste ---------------------------------------------- */
+/* --- Sichtungsleiste + Einsatzleiste ------------------------------ */
+
+/* Eigene, ganz oben angeheftete Zeile über die volle Breite - die
+   Sichtungskategorien-Übersicht bleibt so beim Scrollen sichtbar, ganz
+   ohne die eigentliche Einsatzleiste zu überfrachten (→ ui.einsatzleiste). */
+.sichtungsleiste {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0.6rem 1.5rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--rand);
+  position: sticky;
+  top: 0;
+  z-index: 11;
+}
 
 .einsatzleiste {
   display: grid;
@@ -1082,16 +1098,18 @@ button.gefahr {
   background: var(--bg-panel);
   border-bottom: 1px solid var(--rand);
   position: sticky;
-  top: 0;
+  /* px statt rem: die Seite setzt eine abweichende Root-Schriftgröße
+     (→ body-Regel), rem-Werte hätten hier je nach Basis überlappt. */
+  top: 76px;
   z-index: 10;
 }
 
-/* Bleibt wie die Einsatzleiste angeheftet - eine gestörte Verbindung soll
-   während der laufenden Übung auffallen, nicht erst beim Scrollen sichtbar
-   werden (→ `state.provider`, `sitzung.verbindungsfehler`). */
+/* Bleibt wie Sichtungs- und Einsatzleiste angeheftet - eine gestörte
+   Verbindung soll während der laufenden Übung auffallen, nicht erst beim
+   Scrollen sichtbar werden (→ `state.provider`, `sitzung.verbindungsfehler`). */
 .hinweis-verbindung {
   position: sticky;
-  top: 4.5rem;
+  top: 196px;
   z-index: 9;
   margin: 0;
   padding: 0.6rem 1.5rem;
@@ -1119,13 +1137,6 @@ button.gefahr {
   gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text-leise);
-}
-
-.einsatzleiste-rechts {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  flex-wrap: wrap;
 }
 
 .zaehler {
@@ -2694,7 +2705,7 @@ button.gefahr {
   font-size: 0.75rem;
 }
 
-/* --- Ablaufsteuerung als Regie-Bereich (→ ui.ablaufsteuerungpanel) --- */
+/* --- Ablaufsteuerung in der Einsatzleiste (→ ui.einsatzleiste) ------- */
 
 .regie-ablaufsteuerung {
   display: flex;
@@ -2772,9 +2783,10 @@ button.gefahr {
   min-width: 0;
 }
 
-/* Bleibt wie die Einsatzleiste (→ ui.einsatzleiste) beim Scrollen der
-   Hauptfläche stehen, statt mit dem Inhalt nach oben wegzuscrollen - der
-   top-Wert liegt knapp über deren gemessener Höhe (113-120px). */
+/* Bleibt wie Sichtungs- und Einsatzleiste (→ ui.einsatzleiste) beim
+   Scrollen der Hauptfläche stehen, statt mit dem Inhalt nach oben
+   wegzuscrollen - der top-Wert liegt knapp über deren gemessener
+   kombinierter Höhe (168-191px). */
 .regie-seitenleiste {
   width: 250px;
   flex-shrink: 0;
@@ -2783,8 +2795,8 @@ button.gefahr {
   gap: 0.7rem;
   transition: width 0.15s ease;
   position: sticky;
-  top: 7.5rem;
-  max-height: calc(100vh - 8rem);
+  top: 196px;
+  max-height: calc(100vh - 210px);
   overflow-y: auto;
 }
 
@@ -4284,16 +4296,22 @@ tbody tr:last-child td {
 
 @media (max-width: 1000px) {
   /*
-   * Die Einsatzleiste bleibt oben angeheftet, muss dafuer aber schlank sein:
-   * in voller Hoehe belegte sie auf einem Telefon fast 40 % des Bildschirms.
-   * Die Lagemeldung steht ohnehin im Szenario, Uhr und Steuerung ruecken
-   * in eine gemeinsame Zeile.
+   * Sichtungs- und Einsatzleiste bleiben beide oben angeheftet, muessen
+   * dafuer aber schlank sein: in voller Hoehe belegten sie auf einem
+   * Telefon fast 40 % des Bildschirms. Die Lagemeldung steht ohnehin im
+   * Szenario, Uhr und Steuerung ruecken in eine gemeinsame Zeile.
    */
   /* @anker stil.einsatzleiste Die angeheftete Leiste so flach wie möglich */
+  .sichtungsleiste {
+    justify-content: flex-start;
+    padding: 0.4rem 0.8rem;
+  }
+
   .einsatzleiste {
     grid-template-columns: 1fr;
     gap: 0.35rem;
     padding: 0.45rem 0.8rem;
+    top: 62px;
   }
 
   .einsatzleiste h1 {
@@ -4315,10 +4333,6 @@ tbody tr:last-child td {
 
   .uhr {
     font-size: 1.35rem;
-  }
-
-  .einsatzleiste-rechts {
-    justify-content: flex-start;
   }
 
   .einsatzleiste-mitte button,

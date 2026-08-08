@@ -1,5 +1,5 @@
 interface Props {
-  ansicht: 'kacheln' | 'karte' | 'ablauf' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
+  ansicht: 'kacheln' | 'karte' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk';
 }
 
 const GEMEINSAME_ATTRIBUTE = {
@@ -37,13 +37,6 @@ export function RegieMenueIcon({ ansicht }: Props) {
         <svg {...GEMEINSAME_ATTRIBUTE}>
           <path d="M10 2.5c-3.2 0-5.8 2.5-5.8 5.8 0 4.3 5.8 9.2 5.8 9.2s5.8-4.9 5.8-9.2c0-3.3-2.6-5.8-5.8-5.8z" />
           <circle cx="10" cy="8.3" r="2" />
-        </svg>
-      );
-    case 'ablauf':
-      return (
-        <svg {...GEMEINSAME_ATTRIBUTE}>
-          <circle cx="10" cy="10" r="7.3" />
-          <path d="M8.3 6.9v6.2l5.2-3.1-5.2-3.1z" fill="currentColor" stroke="none" />
         </svg>
       );
     case 'freigabe':

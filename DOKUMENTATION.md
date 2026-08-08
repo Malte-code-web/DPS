@@ -62,6 +62,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Regie-Menü bleibt eingeklappt erreichbar (`DPS-0.8.0.9`) | Der Ein-/Ausklapp-Knopf aus `DPS-0.8.0.8` ließ das Menü beim Einklappen komplett verschwinden - jetzt bleibt es als schmale, aber vollständig bedienbare Leiste bestehen (Activity-Bar-Muster wie in vielen IDE-/Desktop-Apps): dieselben sieben Knöpfe bleiben sichtbar und anklickbar, nur die Beschriftung bricht auf zwei Zeilen um und die Status-Marke (läuft/pausiert, Zähler) fällt aus Platzgründen weg. So lässt sich jede Ansicht jederzeit mit einem Klick erreichen, ohne das Menü erst wieder ausklappen zu müssen. Die Grid-Spalte der Seitenleiste folgt jetzt außerdem ihrer tatsächlichen Breite (`auto` statt fest `320px`) - eingeklappt bleibt keine leere Fläche mehr übrig, die Hauptfläche nutzt den gewonnenen Platz sofort. Kein neuer Datenpfad, reine Layout-Umstellung. Live verifiziert: alle sieben Knöpfe bleiben im eingeklappten Zustand sichtbar und funktionsfähig (Ablaufsteuerung inkl. Pause/Weiter, Kartenansicht), keine Leerfläche rechts, keine Konsolenfehler. Auf Wunsch (Icons statt zweizeiligem Text, Sidebar auch mobil am linken Rand statt unten) in `DPS-0.8.0.10` weiter verfeinert. |
 | Regie-Menü: Icons + Sidebar am linken Rand auf schmalen Bildschirmen (`DPS-0.8.0.10`) | Zwei Verfeinerungen des Ansichts-Menüs aus `DPS-0.8.0.9`: Erstens ersetzen sieben schlichte, einfarbige Strich-Icons (`RegieMenueIcons.tsx`, kein Icon-Set eingebunden) den bisherigen zweizeilig umbrechenden Text im eingeklappten Zustand - jeder Menüpunkt bleibt damit auf einen Blick unterscheidbar, auch ohne Beschriftung; ausgeklappt stehen Icon und Beschriftung nebeneinander. Zweitens bleibt die Seitenleiste auf schmalen Bildschirmen (≤980px) ein Rand-Streifen links neben der Hauptfläche statt darunter zu rutschen - ein `order: -1` im Grid stellt sie visuell nach vorn, ohne die DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu ändern; eingeklappt schrumpft sie auf eine 56px breite Icon-Leiste, die weiterhin jeden Klick zum Ansicht-Wechsel entgegennimmt. Kein neuer Datenpfad, reine UI-Verfeinerung. Live verifiziert (Desktop und mobiler Viewport 390×844): alle sieben Icons vorhanden, im eingeklappten Zustand nur noch Icons sichtbar (kein Text), Ansicht per Icon-Klick auch eingeklappt wechselbar, mobile Seitenleiste steht links auf gleicher Höhe wie die Hauptfläche statt darunter, keine Konsolenfehler. |
 | Regie-Menü bleibt beim Scrollen stehen (`DPS-0.8.0.11`) | Die Seitenleiste scrollte bislang mit der Hauptfläche mit - bei einer langen Kacheln- oder Panel-Ansicht verschwand das Menü nach oben aus dem sichtbaren Bereich. Jetzt bleibt sie wie die bereits angeheftete Einsatzleiste (`position: sticky`) direkt unterhalb von ihr stehen, während der Inhalt darunter/daneben scrollt - ein `top`-Wert knapp über der gemessenen Kopfzeilen-Höhe verhindert eine Überlappung, `max-height`+`overflow-y: auto` fangen sehr niedrige Bildschirme ab. Gilt unverändert für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil. Kein neuer Datenpfad, reine CSS-Änderung. Live verifiziert: Sidebar bleibt nach dem Scrollen sichtbar knapp unter der Einsatzleiste (Desktop und Mobil), ein Menüpunkt lässt sich auch nach dem Scrollen anklicken, keine Konsolenfehler. |
+| Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile (`DPS-0.8.0.12`) | Auf Wunsch (mit annotiertem Screenshot präzisiert) zieht die Sichtungskategorien-Übersicht (SK I-EX + Offen) aus der Einsatzleiste aus und bekommt eine eigene, ganz oben angeheftete Zeile über die volle Breite (`.sichtungsleiste`) - darunter bleibt die Einsatzleiste mit Titel, Lagemeldung und Uhr angeheftet, beide Zeilen zusammen `position: sticky`. Pause/Tempo/Einsatz-beenden (Ablaufsteuerung) stehen wieder hier statt im Ansichts-Menü - nur für Übungsleitung/Beobachter, Spieler sehen weiterhin nur den reinen Status und ihren Verlassen-Knopf. Das Ansichts-Menü hat dadurch nur noch sechs statt sieben Punkte (kein „Ablaufsteuerung“ mehr), `AblaufsteuerungPanel.tsx` entfällt vollständig. Die `top`-Offsets der angehefteten Elemente (Einsatzleiste, Verbindungsfehler-Hinweis, Regie-Menü) sind bewusst in `px` statt `rem` gesetzt, weil die Seite eine von 16px abweichende Root-Schriftgröße (15px) verwendet - mit `rem` hätte es je nach Basis zu Überlappungen kommen können. Kein neuer Datenpfad, reine Layout-Umstellung. Live verifiziert (Desktop und Mobil, mit erzwungenem Scrollen): keine Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen anklickbar, keine Konsolenfehler. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -661,7 +662,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_208 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_207 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -881,23 +882,23 @@ _208 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1527`](src/index.css#L1527) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1911`](src/index.css#L1911) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2444`](src/index.css#L2444) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.anhaengekarte` | [`src/index.css:1538`](src/index.css#L1538) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1922`](src/index.css#L1922) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2455`](src/index.css#L2455) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:698`](src/index.css#L698) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4292`](src/index.css#L4292) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4304`](src/index.css#L4304) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:421`](src/index.css#L421) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1964`](src/index.css#L1964) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.ersteindruck` | [`src/index.css:1975`](src/index.css#L1975) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:147`](src/index.css#L147) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4036`](src/index.css#L4036) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:4048`](src/index.css#L4048) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:331`](src/index.css#L331) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:418`](src/index.css#L418) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:625`](src/index.css#L625) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1790`](src/index.css#L1790) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.patientnav` | [`src/index.css:1801`](src/index.css#L1801) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:213`](src/index.css#L213) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4362`](src/index.css#L4362) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4376`](src/index.css#L4376) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4493`](src/index.css#L4493) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4507`](src/index.css#L4507) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -932,7 +933,6 @@ _208 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `ui.ablagefreigabepanel` | [`src/components/AblageFreigabePanel.tsx:5`](src/components/AblageFreigabePanel.tsx#L5) | Freigabe verdeckter Patienten aus dem Gesamtlagebild |
-| `ui.ablaufsteuerungpanel` | [`src/components/AblaufsteuerungPanel.tsx:6`](src/components/AblaufsteuerungPanel.tsx#L6) | Pause/Tempo/Einsatz beenden als Regie-Bereich |
 | `ui.abschnitteuebersicht` | [`src/components/AbschnitteUebersicht.tsx:16`](src/components/AbschnitteUebersicht.tsx#L16) | Eine Kachel je Einsatzabschnitt - Kern des Gesamtlagebilds |
 | `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
@@ -947,7 +947,7 @@ _208 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.delegationsbenachrichtigung` | [`src/components/DelegationBenachrichtigung.tsx:5`](src/components/DelegationBenachrichtigung.tsx#L5) | Benachrichtigung: jemand braucht eine Freigabe |
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
-| `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:8`](src/components/Einsatzleiste.tsx#L8) | Kopfzeile: Uhr, Status, Sichtungszähler |
+| `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:11`](src/components/Einsatzleiste.tsx#L11) | Kopfzeile: Sichtungszähler, Uhr, Status, Ablaufsteuerung |
 | `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:20`](src/pages/EinsatzSeite.tsx#L20) | Gesamtlagebild (Regie), Abschnittsliste oder Patientenseite |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
@@ -955,7 +955,7 @@ _208 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.fehlergrenze` | [`src/components/Fehlergrenze.tsx:15`](src/components/Fehlergrenze.tsx#L15) | Fängt Renderfehler ab, statt die Seite weiß werden zu lassen |
 | `ui.funkkanaelepanel` | [`src/components/FunkkanaelePanel.tsx:5`](src/components/FunkkanaelePanel.tsx#L5) | Wer steht gerade auf welchem Kanal |
 | `ui.gebundenekraeftepanel` | [`src/components/GebundeneKraeftePanel.tsx:18`](src/components/GebundeneKraeftePanel.tsx#L18) | Übersicht aller aktuell gebundenen Kräfte |
-| `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:29`](src/pages/GesamtlagebildSeite.tsx#L29) | Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü |
+| `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:28`](src/pages/GesamtlagebildSeite.tsx#L28) | Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü |
 | `ui.kartenansicht` | [`src/components/Kartenansicht.tsx:28`](src/components/Kartenansicht.tsx#L28) | Schematische Kartenansicht als zweite Sicht auf dieselbe Lage |
 | `ui.kartenortepanel` | [`src/components/KartenOrtePanel.tsx:8`](src/components/KartenOrtePanel.tsx#L8) | Entfernungen der Kartenansicht als Liste in der Seitenleiste |
 | `ui.kennzahlenleiste` | [`src/components/Kennzahlenleiste.tsx:18`](src/components/Kennzahlenleiste.tsx#L18) | Vier Kacheln als Ersteindruck des Gesamtlagebilds |
@@ -1069,6 +1069,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.12` | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile: eigene volle-Breite Zeile für die Sichtungskategorien ganz oben, Pause/Tempo/Einsatz-beenden zurück in der Einsatzleiste statt im Ansichts-Menü (jetzt nur noch sechs Punkte) |
 | `DPS-0.8.0.11` | Regie-Menü bleibt beim Scrollen stehen: `position: sticky` direkt unter der Einsatzleiste statt mit der Hauptfläche mitzuscrollen, gilt für ausgeklappten und eingeklappten Zustand, Desktop wie Mobil |
 | `DPS-0.8.0.10` | Regie-Menü: Icons statt Text im eingeklappten Zustand, Seitenleiste bleibt auf schmalen Bildschirmen (≤980px) am linken Rand statt unter den Hauptinhalt zu rutschen |
 | `DPS-0.8.0.9` | Regie-Menü bleibt eingeklappt erreichbar: statt komplett zu verschwinden, bleibt das Menü als schmale Leiste bedienbar (Activity-Bar-Muster) - alle sieben Ansichten sind jederzeit einen Klick entfernt, keine leere Fläche mehr eingeklappt |

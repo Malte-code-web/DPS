@@ -553,6 +553,32 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live verifiziert: Sidebar bleibt nach dem Scrollen sichtbar knapp
     unter der Einsatzleiste (Desktop und Mobil), ein Menüpunkt lässt sich
     auch nach dem Scrollen anklicken, keine Konsolenfehler.
+- ✅ **Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile
+  (`DPS-0.8.0.12`)** - Übungsleiter-Ebene, Teil 2 (Wunsch per annotiertem
+  Screenshot präzisiert):
+  - Die Sichtungskategorien-Übersicht (SK I-EX + Offen) zieht aus der
+    Einsatzleiste aus und bekommt eine eigene, ganz oben angeheftete Zeile
+    über die volle Breite (`.sichtungsleiste`) - darunter bleibt die
+    Einsatzleiste mit Titel, Lagemeldung und Uhr angeheftet, beide Zeilen
+    zusammen `position: sticky`.
+  - Pause/Tempo/Einsatz-beenden (Ablaufsteuerung) stehen wieder hier statt
+    im Ansichts-Menü aus `DPS-0.8.0.8`/`.9` - nur für Übungsleitung/
+    Beobachter (→ `domain.regiefuehrend`), Spieler sehen weiterhin nur den
+    reinen Status und ihren Verlassen-Knopf.
+  - Das Ansichts-Menü hat dadurch nur noch sechs statt sieben Punkte (kein
+    „Ablaufsteuerung“ mehr), `AblaufsteuerungPanel.tsx` entfällt
+    vollständig.
+  - Die `top`-Offsets der angehefteten Elemente (Einsatzleiste,
+    Verbindungsfehler-Hinweis, Regie-Menü) sind bewusst in `px` statt
+    `rem` gesetzt, weil die Seite eine von 16px abweichende
+    Root-Schriftgröße (15px) verwendet - mit `rem` hätte es je nach Basis
+    zu Überlappungen kommen können (in einer früheren Fassung dieser
+    Änderung tatsächlich passiert und live gefunden).
+  - Kein neuer Datenpfad, keine Reducer-Änderung - reine Layout-Umstellung.
+  - Live verifiziert (Desktop und Mobil, mit erzwungenem Scrollen): keine
+    Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf
+    funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen
+    anklickbar, keine Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -598,12 +624,14 @@ Jeder Schritt ist eigenständig nutzbar:
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
    Maßnahmen, Rettung eingeklemmter Personen, echte Geodaten-basierte
-   Verlegungsdauer und ein Gesamtlagebild, dessen Regie-Seitenleiste als
-   Menü mit eigenen Icons über alle Ansichten (Kacheln, Karte,
-   Ablaufsteuerung, Freigabe, Gebundene Kräfte, Offene Anfragen,
-   Funkkanäle) wirkt, auch eingeklappt vollständig erreichbar bleibt und
-   auf schmalen Bildschirmen am linken Rand steht statt darunter zu
-   rutschen; Ereignis-Injektion und die fünf übrigen Ebenen offen).
+   Verlegungsdauer, eine eigene angeheftete Sichtungskategorien-Zeile samt
+   Ablaufsteuerung (Pause/Tempo/Einsatz beenden) in der Einsatzleiste und
+   ein Gesamtlagebild, dessen Regie-Seitenleiste als Menü mit eigenen
+   Icons über die übrigen sechs Ansichten (Kacheln, Karte, Freigabe,
+   Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt, auch eingeklappt
+   vollständig erreichbar bleibt und auf schmalen Bildschirmen am linken
+   Rand steht statt darunter zu rutschen; Ereignis-Injektion und die fünf
+   übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

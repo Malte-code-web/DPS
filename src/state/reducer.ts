@@ -2,7 +2,7 @@ import { istVerlegungMoeglich } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO, fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
-import { verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
+import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
 import { routenAusSzenario } from '../domain/geodaten';
@@ -43,6 +43,7 @@ import type {
   Route,
   Rufgruppenmitgliedschaft,
   Sichtungskategorie,
+  SpielerProtokollEintrag,
   Szenario,
   Verlaufseintrag,
 } from '../domain/types';
@@ -164,6 +165,15 @@ export interface SimulationState {
    */
   regieProtokoll: Verlaufseintrag[];
   /**
+   * @anker state.spielerprotokoll Private Statusansicht: was genau hat wer getan
+   *
+   * Wächst wie `regieProtokoll` nur an, ist aber nach Spieler statt nach
+   * Sitzung sortiert (→ `modell.spielerprotokoll`) - Grundlage für "Mein
+   * Einsatz" im Debriefing, wo jede Person nur ihre eigenen Zeilen sieht
+   * (Filter beim Lesen, nicht getrennte Speicherung je Spieler).
+   */
+  spielerProtokoll: SpielerProtokollEintrag[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -197,6 +207,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   routen: [],
   ausgeloesteEreignisse: [],
   regieProtokoll: [],
+  spielerProtokoll: [],
   schnappschussFolge: 0,
 };
 
@@ -211,14 +222,27 @@ export type SimulationAction =
   | { typ: 'pauseUmschalten' }
   | { typ: 'geschwindigkeitSetzen'; wert: number }
   | { typ: 'patientWaehlen'; patientId: string | null }
-  | { typ: 'diagnostikDurchfuehren'; patientId: string; diagnostikId: DiagnostikId }
-  | { typ: 'patientSichten'; patientId: string; kategorie: Sichtungskategorie; final?: boolean }
+  | {
+      typ: 'diagnostikDurchfuehren';
+      patientId: string;
+      diagnostikId: DiagnostikId;
+      /** Für die private Statusansicht (→ `modell.spielerprotokoll`) - fehlt im Einzelspiel. */
+      spielerId?: string;
+    }
+  | {
+      typ: 'patientSichten';
+      patientId: string;
+      kategorie: Sichtungskategorie;
+      final?: boolean;
+      spielerId?: string;
+    }
   | {
       typ: 'massnahmeDurchfuehren';
       patientId: string;
       massnahmeId: MassnahmeId;
       /** Nur bei Maßnahmen mit Dosisreferenz relevant (→ `domain.dosierung`). */
       dosisMg?: number;
+      spielerId?: string;
     }
   | {
       typ: 'delegationAnfragen';
@@ -238,10 +262,10 @@ export type SimulationAction =
     }
   | { typ: 'kollegenanfrageAnnehmen'; anfrageId: string; spielerId: string }
   | { typ: 'rettungUnterstuetzungAnfragen'; patientId: string; anfragendeId: string }
-  | { typ: 'rettungsmaterialBereitstellen'; patientId: string; fahrzeugId: string }
+  | { typ: 'rettungsmaterialBereitstellen'; patientId: string; fahrzeugId: string; spielerId?: string }
   | { typ: 'rettungDurchfuehren'; patientId: string }
   | { typ: 'rufgruppeWaehlen'; teilnehmerId: string; teilnehmerName: string; kanal: string | null }
-  | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt }
+  | { typ: 'patientVerlegen'; patientId: string; ziel: Einsatzabschnitt; spielerId?: string }
   | { typ: 'abschnittWaehlen'; abschnitt: Einsatzabschnitt }
   | { typ: 'einsatzBeenden' }
   | { typ: 'zurueckZumSetup' }
@@ -310,6 +334,8 @@ export interface Schnappschuss {
   ausgeloesteEreignisse: string[];
   /** Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung (→ `state.regieprotokoll`). */
   regieProtokoll: Verlaufseintrag[];
+  /** Private Statusansicht je Spieler für "Mein Einsatz" (→ `state.spielerprotokoll`). */
+  spielerProtokoll: SpielerProtokollEintrag[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -339,6 +365,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     routen: state.routen,
     ausgeloesteEreignisse: state.ausgeloesteEreignisse,
     regieProtokoll: state.regieProtokoll,
+    spielerProtokoll: state.spielerProtokoll,
   };
 }
 
@@ -403,6 +430,65 @@ function protokolliereRegie(state: SimulationState, text: string): SimulationSta
   return {
     ...state,
     regieProtokoll: [...state.regieProtokoll, { zeitSek: state.zeitSek, text }],
+  };
+}
+
+/**
+ * Hängt eine Zeile an `spielerProtokoll` an (→ `state.spielerprotokoll`) -
+ * ohne `spielerId` passiert nichts (Einzelspiel kennt keine Sitzung, dort
+ * ist die ganze Auswertung ohnehin schon "mein Einsatz").
+ */
+function protokolliereSpieler(
+  state: SimulationState,
+  spielerId: string | undefined,
+  patientId: string,
+  text: string,
+): SimulationState {
+  if (!spielerId) return state;
+  return {
+    ...state,
+    spielerProtokoll: [
+      ...state.spielerProtokoll,
+      { spielerId, patientId, zeitSek: state.zeitSek, text },
+    ],
+  };
+}
+
+/**
+ * Übernimmt den zuletzt an einen Patienten angehängten Verlaufseintrag
+ * (→ `domain.simulation`, `protokolliere`) unverändert in `spielerProtokoll`
+ * - kein eigener Text, keine Wiederholung der Domänenlogik. Vergleicht
+ * `vorher`/`nachher`, um zu erkennen, ob die Domänenfunktion überhaupt etwas
+ * protokolliert hat (z. B. keine Wirkung bei bereits durchgeführter
+ * Diagnostik oder einem verstorbenen Patienten) - sonst entstünde ein
+ * irreführender Eintrag ohne echte Handlung dahinter. Kreditiert bei Bedarf
+ * mehrere Personen gleichzeitig mit derselben Zeile (Team-Maßnahmen).
+ */
+function uebernimmVerlaufInSpielerprotokoll(
+  vorher: SimulationState,
+  nachher: SimulationState,
+  spielerIds: (string | undefined)[],
+  patientId: string,
+): SimulationState {
+  const beteiligte = spielerIds.filter((id): id is string => id !== undefined);
+  if (beteiligte.length === 0) return nachher;
+  const alterPatient = vorher.patienten.find((patient) => patient.id === patientId);
+  const neuerPatient = nachher.patienten.find((patient) => patient.id === patientId);
+  if (!neuerPatient || neuerPatient.verlauf.length === (alterPatient?.verlauf.length ?? 0)) {
+    return nachher;
+  }
+  const eintrag = neuerPatient.verlauf.at(-1)!;
+  return {
+    ...nachher,
+    spielerProtokoll: [
+      ...nachher.spielerProtokoll,
+      ...beteiligte.map((spielerId) => ({
+        spielerId,
+        patientId,
+        zeitSek: eintrag.zeitSek,
+        text: eintrag.text,
+      })),
+    ],
   };
 }
 
@@ -511,28 +597,46 @@ export function simulationReducer(
       if (!patient || patient.durchgefuehrteDiagnostik.includes(action.diagnostikId)) {
         return state;
       }
-      return mitPatient(state, action.patientId, (eintrag) =>
+      const naechster = mitPatient(state, action.patientId, (eintrag) =>
         fuehreDiagnostikDurch(eintrag, action.diagnostikId, state.zeitSek),
+      );
+      return uebernimmVerlaufInSpielerprotokoll(
+        state,
+        naechster,
+        [action.spielerId],
+        action.patientId,
       );
     }
 
     case 'patientSichten': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       if (!patient) return state;
-      return mitPatient(state, action.patientId, (eintrag) =>
+      const naechster = mitPatient(state, action.patientId, (eintrag) =>
         sichtePatient(eintrag, action.kategorie, state.zeitSek, action.final),
+      );
+      return uebernimmVerlaufInSpielerprotokoll(
+        state,
+        naechster,
+        [action.spielerId],
+        action.patientId,
       );
     }
 
     case 'massnahmeDurchfuehren': {
       const behandelter = state.patienten.find((patient) => patient.id === action.patientId);
       if (!behandelter) return state;
-      return {
+      const naechster = {
         ...mitPatient(state, action.patientId, (patient) =>
           wendeMassnahmeAn(patient, action.massnahmeId, state.zeitSek, action.dosisMg),
         ),
         fahrzeuge: verbraucheMaterial(state.fahrzeuge, action.massnahmeId, behandelter.abschnitt),
       };
+      return uebernimmVerlaufInSpielerprotokoll(
+        state,
+        naechster,
+        [action.spielerId],
+        action.patientId,
+      );
     }
 
     case 'delegationAnfragen':
@@ -650,7 +754,7 @@ export function simulationReducer(
         const genugKollegen =
           eingeklemmterPatient.eingeklemmt.helfendeIds.length + 1 >=
           eingeklemmterPatient.eingeklemmt.benoetigteKollegenAnzahl;
-        return {
+        const naechster = {
           ...mitPatient(state, anfrage.patientId, (patient) =>
             patient.eingeklemmt
               ? {
@@ -674,6 +778,12 @@ export function simulationReducer(
             ),
           },
         };
+        return protokolliereSpieler(
+          naechster,
+          action.spielerId,
+          anfrage.patientId,
+          `Bei der Rettung von ${anfrage.patientId} unterstützt.`,
+        );
       }
 
       // Narkose: sobald keine andere Anfrage desselben Vorgangs (dieselbe
@@ -715,7 +825,7 @@ export function simulationReducer(
                 ),
               }
             : state;
-          return {
+          const naechster = {
             ...mitWirkung,
             kollegenanfragen: ohneVorgang,
             sitzung: {
@@ -725,6 +835,10 @@ export function simulationReducer(
               ),
             },
           };
+          // Das ganze Team wird kreditiert, nicht nur die zuletzt annehmende
+          // Person - dieselbe Zeile aus `patient.verlauf` erscheint bei allen
+          // Beteiligten in ihrer je eigenen Statusansicht.
+          return uebernimmVerlaufInSpielerprotokoll(state, naechster, teamIds, anfrage.patientId);
         }
       }
 
@@ -760,7 +874,7 @@ export function simulationReducer(
       if (!patient?.eingeklemmt || patient.eingeklemmt.anfragendeId !== null) return state;
       const braucht = patient.eingeklemmt.benoetigteKollegenAnzahl > 0;
       const gebundenGrund = `Rettung bei ${action.patientId}`;
-      return {
+      const naechsterAnfrage = {
         ...mitPatient(state, action.patientId, (eintrag) =>
           eintrag.eingeklemmt
             ? { ...eintrag, eingeklemmt: { ...eintrag.eingeklemmt, anfragendeId: action.anfragendeId } }
@@ -772,7 +886,7 @@ export function simulationReducer(
               {
                 id: erzeugeId(),
                 patientId: action.patientId,
-                grund: 'rettung',
+                grund: 'rettung' as const,
                 anfragendeId: action.anfragendeId,
                 angenommenVon: [],
               },
@@ -787,13 +901,19 @@ export function simulationReducer(
           ),
         },
       };
+      return protokolliereSpieler(
+        naechsterAnfrage,
+        action.anfragendeId,
+        action.patientId,
+        `Unterstützung bei der Rettung von ${action.patientId} angefordert.`,
+      );
     }
 
     case 'rettungsmaterialBereitstellen': {
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       const material = patient?.eingeklemmt?.benoetigtesMaterial;
       if (!patient?.eingeklemmt || !material || patient.eingeklemmt.materialBereitgestellt) return state;
-      return {
+      const naechster = {
         ...mitPatient(state, action.patientId, (eintrag) =>
           eintrag.eingeklemmt
             ? { ...eintrag, eingeklemmt: { ...eintrag.eingeklemmt, materialBereitgestellt: true } }
@@ -801,6 +921,12 @@ export function simulationReducer(
         ),
         fahrzeuge: verbraucheMaterialTyp(state.fahrzeuge, material, patient.abschnitt),
       };
+      return protokolliereSpieler(
+        naechster,
+        action.spielerId,
+        action.patientId,
+        `Rettungsmaterial (${MATERIAL_LABEL[material]}) bereitgestellt.`,
+      );
     }
 
     case 'rettungDurchfuehren': {
@@ -809,7 +935,7 @@ export function simulationReducer(
       if (!rettungBereit(patient.eingeklemmt)) return state;
       const { anfragendeId, helfendeIds, entdecktUmSek } = patient.eingeklemmt;
       const beteiligteIds = [anfragendeId, ...helfendeIds].filter((id): id is string => id !== null);
-      return {
+      const naechster = {
         ...mitPatient(state, action.patientId, (eintrag) =>
           eintrag.eingeklemmt
             ? {
@@ -831,6 +957,16 @@ export function simulationReducer(
           ),
         },
       };
+      return beteiligteIds.reduce(
+        (zwischenstand, spielerId) =>
+          protokolliereSpieler(
+            zwischenstand,
+            spielerId,
+            action.patientId,
+            `Rettung von ${action.patientId} abgeschlossen.`,
+          ),
+        naechster,
+      );
     }
 
     case 'rufgruppeWaehlen': {
@@ -860,9 +996,15 @@ export function simulationReducer(
       const verlegt = mitPatient(state, action.patientId, (eintrag) =>
         verlegePatient(eintrag, action.ziel, state.zeitSek),
       );
+      const protokolliert = uebernimmVerlaufInSpielerprotokoll(
+        state,
+        verlegt,
+        [action.spielerId],
+        action.patientId,
+      );
       // Nach der Verlegung zurück in die Liste des bearbeiteten Abschnitts:
       // Dort warten die übrigen Patienten.
-      return { ...verlegt, ausgewaehlterPatientId: null };
+      return { ...protokolliert, ausgewaehlterPatientId: null };
     }
 
     case 'abschnittWaehlen':
@@ -1240,6 +1382,7 @@ export function simulationReducer(
         routen: s.routen,
         ausgeloesteEreignisse: s.ausgeloesteEreignisse,
         regieProtokoll: s.regieProtokoll,
+        spielerProtokoll: s.spielerProtokoll,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

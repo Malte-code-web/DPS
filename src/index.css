@@ -4135,9 +4135,9 @@ tbody tr:last-child td {
   color: var(--text-leise);
 }
 
-/* --- Debriefing-Erweiterung: Ressourceneinsatz + Führungsentscheidungen (→ ui.debriefing) --- */
+/* --- Debriefing-Erweiterung: Mein Einsatz, Ressourceneinsatz, Führungsentscheidungen (→ ui.debriefing) --- */
 
-.debriefing-regieprotokoll .protokoll {
+.protokoll-karte {
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);

@@ -336,8 +336,8 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
-  - 💤 **Noch offen (Fundament, Teil 2, Rest):** private
-    Spieler-Statusansicht.
+  - ✅ **Fundament, Teil 2 damit komplett** - der letzte offene Punkt (private
+    Spieler-Statusansicht) ist mit `DPS-0.8.0.15` fertig.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
   Teil 2 (Rettungs-Hälfte):
   - Ein Patient kann im Szenario `eingeklemmtBeimStart` tragen (z. B. B-04 im
@@ -630,6 +630,36 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Nachforderung und einer ausgelösten Lageänderung zeigt das Debriefing acht
     chronologisch korrekte Protokollzeilen und die richtige
     Fahrzeug-Kennzahl (2 im Einsatz, 1 ausgefallen), keine Konsolenfehler.
+- ✅ **Private Spieler-Statusansicht "Mein Einsatz" (`DPS-0.8.0.15`)** -
+  Übungsleiter-Ebene, Teil 2 (letzter Punkt aus dem Fundament, Teil 2 - auf
+  Wunsch: eine zusätzliche Debriefing-Seite, auf der ein Spieler sieht, was
+  er genau gemacht hat):
+  - Der Reducer kannte bislang bei Maßnahme/Diagnostik/Sichtung/Verlegung
+    keine Spieler-Zuordnung (nur teambasierte Aktionen wie Kollegenanfrage/
+    Delegation/Rettung hatten schon eine Spieler-ID) - für eine echte
+    persönliche Historie war deshalb eine Reducer-Erweiterung nötig, keine
+    reine UI-Änderung.
+  - Neues Feld `state.spielerProtokoll` (spielerId, patientId, zeitSek,
+    text). Zwei Helfer füllen es: `protokolliereSpieler` für explizite Texte
+    (Rettungskette) und `uebernimmVerlaufInSpielerprotokoll`, der den
+    ohnehin schon an `patient.verlauf` angehängten Text unverändert
+    übernimmt (Diagnostik, Sichtung, Maßnahme, Verlegung) statt ihn zu
+    duplizieren - erkennt per Längenvergleich von `verlauf` vorher/nachher,
+    ob überhaupt etwas passiert ist.
+  - Team-Aktionen kreditieren alle Beteiligten mit derselben Zeile: eine
+    abgeschlossene Notfallnarkose alle drei, eine abgeschlossene Rettung
+    anfragende Person und alle Helfer:innen.
+  - Fünf Aktionen bekamen dafür ein optionales `spielerId`-Feld
+    (`state.sitzung.eigeneId`, im Einzelspiel `undefined` - dort
+    protokolliert der Reducer bewusst nichts, die Haupttabelle deckt dort
+    ohnehin schon alles ab), mitgegeben an allen acht betroffenen
+    UI-Dispatch-Stellen. Die Debriefing-Seite filtert `spielerProtokoll`
+    beim Lesen auf die eigene `sitzung.eigeneId` - keine getrennte
+    Speicherung je Spieler.
+  - Live mit zwei echten Clients verifiziert: Übungsleitung und Spieler
+    sichten je einen anderen Patienten - jede Person sieht in "Mein Einsatz"
+    ausschließlich die eigene Zeile, nie die der anderen Person, keine
+    Konsolenfehler.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -674,19 +704,20 @@ Jeder Schritt ist eigenständig nutzbar:
    (Bestückung je Fahrzeug, Materiallimit für ~50 Maßnahmen, kein Nachschub).
 4. **Sprechfunk** ✅ fertig (echte Live-Sprachverbindung in frei wählbaren
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
-5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
-   Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen, echte Geodaten-basierte
-   Verlegungsdauer, eine eigene angeheftete Sichtungskategorien-Zeile samt
-   Ablaufsteuerung (Pause/Tempo/Einsatz beenden) in der Einsatzleiste und
-   ein Gesamtlagebild, dessen Regie-Seitenleiste als Menü mit eigenen
-   Icons über die übrigen sechs Ansichten (Kacheln, Karte, Freigabe,
-   Gebundene Kräfte, Offene Anfragen, Funkkanäle) wirkt, auch eingeklappt
-   vollständig erreichbar bleibt und auf schmalen Bildschirmen am linken
-   Rand steht statt darunter zu rutschen, sowie Ereignis-Injektion
-   (Fahrzeugausfall, Nachforderung, Lageänderung) und die Debriefing-
-   Erweiterung um Ressourceneinsatz und Führungsentscheidungen; private
-   Spieler-Statusansicht und die fünf übrigen Ebenen offen).
+5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene
+   **komplett fertig**: Freigabemodus, Ablage, Beobachter-Rolle,
+   Regie-Funkkanal, Bindende Maßnahmen, Rettung eingeklemmter Personen,
+   echte Geodaten-basierte Verlegungsdauer, eine eigene angeheftete
+   Sichtungskategorien-Zeile samt Ablaufsteuerung (Pause/Tempo/Einsatz
+   beenden) in der Einsatzleiste, ein Gesamtlagebild, dessen
+   Regie-Seitenleiste als Menü mit eigenen Icons über die übrigen sechs
+   Ansichten (Kacheln, Karte, Freigabe, Gebundene Kräfte, Offene Anfragen,
+   Funkkanäle) wirkt, auch eingeklappt vollständig erreichbar bleibt und auf
+   schmalen Bildschirmen am linken Rand steht statt darunter zu rutschen,
+   Ereignis-Injektion (Fahrzeugausfall, Nachforderung, Lageänderung), die
+   Debriefing-Erweiterung um Ressourceneinsatz und Führungsentscheidungen
+   sowie die private Spieler-Statusansicht "Mein Einsatz"; die fünf übrigen
+   Ebenen offen).
 
 ## Ehrliche Grenzen
 

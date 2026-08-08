@@ -148,6 +148,7 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
                 patientId: patient.id,
                 kategorie: eintragKategorie,
                 final: false,
+                spielerId: state.sitzung.eigeneId ?? undefined,
               })
             }
           >
@@ -200,7 +201,12 @@ export function PatientKarte({ patient, onAuswahl }: Props) {
                     setOffenFuer(anfrageOffen ? null : id);
                     return;
                   }
-                  dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId: id });
+                  dispatch({
+                    typ: 'massnahmeDurchfuehren',
+                    patientId: patient.id,
+                    massnahmeId: id,
+                    spielerId: state.sitzung.eigeneId ?? undefined,
+                  });
                 }}
               >
                 <span className="massnahme-label">{massnahme.label}</span>

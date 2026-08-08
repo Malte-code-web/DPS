@@ -582,6 +582,23 @@ export interface Verlaufseintrag {
 }
 
 /**
+ * @anker modell.spielerprotokoll Eine Zeile in der privaten Statusansicht eines Spielers
+ *
+ * Dieselbe Zeile wie `Verlaufseintrag`, zusätzlich nach Spieler statt nur
+ * nach Patient sortiert (→ `ui.debriefing`) - Grundlage für "Mein Einsatz",
+ * eine private Rückschau, was genau diese eine Person getan hat. Wo eine
+ * Aktion ohnehin schon einen `Verlaufseintrag` am Patienten erzeugt (→
+ * `domain.simulation`, `protokolliere`), übernimmt der Reducer denselben
+ * Text unverändert, statt ihn zu wiederholen.
+ */
+export interface SpielerProtokollEintrag {
+  spielerId: string;
+  patientId: string;
+  zeitSek: number;
+  text: string;
+}
+
+/**
  * Statische Beschreibung eines Patienten in einem Szenario.
  * @anker modell.patientvorlage Felder, die ein neuer Szenario-Patient braucht
  */

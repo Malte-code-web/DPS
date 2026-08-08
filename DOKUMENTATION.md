@@ -65,6 +65,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile (`DPS-0.8.0.12`) | Auf Wunsch (mit annotiertem Screenshot präzisiert) zieht die Sichtungskategorien-Übersicht (SK I-EX + Offen) aus der Einsatzleiste aus und bekommt eine eigene, ganz oben angeheftete Zeile über die volle Breite (`.sichtungsleiste`) - darunter bleibt die Einsatzleiste mit Titel, Lagemeldung und Uhr angeheftet, beide Zeilen zusammen `position: sticky`. Pause/Tempo/Einsatz-beenden (Ablaufsteuerung) stehen wieder hier statt im Ansichts-Menü - nur für Übungsleitung/Beobachter, Spieler sehen weiterhin nur den reinen Status und ihren Verlassen-Knopf. Das Ansichts-Menü hat dadurch nur noch sechs statt sieben Punkte (kein „Ablaufsteuerung“ mehr), `AblaufsteuerungPanel.tsx` entfällt vollständig. Die `top`-Offsets der angehefteten Elemente (Einsatzleiste, Verbindungsfehler-Hinweis, Regie-Menü) sind bewusst in `px` statt `rem` gesetzt, weil die Seite eine von 16px abweichende Root-Schriftgröße (15px) verwendet - mit `rem` hätte es je nach Basis zu Überlappungen kommen können. Kein neuer Datenpfad, reine Layout-Umstellung. Live verifiziert (Desktop und Mobil, mit erzwungenem Scrollen): keine Überlappung zwischen Sichtungs- und Einsatzleiste, Pause/Weiter-Knopf funktioniert in der Kopfzeile, ein Menüpunkt bleibt nach dem Scrollen anklickbar, keine Konsolenfehler. |
 | Ereignis-Injektion (`DPS-0.8.0.13`) | Erster der drei noch offenen "Fundament, Teil 2"-Punkte: ein neuer Bereich "Ereignisse" im Ansichts-Menü (nur Übungsleitung/Beobachter) bündelt drei live auslösbare Ereignisse. **Fahrzeugausfall** markiert ein vorhandenes Fahrzeug als ausgefallen - Besatzung und Material bleiben zugeordnet, liefern aber kein Material mehr (`verbraucheMaterialTyp`/`materialTypVerfuegbar` schließen es aus), bis die Übungsleitung den Ausfall wieder aufhebt. **Nachforderung** fügt ein neues Fahrzeug hinzu, das im Bereitstellungsraum eintrifft (bislang reine, extra dafür vorgesehene Fahrzeug-Infrastruktur ohne Funktion) und von dort per normaler Fahrzeugverlegung mit echter, geodatenbasierter Anfahrtszeit weiter muss. **Lageänderung** setzt vordefinierte Nachzügler-Patienten aus dem Szenario frei (`Szenario.ereignisse`) - anders als die gestaffelte Freigabe existieren diese bis zum Auslösen gar nicht in `state.patienten`, sondern nur als Vorlage; sie landen je nach Freigabemodus an der Schadensstelle oder in der Ablage, jedes Ereignis ist nur einmal auslösbar. Für Busunfall B31 ein Beispiel-Ereignis ("Zweiter Unfall am Bus") mit zwei neuen, gegen tacSTART geprüften Patienten hinterlegt. Kein Reducer-Eingriff in bestehende Abläufe - alle drei Ereignisse sind reine Ergänzungen ohne Rollenprüfung im Reducer selbst (wie die übrigen Regie-Werkzeuge). Live verifiziert: Fahrzeugausfall-Umschalten in beide Richtungen mit sichtbarer Marke, Nachforderung erscheint in der Fahrzeugliste, Lageänderung erhöht die Patientenzahl korrekt und sperrt sich nach dem Auslösen, keine Konsolenfehler. |
 | Debriefing-Erweiterung (`DPS-0.8.0.14`) | Letzter der drei "Fundament, Teil 2"-Punkte: das Debriefing zeigt jetzt nicht mehr nur Sichtungskategorien, sondern auch Ressourceneinsatz und Führungsentscheidungen (wörtlich der offene ROADMAP-Punkt). **Ressourceneinsatz** ist rein abgeleitet, ohne neuen State: `berechneMaterialverbrauch` vergleicht je Fahrzeug die Bestückung, mit der sein Typ immer startet (`materialAusVorlage`, unabhängig davon, wann es ins Spiel kam - auch eine Nachforderung aus `DPS-0.8.0.13`), mit dem aktuellen Bestand und summiert die Differenz je Materialtyp über alle Fahrzeuge (nur tatsächlich verbrauchte Typen, absteigend sortiert) - dazu zwei neue Kennzahlen-Kacheln (Fahrzeuge im Einsatz, davon ausgefallen). **Führungsentscheidungen** sind dagegen ein neues, nur wachsendes Protokollfeld `state.regieProtokoll` (wiederverwendet denselben `Verlaufseintrag`-Zeilentyp wie `Patient.verlauf`, nur auf Sitzungsebene): eine Zeile je Pause/Weiter, Tempoänderung, Einzel- und Sammelfreigabe, Fahrzeugausfall, Nachforderung, Lageänderung sowie Start/Ende der Übung - über einen neuen `protokolliereRegie`-Helfer im Reducer, geteilt über den bestehenden Schnappschuss-Mechanismus. Beide Auswertungen erscheinen als neue Abschnitte im Debriefing, nur wenn es etwas zu zeigen gibt (keine Fahrzeuge/kein Protokoll → Abschnitt bleibt weg). Live verifiziert: nach Pause/Weiter, Tempo ×4, Fahrzeugausfall, Nachforderung und einer ausgelösten Lageänderung zeigt das Debriefing acht chronologisch korrekte Protokollzeilen und die richtige Fahrzeug-Kennzahl (2 im Einsatz, 1 ausgefallen), keine Konsolenfehler. |
+| Private Spieler-Statusansicht "Mein Einsatz" (`DPS-0.8.0.15`) | Letzter offener Punkt aus "Fundament, Teil 2": eine neue, private Debriefing-Sektion "Mein Einsatz" zeigt jeder Person nur ihre eigenen Handlungen - auf Wunsch, damit ein Spieler nachvollziehen kann, was er genau gemacht hat. Da der Reducer bislang bei Maßnahme/Diagnostik/Sichtung/Verlegung keine Spieler-Zuordnung führte (nur teambasierte Aktionen wie Kollegenanfrage/Delegation/Rettung kannten schon eine Spieler-ID), war dafür eine echte Reducer-Erweiterung nötig statt nur einer UI-Änderung. Neues Feld `state.spielerProtokoll: SpielerProtokollEintrag[]` (spielerId, patientId, zeitSek, text), gefüllt über zwei neue Helfer: `protokolliereSpieler` für explizite Texte (Rettungskette) und `uebernimmVerlaufInSpielerprotokoll`, der den ohnehin schon an `patient.verlauf` angehängten Text unverändert übernimmt (`diagnostikDurchfuehren`, `patientSichten`, `massnahmeDurchfuehren`, `patientVerlegen`) statt ihn zu duplizieren - erkennt über einen Längenvergleich von `verlauf` vorher/nachher, ob überhaupt etwas passiert ist (kein Eintrag bei bereits durchgeführter Diagnostik). Team-Aktionen kreditieren alle Beteiligten mit derselben Zeile: eine abgeschlossene Notfallnarkose alle drei (anfragende Person + beide Team-Mitglieder), eine abgeschlossene Rettung anfragende Person und alle Helfer:innen. Die fünf betroffenen Aktionen bekamen dafür ein optionales `spielerId`-Feld (`state.sitzung.eigeneId`, im Einzelspiel `undefined` - dort protokolliert der Reducer bewusst nichts, die Haupttabelle deckt dort ohnehin schon alles ab), das an allen acht UI-Dispatch-Stellen (`Patientenansicht.tsx`, `Anhaengekarte.tsx`, `Verlegung.tsx`, `PatientKarte.tsx`, `RettungPanel.tsx`) mitgegeben wird. Die Debriefing-Seite filtert `spielerProtokoll` beim Lesen auf die eigene `sitzung.eigeneId` - keine getrennte Speicherung je Spieler, jede Person sieht dieselbe geteilte Liste, nur anders gefiltert. Live mit zwei echten Clients verifiziert: Übungsleitung sichtet Patient B-01, Spieler sichtet Patient B-02 - jede Person sieht in "Mein Einsatz" ausschließlich die eigene Zeile mit korrektem Patientenbezug, nie die der anderen Person, keine Konsolenfehler. |
 | Fahrzeuge | RTW/NEF/KTW/GW-Rett/GW-San/AB-MANV/ELW 2/GW-Log als eigene Objekte: vor Sitzungsbeginn per MANV-Stufe (MANV-10 bis MANV-50plus, nach dem MANV-Konzept Kreis Steinfurt) oder einzeln zusammengestellt. Besatzung wird im Wartebereich je Fahrzeug über ein Dropdown-Menü pro Besatzungsplatz zugewiesen - jedes Fahrzeug lässt sich komplett besetzen: RTW/NEF/KTW/GW-Rett/AB-MANV je 2 (Doppelbesetzung bzw. Fahrer/-in + Maschinist/-in), GW-San/GW-Log/ELW 2 je 6 (Staffel-/Führungsgruppenbesetzung); eine Person lässt sich nicht doppelt auf denselben Wagen setzen. Dazu eine reale Stärkemeldung nach BOS-Funkkonvention ("Führungskräfte/Unterführer/Mannschaft/Gesamt", z. B. `1/0/1/2`), je Fahrzeug und als Gesamtsumme im Wartebereich sowie kompakt auf jeder Fahrzeugkarte im Einsatz - eingeordnet über die Führungsrolle der Besatzung. In der laufenden Übung zwischen Einsatzabschnitten verlegbar |
 | Fahrzeug-Bestückung & Materialverbrauch | Jedes Fahrzeug führt eine reale Bestückung (58 Verbrauchsmaterialien und Medikamente): RTW und NEF nach der jeweiligen Bestückungsliste Kreis Steinfurt (inkl. gemeinsamem Rucksacksystem und MANV-Tasche), GW-San nach dem BBK-Begleitheft, AB-MANV nach der Packliste Kreis Steinfurt - je vollständig ausgewertet; KTW/GW-Rett daraus hergeleitet und als Schätzung gekennzeichnet, ELW 2/GW-Log führen kein Patientenmaterial. 60 Maßnahmen (Verbandmaterial, Zugänge, Atemwegshilfen, Immobilisation und alle Medikamente mit gefundener Bestückung) ziehen bei Ausführung 1 Einheit vom Bestand eines Fahrzeugs im selben Einsatzabschnitt; ist dort nichts mehr da, sperrt der Knopf mit Kurzhinweis ("... alle"). Ohne Fahrzeuge im Spiel (Solo, oder eine Sitzung ohne konfigurierte Fahrzeuge) bleibt jede Maßnahme unbegrenzt. Bestand je Fahrzeug einsehbar über einen Aufklapper auf der Fahrzeugkarte im Einsatz |
 | Maßnahmen | 88 Maßnahmen nach xABCDE, abgeglichen gegen SAA/BPR der ÄLRD (6 Länder 2025), DBRD-Musteralgorithmen 2026, AWMF S3 Polytrauma und ERC/RCUK 2025: Basismaßnahmen, invasive Maßnahmen und 40 Medikamente mit Indikation, Dosierung und Kontraindikationen; Atemwegssicherung wirkt erst nach Mundraumkontrolle, Guedel-Tubus und Larynxmaske nur beim Bewusstlosen - der Wendl-Tubus bewusst auch beim Wachen |
@@ -664,7 +665,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_211 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_213 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -766,29 +767,30 @@ _211 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
 | `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
-| `modell.delegation` | [`src/domain/types.ts:706`](src/domain/types.ts#L706) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:718`](src/domain/types.ts#L718) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:672`](src/domain/types.ts#L672) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.eingeklemmt` | [`src/domain/types.ts:629`](src/domain/types.ts#L629) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
-| `modell.eingeklemmtstatus` | [`src/domain/types.ts:643`](src/domain/types.ts#L643) | Laufzeitzustand der Rettung einer eingeklemmten Person |
-| `modell.ereignis` | [`src/domain/types.ts:846`](src/domain/types.ts#L846) | Von der Übungsleitung live ausgelöste Lageänderung |
+| `modell.delegation` | [`src/domain/types.ts:723`](src/domain/types.ts#L723) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:735`](src/domain/types.ts#L735) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:689`](src/domain/types.ts#L689) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.eingeklemmt` | [`src/domain/types.ts:646`](src/domain/types.ts#L646) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
+| `modell.eingeklemmtstatus` | [`src/domain/types.ts:660`](src/domain/types.ts#L660) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.ereignis` | [`src/domain/types.ts:863`](src/domain/types.ts#L863) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:422`](src/domain/types.ts#L422) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:786`](src/domain/types.ts#L786) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
-| `modell.freigabemodus` | [`src/domain/types.ts:619`](src/domain/types.ts#L619) | Geplante automatische Freigabe im gestaffelten Modus |
+| `modell.finalsichtung` | [`src/domain/types.ts:803`](src/domain/types.ts#L803) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.freigabemodus` | [`src/domain/types.ts:636`](src/domain/types.ts#L636) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
-| `modell.geoposition` | [`src/domain/types.ts:815`](src/domain/types.ts#L815) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
+| `modell.geoposition` | [`src/domain/types.ts:832`](src/domain/types.ts#L832) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.kollegenanfrage` | [`src/domain/types.ts:733`](src/domain/types.ts#L733) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
+| `modell.kollegenanfrage` | [`src/domain/types.ts:750`](src/domain/types.ts#L750) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
 | `modell.material` | [`src/domain/types.ts:482`](src/domain/types.ts#L482) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
-| `modell.patient` | [`src/domain/types.ts:775`](src/domain/types.ts#L775) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:586`](src/domain/types.ts#L586) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.patient` | [`src/domain/types.ts:792`](src/domain/types.ts#L792) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:603`](src/domain/types.ts#L603) | Felder, die ein neuer Szenario-Patient braucht |
 | `modell.problem` | [`src/domain/types.ts:366`](src/domain/types.ts#L366) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.route` | [`src/domain/types.ts:822`](src/domain/types.ts#L822) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
-| `modell.rufgruppe` | [`src/domain/types.ts:757`](src/domain/types.ts#L757) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.route` | [`src/domain/types.ts:839`](src/domain/types.ts#L839) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
+| `modell.rufgruppe` | [`src/domain/types.ts:774`](src/domain/types.ts#L774) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
+| `modell.spielerprotokoll` | [`src/domain/types.ts:585`](src/domain/types.ts#L585) | Eine Zeile in der privaten Statusansicht eines Spielers |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
 #### modi
@@ -866,22 +868,23 @@ _211 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:203`](src/state/reducer.ts#L203) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:214`](src/state/reducer.ts#L214) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:133`](src/state/reducer.ts#L133) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:60`](src/state/reducer.ts#L60) | Die Hauptzustände der Anwendung |
+| `state.freigabemodus` | [`src/state/reducer.ts:134`](src/state/reducer.ts#L134) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:61`](src/state/reducer.ts#L61) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:409`](src/state/reducer.ts#L409) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.regieprotokoll` | [`src/state/reducer.ts:156`](src/state/reducer.ts#L156) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
-| `state.schnappschuss` | [`src/state/reducer.ts:279`](src/state/reducer.ts#L279) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.reducer` | [`src/state/reducer.ts:495`](src/state/reducer.ts#L495) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.regieprotokoll` | [`src/state/reducer.ts:157`](src/state/reducer.ts#L157) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
+| `state.schnappschuss` | [`src/state/reducer.ts:303`](src/state/reducer.ts#L303) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.spielerprotokoll` | [`src/state/reducer.ts:168`](src/state/reducer.ts#L168) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:10`](src/state/zeitkosten.ts#L10) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:94`](src/state/zeitkosten.ts#L94) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:75`](src/state/reducer.ts#L75) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:76`](src/state/reducer.ts#L76) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -1075,6 +1078,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.0.15` | Private Spieler-Statusansicht "Mein Einsatz": neue Debriefing-Sektion mit den eigenen Handlungen einer Person - neues `state.spielerProtokoll`, gefüllt aus fünf Reducer-Aktionen (Diagnostik/Sichtung/Maßnahme/Verlegung/Rettungsmaterial) plus Team-Abschlüssen (Narkose, Rettung), gefiltert nach `sitzung.eigeneId` beim Lesen |
 | `DPS-0.8.0.14` | Debriefing-Erweiterung: Ressourceneinsatz (Materialverbrauch je Typ aus der Differenz zur Fahrzeug-Bestückung, Fahrzeuge-im-Einsatz/ausgefallen-Kennzahlen) und Führungsentscheidungen (neues, nur wachsendes `state.regieProtokoll` - Pause/Weiter, Tempo, Freigaben, Fahrzeugausfall/Nachforderung/Lageänderung, Start/Ende) als zwei neue Debriefing-Abschnitte |
 | `DPS-0.8.0.13` | Ereignis-Injektion: neuer Ansichts-Punkt "Ereignisse" (Übungsleitung/Beobachter) mit drei Ereignistypen - Fahrzeugausfall (reversibel, Fahrzeug liefert kein Material mehr, Besatzung bleibt zugeordnet), Nachforderung (neues Fahrzeug trifft unbesetzt im Bereitstellungsraum ein, muss verlegt werden), Lageänderung (setzt vorab im Szenario hinterlegte, tacSTART-geprüfte Nachzügler-Patienten frei, je Ereignis nur einmal auslösbar) |
 | `DPS-0.8.0.12` | Sichtungsleiste + Ablaufsteuerung zurück in der Kopfzeile: eigene volle-Breite Zeile für die Sichtungskategorien ganz oben, Pause/Tempo/Einsatz-beenden zurück in der Einsatzleiste statt im Ansichts-Menü (jetzt nur noch sechs Punkte) |

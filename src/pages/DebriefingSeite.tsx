@@ -36,6 +36,15 @@ export function DebriefingSeite() {
   const kennzahlen = berechneKennzahlen(zeilen);
   const materialverbrauch = berechneMaterialverbrauch(state.fahrzeuge);
   const ausgefalleneFahrzeuge = state.fahrzeuge.filter((fahrzeug) => fahrzeug.ausgefallen).length;
+  // Private Statusansicht (→ `state.spielerprotokoll`) - nur die eigenen
+  // Zeilen, nicht die aller Mitspieler:innen. Im Einzelspiel (kein
+  // `eigeneId`) bleibt sie leer, dort zeigt die Tabelle oben ohnehin schon
+  // die gesamte, einzige Person.
+  const meinProtokoll = state.sitzung.eigeneId
+    ? state.spielerProtokoll.filter((eintrag) => eintrag.spielerId === state.sitzung.eigeneId)
+    : [];
+  const patientName = (patientId: string) =>
+    state.patienten.find((patient) => patient.id === patientId)?.name ?? '';
 
   return (
     <main className="debriefing">
@@ -151,6 +160,27 @@ export function DebriefingSeite() {
         </table>
       </section>
 
+      {state.sitzung.eigeneId && (
+        <section className="debriefing-mein-einsatz">
+          <h2>Mein Einsatz</h2>
+          {meinProtokoll.length === 0 ? (
+            <p className="hinweis hinweis-knapp">Keine eigenen Handlungen protokolliert.</p>
+          ) : (
+            <ol className="protokoll protokoll-karte">
+              {meinProtokoll.map((eintrag, index) => (
+                <li key={index}>
+                  <time>{zeitFormat(eintrag.zeitSek)}</time>
+                  <span>
+                    <strong>{eintrag.patientId}</strong> {patientName(eintrag.patientId)} -{' '}
+                    {eintrag.text}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
+
       {state.fahrzeuge.length > 0 && (
         <section className="debriefing-ressourcen">
           <h2>Ressourceneinsatz</h2>
@@ -190,7 +220,7 @@ export function DebriefingSeite() {
       {state.regieProtokoll.length > 0 && (
         <section className="debriefing-regieprotokoll">
           <h2>Führungsentscheidungen</h2>
-          <ol className="protokoll">
+          <ol className="protokoll protokoll-karte">
             {state.regieProtokoll.map((eintrag, index) => (
               <li key={index}>
                 <time>{zeitFormat(eintrag.zeitSek)}</time>

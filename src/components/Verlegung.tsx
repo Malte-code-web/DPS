@@ -47,7 +47,14 @@ export function Verlegung({ patient }: { patient: Patient }) {
             disabled={verstorben || wartetAufSichtung || (zkBeschaeftigt && !zkEigen)}
             aria-busy={zkEigen || undefined}
             aria-label={passend ? `${ziel.name} - empfohlen` : ziel.name}
-            onClick={() => dispatch({ typ: 'patientVerlegen', patientId: patient.id, ziel: ziel.id })}
+            onClick={() =>
+              dispatch({
+                typ: 'patientVerlegen',
+                patientId: patient.id,
+                ziel: ziel.id,
+                spielerId: state.sitzung.eigeneId ?? undefined,
+              })
+            }
           >
             <span className="verlegung-ziel">
               {ziel.name}

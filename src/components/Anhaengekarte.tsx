@@ -38,7 +38,7 @@ const ZEILEN: { stelle: Sichtungsstelle; nummer: string; titel: string; kurz: st
  * Blick zu sehen, wer noch nachgesichtet werden muss.
  */
 export function Anhaengekarte({ patient }: { patient: Patient }) {
-  const { dispatch } = useSimulation();
+  const { state, dispatch } = useSimulation();
   const verstorben = patient.status === 'verstorben';
   const kategorie = verstorben ? 'EX' : patient.gesichtetAls;
   const aktuelleStelle = sichtungsstelleIn(patient.abschnitt);
@@ -49,7 +49,13 @@ export function Anhaengekarte({ patient }: { patient: Patient }) {
     [...patient.sichtungsverlauf].reverse().find((eintrag) => eintrag.stelle === stelle) ?? null;
 
   const sichte = (neu: Sichtungskategorie, final: boolean) =>
-    dispatch({ typ: 'patientSichten', patientId: patient.id, kategorie: neu, final });
+    dispatch({
+      typ: 'patientSichten',
+      patientId: patient.id,
+      kategorie: neu,
+      final,
+      spielerId: state.sitzung.eigeneId ?? undefined,
+    });
 
   return (
     <section

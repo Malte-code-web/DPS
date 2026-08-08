@@ -98,6 +98,7 @@ export function RettungPanel({ patient }: Props) {
                     fahrzeug.abschnitt === patient.abschnitt &&
                     (fahrzeug.material[benoetigtesMaterial] ?? 0) > 0,
                 )?.id ?? '',
+              spielerId: eigeneId ?? undefined,
             })
           }
         >

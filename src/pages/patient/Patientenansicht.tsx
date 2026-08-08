@@ -56,6 +56,10 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
   const { state, dispatch } = useSimulation();
   const [bereich, setBereich] = useState<Bereich>(null);
   const zk = useZeitkostenStatus();
+  // Für die private Statusansicht (→ `modell.spielerprotokoll`) - im
+  // Einzelspiel ohne Sitzung bleibt es undefined, dort protokolliert der
+  // Reducer bewusst nichts (→ `state.spielerprotokoll`).
+  const eigeneId = state.sitzung.eigeneId ?? undefined;
   const zkBodycheck = zk.aktion !== null && istDiagnostikAktion(zk.aktion, patient.id, 'bodycheck');
 
   const gesperrt = patient.status === 'verstorben' || patient.status === 'transportiert';
@@ -88,7 +92,7 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
         <Sofortmassnahmen
           patient={patient}
           onMassnahme={(massnahmeId) =>
-            dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId })
+            dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId, spielerId: eigeneId })
           }
         />
       )}
@@ -96,7 +100,12 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
       <Monitor
         patient={patient}
         onAnschliessen={() =>
-          dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId: 'monitoring' })
+          dispatch({
+            typ: 'massnahmeDurchfuehren',
+            patientId: patient.id,
+            massnahmeId: 'monitoring',
+            spielerId: eigeneId,
+          })
         }
       />
 
@@ -177,7 +186,12 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
           <Befundtafel
             patient={patient}
             onDiagnostik={(diagnostikId) =>
-              dispatch({ typ: 'diagnostikDurchfuehren', patientId: patient.id, diagnostikId })
+              dispatch({
+                typ: 'diagnostikDurchfuehren',
+                patientId: patient.id,
+                diagnostikId,
+                spielerId: eigeneId,
+              })
             }
           />
 
@@ -217,6 +231,7 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
                   typ: 'diagnostikDurchfuehren',
                   patientId: patient.id,
                   diagnostikId: 'bodycheck',
+                  spielerId: eigeneId,
                 })
               }
             >
@@ -249,7 +264,13 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
             patient={patient}
             arten={MASSNAHMEN_ARTEN}
             onMassnahme={(massnahmeId, dosisMg) =>
-              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId, dosisMg })
+              dispatch({
+                typ: 'massnahmeDurchfuehren',
+                patientId: patient.id,
+                massnahmeId,
+                dosisMg,
+                spielerId: eigeneId,
+              })
             }
           />
           {erledigteMassnahmen > 0 && (
@@ -276,7 +297,13 @@ export function Patientenansicht({ patient }: { patient: Patient }) {
             patient={patient}
             arten={MEDIKAMENT_ARTEN}
             onMassnahme={(massnahmeId, dosisMg) =>
-              dispatch({ typ: 'massnahmeDurchfuehren', patientId: patient.id, massnahmeId, dosisMg })
+              dispatch({
+                typ: 'massnahmeDurchfuehren',
+                patientId: patient.id,
+                massnahmeId,
+                dosisMg,
+                spielerId: eigeneId,
+              })
             }
           />
         </Bereichsseite>

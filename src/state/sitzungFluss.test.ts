@@ -1748,3 +1748,242 @@ describe('Führungsentscheidungs-Protokoll (→ state.regieprotokoll)', () => {
     expect(pausiert.regieProtokoll.length).toBe(imEinsatz.regieProtokoll.length + 1);
   });
 });
+
+describe('Private Statusansicht: spielerProtokoll (→ modell.spielerprotokoll)', () => {
+  function eroeffnetMitFahrzeug(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugHinzugefuegt', fahrzeugTyp: 'rtw' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  it('übernimmt bei einer Diagnostik denselben Verlaufstext, mit Spieler- und Patientzuordnung', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const patientId = imEinsatz.patienten[0]!.id;
+    const nachher = simulationReducer(imEinsatz, {
+      typ: 'diagnostikDurchfuehren',
+      patientId,
+      diagnostikId: 'bodycheck',
+      spielerId: 'leiter-1',
+    });
+    const letzterVerlauf = nachher.patienten.find((p) => p.id === patientId)!.verlauf.at(-1)!;
+    expect(nachher.spielerProtokoll).toEqual([
+      { spielerId: 'leiter-1', patientId, zeitSek: letzterVerlauf.zeitSek, text: letzterVerlauf.text },
+    ]);
+  });
+
+  it('protokolliert nichts ohne spielerId (Einzelspiel)', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const patientId = imEinsatz.patienten[0]!.id;
+    const nachher = simulationReducer(imEinsatz, {
+      typ: 'diagnostikDurchfuehren',
+      patientId,
+      diagnostikId: 'bodycheck',
+    });
+    expect(nachher.spielerProtokoll).toEqual([]);
+  });
+
+  it('protokolliert nichts, wenn die Domänenfunktion nichts bewirkt (Diagnostik bereits durchgeführt)', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const patientId = imEinsatz.patienten[0]!.id;
+    const einmal = simulationReducer(imEinsatz, {
+      typ: 'diagnostikDurchfuehren',
+      patientId,
+      diagnostikId: 'bodycheck',
+      spielerId: 'leiter-1',
+    });
+    const zweimal = simulationReducer(einmal, {
+      typ: 'diagnostikDurchfuehren',
+      patientId,
+      diagnostikId: 'bodycheck',
+      spielerId: 'leiter-1',
+    });
+    expect(zweimal.spielerProtokoll).toEqual(einmal.spielerProtokoll);
+  });
+
+  it('protokolliert Maßnahme, Sichtung und Verlegung je mit eigener Verlaufszeile', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const patientId = imEinsatz.patienten[0]!.id;
+    const gesichtet = simulationReducer(imEinsatz, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK1',
+      final: true,
+      spielerId: 'leiter-1',
+    });
+    const behandelt = simulationReducer(gesichtet, {
+      typ: 'massnahmeDurchfuehren',
+      patientId,
+      massnahmeId: 'tourniquet',
+      spielerId: 'leiter-1',
+    });
+    const verlegt = simulationReducer(behandelt, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'eingangssichtung',
+      spielerId: 'leiter-1',
+    });
+    expect(verlegt.spielerProtokoll).toHaveLength(3);
+    expect(
+      verlegt.spielerProtokoll.every(
+        (eintrag) => eintrag.spielerId === 'leiter-1' && eintrag.patientId === patientId,
+      ),
+    ).toBe(true);
+  });
+
+  it('ist Teil des Schnappschusses', () => {
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const patientId = imEinsatz.patienten[0]!.id;
+    const nachher = simulationReducer(imEinsatz, {
+      typ: 'diagnostikDurchfuehren',
+      patientId,
+      diagnostikId: 'bodycheck',
+      spielerId: 'leiter-1',
+    });
+    expect(schnappschussAus(nachher).spielerProtokoll).toEqual(nachher.spielerProtokoll);
+  });
+
+  it('kreditiert bei einer abgeschlossenen Team-Maßnahme (Narkose) alle Beteiligten mit derselben Zeile', () => {
+    const gestartet = simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
+        { typ: 'massnahmenrechteAbgeschlossen' },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+    const imEinsatz = [
+      { id: 'na-1', name: 'Dr. Voss', rolle: 'spieler' as const, qualifikation: 'notarzt' as const },
+      { id: 'ns-1', name: 'Krüger', rolle: 'spieler' as const, qualifikation: 'notsan' as const },
+      { id: 'rs-1', name: 'Thoms', rolle: 'spieler' as const, qualifikation: 'rettungssanitaeter' as const },
+    ].reduce(
+      (zustand, spieler) => simulationReducer(zustand, { typ: 'spielerHinzugefuegt', spieler }),
+      gestartet,
+    );
+    const patientId = imEinsatz.patienten[0]!.id;
+    const angefordert = simulationReducer(imEinsatz, {
+      typ: 'massnahmeMitTeamStarten',
+      patientId,
+      massnahmeId: 'propofol',
+      anfragendeId: 'na-1',
+      dosisMg: 150,
+    });
+    // Vor Team-Vollständigkeit wird noch nichts protokolliert.
+    expect(angefordert.spielerProtokoll).toEqual([]);
+
+    const notSanAnfrage = angefordert.kollegenanfragen.find((a) => a.benoetigteQualifikation === 'notsan')!;
+    const rsAnfrage = angefordert.kollegenanfragen.find(
+      (a) => a.benoetigteQualifikation === 'rettungssanitaeter',
+    )!;
+    const komplett = simulationReducer(
+      simulationReducer(angefordert, {
+        typ: 'kollegenanfrageAnnehmen',
+        anfrageId: notSanAnfrage.id,
+        spielerId: 'ns-1',
+      }),
+      { typ: 'kollegenanfrageAnnehmen', anfrageId: rsAnfrage.id, spielerId: 'rs-1' },
+    );
+    expect(komplett.spielerProtokoll).toHaveLength(3);
+    const beteiligte = komplett.spielerProtokoll.map((eintrag) => eintrag.spielerId).sort();
+    expect(beteiligte).toEqual(['na-1', 'ns-1', 'rs-1']);
+    const texte = new Set(komplett.spielerProtokoll.map((eintrag) => eintrag.text));
+    expect(texte.size).toBe(1);
+    expect(komplett.spielerProtokoll.every((eintrag) => eintrag.patientId === patientId)).toBe(true);
+  });
+
+  it('protokolliert die Rettungskette (Anfrage, Helfer-Beitritt, Material, Abschluss) für alle Beteiligten', () => {
+    const patientId = 'B-04';
+    const gestartet = simulationReducer(
+      spiele(
+        { typ: 'gemeinsamOeffnen' },
+        { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+        { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+        { typ: 'modusWaehlen', modus: 'digital' },
+        { typ: 'massnahmenrechteAbgeschlossen' },
+        { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+        { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+        { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      ),
+      { typ: 'sitzungStarten' },
+    );
+    const imEinsatz = [
+      { id: 'ns-1', name: 'Krüger', rolle: 'spieler' as const, qualifikation: 'notsan' as const },
+      { id: 'rs-1', name: 'Thoms', rolle: 'spieler' as const, qualifikation: 'rettungssanitaeter' as const },
+    ].reduce(
+      (zustand, spieler) => simulationReducer(zustand, { typ: 'spielerHinzugefuegt', spieler }),
+      gestartet,
+    );
+    // Ausgewürfelten Bedarf durch feste Werte ersetzen - unabhängig vom Zufall testbar.
+    const mitBedarf: SimulationState = {
+      ...imEinsatz,
+      patienten: imEinsatz.patienten.map((patient) =>
+        patient.id === patientId && patient.eingeklemmt
+          ? {
+              ...patient,
+              eingeklemmt: {
+                ...patient.eingeklemmt,
+                benoetigtesMaterial: 'kedsystem',
+                benoetigteKollegenAnzahl: 1,
+              },
+            }
+          : patient,
+      ),
+    };
+
+    const angefragt = simulationReducer(mitBedarf, {
+      typ: 'rettungUnterstuetzungAnfragen',
+      patientId,
+      anfragendeId: 'ns-1',
+    });
+    expect(angefragt.spielerProtokoll).toEqual([
+      {
+        spielerId: 'ns-1',
+        patientId,
+        zeitSek: angefragt.zeitSek,
+        text: `Unterstützung bei der Rettung von ${patientId} angefordert.`,
+      },
+    ]);
+
+    const anfrage = angefragt.kollegenanfragen[0]!;
+    const mitHelfer = simulationReducer(angefragt, {
+      typ: 'kollegenanfrageAnnehmen',
+      anfrageId: anfrage.id,
+      spielerId: 'rs-1',
+    });
+    expect(mitHelfer.spielerProtokoll).toContainEqual({
+      spielerId: 'rs-1',
+      patientId,
+      zeitSek: mitHelfer.zeitSek,
+      text: `Bei der Rettung von ${patientId} unterstützt.`,
+    });
+
+    const mitMaterial = simulationReducer(mitHelfer, {
+      typ: 'rettungsmaterialBereitstellen',
+      patientId,
+      fahrzeugId: '',
+      spielerId: 'rs-1',
+    });
+    expect(mitMaterial.spielerProtokoll).toContainEqual({
+      spielerId: 'rs-1',
+      patientId,
+      zeitSek: mitMaterial.zeitSek,
+      text: 'Rettungsmaterial (Spineboard/KED-System) bereitgestellt.',
+    });
+
+    const gerettet = simulationReducer(mitMaterial, { typ: 'rettungDurchfuehren', patientId });
+    const abschlussZeilen = gerettet.spielerProtokoll.filter(
+      (eintrag) => eintrag.text === `Rettung von ${patientId} abgeschlossen.`,
+    );
+    expect(abschlussZeilen.map((eintrag) => eintrag.spielerId).sort()).toEqual(['ns-1', 'rs-1']);
+  });
+});

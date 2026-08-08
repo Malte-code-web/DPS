@@ -805,6 +805,36 @@ export interface Patient extends PatientVorlage {
   eingeklemmt?: EingeklemmtStatus;
 }
 
+/** @anker modell.geoposition Schematische Koordinate eines Szenario-Schlüsselpunkts */
+export interface GeoPosition {
+  lat: number;
+  lon: number;
+}
+
+/**
+ * @anker modell.route Weg zwischen zwei Einsatzabschnitten mit echter Distanz
+ *
+ * `distanzMeter` ist eine bewusst gewählte, plausible Schätzung je Szenario -
+ * anders als die sorgfältig ausgewertete Fahrzeug-/Material-Bestückung gibt
+ * es dafür keine reale Quelle (→ `domain.geodaten`). `sperraufschlagSek`
+ * wirkt nur als fester Zeitaufschlag bei `status: 'gesperrt'`, nie als
+ * Blockade - dieselbe "verzögert, nicht blockiert"-Linie wie überall sonst
+ * in der Simulation.
+ */
+export interface RouteVorlage {
+  id: string;
+  von: Einsatzabschnitt;
+  nach: Einsatzabschnitt;
+  distanzMeter: number;
+  sperraufschlagSek: number;
+  /** Startet die Route gesperrt, statt frei (→ `modell.freigabemodus`-ähnliches Muster). */
+  gesperrtBeimStart?: boolean;
+}
+
+export interface Route extends RouteVorlage {
+  status: 'frei' | 'gesperrt';
+}
+
 export interface Szenario {
   id: string;
   titel: string;
@@ -818,4 +848,14 @@ export interface Szenario {
    * bestehende Szenariodateien gültig bleiben.
    */
   fahrzeuge?: FahrzeugVorlage[];
+  /**
+   * Koordinaten und Wege der Schlüsselpunkte, Grundlage der Kartenansicht
+   * (→ `ui.kartenansicht`) und der echten Verlegungsdauer
+   * (→ `domain.geodaten`). Optional - ein Szenario ohne Geodaten funktioniert
+   * unverändert mit der pauschalen `VERLEGUNGSDAUER_SEK`.
+   */
+  geodaten?: {
+    schluesselpunkte: Partial<Record<Einsatzabschnitt, GeoPosition>>;
+    routen: RouteVorlage[];
+  };
 }

@@ -1,4 +1,5 @@
-import { VERLEGUNGSDAUER_SEK, moeglicheZiele, zeltFuerKategorie } from '../domain/abschnitte';
+import { moeglicheZiele, zeltFuerKategorie } from '../domain/abschnitte';
+import { verlegungsdauerSek } from '../domain/geodaten';
 import { sichtungOffen } from '../domain/simulation';
 import { useSimulation } from '../state/useSimulation';
 import { istPatientVerlegenAktion } from '../state/zeitkosten';
@@ -17,7 +18,7 @@ import type { Patient } from '../domain/types';
  * ist sie zusätzlich sichtbar gesperrt, damit kein Klick ins Leere geht.
  */
 export function Verlegung({ patient }: { patient: Patient }) {
-  const { dispatch } = useSimulation();
+  const { state, dispatch } = useSimulation();
   const zk = useZeitkostenStatus();
   const zkBeschaeftigt = zk.aktion !== null;
   const ziele = moeglicheZiele(patient.abschnitt);
@@ -57,7 +58,9 @@ export function Verlegung({ patient }: { patient: Patient }) {
               )}
             </span>
             <span className="verlegung-dauer">
-              {zkEigen ? `noch ${zk.restSek} s` : `${VERLEGUNGSDAUER_SEK} s`}
+              {zkEigen
+                ? `noch ${zk.restSek} s`
+                : `${Math.round(verlegungsdauerSek(state.routen, patient.abschnitt, ziel.id))} s`}
             </span>
           </button>
         );

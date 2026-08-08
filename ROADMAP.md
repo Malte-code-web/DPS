@@ -336,9 +336,9 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   - Live mit drei echten Clients (NotArzt + NotSan + Rettungssanitäter/-in)
     verifiziert: Anfrage-Benachrichtigung, Bindungsanzeige und automatisches
     Anwenden nach vollständigem Team funktionieren zusammen.
-  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Kartenansicht mit Geodaten
-    (Kacheln-Ansicht ist mit `DPS-0.8.0.4` fertig), Ereignis-Injektion
-    (Fahrzeugausfall/Nachforderung/Lageänderung), private
+  - 💤 **Noch offen (Fundament, Teil 2, Rest):** Ereignis-Injektion
+    (Fahrzeugausfall/Nachforderung/Lageänderung - Kacheln- und Kartenansicht
+    sind mit `DPS-0.8.0.4`/`DPS-0.8.0.5` fertig), private
     Spieler-Statusansicht, Debriefing-Erweiterung.
 - ✅ **Rettung eingeklemmter Personen (`DPS-0.8.0.2`)** - Übungsleiter-Ebene,
   Teil 2 (Rettungs-Hälfte):
@@ -409,8 +409,33 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Navigation in die Detailsicht und zurück, vollständiger
     Narkose-Kollegenanfrage-Zyklus (offene Anfrage → Team komplett →
     Bindungsanzeige mit Countdown), Funkkanal-Übersicht.
-  - 💤 **Noch offen:** Kartenansicht mit Geodaten als zweite, umschaltbare
-    Sicht neben den Kacheln (wartet auf die Geodaten-Datenschicht).
+- ✅ **Geodaten & Kartenansicht (`DPS-0.8.0.5`)** - Übungsleiter-Ebene, Teil 2
+  (Geodaten, voller Umfang inkl. echter Fahrzeit-Berechnung):
+  - Komplett neue, optionale Datenschicht: ein Szenario kann `geodaten`
+    mitbringen - schematische Koordinaten für seine Schlüsselpunkte
+    (`GeoPosition`) und Wege zwischen Abschnitten (`RouteVorlage`/`Route`)
+    mit Distanz und Sperrstatus. Ohne Geodaten funktioniert ein Szenario
+    unverändert weiter.
+  - **Ersetzt konsequent die bisher pauschale `VERLEGUNGSDAUER_SEK`** (30s
+    für jede Patienten-/Fahrzeugverlegung) durch `verlegungsdauerSek()`:
+    echte, distanzbasierte Dauer, wo eine passende Route existiert, sonst
+    Fallback auf die alte Pauschale. Eine gesperrte Route bleibt passierbar,
+    kostet aber einen festen Zeitaufschlag (`sperraufschlagSek`) - dieselbe
+    "verzögert, nicht blockiert"-Linie wie überall sonst in der Simulation.
+  - Neue, per Umschalter erreichbare **Kartenansicht** im Gesamtlagebild:
+    schematische SVG-Darstellung (keine echten Kartenkacheln) mit einem
+    Marker je Schlüsselpunkt (Patienten-/Fahrzeugzahl im Etikett), Wegen als
+    Linien mit Distanz-Label (gesperrt: gestrichelt und orange), Legende und
+    einer Orte-Liste in der Seitenleiste - der Umschalter erscheint nur,
+    wenn das Szenario tatsächlich Geodaten mitbringt.
+  - Busunfall-Szenario mit vollständigen, plausiblen (nicht real
+    vermessenen) Koordinaten und Distanzen für alle neun Schlüsselpunkte
+    hinterlegt - wie schon die feste Rufgruppenliste ein "sinnvoller
+    Standard", keine sourcierte Angabe. Eine Route (Bereitstellungsraum →
+    Schadensstelle) startet gesperrt, als Beispiel für den Sperraufschlag.
+  - Live verifiziert: Kartenansicht mit allen neun Markern, gesperrte Route
+    sichtbar als Linie und Label, Orte-Liste in der Seitenleiste, echte
+    (statt pauschale) Verlegungsdauer in der Patientenansicht.
 - 💤 **Noch offen:** je eine eigene Ansicht für Zugführer (`DPS-0.8.1.x`),
   Gruppenführer (`DPS-0.8.2.x`), Truppführer (`DPS-0.8.3.x`), OrgL RD
   (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`); die reine Führungsübung
@@ -455,9 +480,9 @@ Jeder Schritt ist eigenständig nutzbar:
    Rufgruppen, TURN-Server optional per `.env` nachrüstbar).
 5. **Führungsebenen** 🟡 teilweise (Fundament der Übungsleiter-Ebene fertig:
    Freigabemodus, Ablage, Beobachter-Rolle, Regie-Funkkanal, Bindende
-   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel,
-   Gesamtlagebild-Kacheln; Kartenansicht mit Geodaten, Ereignis-Injektion
-   und die fünf übrigen Ebenen offen).
+   Maßnahmen, Rettung eingeklemmter Personen, Regie-Panel, Gesamtlagebild
+   mit Kacheln- und Kartenansicht, echte Geodaten-basierte Verlegungsdauer;
+   Ereignis-Injektion und die fünf übrigen Ebenen offen).
 
 ## Ehrliche Grenzen
 

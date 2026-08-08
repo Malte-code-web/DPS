@@ -1,5 +1,6 @@
-import { VERLEGUNGSDAUER_SEK, istVerlegungMoeglich } from '../domain/abschnitte';
+import { istVerlegungMoeglich } from '../domain/abschnitte';
 import { DIAGNOSTIK } from '../domain/diagnostik';
+import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { sichtungOffen } from '../domain/simulation';
 import type { DiagnostikId, Einsatzabschnitt, MassnahmeId } from '../domain/types';
@@ -45,13 +46,13 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
       const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
       if (!patient || !istVerlegungMoeglich(patient.abschnitt, action.ziel)) return 0;
       if (sichtungOffen(patient)) return 0;
-      return VERLEGUNGSDAUER_SEK;
+      return verlegungsdauerSek(state.routen, patient.abschnitt, action.ziel);
     }
 
     case 'fahrzeugVerlegen': {
       const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
       if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return 0;
-      return VERLEGUNGSDAUER_SEK;
+      return verlegungsdauerSek(state.routen, fahrzeug.abschnitt, action.ziel);
     }
 
     // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung

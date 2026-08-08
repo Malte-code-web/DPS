@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { VERLEGUNGSDAUER_SEK } from '../domain/abschnitte';
 import { DIAGNOSTIK, DIAGNOSTIK_LISTE, VOLLSTAENDIGE_DIAGNOSTIK_SEK } from '../domain/diagnostik';
+import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { SZENARIEN } from '../domain/szenarien';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
@@ -91,7 +91,9 @@ describe('zeitkostenSek', () => {
       patientId: 'B-01',
       kategorie: 'SK1',
     });
-    expect(zeitkostenSek(gesichtet, aktion)).toBe(VERLEGUNGSDAUER_SEK);
+    expect(zeitkostenSek(gesichtet, aktion)).toBe(
+      verlegungsdauerSek(gesichtet.routen, 'schadensstelle', 'eingangssichtung'),
+    );
 
     // Ein nicht erlaubter Sprung im Graphen kostet ebenfalls nichts.
     expect(
@@ -103,9 +105,10 @@ describe('zeitkostenSek', () => {
     const start = imEinsatz();
     const fahrzeugId = start.fahrzeuge[0]?.id;
     if (!fahrzeugId) return; // Szenario ohne konfigurierte Fahrzeuge - Bypass.
+    const abschnitt = start.fahrzeuge.find((f) => f.id === fahrzeugId)!.abschnitt;
     expect(
       zeitkostenSek(start, { typ: 'fahrzeugVerlegen', fahrzeugId, ziel: 'eingangssichtung' }),
-    ).toBe(VERLEGUNGSDAUER_SEK);
+    ).toBe(verlegungsdauerSek(start.routen, abschnitt, 'eingangssichtung'));
     expect(
       zeitkostenSek(start, { typ: 'fahrzeugVerlegen', fahrzeugId, ziel: 'zelt_rot' }),
     ).toBe(0);

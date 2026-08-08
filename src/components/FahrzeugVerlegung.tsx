@@ -1,5 +1,6 @@
-import { VERLEGUNGSDAUER_SEK, moeglicheZiele } from '../domain/abschnitte';
+import { moeglicheZiele } from '../domain/abschnitte';
 import { darfFahrzeugeDisponieren } from '../domain/fuehrung';
+import { verlegungsdauerSek } from '../domain/geodaten';
 import { useSimulation } from '../state/useSimulation';
 import { istFahrzeugVerlegenAktion } from '../state/zeitkosten';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -53,7 +54,9 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
           >
             <span className="verlegung-ziel">{ziel.name}</span>
             <span className="verlegung-dauer">
-              {zkEigen ? `noch ${zk.restSek} s` : `${VERLEGUNGSDAUER_SEK} s`}
+              {zkEigen
+                ? `noch ${zk.restSek} s`
+                : `${Math.round(verlegungsdauerSek(state.routen, fahrzeug.abschnitt, ziel.id))} s`}
             </span>
           </button>
         );

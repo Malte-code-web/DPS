@@ -538,6 +538,39 @@ describe('Freigabemodus und Patientenfreigabe (→ modell.freigabemodus)', () =>
   });
 });
 
+describe('Geodaten und Verlegungsdauer (→ domain.geodaten)', () => {
+  function eroeffnet(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+  }
+
+  it('materialisiert die Routen aus dem Szenario bei sitzungStarten, gesperrtBeimStart als Status "gesperrt"', () => {
+    const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
+    expect(state.routen.length).toBe(busunfall.geodaten!.routen.length);
+    const zufahrt = state.routen.find(
+      (route) => route.von === 'bereitstellungsraum' && route.nach === 'schadensstelle',
+    );
+    expect(zufahrt?.status).toBe('gesperrt');
+    const frei = state.routen.find(
+      (route) => route.von === 'schadensstelle' && route.nach === 'eingangssichtung',
+    );
+    expect(frei?.status).toBe('frei');
+  });
+
+  it('nimmt die Routen in den Schnappschuss auf, damit Spieler dieselbe Verlegungsdauer sehen', () => {
+    const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
+    const schnappschuss = schnappschussAus(state);
+    expect(schnappschuss.routen).toEqual(state.routen);
+  });
+});
+
 describe('Host-autoritative Synchronisation', () => {
   function imEinsatz(): SimulationState {
     return simulationReducer(

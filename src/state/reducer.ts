@@ -5,6 +5,7 @@ import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
+import { routenAusSzenario } from '../domain/geodaten';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -39,6 +40,7 @@ import type {
   MassnahmeId,
   Patient,
   Qualifikation,
+  Route,
   Rufgruppenmitgliedschaft,
   Sichtungskategorie,
   Szenario,
@@ -137,6 +139,13 @@ export interface SimulationState {
    */
   freigabemodus: 'sofort' | 'gestaffelt';
   /**
+   * Wege zwischen Einsatzabschnitten mit echter Distanz (→ `domain.geodaten`,
+   * `modell.route`) - aus `szenario.geodaten` materialisiert, leer ohne
+   * Geodaten (die Verlegungsdauer fällt dann auf `VERLEGUNGSDAUER_SEK`
+   * zurück).
+   */
+  routen: Route[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -167,6 +176,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   rufgruppen: [],
   kollegenanfragen: [],
   freigabemodus: 'sofort',
+  routen: [],
   schnappschussFolge: 0,
 };
 
@@ -271,6 +281,8 @@ export interface Schnappschuss {
   kollegenanfragen: Kollegenanfrage[];
   /** Sofort sichtbar oder gestaffelt über die Ablage (→ `state.freigabemodus`). */
   freigabemodus: 'sofort' | 'gestaffelt';
+  /** Wege zwischen Einsatzabschnitten mit echter Distanz (→ `modell.route`). */
+  routen: Route[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -297,6 +309,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     rufgruppen: state.rufgruppen,
     kollegenanfragen: state.kollegenanfragen,
     freigabemodus: state.freigabemodus,
+    routen: state.routen,
   };
 }
 
@@ -400,6 +413,7 @@ export function simulationReducer(
         alleine,
         ausgewaehlterAbschnitt: 'schadensstelle',
         patienten: action.szenario.patienten.map((vorlage) => patientAusVorlage(vorlage, faktor)),
+        routen: routenAusSzenario(action.szenario),
         // Ein einzelner Betroffener geht direkt in die Patientenansicht - kein
         // Behandlungsplatz, keine Übersicht dazwischen.
         ausgewaehlterPatientId:
@@ -1079,6 +1093,7 @@ export function simulationReducer(
         patienten: state.szenario.patienten.map((vorlage) =>
           patientAusVorlage(vorlage, 1, startAbschnitt),
         ),
+        routen: routenAusSzenario(state.szenario),
         sitzung: { ...state.sitzung, status: 'laeuft' },
       };
     }
@@ -1111,6 +1126,7 @@ export function simulationReducer(
         rufgruppen: s.rufgruppen,
         kollegenanfragen: s.kollegenanfragen,
         freigabemodus: s.freigabemodus,
+        routen: s.routen,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

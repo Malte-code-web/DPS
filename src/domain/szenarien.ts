@@ -394,6 +394,43 @@ const busunfall: Szenario = {
       erwarteteSK: 'SK3',
     },
   ],
+  // Schematische, plausible Koordinaten (Raum Kreis Steinfurt, wie die
+  // Fahrzeug-Bestückung) - keine echte Vermessung dieses Unfallorts, ein
+  // "sinnvoller Standard" für Kartenansicht und Verlegungsdauer
+  // (→ `domain.geodaten`), wie schon die feste Rufgruppenliste.
+  geodaten: {
+    schluesselpunkte: {
+      schadensstelle: { lat: 52.351, lon: 7.902 },
+      ablage: { lat: 52.3505, lon: 7.901 },
+      eingangssichtung: { lat: 52.3498, lon: 7.9 },
+      zelt_rot: { lat: 52.3496, lon: 7.8998 },
+      zelt_gelb: { lat: 52.3495, lon: 7.9 },
+      zelt_gruen: { lat: 52.3494, lon: 7.9002 },
+      ausgangssichtung: { lat: 52.3492, lon: 7.8999 },
+      transport: { lat: 52.349, lon: 7.8995 },
+      bereitstellungsraum: { lat: 52.3515, lon: 7.8985 },
+    },
+    routen: [
+      { id: 'r-schadensstelle-eingangssichtung', von: 'schadensstelle', nach: 'eingangssichtung', distanzMeter: 150, sperraufschlagSek: 90 },
+      { id: 'r-ablage-eingangssichtung', von: 'ablage', nach: 'eingangssichtung', distanzMeter: 100, sperraufschlagSek: 90 },
+      // Zufahrt zur Schadensstelle beim Start gesperrt (Bus quer auf der
+      // Fahrbahn) - Reserve-Fahrzeuge aus dem Bereitstellungsraum brauchen
+      // dorthin einen festen Zeitaufschlag, keine Blockade.
+      { id: 'r-bereitstellung-schadensstelle', von: 'bereitstellungsraum', nach: 'schadensstelle', distanzMeter: 350, sperraufschlagSek: 90, gesperrtBeimStart: true },
+      { id: 'r-bereitstellung-ablage', von: 'bereitstellungsraum', nach: 'ablage', distanzMeter: 300, sperraufschlagSek: 90 },
+      { id: 'r-bereitstellung-eingangssichtung', von: 'bereitstellungsraum', nach: 'eingangssichtung', distanzMeter: 280, sperraufschlagSek: 90 },
+      { id: 'r-eingang-zeltrot', von: 'eingangssichtung', nach: 'zelt_rot', distanzMeter: 40, sperraufschlagSek: 60 },
+      { id: 'r-eingang-zeltgelb', von: 'eingangssichtung', nach: 'zelt_gelb', distanzMeter: 45, sperraufschlagSek: 60 },
+      { id: 'r-eingang-zeltgruen', von: 'eingangssichtung', nach: 'zelt_gruen', distanzMeter: 50, sperraufschlagSek: 60 },
+      { id: 'r-zeltrot-zeltgelb', von: 'zelt_rot', nach: 'zelt_gelb', distanzMeter: 20, sperraufschlagSek: 30 },
+      { id: 'r-zeltrot-zeltgruen', von: 'zelt_rot', nach: 'zelt_gruen', distanzMeter: 25, sperraufschlagSek: 30 },
+      { id: 'r-zeltgelb-zeltgruen', von: 'zelt_gelb', nach: 'zelt_gruen', distanzMeter: 20, sperraufschlagSek: 30 },
+      { id: 'r-zeltrot-ausgang', von: 'zelt_rot', nach: 'ausgangssichtung', distanzMeter: 35, sperraufschlagSek: 30 },
+      { id: 'r-zeltgelb-ausgang', von: 'zelt_gelb', nach: 'ausgangssichtung', distanzMeter: 30, sperraufschlagSek: 30 },
+      { id: 'r-zeltgruen-ausgang', von: 'zelt_gruen', nach: 'ausgangssichtung', distanzMeter: 35, sperraufschlagSek: 30 },
+      { id: 'r-ausgang-transport', von: 'ausgangssichtung', nach: 'transport', distanzMeter: 60, sperraufschlagSek: 45 },
+    ],
+  },
 };
 
 const wohnungsbrand: Szenario = {

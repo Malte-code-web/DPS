@@ -3250,6 +3250,187 @@ button.gefahr {
   flex-shrink: 0;
 }
 
+/* --- Kartenansicht (→ ui.kartenansicht) ------------------------------ */
+
+.lagebild-kopf {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.umschalter {
+  align-self: flex-start;
+  display: inline-flex;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.umschalter button {
+  border: none;
+  background: transparent;
+  color: var(--text-leise);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.umschalter button.aktiv {
+  background: var(--akzent);
+  color: #fff;
+}
+
+.karten-rahmen {
+  background: #0c1017;
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  min-height: 420px;
+}
+
+.routen-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.route-linie {
+  stroke: var(--rand);
+  stroke-width: 2;
+}
+
+.route-linie-gesperrt {
+  stroke: var(--warn);
+  stroke-dasharray: 4 3;
+}
+
+.distanz-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border: 1px solid var(--rand);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.66rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.marker {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.marker-pin {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.marker-etikett {
+  margin-top: 0.3rem;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 7px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.marker-etikett b {
+  font-size: 0.74rem;
+}
+
+.marker-etikett span {
+  color: var(--text-leise);
+  font-size: 0.66rem;
+}
+
+.legende {
+  position: absolute;
+  left: 0.85rem;
+  bottom: 0.85rem;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 7px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.7rem;
+  color: var(--text-leise);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 15rem;
+}
+
+.legende-zeile {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legende-punkt {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.legende-linie {
+  width: 0.9rem;
+  height: 2px;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+
+.ort-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ort-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  background: var(--bg-panel-hoch);
+  border-radius: 7px;
+  font-size: 0.78rem;
+}
+
+.entfernung {
+  color: var(--text-leise);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.entfernung-gesperrt {
+  color: var(--warn);
+  font-weight: 700;
+}
+
 @media (max-width: 980px) {
   .arbeitsflaeche {
     grid-template-columns: 1fr;
@@ -3257,6 +3438,10 @@ button.gefahr {
 
   .kennzahlen {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .karten-rahmen {
+    min-height: 320px;
   }
 }
 

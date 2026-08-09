@@ -4189,11 +4189,16 @@ button.vital-unbekannt:not(:disabled) {
   border-color: color-mix(in srgb, var(--sk1) 55%, transparent);
 }
 
-.debriefing-tabelle {
+.debriefing-tabelle,
+.gruppen-tabelle {
   overflow-x: auto;
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
+}
+
+.gruppen-tabelle select {
+  font: inherit;
 }
 
 table {

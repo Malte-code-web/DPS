@@ -1,5 +1,5 @@
 import type { Rolle, Spieler } from './sitzung';
-import type { Fuehrungsrolle } from './types';
+import type { Fahrzeug, Fuehrungsrolle } from './types';
 
 /**
  * @anker domain.fuehrung Rangfolge und Prüfung der Führungsrolle
@@ -103,6 +103,26 @@ export function darfFahrzeugeDisponieren(
 export function zugfuehrungAktiv(sitzungAktiv: boolean, spieler: Spieler[]): boolean {
   if (!sitzungAktiv) return false;
   return spieler.some((eintrag) => erfuelltFuehrung(eintrag.fuehrungsrolle ?? 'keine', 'zugfuehrer'));
+}
+
+/**
+ * @anker domain.gruppenfuehrerliste Wer als Gruppenführer in der Sitzung mitspielt
+ *
+ * Faktoriert den bisher inline in `Lagekarte.tsx` wiederholten Filter
+ * (→ `ui.lagekarte`) an seinen fachlich richtigen Ort - dieselbe Definition
+ * gilt jetzt auch für die Gruppen-Zuweisung (→ `ui.gruppenzuweisung`).
+ */
+export function gruppenfuehrerListe(spieler: Spieler[]): Spieler[] {
+  return spieler.filter(
+    (eintrag) => eintrag.rolle === 'spieler' && eintrag.fuehrungsrolle === 'gruppenfuehrer',
+  );
+}
+
+/**
+ * @anker domain.gruppevon Die einem Gruppenführer zugewiesenen Fahrzeuge (→ `modell.gruppe`)
+ */
+export function gruppeVon(fahrzeuge: Fahrzeug[], gruppenfuehrerId: string): Fahrzeug[] {
+  return fahrzeuge.filter((fahrzeug) => fahrzeug.gruppenfuehrerId === gruppenfuehrerId);
 }
 
 export interface Staerke {

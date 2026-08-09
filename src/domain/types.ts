@@ -482,6 +482,18 @@ export interface Fahrzeug extends FahrzeugVorlage {
    * wieder aufhebt. Reine Regie-Markierung, kein automatischer Auslöser.
    */
   ausgefallen?: boolean;
+  /**
+   * @anker modell.gruppe Welchem Gruppenführer dieses Fahrzeug samt Besatzung zugewiesen ist
+   *
+   * Die "Gruppe" ist kein eigenes Modellobjekt - sie ergibt sich rein aus
+   * diesem Feld (→ `domain.fuehrung`, `gruppeVon`): alle Fahrzeuge mit
+   * derselben `gruppenfuehrerId` bilden zusammen die Gruppe dieser Person,
+   * inklusive ihrer bereits zugewiesenen Besatzung. Fehlt das Feld, ist das
+   * Fahrzeug keiner Gruppe zugeteilt. Vom Zugführer vergeben (→
+   * `ui.gruppenzuweisung`), analog zur Führungsrolle-Zuteilung durch die
+   * Übungsleitung (→ `sitzung.modell`, `Spieler.fuehrungsrolle`).
+   */
+  gruppenfuehrerId?: string;
 }
 
 /**

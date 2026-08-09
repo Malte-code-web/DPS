@@ -5,12 +5,15 @@ import {
   darfFahrzeugeDisponieren,
   erfuelltFuehrung,
   formatStaerke,
+  gruppeVon,
+  gruppenfuehrerListe,
   istRegiefuehrend,
   istZugfuehrend,
   staerkemeldung,
   zugfuehrungAktiv,
 } from './fuehrung';
 import type { Spieler } from './sitzung';
+import type { Fahrzeug } from './types';
 
 describe('istRegiefuehrend', () => {
   it('gilt für Übungsleitung und Beobachter, nicht für Spieler oder niemanden', () => {
@@ -158,5 +161,50 @@ describe('staerkemeldung / formatStaerke', () => {
   it('ignoriert leere Platzhalter ("") aus der positionellen Platzliste', () => {
     const staerke = staerkemeldung(['anna', '', 'dana', ''], alleSpieler);
     expect(staerke).toEqual({ fuehrungskraefte: 1, unterfuehrer: 0, mannschaft: 1, gesamt: 2 });
+  });
+});
+
+function fahrzeug(id: string, gruppenfuehrerId?: string): Fahrzeug {
+  return {
+    id,
+    typ: 'rtw',
+    abschnitt: 'bereitstellungsraum',
+    besatzung: [],
+    material: {},
+    gruppenfuehrerId,
+  };
+}
+
+describe('gruppenfuehrerListe', () => {
+  it('filtert nur Spieler mit der Führungsrolle gruppenfuehrer', () => {
+    const alle = [
+      spieler('anna', 'gruppenfuehrer'),
+      spieler('bert', 'zugfuehrer'),
+      spieler('chris', undefined),
+    ];
+    expect(gruppenfuehrerListe(alle).map((s) => s.id)).toEqual(['anna']);
+  });
+
+  it('lässt Übungsleitung/Beobachter mit derselben Führungsrolle außen vor', () => {
+    const alle: Spieler[] = [
+      { id: 'ol', name: 'ol', rolle: 'uebungsleiter', qualifikation: 'basis', fuehrungsrolle: 'gruppenfuehrer' },
+      spieler('anna', 'gruppenfuehrer'),
+    ];
+    expect(gruppenfuehrerListe(alle).map((s) => s.id)).toEqual(['anna']);
+  });
+
+  it('liefert eine leere Liste ohne Gruppenführer', () => {
+    expect(gruppenfuehrerListe([spieler('anna', 'zugfuehrer')])).toEqual([]);
+  });
+});
+
+describe('gruppeVon', () => {
+  it('liefert nur die einem Gruppenführer zugewiesenen Fahrzeuge', () => {
+    const fahrzeuge = [fahrzeug('f1', 'anna'), fahrzeug('f2', 'bert'), fahrzeug('f3', 'anna')];
+    expect(gruppeVon(fahrzeuge, 'anna').map((f) => f.id)).toEqual(['f1', 'f3']);
+  });
+
+  it('liefert eine leere Liste, wenn niemand zugewiesen ist', () => {
+    expect(gruppeVon([fahrzeug('f1'), fahrzeug('f2')], 'anna')).toEqual([]);
   });
 });

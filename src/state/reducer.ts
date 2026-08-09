@@ -321,6 +321,7 @@ export type SimulationAction =
   | { typ: 'spielerAbschnittGesetzt'; spielerId: string; abschnitt: Einsatzabschnitt }
   | { typ: 'fahrzeugBesatzungGesetzt'; fahrzeugId: string; besatzung: string[] }
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
+  | { typ: 'fahrzeugGruppeZuweisen'; fahrzeugId: string; gruppenfuehrerId: string | null }
   | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
   | { typ: 'patientFreigeben'; patientId: string }
   | { typ: 'alleVerdecktenFreigeben' }
@@ -1316,6 +1317,26 @@ export function simulationReducer(
       const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
       if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return state;
       return mitFahrzeug(state, action.fahrzeugId, (eintrag) => verlegeFahrzeug(eintrag, action.ziel));
+    }
+
+    case 'fahrzeugGruppeZuweisen': {
+      const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
+      if (!fahrzeug) return state;
+      const naechster = mitFahrzeug(state, action.fahrzeugId, (eintrag) => ({
+        ...eintrag,
+        gruppenfuehrerId: action.gruppenfuehrerId ?? undefined,
+      }));
+      if (!action.gruppenfuehrerId) {
+        return protokolliereRegie(
+          naechster,
+          `${FAHRZEUGTYP_INFO[fahrzeug.typ].label} keiner Gruppe mehr zugewiesen.`,
+        );
+      }
+      const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === action.gruppenfuehrerId);
+      return protokolliereRegie(
+        naechster,
+        `${FAHRZEUGTYP_INFO[fahrzeug.typ].label} der Gruppe von ${gruppenfuehrer?.name ?? 'Gruppenführer'} zugewiesen.`,
+      );
     }
 
     case 'verbindungsfehlerSetzen':

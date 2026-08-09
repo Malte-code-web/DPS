@@ -913,9 +913,26 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   Eintrag bleibt beim Tab-Wechsel sichtbar, die Regie-Kennzahlenleiste
   bleibt währenddessen unverändert live, das Debriefing zeigt alle
   Meldungen korrekt zugeordnet, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 11):** Kräfte/Patienten weich
-  zuweisen (Benachrichtigung statt Hard-Lock),
-  Rettungsmittelhalteplatz + Transporte freigeben.
+- ✅ **Gruppen-Zuweisung (`DPS-0.8.1.10`)** - Zugführer-Ebene, Teil 11, auf
+  Präzisierung des Nutzers: "Zuweisung muss Befehle an Gruppenführer werden" -
+  der Zugführer weist einem Gruppenführer Fahrzeuge samt bereits zugewiesener
+  Besatzung zu, statt Kräfte/Patienten per weicher Benachrichtigung direkt zu
+  verschieben. Grundlage für Einsatzaufträge an eine Gruppe (z. B. "rotes
+  Zelt führen" oder "Fläche bauen", → Teil 12). Eine "Gruppe" ist kein
+  eigenes Modellobjekt, sondern ergibt sich rein aus dem neuen optionalen
+  `Fahrzeug.gruppenfuehrerId` (→ `modell.gruppe`); zwei neue Domain-Helfer
+  `gruppenfuehrerListe`/`gruppeVon` in `domain/fuehrung.ts` (faktoriert aus
+  `Lagekarte.tsx`s bisher inline wiederholtem Filter), neue Reducer-Aktion
+  `fahrzeugGruppeZuweisen`, neuer sechster Tab "Gruppen" im
+  Zugführer-Ansichtsmenü (→ `ui.gruppenzuweisung`) - eine Tabelle mit
+  Dropdown je Fahrzeug, gesperrt für alle unterhalb Zugführer-Rang wie die
+  bestehende Fahrzeugverlegung. Live verifiziert: Tabelle zeigt alle
+  Fahrzeuge, Zuweisung/Umweisung/Entfernen funktionieren und bleiben nach
+  erneutem Öffnen des Tabs erhalten, keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 12):** Einsatzaufträge an eine
+  Gruppe über ihren Gruppenführer - "Abschnitt führen" (die Gruppe verlegt
+  sich komplett an einen Zielabschnitt) als neue, zu `FlaechenBefehl`
+  parallele Auftragsart; Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,

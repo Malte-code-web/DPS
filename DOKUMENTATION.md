@@ -70,6 +70,7 @@ nur über den Zustand der Patienten und das Debriefing.
 | Baufeld: Zeltplatzierung (`DPS-0.8.1.1`) | Zweiter Baustein der Zugführer-Ebene: der Zugführer bestimmt jetzt selbst, wo welche Zeltgröße steht, statt dass ein Szenario feste Zeltpositionen vorgibt. Reale Zeltgrößen nach dem DRK-Konzept "Behandlungsplatz 50" - SG20 (5,00×4,74 m, 23,7 m², Richtwert ≤ 6 SK I) bis SG50 (10,00×5,64 m, 56,4 m²), 2 m Mindestabstand zwischen Zelten (→ `domain.zelte`). Ein neues, eigenständiges `Baufeld` (→ `ui.baufeld`) zeichnet die Fläche maßstabsgetreu in echten Metern - bewusst getrennt von der bestehenden, nur schematischen `Kartenansicht` (deren Lat/Lon-Koordinaten nachweislich nicht mit den dort gezeigten Entfernungen übereinstimmen), damit die Platzierung auch für Szenarien ganz ohne Geodaten funktioniert. Größe wählen (SG20-50), dann eine freie, farblich als gültig/ungültig markierte Rasterzelle antippen - kein Drag nötig. Der Aufbau kostet echte Zeit (`aufbauSek`, größenabhängig 5-15 Minuten) als echter Countdown wie jede andere zeitkostende Handlung. Das Baufeld hat eine reale Gesamtfläche (Kreis-Steinfurt-Wert: 40×50 m = 2.000 m², für Zelte **und** Fahrzeuge zusammen, → `STANDARD_BAUFELD`) - verbrauchen die Zelte zu viel davon, warnt eine weiche Hinweiszeile vor knappem Platz für Fahrzeuge, ohne etwas zu sperren. Das Platzieren eines Zelts fungiert zugleich als "Abschnitt eröffnen" für die drei Behandlungs-Zelte; die übrigen Abschnitte (Ablage, Bereitstellungsraum, Eingangssichtung, Ausgangssichtung, Transport) haben einen einfachen Eröffnen-Knopf ohne Flächenmodell - Schadensstelle ist vom Szenario vorgegeben und bleibt immer offen (→ `domain.istAbschnittEroeffnet`). Ein nicht eröffneter Abschnitt erscheint für Patienten/Fahrzeuge erst gar nicht als Verlegungsziel, sobald in der Sitzung ein Zugführer mitspielt (→ `domain.zugfuehrungaktiv`) - ohne aktiven Zugführer bleibt alles wie zuvor ungegatet, die ~450 bestehenden Tests bleiben unangetastet. Live mit zwei Clients verifiziert: Zeltplatzierung mit sichtbarem Countdown ("SG 20-Zelt ... wird aufgebaut - noch X s", bei 10-facher Geschwindigkeit real durchlaufen), das fertige Zelt erscheint maßstabsgetreu im Baufeld, ein Patient kann erst nach Eröffnung des Zielabschnitts dorthin verlegt werden (beide Richtungen geprüft), keine Konsolenfehler. |
 | Zeltbefehl: Auftragstaktik statt Direktbau (`DPS-0.8.1.2`) | Dritter Baustein der Zugführer-Ebene, auf ausdrücklichen Wunsch: der Zugführer baut Zelte im Baufeld nicht mehr selbst, sondern gibt einen Befehl an einen Gruppenführer - genau das reale Führungsprinzip Auftragstaktik (Befehl gibt Ziel vor, Ausführung liegt bei der unterstellten Kraft), das schon in der Zugführer-Recherche (FwDV 100) auftauchte. Der Zugführer legt wie gehabt Zeltgröße und Position im Baufeld fest (→ `ui.baufeld`); sitzt mindestens ein Gruppenführer in der Sitzung, löst das statt einer direkten Platzierung einen `ZeltBefehl` aus (→ `modell.zeltbefehl`) - bei mehreren Gruppenführern wählt der Zugführer eine Zielperson. Der angesprochene Gruppenführer bekommt eine nicht blockierende Benachrichtigung (→ `ui.zeltbefehlbenachrichtigung`, gleiches Muster wie die bestehende Delegationsanfrage) mit "Befehl ausführen"/"Ablehnen" - erst die Ausführung löst die tatsächliche `zeltPlatzieren`-Aktion mitsamt dem echten Bau-Countdown aus, jetzt bei der ausführenden Person statt beim befehlenden Zugführer; ist die Person gerade anderweitig beschäftigt, bleibt der Knopf gesperrt statt die Ausführung stillschweigend zu verwerfen. Der Zugführer sieht seine offenen Befehle im Baufeld als Statuszeile mit "Zurückziehen"-Option. Ohne jeden Gruppenführer in der Sitzung baut der Zugführer weiterhin direkt (Blast-Radius-Begrenzung wie bei `domain.zugfuehrungaktiv`) - Solospiel und kleine Sitzungen bleiben unangetastet. Live mit drei echten Clients verifiziert: Zugführer platziert ein Zelt → Gruppenführer bekommt die Benachrichtigung mit Zugführer-Namen und Zeltgröße, führt aus → nach Ablauf der Bauzeit (10-fache Geschwindigkeit) erscheint das Zelt im Baufeld des Zugführers, die Statuszeile "wartet auf Ausführung" verschwindet, keine Konsolenfehler. |
 | Zelt-/Flächenwahl auch bei den Behandlungszelten (`DPS-0.8.1.5`) | Kleine Korrektur an `DPS-0.8.1.4` auf ausdrücklichen Wunsch: die drei Behandlungszelte boten bislang nur echte Zeltprodukte an, die übrigen erweiterten Abschnitte durften schon zwischen Zelt und reiner Fläche wählen. `ZeltTypAuswahl.tsx`s `katalogeFuer()` bietet jetzt bei allen fünf Abschnitten mit sinnvollem Zeltbezug (die drei Behandlungszelte, Ein-/Ausgangssichtung) zusätzlich zum echten Zelt immer auch die reine Fläche an - Ablage/Bereitstellungsraum/Transport bleiben bei der reinen Fläche, da es dafür kein passendes Zeltprodukt gibt. Live verifiziert: Rotes Zelt zeigt jetzt alle vier Zeltgrößen plus drei Flächengrößen, keine Konsolenfehler. |
+| Gruppen-Zuweisung: Fahrzeuge inkl. Besatzung einem Gruppenführer zuweisen (`DPS-0.8.1.10`) | Auf ausdrücklichen Wunsch, Grundlage für Einsatzaufträge an eine Gruppe: der Zugführer weist einem Gruppenführer Fahrzeuge samt ihrer bereits zugewiesenen Besatzung zu - eine "Gruppe" ist dabei kein eigenes Modellobjekt, sondern ergibt sich rein aus dem neuen optionalen Feld `Fahrzeug.gruppenfuehrerId` (→ `modell.gruppe`). Zwei neue, aus `Lagekarte.tsx`s bisher inline wiederholtem Filter faktorierte Domain-Helfer in `domain/fuehrung.ts`: `gruppenfuehrerListe(spieler)` (wer in der Sitzung als Gruppenführer mitspielt) und `gruppeVon(fahrzeuge, gruppenfuehrerId)` (die zugewiesenen Fahrzeuge). Neue Reducer-Aktion `fahrzeugGruppeZuweisen` (Zuweisen, Umweisen, `gruppenfuehrerId: null` zum Entfernen) protokolliert jede Änderung namentlich in `regieProtokoll`. Neue Komponente `GruppenZuweisung.tsx` (→ `ui.gruppenzuweisung`) als sechster Tab "Gruppen" im Zugführer-Ansichtsmenü, zwischen Karte und Fahrzeuge: eine Tabelle mit einer Zeile je Fahrzeug (Typ, aktueller Abschnitt, Besatzungsnamen, Dropdown zur Gruppenführer-Wahl), gesperrt für alle unterhalb Zugführer-Rang wie die bestehende Fahrzeugverlegung (→ `darfFahrzeugeDisponieren`). Live verifiziert: die Tabelle zeigt alle Fahrzeuge der Sitzung, eine Zuweisung erscheint sofort im Dropdown und bleibt bei erneutem Öffnen des Tabs erhalten, Umweisen auf einen anderen Gruppenführer ersetzt statt zu addieren, Entfernen setzt zurück auf "— keiner —", keine Konsolenfehler. |
 | Meldebuch: Zugführer fragt Gruppenführer per Funk statt Live-Daten (`DPS-0.8.1.9`) | Auf ausdrücklichen Wunsch: der Zugführer sah in den Tabs Fahrzeuge/Kräfte/Kennzahlen bislang sofort den echten, live berechneten Stand - real muss er sich diesen Stand per Funk bei seinen Gruppenführern aktiv erfragen. Die App kann den Inhalt eines echten Funkspruchs nicht kennen, deshalb ersetzt eine neue, wiederverwendbare `Meldebuch`-Komponente (→ `ui.meldebuch`) die drei bisherigen Live-Panels (`FahrzeugStatusPanel.tsx`, `KraefteStatusPanel.tsx`, `Kennzahlenleiste`-Nutzung in der Zugführer-Ansicht) durch ein Freitext-Protokoll je Bereich: der Zugführer tippt selbst ein, was er über Funk erfahren hat. Neues, nur wachsendes State-Feld `state.meldebuch: MeldebuchEintrag[]` (`id`, `bereich: MeldebuchBereich`, `text`, `zeitSek`, `spielerId`, → `modell.meldebucheintrag`) über eine neue Reducer-Aktion `meldebuchEintragen` (Leerstring-Guard, `text.trim()`) - an allen fünf Schnappschuss-Touchpoints sowie den drei `SimulationProvider.tsx`-Stellen ergänzt, damit es korrekt zwischen allen Clients synchron bleibt. `Kennzahlenleiste.tsx` selbst bleibt unverändert (die Regie braucht dort weiterhin echte Zahlen für die Aufsicht) - nur die Zugführer-Ansicht verwendet sie nicht mehr. `FahrzeugStatusPanel.tsx`/`KraefteStatusPanel.tsx` sind jetzt ungenutzt und gelöscht. Die Einträge bleiben bis zum Debriefing erhalten: ein neuer Abschnitt "Meldebuch des Zugführers" zeigt dort alle Einträge chronologisch mit Bereichs-Tag, Autor:in und Zeitstempel - zum Abgleich mit der tatsächlichen Lage in der Haupttabelle, genau der pädagogische Witz der Übung. Live mit zwei Clients verifiziert: alle drei Tabs starten leer ("Noch keine Meldung eingetragen."), ein eingetragener Text bleibt beim Tab-Wechsel und bei erneutem Öffnen sichtbar, die Regie-Kennzahlenleiste im Gesamtlagebild bleibt währenddessen unverändert live (echte SK-Zahlen, keine Meldebuch-Texte), nach Einsatzende zeigt das Debriefing alle drei eingetragenen Meldungen mit korrektem Bereich, Autor:in und Zeitstempel, keine Konsolenfehler. |
 | Zugführer-Ansicht als Seitenleisten-Ansichtsmenü (`DPS-0.8.1.8`) | Auf ausdrücklichen Wunsch: die Zugführer-Ansicht (→ `ui.zugfuehrerseite`) optisch an das Gesamtlagebild der Regie angleichen - mit denselben, schon vorhandenen Menüpunkten (Kacheln, Karte, Fahrzeuge, Kräfte, Kennzahlen) statt der bisherigen Kombination aus gestapelter Karte+Kacheln und einer separaten Abfrage-Tab-Leiste darunter. `RegieMenueIcons.tsx` wird zu `AnsichtsmenueIcons.tsx` (Komponente `AnsichtsmenueIcon`, Anker `ui.regiemenueicons` → `ui.ansichtsmenueicons`) mit drei neuen Icons (Fahrzeuge, Kräfte, Kennzahlen) - jetzt von beiden Seitenleisten-Ansichtsmenüs geteilt statt Regie-exklusiv. Die zugrundeliegenden CSS-Klassen sind ebenfalls generisch umbenannt (`.regie-seitenleiste*`/`.regie-menue*`/`.gesamtlagebild-flaeche`/`.gesamtlagebild-haupt` → `.ansichtsmenue-seitenleiste*`/`.ansichtsmenue*`/`.ansicht-flaeche`/`.ansicht-haupt`), ein reiner Rename ohne Verhaltensänderung für das Gesamtlagebild. `ZugfuehrerSeite.tsx` bekommt dieselbe Ein-/Ausklapp-Seitenleiste mit `role="tablist"` wie die Regie - Kacheln bleiben wie zuvor der einzige Weg in die Abschnitt-Detailsicht, die Lagekarte steht jetzt als eigene Ansicht daneben statt zusätzlich obendrüber gestapelt; Fahrzeuge/Kräfte/Kennzahlen bleiben bewusst nur nach aktivem Klick sichtbar (keine dauerhafte Kennzahlenleiste, passend zur realen Meldepflicht). Alte `.zf-abfrage*`-CSS-Regeln entfernt. Live verifiziert: Zugführer- und Regie-Seitenleiste sehen optisch identisch aus (gleiches Layout, gleiche Icons, gleiches aktiv/eingeklappt-Verhalten), alle fünf Zugführer-Ansichten lassen sich über das Menü erreichen, Ein-/Ausklappen funktioniert, ein Klick auf eine Kachel öffnet weiterhin korrekt die Abschnitt-Detailsicht mit funktionierendem "← Übersicht"-Rücksprung, Regie-Ansicht nach dem Rename unverändert funktionsfähig, keine Konsolenfehler. |
 | Lagekarte, Teil 3: Bauen per Kartenklick statt sofortiger Platzhalter (`DPS-0.8.1.7`) | Auf ausdrücklichen Wunsch: eine Übung soll immer nur mit der Schadensstelle sichtbar beginnen, alles andere muss erst gebaut werden, bevor es auf der Karte erscheint - bisher zeigte die Lagekarte alle acht weiteren Abschnitte von Anfang an als schematischen Platzhalter-Marker. `Lagekarte.tsx`s `sichtbarePosition()`-Helfer (→ `ui.lagekarte`) liefert für jeden `FlaechenAbschnitt` erst dann eine Position (Marker wie Route), wenn wirklich eine `PlatzierteFlaeche` existiert - am echten Mittelpunkt des gebauten Rechtecks statt am alten festen Schlüsselpunkt, Routen verschwinden entsprechend, solange eines ihrer beiden Enden noch nicht gebaut ist. Der Bauablauf selbst läuft jetzt komplett über die Karte statt über eine feste Knopfliste (→ `ui.lagekarte.bauen`): ein Kartenklick öffnet an genau dieser Stelle ein Leaflet-Popup mit den noch offenen Abschnitten, danach wie gehabt `ZeltTypAuswahl` für die Größe - aber keine sofortige Platzierung mehr. Stattdessen erscheint eine ziehbare Vorschau (Rechteck + Ziehgriff-Marker) am Klickpunkt, frei auf der Karte verschiebbar, live grün/rot eingefärbt je nach `platzierungGueltig()`; erst ein bewusstes "Bauort bestätigen" löst die bestehende Auftragstaktik-Entscheidung und den echten Bau-Countdown aus, "Abbrechen" verwirft die Vorschau folgenlos. Neue Leaflet-Popup-Dark-Theme-Overrides, tote `.baufeld-farb-knoepfe`-Regel entfernt. Live verifiziert: Szenario startet mit ausschließlich der Schadensstelle sichtbar; Kartenklick öffnet das Baumenü mit allen offenen Abschnitten; Vorschau lässt sich ziehen und färbt sich korrekt grün/rot (innerhalb/außerhalb des für die drei Zeltfarben geprüften Baufelds), "Bauort bestätigen" bleibt bei ungültiger Stelle deaktiviert; nach Bestätigung und Bauzeit erscheinen sowohl die gebaute Fläche als auch die zuvor unsichtbare Route zur Schadensstelle korrekt auf der Karte; keine Konsolenfehler. |
@@ -675,7 +676,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_235 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -719,6 +720,8 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.geodaten.haversine` | [`src/domain/geodaten.ts:22`](src/domain/geodaten.ts#L22) | Echte Distanz zwischen zwei Schlüsselpunkten |
 | `domain.geodaten.projektion` | [`src/domain/geodaten.ts:42`](src/domain/geodaten.ts#L42) | Lat/Lon ↔ lokale Meter, ein einziges Koordinatensystem für die Einsatzstelle |
 | `domain.gewicht` | [`src/domain/dosierung.ts:337`](src/domain/dosierung.ts#L337) | Körpergewicht - hinterlegt oder geschätzt |
+| `domain.gruppenfuehrerliste` | [`src/domain/fuehrung.ts:109`](src/domain/fuehrung.ts#L109) | Wer als Gruppenführer in der Sitzung mitspielt |
+| `domain.gruppevon` | [`src/domain/fuehrung.ts:122`](src/domain/fuehrung.ts#L122) | Die einem Gruppenführer zugewiesenen Fahrzeuge (→ `modell.gruppe`) |
 | `domain.istAbschnittEroeffnet` | [`src/domain/flaechen.ts:217`](src/domain/flaechen.ts#L217) | Ob ein Abschnitt als Verlegungsziel gilt |
 | `domain.manvstufen` | [`src/domain/manvStufen.ts:4`](src/domain/manvStufen.ts#L4) | MANV-Stufen des Kreises Steinfurt -> kumulativer Fahrzeugbestand |
 | `domain.massnahmenrechte` | [`src/domain/massnahmenrechte.ts:6`](src/domain/massnahmenrechte.ts#L6) | Je Sitzung einstellbare Durchführungs- und Delegationsziele |
@@ -732,7 +735,7 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.regiefuehrend` | [`src/domain/fuehrung.ts:46`](src/domain/fuehrung.ts#L46) | Übungsleitung und Beobachter teilen sich Sicht und Rechte |
 | `domain.rettung` | [`src/domain/rettung.ts:4`](src/domain/rettung.ts#L4) | Rettung eingeklemmter Personen - live gewürfelter Bedarf |
 | `domain.rufgruppen` | [`src/domain/rufgruppen.ts:14`](src/domain/rufgruppen.ts#L14) | Feste Kanalliste für den Sprechfunk |
-| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:116`](src/domain/fuehrung.ts#L116) | Reale Stärkemeldung einer Fahrzeugbesatzung |
+| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:136`](src/domain/fuehrung.ts#L136) | Reale Stärkemeldung einer Fahrzeugbesatzung |
 | `domain.taktischezeichen` | [`src/domain/taktischeZeichen.ts:18`](src/domain/taktischeZeichen.ts#L18) | DV-102-Symbole je Einsatzabschnitt |
 | `domain.verfuegbareFlaecheQm` | [`src/domain/flaechen.ts:197`](src/domain/flaechen.ts#L197) | Geteiltes Flächenbudget: Zelte/Flächen und Fahrzeuge teilen sich das Baufeld |
 | `domain.zugfuehrend` | [`src/domain/fuehrung.ts:58`](src/domain/fuehrung.ts#L58) | Der Zugführer leitet den Abschnitt Medizinische Rettung |
@@ -786,33 +789,34 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
 | `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
-| `modell.delegation` | [`src/domain/types.ts:751`](src/domain/types.ts#L751) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
-| `modell.delegationsanfrage` | [`src/domain/types.ts:763`](src/domain/types.ts#L763) | Angefragte, noch nicht beantwortete Delegation |
-| `modell.diagnostik` | [`src/domain/types.ts:717`](src/domain/types.ts#L717) | Einzelne Untersuchungen statt einer Rundumschau |
-| `modell.eingeklemmt` | [`src/domain/types.ts:674`](src/domain/types.ts#L674) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
-| `modell.eingeklemmtstatus` | [`src/domain/types.ts:688`](src/domain/types.ts#L688) | Laufzeitzustand der Rettung einer eingeklemmten Person |
-| `modell.ereignis` | [`src/domain/types.ts:952`](src/domain/types.ts#L952) | Von der Übungsleitung live ausgelöste Lageänderung |
+| `modell.delegation` | [`src/domain/types.ts:763`](src/domain/types.ts#L763) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
+| `modell.delegationsanfrage` | [`src/domain/types.ts:775`](src/domain/types.ts#L775) | Angefragte, noch nicht beantwortete Delegation |
+| `modell.diagnostik` | [`src/domain/types.ts:729`](src/domain/types.ts#L729) | Einzelne Untersuchungen statt einer Rundumschau |
+| `modell.eingeklemmt` | [`src/domain/types.ts:686`](src/domain/types.ts#L686) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
+| `modell.eingeklemmtstatus` | [`src/domain/types.ts:700`](src/domain/types.ts#L700) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.ereignis` | [`src/domain/types.ts:964`](src/domain/types.ts#L964) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:422`](src/domain/types.ts#L422) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
-| `modell.finalsichtung` | [`src/domain/types.ts:831`](src/domain/types.ts#L831) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
-| `modell.flaechenbefehl` | [`src/domain/types.ts:932`](src/domain/types.ts#L932) | Auftrag des Zugführers an einen Gruppenführer, eine Fläche zu bauen |
-| `modell.freigabemodus` | [`src/domain/types.ts:664`](src/domain/types.ts#L664) | Geplante automatische Freigabe im gestaffelten Modus |
+| `modell.finalsichtung` | [`src/domain/types.ts:843`](src/domain/types.ts#L843) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
+| `modell.flaechenbefehl` | [`src/domain/types.ts:944`](src/domain/types.ts#L944) | Auftrag des Zugführers an einen Gruppenführer, eine Fläche zu bauen |
+| `modell.freigabemodus` | [`src/domain/types.ts:676`](src/domain/types.ts#L676) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
 | `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
-| `modell.geoposition` | [`src/domain/types.ts:860`](src/domain/types.ts#L860) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
+| `modell.geoposition` | [`src/domain/types.ts:872`](src/domain/types.ts#L872) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
+| `modell.gruppe` | [`src/domain/types.ts:486`](src/domain/types.ts#L486) | Welchem Gruppenführer dieses Fahrzeug samt Besatzung zugewiesen ist |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
-| `modell.kollegenanfrage` | [`src/domain/types.ts:778`](src/domain/types.ts#L778) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
-| `modell.material` | [`src/domain/types.ts:488`](src/domain/types.ts#L488) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
-| `modell.meldebucheintrag` | [`src/domain/types.ts:610`](src/domain/types.ts#L610) | Eine per Funk erfragte, selbst eingetragene Meldung des Zugführers |
-| `modell.patient` | [`src/domain/types.ts:820`](src/domain/types.ts#L820) | Alles, was sich an einem Patienten im Einsatz ändert |
-| `modell.patientvorlage` | [`src/domain/types.ts:631`](src/domain/types.ts#L631) | Felder, die ein neuer Szenario-Patient braucht |
-| `modell.platzierteflaeche` | [`src/domain/types.ts:909`](src/domain/types.ts#L909) | Vom Zugführer gewählte Zelt- oder Flächengröße und Position |
+| `modell.kollegenanfrage` | [`src/domain/types.ts:790`](src/domain/types.ts#L790) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
+| `modell.material` | [`src/domain/types.ts:500`](src/domain/types.ts#L500) | Verbrauchsmaterial, das eine Maßnahme aus einem Fahrzeug zieht |
+| `modell.meldebucheintrag` | [`src/domain/types.ts:622`](src/domain/types.ts#L622) | Eine per Funk erfragte, selbst eingetragene Meldung des Zugführers |
+| `modell.patient` | [`src/domain/types.ts:832`](src/domain/types.ts#L832) | Alles, was sich an einem Patienten im Einsatz ändert |
+| `modell.patientvorlage` | [`src/domain/types.ts:643`](src/domain/types.ts#L643) | Felder, die ein neuer Szenario-Patient braucht |
+| `modell.platzierteflaeche` | [`src/domain/types.ts:921`](src/domain/types.ts#L921) | Vom Zugführer gewählte Zelt- oder Flächengröße und Position |
 | `modell.problem` | [`src/domain/types.ts:366`](src/domain/types.ts#L366) | Herzstück der Dynamik: Problem -> Vitalwertänderung pro Minute |
 | `modell.qualifikation` | [`src/domain/types.ts:227`](src/domain/types.ts#L227) | Fünf Ausbildungsstufen von Basis bis Notärztin |
-| `modell.route` | [`src/domain/types.ts:867`](src/domain/types.ts#L867) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
-| `modell.rufgruppe` | [`src/domain/types.ts:802`](src/domain/types.ts#L802) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
+| `modell.route` | [`src/domain/types.ts:879`](src/domain/types.ts#L879) | Weg zwischen zwei Einsatzabschnitten mit echter Distanz |
+| `modell.rufgruppe` | [`src/domain/types.ts:814`](src/domain/types.ts#L814) | Mitgliedschaft in einer Sprechfunk-Rufgruppe |
 | `modell.sichtungskategorien` | [`src/domain/types.ts:12`](src/domain/types.ts#L12) | Die vier Sichtungskategorien und EX mit Farbe und Bedeutung |
-| `modell.spielerprotokoll` | [`src/domain/types.ts:591`](src/domain/types.ts#L591) | Eine Zeile in der privaten Statusansicht eines Spielers |
+| `modell.spielerprotokoll` | [`src/domain/types.ts:603`](src/domain/types.ts#L603) | Eine Zeile in der privaten Statusansicht eines Spielers |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
 
 #### modi
@@ -896,9 +900,9 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `state.freigabemodus` | [`src/state/reducer.ts:142`](src/state/reducer.ts#L142) | Sofort sichtbar oder gestaffelt über die Ablage |
 | `state.phase` | [`src/state/reducer.ts:69`](src/state/reducer.ts#L69) | Die Hauptzustände der Anwendung |
 | `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:567`](src/state/reducer.ts#L567) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.reducer` | [`src/state/reducer.ts:568`](src/state/reducer.ts#L568) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
 | `state.regieprotokoll` | [`src/state/reducer.ts:165`](src/state/reducer.ts#L165) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
-| `state.schnappschuss` | [`src/state/reducer.ts:366`](src/state/reducer.ts#L366) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.schnappschuss` | [`src/state/reducer.ts:367`](src/state/reducer.ts#L367) | Der geteilte, host-autoritative Ausschnitt des Zustands |
 | `state.spielerprotokoll` | [`src/state/reducer.ts:176`](src/state/reducer.ts#L176) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
@@ -916,19 +920,19 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1929`](src/index.css#L1929) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2462`](src/index.css#L2462) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:705`](src/index.css#L705) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4517`](src/index.css#L4517) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4522`](src/index.css#L4522) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:428`](src/index.css#L428) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1982`](src/index.css#L1982) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:154`](src/index.css#L154) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4261`](src/index.css#L4261) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:4266`](src/index.css#L4266) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:338`](src/index.css#L338) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:425`](src/index.css#L425) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:632`](src/index.css#L632) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1808`](src/index.css#L1808) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:220`](src/index.css#L220) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4589`](src/index.css#L4589) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4594`](src/index.css#L4594) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4720`](src/index.css#L4720) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4725`](src/index.css#L4725) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -969,7 +973,7 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
-| `ui.ansichtsmenueicons` | [`src/components/AnsichtsmenueIcons.tsx:28`](src/components/AnsichtsmenueIcons.tsx#L28) | Icons für die Seitenleisten-Ansichtsmenüs |
+| `ui.ansichtsmenueicons` | [`src/components/AnsichtsmenueIcons.tsx:29`](src/components/AnsichtsmenueIcons.tsx#L29) | Icons für die Seitenleisten-Ansichtsmenüs |
 | `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:15`](src/components/Befundtafel.tsx#L15) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
@@ -989,13 +993,14 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.funkkanaelepanel` | [`src/components/FunkkanaelePanel.tsx:5`](src/components/FunkkanaelePanel.tsx#L5) | Wer steht gerade auf welchem Kanal |
 | `ui.gebundenekraeftepanel` | [`src/components/GebundeneKraeftePanel.tsx:18`](src/components/GebundeneKraeftePanel.tsx#L18) | Übersicht aller aktuell gebundenen Kräfte |
 | `ui.gesamtlagebild` | [`src/pages/GesamtlagebildSeite.tsx:29`](src/pages/GesamtlagebildSeite.tsx#L29) | Regie-Startbildschirm: eine Seitenleiste als Ansichts-Menü |
+| `ui.gruppenzuweisung` | [`src/components/GruppenZuweisung.tsx:7`](src/components/GruppenZuweisung.tsx#L7) | Der Zugführer weist Fahrzeuge samt Besatzung einem Gruppenführer zu |
 | `ui.kartenortepanel` | [`src/components/KartenOrtePanel.tsx:8`](src/components/KartenOrtePanel.tsx#L8) | Entfernungen der Lagekarte als Liste in der Seitenleiste |
 | `ui.kennzahlenleiste` | [`src/components/Kennzahlenleiste.tsx:18`](src/components/Kennzahlenleiste.tsx#L18) | Vier Kacheln als Ersteindruck des Gesamtlagebilds |
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.kollegenanfragebenachrichtigung` | [`src/components/KollegenanfrageBenachrichtigung.tsx:7`](src/components/KollegenanfrageBenachrichtigung.tsx#L7) | Benachrichtigung: ein Team braucht Unterstützung |
-| `ui.lagekarte` | [`src/components/Lagekarte.tsx:105`](src/components/Lagekarte.tsx#L105) | Echte, maßstabsgetreue Lagekarte statt Kartenansicht/Baufeld |
-| `ui.lagekarte.bauen` | [`src/components/Lagekarte.tsx:119`](src/components/Lagekarte.tsx#L119) | Bauen per Kartenklick statt Knopfliste |
+| `ui.lagekarte` | [`src/components/Lagekarte.tsx:106`](src/components/Lagekarte.tsx#L106) | Echte, maßstabsgetreue Lagekarte statt Kartenansicht/Baufeld |
+| `ui.lagekarte.bauen` | [`src/components/Lagekarte.tsx:120`](src/components/Lagekarte.tsx#L120) | Bauen per Kartenklick statt Knopfliste |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:44`](src/components/Massnahmenliste.tsx#L44) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.meldebuch` | [`src/components/Meldebuch.tsx:14`](src/components/Meldebuch.tsx#L14) | Freitext-Meldebuch: was der Zugführer per Funk erfragt hat |
@@ -1020,7 +1025,7 @@ _231 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 | `ui.zeltbefehlbenachrichtigung` | [`src/components/ZeltBefehlBenachrichtigung.tsx:7`](src/components/ZeltBefehlBenachrichtigung.tsx#L7) | Benachrichtigung: der Zugführer befiehlt ein Zelt oder eine Fläche |
 | `ui.zelttypauswahl` | [`src/components/ZeltTypAuswahl.tsx:33`](src/components/ZeltTypAuswahl.tsx#L33) | Größenauswahl für ein neues Zelt oder eine Fläche |
-| `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:29`](src/pages/ZugfuehrerSeite.tsx#L29) | Startbildschirm des Zugführers: dieselbe Seitenleiste wie im Gesamtlagebild |
+| `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:31`](src/pages/ZugfuehrerSeite.tsx#L31) | Startbildschirm des Zugführers: dieselbe Seitenleiste wie im Gesamtlagebild |
 
 #### vorlagen
 
@@ -1106,6 +1111,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.1.10` | Gruppen-Zuweisung: Zugführer weist Fahrzeuge samt Besatzung einem Gruppenführer zu - `Fahrzeug.gruppenfuehrerId` (kein eigenes Gruppen-Objekt), `gruppenfuehrerListe`/`gruppeVon` in `domain/fuehrung.ts`, Reducer-Aktion `fahrzeugGruppeZuweisen`, neuer Tab "Gruppen" (`GruppenZuweisung.tsx`) im Zugführer-Ansichtsmenü |
 | `DPS-0.8.1.9` | Meldebuch: Zugführer trägt Fahrzeuge/Kräfte/Kennzahlen jetzt selbst per Funk-Rückfrage ein statt Live-Daten zu sehen - neue `Meldebuch`-Komponente + `state.meldebuch`/`meldebuchEintragen`, ersetzt `FahrzeugStatusPanel.tsx`/`KraefteStatusPanel.tsx`/die Zugführer-Nutzung von `Kennzahlenleiste` (bleibt für Regie live unverändert); Einträge erscheinen chronologisch im Debriefing |
 | `DPS-0.8.1.8` | Zugführer-Ansicht als Seitenleisten-Ansichtsmenü: `ZugfuehrerSeite.tsx` optisch an `ui.gesamtlagebild` angeglichen (fünf Ansichten Kacheln/Karte/Fahrzeuge/Kräfte/Kennzahlen im Ein-/Ausklapp-Seitenleisten-Menü statt gestapelter Karte + Abfrage-Tab-Leiste); `RegieMenueIcons.tsx`→`AnsichtsmenueIcons.tsx` (`AnsichtsmenueIcon`, + 3 neue Icons), CSS generisch umbenannt (`.regie-seitenleiste*`/`.regie-menue*`/`.gesamtlagebild-flaeche`/`.gesamtlagebild-haupt` → `.ansichtsmenue-seitenleiste*`/`.ansichtsmenue*`/`.ansicht-flaeche`/`.ansicht-haupt`), jetzt von beiden Seiten geteilt; alte `.zf-abfrage*`-Regeln entfernt |
 | `DPS-0.8.1.7` | Lagekarte, Teil 3: nur die Schadensstelle startet sichtbar, jeder weitere Abschnitt (Marker wie Route) erscheint erst nach dem Bau (→ `sichtbarePosition()`); Bauablauf jetzt per Kartenklick → Leaflet-Popup-Baumenü → `ZeltTypAuswahl` → ziehbare, live grün/rot validierte Vorschau → "Bauort bestätigen" löst Auftragstaktik/Countdown aus (→ `ui.lagekarte.bauen`); alte feste Knopfliste + Sofortplatzierung entfernt |

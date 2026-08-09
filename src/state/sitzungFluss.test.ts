@@ -2190,6 +2190,86 @@ describe('Baufeld: Zelt-/Flächenplatzierung (→ ui.baufeld)', () => {
   });
 });
 
+describe('Gruppen-Zuweisung: Fahrzeuge einem Gruppenführer zuordnen (→ modell.gruppe)', () => {
+  function eroeffnetMitFahrzeugenUndGruppenfuehrer(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    return simulationReducer(basis, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-1',
+        name: 'Gruppenführer Gruber',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+  }
+
+  it('weist ein Fahrzeug einem Gruppenführer zu und protokolliert es', () => {
+    const state = eroeffnetMitFahrzeugenUndGruppenfuehrer();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const zugewiesen = simulationReducer(state, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(zugewiesen.fahrzeuge.find((f) => f.id === fahrzeugId)?.gruppenfuehrerId).toBe('gruppe-1');
+    expect(zugewiesen.regieProtokoll.at(-1)?.text).toContain('Gruppenführer Gruber');
+  });
+
+  it('weist ein Fahrzeug einer anderen Gruppe zu, statt zu addieren', () => {
+    const state = eroeffnetMitFahrzeugenUndGruppenfuehrer();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const erst = simulationReducer(state, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const umgewiesen = simulationReducer(erst, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-2',
+    });
+    expect(umgewiesen.fahrzeuge.find((f) => f.id === fahrzeugId)?.gruppenfuehrerId).toBe('gruppe-2');
+  });
+
+  it('entfernt die Zuweisung wieder mit gruppenfuehrerId: null', () => {
+    const state = eroeffnetMitFahrzeugenUndGruppenfuehrer();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const zugewiesen = simulationReducer(state, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const entfernt = simulationReducer(zugewiesen, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: null,
+    });
+    expect(entfernt.fahrzeuge.find((f) => f.id === fahrzeugId)?.gruppenfuehrerId).toBeUndefined();
+    expect(entfernt.regieProtokoll.at(-1)?.text).toContain('keiner Gruppe mehr');
+  });
+
+  it('bleibt bei einer unbekannten fahrzeugId unverändert', () => {
+    const state = eroeffnetMitFahrzeugenUndGruppenfuehrer();
+    const unveraendert = simulationReducer(state, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId: 'unbekannt',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(unveraendert).toBe(state);
+  });
+});
+
 describe('Zeltbefehl: Zugführer befiehlt, Gruppenführer führt aus (→ modell.flaechenbefehl)', () => {
   function eroeffnetMitGruppenfuehrer(): SimulationState {
     const basis = spiele(

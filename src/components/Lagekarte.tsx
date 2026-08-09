@@ -5,6 +5,7 @@ import { MapContainer, Marker, Polyline, Popup, Rectangle, TileLayer, Tooltip, u
 import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
 import { erzeugeId } from '../domain/sitzung';
 import { geoPunktName, geoZuLokalM, lokalMZuGeo } from '../domain/geodaten';
+import { gruppenfuehrerListe as gruppenfuehrerListeVon } from '../domain/fuehrung';
 import {
   FAHRZEUG_FLAECHENBEDARF_QM,
   STANDARD_BAUFELD,
@@ -177,9 +178,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
   const flaechen = state.flaechen;
   const punkte = Object.entries(schluesselpunkte) as [Einsatzabschnitt, GeoPosition][];
 
-  const gruppenfuehrerListe = state.sitzung.spieler.filter(
-    (spieler) => spieler.rolle === 'spieler' && spieler.fuehrungsrolle === 'gruppenfuehrer',
-  );
+  const gruppenfuehrerListe = gruppenfuehrerListeVon(state.sitzung.spieler);
   const eigeneBefehle = state.flaechenBefehle.filter(
     (befehl) => befehl.zugfuehrerId === state.sitzung.eigeneId,
   );

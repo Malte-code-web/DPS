@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AbschnitteKurzuebersicht } from '../components/AbschnitteKurzuebersicht';
 import { AnsichtsmenueIcon } from '../components/AnsichtsmenueIcons';
+import { GruppenZuweisung } from '../components/GruppenZuweisung';
 import { KartenOrtePanel } from '../components/KartenOrtePanel';
 import { Lagekarte } from '../components/Lagekarte';
 import { Meldebuch } from '../components/Meldebuch';
@@ -10,7 +11,7 @@ interface Props {
   onAbschnittWaehlen: (abschnitt: Einsatzabschnitt) => void;
 }
 
-type AnsichtId = 'kacheln' | 'karte' | 'fahrzeuge' | 'kraefte' | 'kennzahlen';
+type AnsichtId = 'kacheln' | 'karte' | 'gruppen' | 'fahrzeuge' | 'kraefte' | 'kennzahlen';
 
 interface AnsichtEintrag {
   id: AnsichtId;
@@ -20,6 +21,7 @@ interface AnsichtEintrag {
 const ANSICHTEN: AnsichtEintrag[] = [
   { id: 'kacheln', label: 'Kacheln' },
   { id: 'karte', label: 'Karte' },
+  { id: 'gruppen', label: 'Gruppen' },
   { id: 'fahrzeuge', label: 'Fahrzeuge' },
   { id: 'kraefte', label: 'Kräfte' },
   { id: 'kennzahlen', label: 'Kennzahlen' },
@@ -33,17 +35,20 @@ const ANSICHTEN: AnsichtEintrag[] = [
  * nur Bereitstellungsraum und Rettungsmittelhalteplatz führt
  * (→ `domain.zugfuehrend`). Optisch dasselbe Seitenleisten-Ansichtsmenü wie
  * im Gesamtlagebild der Regie (→ `ui.gesamtlagebild`, geteilte Klassen und
- * Icons → `ui.ansichtsmenueicons`) - fünf Ansichten (Kacheln, Karte,
- * Fahrzeuge, Kräfte, Kennzahlen) statt der sieben dort, sonst dieselbe
- * Mechanik: immer nur eine Ansicht sichtbar, ein Klick im Menü wechselt sie,
- * eingeklappt bleibt die Leiste als schmaler Icon-Streifen bedienbar. Anders
- * als bei der Regie bleibt hier keine Kennzahlenleiste dauerhaft sichtbar und
- * live - Fahrzeuge, Kräfte und Kennzahlen sind je ein Freitext-Meldebuch (→
- * `ui.meldebuch`, `Meldebuch`): der Zugführer muss seine Gruppenführer real
- * per Funk fragen (außerhalb der App) und trägt das Ergebnis selbst ein,
- * statt es automatisch vorgesetzt zu bekommen - passend zur realen
- * Meldepflicht, bei der eine Führungskraft sich aktiv ein Lagebild
- * verschafft. Die Kacheln (→ `ui.abschnittekurzuebersicht`)
+ * Icons → `ui.ansichtsmenueicons`) - sechs Ansichten (Kacheln, Karte,
+ * Gruppen, Fahrzeuge, Kräfte, Kennzahlen) statt der sieben dort, sonst
+ * dieselbe Mechanik: immer nur eine Ansicht sichtbar, ein Klick im Menü
+ * wechselt sie, eingeklappt bleibt die Leiste als schmaler Icon-Streifen
+ * bedienbar. Anders als bei der Regie bleibt hier keine Kennzahlenleiste
+ * dauerhaft sichtbar und live - Fahrzeuge, Kräfte und Kennzahlen sind je ein
+ * Freitext-Meldebuch (→ `ui.meldebuch`, `Meldebuch`): der Zugführer muss
+ * seine Gruppenführer real per Funk fragen (außerhalb der App) und trägt
+ * das Ergebnis selbst ein, statt es automatisch vorgesetzt zu bekommen -
+ * passend zur realen Meldepflicht, bei der eine Führungskraft sich aktiv
+ * ein Lagebild verschafft. Gruppen (→ `ui.gruppenzuweisung`) ist die neue
+ * Voraussetzung für Einsatzaufträge an einen Gruppenführer: erst weist der
+ * Zugführer ihm Fahrzeuge samt Besatzung zu, danach kann er dieser Gruppe
+ * Aufträge geben (→ `modell.gruppe`). Die Kacheln (→ `ui.abschnittekurzuebersicht`)
  * bleiben immer der einzige Weg in die Abschnitt-Detailsicht - die Lagekarte
  * (→ `ui.lagekarte`) selbst nimmt keinen Klick zum Wechseln entgegen, sie
  * steht jetzt als eigene Ansicht neben statt zusätzlich über den Kacheln.
@@ -68,6 +73,7 @@ export function ZugfuehrerSeite({ onAbschnittWaehlen }: Props) {
               <KartenOrtePanel />
             </>
           )}
+          {aktiv === 'gruppen' && <GruppenZuweisung />}
           {aktiv === 'fahrzeuge' && (
             <Meldebuch
               bereich="fahrzeuge"

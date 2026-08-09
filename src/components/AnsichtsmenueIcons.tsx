@@ -2,6 +2,7 @@ interface Props {
   ansicht:
     | 'kacheln'
     | 'karte'
+    | 'gruppen'
     | 'freigabe'
     | 'gebunden'
     | 'anfragen'
@@ -48,6 +49,15 @@ export function AnsichtsmenueIcon({ ansicht }: Props) {
         <svg {...GEMEINSAME_ATTRIBUTE}>
           <path d="M10 2.5c-3.2 0-5.8 2.5-5.8 5.8 0 4.3 5.8 9.2 5.8 9.2s5.8-4.9 5.8-9.2c0-3.3-2.6-5.8-5.8-5.8z" />
           <circle cx="10" cy="8.3" r="2" />
+        </svg>
+      );
+    case 'gruppen':
+      return (
+        <svg {...GEMEINSAME_ATTRIBUTE}>
+          <circle cx="10" cy="5" r="2.2" />
+          <circle cx="4.5" cy="15.5" r="1.8" />
+          <circle cx="15.5" cy="15.5" r="1.8" />
+          <path d="M10 7.2v2.3M10 9.5l-4.6 4.4M10 9.5l4.6 4.4" />
         </svg>
       );
     case 'freigabe':

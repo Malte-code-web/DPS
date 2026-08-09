@@ -856,7 +856,27 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   nicht laden (Netzwerk-Sandbox blockiert Bildanfragen an
   `tile.openstreetmap.org` aus dem Headless-Browser heraus) - alle übrigen
   Kartenbestandteile sind davon unberührt.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Kräfte/Patienten weich
+- ✅ **Lagekarte, Teil 3 (`DPS-0.8.1.7`)** - Zugführer-Ebene, Teil 8: Bauen
+  per Kartenklick statt sofortiger Platzhalter, auf ausdrücklichen Wunsch.
+  Eine Übung beginnt jetzt bewusst nur mit der Schadensstelle sichtbar -
+  `sichtbarePosition()` (→ `ui.lagekarte`) liefert für jeden weiteren
+  Abschnitt erst dann eine Position (Marker wie Route), wenn dort wirklich
+  eine Fläche gebaut wurde, statt vorher schon einen Platzhalter-Marker am
+  festen Schlüsselpunkt zu zeigen. Der Bauablauf läuft komplett über die
+  Karte statt über eine feste Knopfliste (→ `ui.lagekarte.bauen`): ein
+  Kartenklick öffnet an genau dieser Stelle ein Leaflet-Popup mit den noch
+  offenen Abschnitten, danach wie gehabt `ZeltTypAuswahl` für die Größe -
+  aber keine sofortige Platzierung mehr. Stattdessen erscheint eine ziehbare
+  Vorschau (Rechteck + Ziehgriff-Marker), frei verschiebbar, live grün/rot
+  eingefärbt je nach `platzierungGueltig()`; erst "Bauort bestätigen" löst
+  die bestehende Auftragstaktik-Entscheidung und den echten Bau-Countdown
+  aus, "Abbrechen" verwirft die Vorschau folgenlos. Live verifiziert:
+  Szenariostart zeigt ausschließlich die Schadensstelle; Kartenklick öffnet
+  das Baumenü; Vorschau lässt sich ziehen und färbt sich korrekt grün/rot,
+  "Bauort bestätigen" bleibt bei ungültiger Stelle deaktiviert; nach Bau
+  erscheinen sowohl die Fläche als auch die zuvor unsichtbare Route zur
+  Schadensstelle korrekt, keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 9):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

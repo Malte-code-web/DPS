@@ -3478,6 +3478,54 @@ button.gefahr {
   white-space: nowrap;
 }
 
+.leaflet-popup-content-wrapper {
+  background: var(--bg-panel-hoch);
+  color: var(--text);
+  border-radius: var(--radius);
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-panel-hoch);
+}
+
+.leaflet-popup-close-button {
+  color: var(--text-leise) !important;
+}
+
+.lagekarte-bau-menue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 9rem;
+}
+
+.lagekarte-bau-menue-titel {
+  margin: 0 0 0.15rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.lagekarte-bau-menue button {
+  text-align: left;
+}
+
+/* Ziehgriff der bewegbaren Bau-Vorschau (→ ui.lagekarte.bauen) - bewusst kein
+   taktisches Zeichen, sondern ein neutraler Punkt mit Grab-Cursor. */
+.vorschau-griff {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--akzent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 50%);
+  cursor: grab;
+}
+
+.vorschau-marker {
+  background: transparent;
+  border: none;
+}
+
 .ort-liste {
   list-style: none;
   margin: 0;
@@ -3524,12 +3572,6 @@ button.gefahr {
   border: 1px solid var(--rand);
   color: var(--text);
   font-weight: 600;
-}
-
-.baufeld-farb-knoepfe {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .baufeld-abbrechen {

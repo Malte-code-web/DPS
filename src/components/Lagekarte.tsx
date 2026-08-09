@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, Marker, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvent } from 'react-leaflet';
+import { MapContainer, Marker, Polyline, Popup, Rectangle, TileLayer, Tooltip, useMap, useMapEvent } from 'react-leaflet';
 import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
 import { erzeugeId } from '../domain/sitzung';
 import { geoPunktName, geoZuLokalM, lokalMZuGeo } from '../domain/geodaten';
@@ -73,6 +73,14 @@ function taktischesZeichenIcon(abschnitt: Einsatzabschnitt): L.DivIcon {
   return icon;
 }
 
+/** Ziehgriff der bewegbaren Bau-Vorschau (→ `ui.lagekarte.bauen`) - bewusst kein taktisches Zeichen, damit klar bleibt: das steht noch nicht wirklich da. */
+const VORSCHAU_ICON = L.divIcon({
+  html: '<div class="vorschau-griff"></div>',
+  className: 'vorschau-marker',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
 /** Ruft `map.invalidateSize()` auf, sobald sich der Kartencontainer verändert - z. B. beim Ein-/Ausklappen der Regie-Seitenleiste (→ `ui.gesamtlagebild`). Leaflet merkt eine reine CSS-Größenänderung des Elternelements sonst nicht selbst. */
 function KartenGroessenBeobachter() {
   const map = useMap();
@@ -100,27 +108,44 @@ function KartenKlickHandler({ aktiv, onKlick }: { aktiv: boolean; onKlick: (posi
  * `Baufeld` durch eine einzige echte Karte (OpenStreetMap-Kacheln über
  * React-Leaflet) - der Maßstab ergibt sich automatisch aus echten
  * Koordinaten statt aus einer separat gepflegten, potenziell
- * widersprüchlichen Distanzangabe. Taktische Symbole nach DV 102
- * (→ `domain.taktischezeichen`, Bibliothek `taktische-zeichen-core`)
- * markieren die Schlüsselpunkte, solange dafür keine Fläche platziert ist -
- * danach übernimmt ein maßstabsgetreues Rechteck (→ `domain.geodaten.projektion`,
- * `lokalMZuGeo`) dieselbe Stelle.
+ * widersprüchlichen Distanzangabe. Eine Übung beginnt bewusst nur mit der
+ * Schadensstelle sichtbar (taktisches Zeichen nach DV 102, →
+ * `domain.taktischezeichen`) - jeder weitere Abschnitt erscheint (Marker wie
+ * Route) erst, sobald dort wirklich eine Fläche steht, nicht schon vorher als
+ * Platzhalter. Danach übernimmt ein maßstabsgetreues Rechteck
+ * (→ `domain.geodaten.projektion`, `lokalMZuGeo`) an der echten Baustelle die
+ * Stelle des Markers.
  *
- * Die Platzierung läuft wie im bisherigen Baufeld über eine
- * Zwei-Schritt-Auswahl (Größe wählen, dann Standort antippen - hier ein
- * echter Kartenklick statt einer Rasterzelle) inklusive Auftragstaktik
- * (→ `ui.baufeld.befehl`) und echtem Bau-Countdown (→ `state.zeitkosten`) -
- * nur bei `interaktiv` (Zugführer), die Regie (→ `ui.gesamtlagebild`) sieht
- * dieselbe Karte rein lesend.
+ * @anker ui.lagekarte.bauen Bauen per Kartenklick statt Knopfliste
+ *
+ * Ein Kartenklick öffnet an genau dieser Stelle ein Leaflet-Popup mit den
+ * noch offenen Abschnitten zur Auswahl - kein fester Knopf pro Abschnitt
+ * mehr. Nach der Abschnittswahl folgt wie gehabt `ZeltTypAuswahl` (welche
+ * Größe), danach aber keine sofortige Platzierung mehr: eine ziehbare
+ * Vorschau (Rechteck + Ziehgriff-Marker) erscheint am Klickpunkt und lässt
+ * sich frei auf der Karte verschieben, live grün/rot eingefärbt je nachdem,
+ * ob die aktuelle Stelle gültig ist (→ `domain.platzierungGueltig`). Erst ein
+ * bewusstes "Bauort bestätigen" löst - wie im bisherigen Baufeld - die
+ * Auftragstaktik-Entscheidung (→ `ui.baufeld.befehl`) und den echten
+ * Bau-Countdown (→ `state.zeitkosten`) aus; "Abbrechen" verwirft die Vorschau
+ * ohne jede Aktion. All das nur bei `interaktiv` (Zugführer) - die Regie
+ * (→ `ui.gesamtlagebild`) sieht dieselbe Karte rein lesend.
  */
 export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
   const { state, dispatch } = useSimulation();
   const schluesselpunkte = state.szenario?.geodaten?.schluesselpunkte;
 
-  const [auswahlAbschnitt, setAuswahlAbschnitt] = useState<FlaechenAbschnitt | null>(null);
-  const [platzierModus, setPlatzierModus] = useState<{
+  // Bauablauf: Kartenklick → Baumenü (welcher Abschnitt?) → Zelttypauswahl (welche Größe?)
+  // → bewegbare Vorschau (wo genau, ziehbar) → Bestätigung → Auftragstaktik-Entscheidung
+  // → echter Bau. Jeder Schritt ersetzt den vorigen, nie zwei gleichzeitig offen.
+  const [bauMenuPosition, setBauMenuPosition] = useState<GeoPosition | null>(null);
+  const [typAuswahl, setTypAuswahl] = useState<{ abschnitt: FlaechenAbschnitt; klickPunkt: GeoPosition } | null>(
+    null,
+  );
+  const [vorschau, setVorschau] = useState<{
     abschnitt: FlaechenAbschnitt;
     typ: ZeltTypId | FlaechenTypId;
+    position: GeoPosition;
   } | null>(null);
   const [zielAuswahl, setZielAuswahl] = useState<{
     abschnitt: FlaechenAbschnitt;
@@ -134,7 +159,6 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     xM: number;
     yM: number;
   } | null>(null);
-  const [fehler, setFehler] = useState<string | null>(null);
 
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
@@ -212,37 +236,6 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     setEntscheidung(null);
   };
 
-  const kartenKlick = (position: GeoPosition) => {
-    if (!platzierModus) return;
-    const { xM, yM } = geoZuLokalM(ursprung, position);
-    const gueltig = platzierungGueltig(
-      { typ: platzierModus.typ, abschnitt: platzierModus.abschnitt, xM, yM },
-      flaechen,
-      baufeld,
-      ZELT_ABSCHNITTE.has(platzierModus.abschnitt),
-    );
-    if (!gueltig) {
-      setFehler('Diese Stelle überschneidet eine andere Fläche oder liegt außerhalb des Baufelds.');
-      return;
-    }
-    setFehler(null);
-    if (gruppenfuehrerListe.length === 0) {
-      dispatch({
-        typ: 'zeltPlatzieren',
-        id: erzeugeId(),
-        flaechenTyp: platzierModus.typ,
-        abschnitt: platzierModus.abschnitt,
-        xM,
-        yM,
-        spielerId: state.sitzung.eigeneId ?? undefined,
-      });
-      setPlatzierModus(null);
-      return;
-    }
-    setEntscheidung({ abschnitt: platzierModus.abschnitt, typ: platzierModus.typ, xM, yM });
-    setPlatzierModus(null);
-  };
-
   const abschnitteInBearbeitung = new Set([
     ...flaechen.map((flaeche) => flaeche.abschnitt),
     ...state.flaechenBefehle.map((befehl) => befehl.abschnitt),
@@ -251,21 +244,83 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     (abschnitt) => !abschnitteInBearbeitung.has(abschnitt),
   );
 
+  const kannBauMenuOeffnen =
+    !zkBeschaeftigt &&
+    !bauMenuPosition &&
+    !typAuswahl &&
+    !vorschau &&
+    !entscheidung &&
+    !zielAuswahl &&
+    nochOffeneAbschnitte.length > 0;
+
+  const vorschauXY = vorschau ? geoZuLokalM(ursprung, vorschau.position) : null;
+  const vorschauInfo = vorschau ? groesseVon(vorschau.typ) : null;
+  const vorschauEckeB =
+    vorschau && vorschauXY && vorschauInfo
+      ? lokalMZuGeo(ursprung, vorschauXY.xM + vorschauInfo.breiteM, vorschauXY.yM + vorschauInfo.tiefeM)
+      : null;
+  const vorschauGueltig =
+    vorschau && vorschauXY
+      ? platzierungGueltig(
+          { typ: vorschau.typ, abschnitt: vorschau.abschnitt, xM: vorschauXY.xM, yM: vorschauXY.yM },
+          flaechen,
+          baufeld,
+          ZELT_ABSCHNITTE.has(vorschau.abschnitt),
+        )
+      : false;
+
+  const bauortBestaetigen = () => {
+    if (!vorschau || !vorschauXY || !vorschauGueltig) return;
+    const { xM, yM } = vorschauXY;
+    if (gruppenfuehrerListe.length === 0) {
+      dispatch({
+        typ: 'zeltPlatzieren',
+        id: erzeugeId(),
+        flaechenTyp: vorschau.typ,
+        abschnitt: vorschau.abschnitt,
+        xM,
+        yM,
+        spielerId: state.sitzung.eigeneId ?? undefined,
+      });
+      setVorschau(null);
+      return;
+    }
+    setEntscheidung({ abschnitt: vorschau.abschnitt, typ: vorschau.typ, xM, yM });
+    setVorschau(null);
+  };
+
+  const vorschauAbbrechen = () => {
+    setVorschau(null);
+  };
+
+  /**
+   * Wo ein Abschnitt gerade wirklich auf der Karte steht - nur die
+   * Schadensstelle (vom Szenario vorgegeben) und bereits gebaute Flächen
+   * (am echten Mittelpunkt des gebauten Rechtecks) sind sichtbar. Ein noch
+   * nicht gebauter Abschnitt hat keine Position - weder Marker noch Route
+   * zeigen dorthin, bis wirklich etwas steht (→ `ui.lagekarte.bauen`).
+   */
+  const sichtbarePosition = (abschnitt: Einsatzabschnitt): GeoPosition | undefined => {
+    if (!FLAECHEN_ABSCHNITT_SET.has(abschnitt)) return schluesselpunkte[abschnitt];
+    const flaeche = flaechen.find((f) => f.abschnitt === abschnitt);
+    if (!flaeche) return undefined;
+    const info = groesseVon(flaeche.typ);
+    return lokalMZuGeo(ursprung, flaeche.xM + info.breiteM / 2, flaeche.yM + info.tiefeM / 2);
+  };
+
   const baufeldEckeA = lokalMZuGeo(ursprung, 0, 0);
   const baufeldEckeB = lokalMZuGeo(ursprung, baufeld.breiteM, baufeld.tiefeM);
 
   return (
     <div className="baufeld-block">
-      <div className={`karten-rahmen${platzierModus ? ' karten-rahmen-platziermodus' : ''}`}>
+      <div className={`karten-rahmen${kannBauMenuOeffnen ? ' karten-rahmen-platziermodus' : ''}`}>
         <MapContainer center={[ursprung.lat, ursprung.lon]} zoom={18} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
           />
           <KartenGroessenBeobachter />
-          {interaktiv && (
-            <KartenKlickHandler aktiv={platzierModus !== null && !zkBeschaeftigt} onKlick={kartenKlick} />
-          )}
+          {interaktiv && <KartenKlickHandler aktiv={kannBauMenuOeffnen} onKlick={setBauMenuPosition} />}
 
           <Rectangle
             bounds={[
@@ -281,8 +336,8 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
           </Rectangle>
 
           {state.routen.map((route) => {
-            const von = schluesselpunkte[route.von];
-            const nach = schluesselpunkte[route.nach];
+            const von = sichtbarePosition(route.von);
+            const nach = sichtbarePosition(route.nach);
             if (!von || !nach) return null;
             const gesperrt = route.status === 'gesperrt';
             return (
@@ -307,10 +362,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
           })}
 
           {punkte
-            .filter(
-              ([abschnitt]) =>
-                !(FLAECHEN_ABSCHNITT_SET.has(abschnitt) && abschnitteInBearbeitung.has(abschnitt as FlaechenAbschnitt)),
-            )
+            .filter(([abschnitt]) => !FLAECHEN_ABSCHNITT_SET.has(abschnitt))
             .map(([abschnitt, position]) => {
               const patientenAnzahl = state.patienten.filter((p) => p.abschnitt === abschnitt).length;
               const fahrzeugAnzahl = state.fahrzeuge.filter((f) => f.abschnitt === abschnitt).length;
@@ -334,6 +386,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
             const eckeB = lokalMZuGeo(ursprung, flaeche.xM + info.breiteM, flaeche.yM + info.tiefeM);
             const farbe = FLAECHEN_FARBEN[flaeche.abschnitt];
             const patientenAnzahl = state.patienten.filter((p) => p.abschnitt === flaeche.abschnitt).length;
+            const fahrzeugAnzahl = state.fahrzeuge.filter((f) => f.abschnitt === flaeche.abschnitt).length;
             return (
               <Rectangle
                 key={flaeche.id}
@@ -347,13 +400,72 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
                 }
               >
                 <Tooltip sticky>
-                  {info.bezeichnung} - {geoPunktName(flaeche.abschnitt)}
-                  {patientenAnzahl > 0 && ` (${patientenAnzahl} Pat.)`}
+                  <b>
+                    {info.bezeichnung} - {geoPunktName(flaeche.abschnitt)}
+                  </b>
+                  <br />
+                  {patientenAnzahl > 0 && `${patientenAnzahl} Pat.`}
+                  {patientenAnzahl > 0 && fahrzeugAnzahl > 0 && ' · '}
+                  {fahrzeugAnzahl > 0 && `${fahrzeugAnzahl} Fzg.`}
+                  {patientenAnzahl === 0 && fahrzeugAnzahl === 0 && 'unbesetzt'}
                   {interaktiv && ' - antippen zum Entfernen'}
                 </Tooltip>
               </Rectangle>
             );
           })}
+
+          {interaktiv && bauMenuPosition && (
+            <Popup
+              position={[bauMenuPosition.lat, bauMenuPosition.lon]}
+              eventHandlers={{ remove: () => setBauMenuPosition(null) }}
+            >
+              <div className="lagekarte-bau-menue">
+                <p className="lagekarte-bau-menue-titel">Was hier bauen?</p>
+                {nochOffeneAbschnitte.map((abschnitt) => (
+                  <button
+                    key={abschnitt}
+                    type="button"
+                    onClick={() => {
+                      setTypAuswahl({ abschnitt, klickPunkt: bauMenuPosition });
+                      setBauMenuPosition(null);
+                    }}
+                  >
+                    {geoPunktName(abschnitt)}
+                  </button>
+                ))}
+              </div>
+            </Popup>
+          )}
+
+          {interaktiv && vorschau && vorschauEckeB && (
+            <>
+              <Rectangle
+                bounds={[
+                  [vorschau.position.lat, vorschau.position.lon],
+                  [vorschauEckeB.lat, vorschauEckeB.lon],
+                ]}
+                pathOptions={{
+                  color: vorschauGueltig ? 'var(--ok)' : 'var(--sk1)',
+                  fillColor: vorschauGueltig ? 'var(--ok)' : 'var(--sk1)',
+                  fillOpacity: 0.25,
+                  dashArray: '5 4',
+                  weight: 2,
+                }}
+                interactive={false}
+              />
+              <Marker
+                position={[vorschau.position.lat, vorschau.position.lon]}
+                icon={VORSCHAU_ICON}
+                draggable
+                eventHandlers={{
+                  drag: (ereignis) => {
+                    const { lat, lng } = (ereignis.target as L.Marker).getLatLng();
+                    setVorschau((bisher) => (bisher ? { ...bisher, position: { lat, lon: lng } } : bisher));
+                  },
+                }}
+              />
+            </>
+          )}
         </MapContainer>
       </div>
 
@@ -373,12 +485,6 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
 
       {!interaktiv ? null : (
         <>
-          {fehler && (
-            <p className="hinweis hinweis-fehler" role="alert">
-              {fehler}
-            </p>
-          )}
-
           {eigeneBefehle.length > 0 && (
             <ul className="baufeld-befehle-liste">
               {eigeneBefehle.map((befehl) => {
@@ -401,24 +507,25 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
             </ul>
           )}
 
-          {platzierModus ? (
-            <p className="hinweis">
-              Karte antippen, um den Standort für {geoPunktName(platzierModus.abschnitt)} festzulegen.
-            </p>
-          ) : null}
-
-          {platzierModus ? (
-            <button
-              type="button"
-              className="baufeld-abbrechen"
-              disabled={zkBeschaeftigt}
-              onClick={() => {
-                setPlatzierModus(null);
-                setFehler(null);
-              }}
-            >
-              Platzierung abbrechen
-            </button>
+          {vorschau ? (
+            <>
+              <p className="hinweis">
+                Griff auf der Karte ziehen, um den Standort für {geoPunktName(vorschau.abschnitt)} festzulegen.
+              </p>
+              {!vorschauGueltig && (
+                <p className="hinweis hinweis-fehler" role="alert">
+                  Diese Stelle überschneidet eine andere Fläche oder liegt außerhalb des Baufelds.
+                </p>
+              )}
+              <div className="baufeld-ziel-knoepfe">
+                <button type="button" className="primaer" disabled={!vorschauGueltig} onClick={bauortBestaetigen}>
+                  Bauort bestätigen
+                </button>
+                <button type="button" className="baufeld-abbrechen" onClick={vorschauAbbrechen}>
+                  Abbrechen
+                </button>
+              </div>
+            </>
           ) : entscheidung ? (
             <div className="panel zelttyp-auswahl">
               <div className="panel-titel">
@@ -457,31 +564,19 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
               </button>
             </div>
           ) : (
-            !zkZelt &&
-            nochOffeneAbschnitte.length > 0 && (
-              <div className="baufeld-farb-knoepfe">
-                {nochOffeneAbschnitte.map((abschnitt) => (
-                  <button
-                    key={abschnitt}
-                    type="button"
-                    disabled={zkBeschaeftigt}
-                    onClick={() => setAuswahlAbschnitt(abschnitt)}
-                  >
-                    Fläche für {geoPunktName(abschnitt)} platzieren
-                  </button>
-                ))}
-              </div>
+            kannBauMenuOeffnen && (
+              <p className="hinweis">Karte antippen, um dort etwas zu bauen.</p>
             )
           )}
 
-          {auswahlAbschnitt && (
+          {typAuswahl && (
             <ZeltTypAuswahl
-              abschnitt={auswahlAbschnitt}
+              abschnitt={typAuswahl.abschnitt}
               onWaehlen={(typ) => {
-                setPlatzierModus({ abschnitt: auswahlAbschnitt, typ });
-                setAuswahlAbschnitt(null);
+                setVorschau({ abschnitt: typAuswahl.abschnitt, typ, position: typAuswahl.klickPunkt });
+                setTypAuswahl(null);
               }}
-              onAbbrechen={() => setAuswahlAbschnitt(null)}
+              onAbbrechen={() => setTypAuswahl(null)}
             />
           )}
         </>

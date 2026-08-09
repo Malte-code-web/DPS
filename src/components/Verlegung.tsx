@@ -6,6 +6,7 @@ import { istAbschnittEroeffnet } from '../domain/flaechen';
 import { useSimulation } from '../state/useSimulation';
 import { istPatientVerlegenAktion } from '../state/zeitkosten';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
+import { PatientTransportZuweisung } from './PatientTransportZuweisung';
 import type { Patient } from '../domain/types';
 
 /**
@@ -32,6 +33,14 @@ export function Verlegung({ patient }: { patient: Patient }) {
   );
   const verstorben = patient.status === 'verstorben';
   const wartetAufSichtung = sichtungOffen(patient);
+
+  // Mit aktivem Zugführer ersetzt die Fahrzeug-Zuweisung (→
+  // `ui.patienttransportzuweisung`) den alten Direktknopf zum Abtransport -
+  // ohne Zugführer bleibt der bisherige Weg unverändert (→
+  // `domain.zugfuehrungaktiv`, Solo-Spiel/Einzelfälle ohne Fahrzeuge).
+  if (patient.abschnitt === 'ausgangssichtung' && gateAktiv) {
+    return <PatientTransportZuweisung patient={patient} />;
+  }
 
   if (moeglicheZiele(patient.abschnitt).length === 0) {
     return <p className="hinweis">Der Patient hat den Behandlungsplatz verlassen.</p>;

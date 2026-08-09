@@ -404,13 +404,18 @@ export interface Problem {
  * auf, damit er in keiner Spieler-Ansicht als Tab erscheint. `ablage` ist ein
  * zur Schadensstelle gleichwertiger, aber eigenständiger Startpunkt (RD nicht
  * an der Schadensstelle), `bereitstellungsraum` der Warteplatz nachgeforderter
- * Fahrzeuge (→ `modell.ereignis`).
+ * Fahrzeuge (→ `modell.ereignis`). `rettungsmittelhalteplatz` ist das
+ * Gegenstück am anderen Ende der Kette - Warteplatz einsatzbereiter
+ * Transportfahrzeuge, bevor sie zur Ausgangssichtung vorgerufen werden (→
+ * `modell.transport`). Beide sind reine Fahrzeug-Infrastruktur und tauchen
+ * ebenfalls nicht in `ABSCHNITTE` auf, Patienten landen dort nie.
  */
 export type Einsatzabschnitt =
   | 'verdeckt'
   | 'schadensstelle'
   | 'ablage'
   | 'bereitstellungsraum'
+  | 'rettungsmittelhalteplatz'
   | 'eingangssichtung'
   | 'zelt_rot'
   | 'zelt_gelb'
@@ -494,6 +499,8 @@ export interface Fahrzeug extends FahrzeugVorlage {
    * Übungsleitung (→ `sitzung.modell`, `Spieler.fuehrungsrolle`).
    */
   gruppenfuehrerId?: string;
+  /** Gegenstück zu `Patient.transportFahrzeugId` (→ `modell.transport`). */
+  transportierterPatientId?: string;
 }
 
 /**
@@ -867,6 +874,21 @@ export interface Patient extends PatientVorlage {
   verlauf: Verlaufseintrag[];
   /** Laufzeitzustand der Rettung, nur gesetzt für Patienten mit `eingeklemmtBeimStart` nach ihrer Freigabe (→ `modell.eingeklemmtstatus`). */
   eingeklemmt?: EingeklemmtStatus;
+  /**
+   * @anker modell.transport Fahrzeug-Zuweisung ist zugleich die Transport-Freigabe
+   *
+   * Gesetzt, sobald `patientAbtransportieren` den Patienten einem konkreten
+   * Transportfahrzeug zuweist (→ `Fahrzeug.transportierterPatientId`) -
+   * Zuweisung und Freigabe fallen bewusst in einem Schritt zusammen, statt
+   * getrennter Genehmigungs- und Zuordnungsschritte. Nur gesetzt, wenn der
+   * Abtransport über diesen neuen, Zugführer-gegateten Weg lief (→
+   * `ui.patienttransportzuweisung`); ohne aktiven Zugführer in der Sitzung
+   * bleibt der bisherige Direktweg (`patientVerlegen` nach `transport`)
+   * unverändert ungegatet und ohne Fahrzeug-Verknüpfung (→
+   * `domain.zugfuehrungaktiv`) - dieselbe Blast-Radius-Begrenzung wie beim
+   * bestehenden Zeltbefehl.
+   */
+  transportFahrzeugId?: string;
 }
 
 /** @anker modell.geoposition Schematische Koordinate eines Szenario-Schlüsselpunkts */
@@ -903,13 +925,14 @@ export interface Route extends RouteVorlage {
 }
 
 /**
- * Die acht Abschnitte, für die der Zugführer eine Zeltgröße oder eine reine
+ * Die neun Abschnitte, für die der Zugführer eine Zeltgröße oder eine reine
  * Fläche platziert (→ `domain.flaechen`) - Schadensstelle ist vom Szenario
  * vorgegeben und immer offen, `verdeckt` ist kein realer Ort.
  */
 export type FlaechenAbschnitt =
   | 'ablage'
   | 'bereitstellungsraum'
+  | 'rettungsmittelhalteplatz'
   | 'eingangssichtung'
   | 'zelt_rot'
   | 'zelt_gelb'

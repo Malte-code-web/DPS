@@ -949,7 +949,41 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   Auftrag erteilen - Gruppenführer bekommt eigenen Toast, führt aus, beide
   Fahrzeuge erscheinen am Zielabschnitt, Auftrag verschwindet aus beiden
   Ansichten, keine Konsolenfehler.
-- 💤 **Noch offen:** Rettungsmittelhalteplatz + Transporte freigeben.
+- ✅ **Rettungsmittelhalteplatz + Transporte freigeben (`DPS-0.8.1.12`)** -
+  Zugführer-Ebene, Teil 13, letzter Baustein - schließt die Zugführer-Ebene
+  ab. Auf Rückfrage entschieden: "Transporte freigeben" heißt Fahrzeug-
+  Zuweisung UND Freigabe in einem Schritt (kein separater
+  Genehmigungsvorgang), der Rettungsmittelhalteplatz ist ein neuer, eigener,
+  auf der Lagekarte baubarer Abschnitt (neunter neben den bisherigen acht),
+  getrennt vom Bereitstellungsraum (bleibt reine Infrastruktur für
+  nachgeforderte Fahrzeuge). Da der bestehende Verlegungsgraph `ZIELE` (→
+  `abschnitte.wege`) ein einziger, gemeinsamer Graph für Patienten- **und**
+  Fahrzeugverlegung ist, hätte eine direkte Kante zum Rettungsmittelhalteplatz
+  ihn sofort auch für Patienten geöffnet - stattdessen ein additiver,
+  fahrzeug-exklusiver Overlay-Graph (`fahrzeugZiele`/
+  `istFahrzeugVerlegungMoeglich`, → `abschnitte.fahrzeugziele`), den alle vier
+  fahrzeugspezifischen Aufrufstellen jetzt nutzen, während alle
+  patientenspezifischen unverändert auf dem alten Graphen bleiben. Die
+  naheliegende Idee, die alte Kante `ausgangssichtung → transport` zu
+  entfernen, hätte Alleinspiel und die fahrzeuglosen `EINZELFAELLE`-Szenarien
+  kaputt gemacht - stattdessen dasselbe Blast-Radius-Prinzip wie
+  `domain.zugfuehrungaktiv`: die alte Kante bleibt bestehen, die neue
+  Fahrzeug-Zuweisung (→ `ui.patienttransportzuweisung`) ersetzt den
+  Direktknopf nur, wenn ein Zugführer aktiv ist und der Patient an der
+  Ausgangssichtung steht. Neue Reducer-Aktion `patientAbtransportieren`
+  verlegt Patient und Fahrzeug gemeinsam nach `transport` und verknüpft sie
+  (`Patient.transportFahrzeugId`/`Fahrzeug.transportierterPatientId`, →
+  `modell.transport`). Live mit drei Clients verifiziert: Rettungsmittelhalteplatz
+  gebaut, ein RTW über zwei Einsatzaufträge (→ `DPS-0.8.1.11`) zunächst dorthin
+  und dann weiter zur Ausgangssichtung vorgerufen, ein Patient durch die volle
+  Kette bis zur Ausgangssichtung sichtet - dort erscheint statt des alten
+  Direktknopfs die Fahrzeugauswahl, Zuweisen verlegt beide gemeinsam nach
+  `transport`; ein zweiter Patient sieht danach korrekt den Leerzustand ohne
+  freies Fahrzeug; eine Sitzung ganz ohne Zugführer behält den alten
+  Direktknopf unverändert, keine Konsolenfehler.
+
+Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
+
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,

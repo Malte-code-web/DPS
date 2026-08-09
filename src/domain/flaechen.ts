@@ -216,7 +216,7 @@ export function verfuegbareFlaecheQm(
 /**
  * @anker domain.istAbschnittEroeffnet Ob ein Abschnitt als Verlegungsziel gilt
  *
- * Schadensstelle ist vom Szenario vorgegeben und immer offen. Alle acht
+ * Schadensstelle ist vom Szenario vorgegeben und immer offen. Alle neun
  * `FlaechenAbschnitt`e gelten als eröffnet, sobald für sie eine Fläche
  * platziert wurde (→ `modell.platzierteflaeche`) - kein separates Flag
  * mehr nötig, seit auch Ablage/Bereitstellungsraum/Ein-/Ausgangssichtung/

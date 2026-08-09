@@ -2560,3 +2560,180 @@ describe('Führungsbefehl: Zugführer befiehlt, Gruppenführer führt einen Absc
     expect(schnappschuss.abschnittFuehrenBefehle).toEqual(befohlen.abschnittFuehrenBefehle);
   });
 });
+
+describe('Transport-Freigabe: Rettungsmittelhalteplatz + Fahrzeug-Zuweisung (→ modell.transport)', () => {
+  function eroeffnetMitFahrzeugen(): SimulationState {
+    return spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+      { typ: 'sitzungStarten' },
+    );
+  }
+
+  /** Fährt ein Fahrzeug über den Fahrzeug-Overlay zur Ausgangssichtung vor. */
+  function fahrzeugAnAusgangssichtung(state: SimulationState, fahrzeugId: string): SimulationState {
+    const amHalteplatz = simulationReducer(state, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'rettungsmittelhalteplatz',
+    });
+    return simulationReducer(amHalteplatz, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'ausgangssichtung',
+    });
+  }
+
+  /** Sichtet und verlegt einen Patienten durch die volle Kette bis zur Ausgangssichtung, final gesichtet. */
+  function patientAnAusgangssichtung(
+    state: SimulationState,
+    patientId = 'B-01',
+  ): SimulationState {
+    let naechster = simulationReducer(state, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK3',
+    });
+    naechster = simulationReducer(naechster, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'eingangssichtung',
+    });
+    naechster = simulationReducer(naechster, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK3',
+    });
+    naechster = simulationReducer(naechster, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'zelt_gruen',
+    });
+    naechster = simulationReducer(naechster, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK3',
+    });
+    naechster = simulationReducer(naechster, {
+      typ: 'patientVerlegen',
+      patientId,
+      ziel: 'ausgangssichtung',
+    });
+    return simulationReducer(naechster, {
+      typ: 'patientSichten',
+      patientId,
+      kategorie: 'SK3',
+      final: true,
+    });
+  }
+
+  it('fährt ein Fahrzeug über den Rettungsmittelhalteplatz zur Ausgangssichtung vor', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    expect(state.fahrzeuge[0]!.typ).toBe('rtw');
+    const vorgefahren = fahrzeugAnAusgangssichtung(state, fahrzeugId);
+    expect(vorgefahren.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe(
+      'ausgangssichtung',
+    );
+  });
+
+  it('weist ein Transportfahrzeug zu und gibt damit zugleich den Abtransport frei', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const bereit = patientAnAusgangssichtung(fahrzeugAnAusgangssichtung(state, fahrzeugId));
+
+    const zugewiesen = simulationReducer(bereit, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-01',
+      fahrzeugId,
+      spielerId: 'leiter-1',
+    });
+
+    const patient = zugewiesen.patienten.find((p) => p.id === 'B-01');
+    const fahrzeug = zugewiesen.fahrzeuge.find((f) => f.id === fahrzeugId);
+    expect(patient?.abschnitt).toBe('transport');
+    expect(patient?.transportFahrzeugId).toBe(fahrzeugId);
+    expect(fahrzeug?.abschnitt).toBe('transport');
+    expect(fahrzeug?.transportierterPatientId).toBe('B-01');
+    expect(zugewiesen.regieProtokoll.at(-1)?.text).toContain('Abtransport freigegeben');
+  });
+
+  it('lehnt die Zuweisung ab, wenn das Fahrzeug schon einen anderen Patienten transportiert', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    let bereit = fahrzeugAnAusgangssichtung(state, fahrzeugId);
+    bereit = patientAnAusgangssichtung(bereit, 'B-01');
+    bereit = patientAnAusgangssichtung(bereit, 'B-02');
+    const belegt = simulationReducer(bereit, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-01',
+      fahrzeugId,
+    });
+
+    const zweiterVersuch = simulationReducer(belegt, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-02',
+      fahrzeugId,
+    });
+    expect(zweiterVersuch.fahrzeuge.find((f) => f.id === fahrzeugId)?.transportierterPatientId).toBe(
+      'B-01',
+    );
+    expect(zweiterVersuch.patienten.find((p) => p.id === 'B-02')?.abschnitt).toBe('ausgangssichtung');
+  });
+
+  it('lehnt die Zuweisung ab, wenn das Fahrzeug nicht an der Ausgangssichtung steht', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const bereit = patientAnAusgangssichtung(state);
+    const unveraendert = simulationReducer(bereit, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-01',
+      fahrzeugId,
+    });
+    expect(unveraendert).toBe(bereit);
+  });
+
+  it('lehnt die Zuweisung ab, wenn der Patient noch nicht an der Ausgangssichtung sichtungsfertig ist', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const fahrzeugId = state.fahrzeuge[0]!.id;
+    const vorgefahren = fahrzeugAnAusgangssichtung(state, fahrzeugId);
+    const unveraendert = simulationReducer(vorgefahren, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-01',
+      fahrzeugId,
+    });
+    expect(unveraendert).toBe(vorgefahren);
+  });
+
+  it('lehnt die Zuweisung mit einem Nicht-Transportfahrzeug ab (z. B. NEF)', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const nefId = state.fahrzeuge.find((f) => f.typ === 'nef')!.id;
+    const nefVorgefahren = fahrzeugAnAusgangssichtung(state, nefId);
+    const bereit = patientAnAusgangssichtung(nefVorgefahren);
+    const unveraendert = simulationReducer(bereit, {
+      typ: 'patientAbtransportieren',
+      patientId: 'B-01',
+      fahrzeugId: nefId,
+    });
+    expect(unveraendert).toBe(bereit);
+  });
+
+  it('behält die alte Direktverlegung ohne Fahrzeugbezug bei (Solo/Einzelfälle ohne Zugführer)', () => {
+    const state = eroeffnetMitFahrzeugen();
+    const bereit = patientAnAusgangssichtung(state);
+    const direkt = simulationReducer(bereit, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'transport',
+    });
+    const patient = direkt.patienten.find((p) => p.id === 'B-01');
+    expect(patient?.abschnitt).toBe('transport');
+    expect(patient?.transportFahrzeugId).toBeUndefined();
+  });
+});

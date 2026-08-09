@@ -1,4 +1,4 @@
-import { moeglicheZiele } from '../domain/abschnitte';
+import { fahrzeugZiele } from '../domain/abschnitte';
 import { darfFahrzeugeDisponieren, zugfuehrungAktiv } from '../domain/fuehrung';
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { istAbschnittEroeffnet } from '../domain/flaechen';
@@ -22,7 +22,7 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
   const zk = useZeitkostenStatus();
   const zkBeschaeftigt = zk.aktion !== null;
   const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
-  const ziele = moeglicheZiele(fahrzeug.abschnitt).filter(
+  const ziele = fahrzeugZiele(fahrzeug.abschnitt).filter(
     (ziel) => !gateAktiv || istAbschnittEroeffnet(ziel.id, state.flaechen),
   );
   const eigeneFuehrungsrolle = state.sitzung.spieler.find(
@@ -34,7 +34,7 @@ export function FahrzeugVerlegung({ fahrzeug }: { fahrzeug: Fahrzeug }) {
     eigeneFuehrungsrolle,
   );
 
-  if (moeglicheZiele(fahrzeug.abschnitt).length === 0) {
+  if (fahrzeugZiele(fahrzeug.abschnitt).length === 0) {
     return <p className="hinweis">Das Fahrzeug hat den Behandlungsplatz verlassen.</p>;
   }
 

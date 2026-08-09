@@ -14,8 +14,9 @@ const FLAECHEN_TYP_REIHENFOLGE: FlaechenTypId[] = ['FL_S', 'FL_M', 'FL_L'];
 /**
  * Ein reales Zeltprodukt steht zusätzlich zur reinen Fläche zur Wahl, wo ein
  * echtes Zelt fachlich Sinn ergibt (die drei Behandlungszelte, Ein-/
- * Ausgangssichtung) - Ablage/Bereitstellungsraum/Transport bleiben bei der
- * reinen markierten Fläche, dort gibt es kein reales Zeltprodukt dafür.
+ * Ausgangssichtung) - Ablage/Bereitstellungsraum/Rettungsmittelhalteplatz/
+ * Transport bleiben bei der reinen markierten Fläche, dort gibt es kein
+ * reales Zeltprodukt dafür.
  * Die Fläche steht überall zur Wahl - nicht jede Lage braucht ein echtes
  * Zelt, auch bei den Behandlungszelten nicht.
  */
@@ -38,8 +39,8 @@ function katalogeFuer(abschnitt: FlaechenAbschnitt): { zelte: boolean; flaechen:
  * Behandlungszelte und Ein-/Ausgangssichtung dürfen zusätzlich zum echten
  * Zelt auch eine reine Fläche ohne Zeltprodukt wählen (→ `katalogeFuer`) -
  * nicht jede Lage braucht ein echtes Zelt. Ablage/Bereitstellungsraum/
- * Transport bieten von vornherein nur die reine Fläche an, dafür gibt es
- * kein passendes Zeltprodukt.
+ * Rettungsmittelhalteplatz/Transport bieten von vornherein nur die reine
+ * Fläche an, dafür gibt es kein passendes Zeltprodukt.
  */
 export function ZeltTypAuswahl({ abschnitt, onWaehlen, onAbbrechen }: Props) {
   const { zelte, flaechen } = katalogeFuer(abschnitt);

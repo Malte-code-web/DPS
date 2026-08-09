@@ -10,6 +10,7 @@ import {
   istFahrzeugVerlegenAktion,
   istMassnahmeAktion,
   istMassnahmeAusSammlung,
+  istPatientAbtransportierenAktion,
   istPatientVerlegenAktion,
   istZeltPlatzierenAktion,
   zeitkostenLabel,
@@ -116,6 +117,20 @@ describe('zeitkostenSek', () => {
     ).toBe(0);
   });
 
+  it('kostet eine Fahrzeugverlegung zum Rettungsmittelhalteplatz - nur im Fahrzeug-Overlay erlaubt', () => {
+    const start = imEinsatz();
+    const fahrzeugId = start.fahrzeuge[0]?.id;
+    if (!fahrzeugId) return; // Szenario ohne konfigurierte Fahrzeuge - Bypass.
+    const abschnitt = start.fahrzeuge.find((f) => f.id === fahrzeugId)!.abschnitt;
+    expect(
+      zeitkostenSek(start, {
+        typ: 'fahrzeugVerlegen',
+        fahrzeugId,
+        ziel: 'rettungsmittelhalteplatz',
+      }),
+    ).toBe(verlegungsdauerSek(start.routen, abschnitt, 'rettungsmittelhalteplatz'));
+  });
+
   it('kostet den Zeltaufbau je nach Größe - größere Zelte dauern länger', () => {
     const state = imEinsatz();
     const sg20 = zeitkostenSek(state, {
@@ -202,6 +217,69 @@ describe('zeitkostenSek', () => {
     ).toBe(0);
   });
 
+  it('kostet die Transport-Freigabe nur bei sichtungsfertigem Patient und freiem RTW/KTW an der Ausgangssichtung', () => {
+    const start = imEinsatz();
+    const fahrzeugId = start.fahrzeuge.find((f) => f.typ === 'rtw' || f.typ === 'ktw')?.id;
+    if (!fahrzeugId) return; // Szenario ohne Transportfahrzeug - Bypass.
+    const aktion = {
+      typ: 'patientAbtransportieren' as const,
+      patientId: 'B-01',
+      fahrzeugId,
+    };
+    // Weder Fahrzeug an der Ausgangssichtung noch Patient sichtungsfertig.
+    expect(zeitkostenSek(start, aktion)).toBe(0);
+
+    const fahrzeugBereit = simulationReducer(
+      simulationReducer(start, { typ: 'fahrzeugVerlegen', fahrzeugId, ziel: 'rettungsmittelhalteplatz' }),
+      { typ: 'fahrzeugVerlegen', fahrzeugId, ziel: 'ausgangssichtung' },
+    );
+    // Fahrzeug ist da, Patient aber noch an der Schadensstelle.
+    expect(zeitkostenSek(fahrzeugBereit, aktion)).toBe(0);
+
+    let mitPatient = simulationReducer(fahrzeugBereit, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie: 'SK1',
+    });
+    mitPatient = simulationReducer(mitPatient, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'eingangssichtung',
+    });
+    mitPatient = simulationReducer(mitPatient, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie: 'SK1',
+    });
+    mitPatient = simulationReducer(mitPatient, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'zelt_rot',
+    });
+    mitPatient = simulationReducer(mitPatient, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie: 'SK1',
+    });
+    mitPatient = simulationReducer(mitPatient, {
+      typ: 'patientVerlegen',
+      patientId: 'B-01',
+      ziel: 'ausgangssichtung',
+    });
+    // Am Ziel, aber noch nicht final gesichtet.
+    expect(zeitkostenSek(mitPatient, aktion)).toBe(0);
+
+    const gesichtet = simulationReducer(mitPatient, {
+      typ: 'patientSichten',
+      patientId: 'B-01',
+      kategorie: 'SK1',
+      final: true,
+    });
+    expect(zeitkostenSek(gesichtet, aktion)).toBe(
+      verlegungsdauerSek(gesichtet.routen, 'ausgangssichtung', 'transport'),
+    );
+  });
+
   it('summiert die vollständige Diagnostik über fünf Minuten', () => {
     // Wer an einem Patienten alles erhebt, verliert diese Zeit bei allen
     // anderen (→ `state.zeitkosten`) - jede Untersuchung zählt genau einmal.
@@ -265,6 +343,9 @@ describe('zeitkostenLabel', () => {
         yM: 0,
       }),
     ).toBe(`${ZELTTYPEN.SG30.bezeichnung} aufbauen`);
+    expect(
+      zeitkostenLabel({ typ: 'patientAbtransportieren', patientId: 'B-01', fahrzeugId: 'f-1' }),
+    ).toBe('Transport organisieren');
   });
 });
 
@@ -311,6 +392,17 @@ describe('Zeitkosten-Abgleich', () => {
     expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_rot')).toBe(true);
     expect(istFahrzeugVerlegenAktion(aktion, 'f-1', 'zelt_gruen')).toBe(false);
     expect(istFahrzeugVerlegenAktion(aktion, 'f-2', 'zelt_rot')).toBe(false);
+  });
+
+  it('istPatientAbtransportierenAktion erkennt nur exakt Patient und Fahrzeug', () => {
+    const aktion = {
+      typ: 'patientAbtransportieren' as const,
+      patientId: 'B-01',
+      fahrzeugId: 'f-1',
+    };
+    expect(istPatientAbtransportierenAktion(aktion, 'B-01', 'f-1')).toBe(true);
+    expect(istPatientAbtransportierenAktion(aktion, 'B-01', 'f-2')).toBe(false);
+    expect(istPatientAbtransportierenAktion(aktion, 'B-02', 'f-1')).toBe(false);
   });
 
   it('istZeltPlatzierenAktion erkennt nur exakt den Zelttyp', () => {

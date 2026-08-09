@@ -37,6 +37,13 @@ export const ZEICHEN_JE_ABSCHNITT: Partial<Record<Einsatzabschnitt, TaktischesZe
     organisation: 'hilfsorganisation',
     fachaufgabe: 'logistik',
   },
+  // Gleiche Klassifikation wie `bereitstellungsraum` - kein eigenes DV-102-Symbol
+  // für einen Rettungsmittelhalteplatz in der Bibliothek verfügbar.
+  rettungsmittelhalteplatz: {
+    grundzeichen: 'ortsfeste-stelle',
+    organisation: 'hilfsorganisation',
+    fachaufgabe: 'logistik',
+  },
   eingangssichtung: {
     grundzeichen: 'ortsfeste-stelle',
     organisation: 'hilfsorganisation',

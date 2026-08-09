@@ -22,11 +22,15 @@ export interface AbschnittInfo {
 /**
  * @anker abschnitte.liste Namen und Aufgaben der Einsatzabschnitte
  *
- * `verdeckt` und `bereitstellungsraum` erscheinen hier bewusst nicht: `verdeckt`
- * ist der Warteplatz vor der Freigabe (→ `modell.freigabemodus`), kein Ort, den
- * eine Person auswählen können soll. `bereitstellungsraum` ist reine
- * Fahrzeug-Infrastruktur für nachgeforderte Fahrzeuge (→ `modell.ereignis`,
- * noch nicht verdrahtet) - Patienten landen dort nie.
+ * `verdeckt`, `bereitstellungsraum` und `rettungsmittelhalteplatz` erscheinen
+ * hier bewusst nicht: `verdeckt` ist der Warteplatz vor der Freigabe (→
+ * `modell.freigabemodus`), kein Ort, den eine Person auswählen können soll.
+ * `bereitstellungsraum` und `rettungsmittelhalteplatz` sind reine
+ * Fahrzeug-Infrastruktur (nachgeforderte bzw. wartende Transportfahrzeuge, →
+ * `modell.ereignis`, `modell.transport`) - Patienten landen dort nie. Ihre
+ * Namen/Kurzformen liegen stattdessen in `ZUSATZ_ABSCHNITTE`, damit
+ * `abschnittInfo` trotzdem für sie funktioniert, sobald sie als Fahrzeugziel
+ * auftauchen (→ `abschnitte.fahrzeugziele`).
  */
 export const ABSCHNITTE: AbschnittInfo[] = [
   {
@@ -84,8 +88,23 @@ export const ABSCHNITTE: AbschnittInfo[] = [
 
 const NACH_ID = new Map(ABSCHNITTE.map((abschnitt) => [abschnitt.id, abschnitt]));
 
+/**
+ * Namen für Abschnitte außerhalb `ABSCHNITTE` (kein Patienten-Ziel), die
+ * trotzdem einen Namen brauchen, sobald sie als Fahrzeugziel auftauchen (→
+ * `abschnitte.fahrzeugziele`). `bereitstellungsraum` braucht das nicht -
+ * keine Kante referenziert ihn als Ziel.
+ */
+const ZUSATZ_ABSCHNITTE: Partial<Record<Einsatzabschnitt, AbschnittInfo>> = {
+  rettungsmittelhalteplatz: {
+    id: 'rettungsmittelhalteplatz',
+    name: 'Rettungsmittelhalteplatz',
+    kurz: 'RMHP',
+    aufgabe: 'Warteplatz einsatzbereiter Transportfahrzeuge, Abruf zur Ausgangssichtung',
+  },
+};
+
 export function abschnittInfo(id: Einsatzabschnitt): AbschnittInfo {
-  const info = NACH_ID.get(id);
+  const info = NACH_ID.get(id) ?? ZUSATZ_ABSCHNITTE[id];
   if (!info) throw new Error(`Unbekannter Einsatzabschnitt: ${id}`);
   return info;
 }
@@ -110,6 +129,7 @@ const ZIELE: Record<Einsatzabschnitt, Einsatzabschnitt[]> = {
   zelt_gruen: ['ausgangssichtung', 'zelt_rot', 'zelt_gelb'],
   ausgangssichtung: ['transport'],
   transport: [],
+  rettungsmittelhalteplatz: [],
 };
 
 export function moeglicheZiele(abschnitt: Einsatzabschnitt): AbschnittInfo[] {
@@ -118,6 +138,31 @@ export function moeglicheZiele(abschnitt: Einsatzabschnitt): AbschnittInfo[] {
 
 export function istVerlegungMoeglich(von: Einsatzabschnitt, nach: Einsatzabschnitt): boolean {
   return ZIELE[von].includes(nach);
+}
+
+/**
+ * @anker abschnitte.fahrzeugziele Zusätzliche, nur für Fahrzeuge gültige Kanten
+ *
+ * Additiv zu `ZIELE`, nie ersetzend - getrennt gehalten, weil `ZIELE` sonst
+ * denselben Graphen auch für `patientVerlegen`/`ui.verlegung` öffnen würde:
+ * eine Kante zum oder vom Rettungsmittelhalteplatz dürfen Patienten nie
+ * sehen, das ist reine Fahrzeug-Infrastruktur (→ `modell.transport`).
+ */
+const FAHRZEUG_ZUSATZ_ZIELE: Partial<Record<Einsatzabschnitt, Einsatzabschnitt[]>> = {
+  // Standard-Spawnpunkt aller Fahrzeuge (→ `domain.fahrzeuge`, `fahrzeugAusVorlage`).
+  schadensstelle: ['rettungsmittelhalteplatz'],
+  // Nachgeforderte Transportfahrzeuge (→ `modell.ereignis`) können von dort weiter.
+  bereitstellungsraum: ['rettungsmittelhalteplatz'],
+  // Abruf nach vorn, sobald ein Patient an der Ausgangssichtung wartet.
+  rettungsmittelhalteplatz: ['ausgangssichtung'],
+};
+
+export function fahrzeugZiele(abschnitt: Einsatzabschnitt): AbschnittInfo[] {
+  return [...ZIELE[abschnitt], ...(FAHRZEUG_ZUSATZ_ZIELE[abschnitt] ?? [])].map(abschnittInfo);
+}
+
+export function istFahrzeugVerlegungMoeglich(von: Einsatzabschnitt, nach: Einsatzabschnitt): boolean {
+  return ZIELE[von].includes(nach) || (FAHRZEUG_ZUSATZ_ZIELE[von]?.includes(nach) ?? false);
 }
 
 /**

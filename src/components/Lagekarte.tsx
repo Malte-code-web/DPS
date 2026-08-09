@@ -28,6 +28,7 @@ const FLAECHEN_ABSCHNITTE: FlaechenAbschnitt[] = [
   'eingangssichtung',
   'ausgangssichtung',
   'transport',
+  'rettungsmittelhalteplatz',
 ];
 const FLAECHEN_ABSCHNITT_SET = new Set<Einsatzabschnitt>(FLAECHEN_ABSCHNITTE);
 const ZELT_ABSCHNITTE = new Set<FlaechenAbschnitt>(['zelt_rot', 'zelt_gelb', 'zelt_gruen']);
@@ -41,6 +42,7 @@ const FLAECHEN_FARBEN: Record<FlaechenAbschnitt, string> = {
   eingangssichtung: 'var(--text-leise)',
   ausgangssichtung: 'var(--text-leise)',
   transport: 'var(--ok)',
+  rettungsmittelhalteplatz: 'var(--akzent-stark)',
 };
 
 /** Nur die Wege, deren Distanz eine eigene Führungsentscheidung ist - nicht jeder Schritt zwischen zwei Nachbarzelten. */

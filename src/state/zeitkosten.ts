@@ -1,4 +1,4 @@
-import { istVerlegungMoeglich } from '../domain/abschnitte';
+import { istFahrzeugVerlegungMoeglich, istVerlegungMoeglich } from '../domain/abschnitte';
 import { DIAGNOSTIK } from '../domain/diagnostik';
 import { verlegungsdauerSek } from '../domain/geodaten';
 import { MASSNAHMEN } from '../domain/massnahmen';
@@ -52,7 +52,7 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
 
     case 'fahrzeugVerlegen': {
       const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
-      if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return 0;
+      if (!fahrzeug || !istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return 0;
       return verlegungsdauerSek(state.routen, fahrzeug.abschnitt, action.ziel);
     }
 
@@ -80,12 +80,24 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
           (fahrzeug) =>
             fahrzeug.gruppenfuehrerId === befehl.gruppenfuehrerId &&
             fahrzeug.abschnitt !== befehl.ziel &&
-            istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
+            istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
         )
         .map((fahrzeug) => verlegungsdauerSek(state.routen, fahrzeug.abschnitt, befehl.ziel));
       // Ein Konvoi kommt an, wenn das langsamste Fahrzeug ankommt - nicht die
       // Summe aller Einzelverlegungen.
       return dauern.length === 0 ? 0 : Math.max(...dauern);
+    }
+
+    case 'patientAbtransportieren': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
+      if (!patient || !fahrzeug) return 0;
+      if (patient.abschnitt !== 'ausgangssichtung' || patient.status === 'verstorben') return 0;
+      if (sichtungOffen(patient)) return 0;
+      if (fahrzeug.abschnitt !== 'ausgangssichtung') return 0;
+      if (fahrzeug.typ !== 'rtw' && fahrzeug.typ !== 'ktw') return 0;
+      if (fahrzeug.transportierterPatientId) return 0;
+      return verlegungsdauerSek(state.routen, 'ausgangssichtung', 'transport');
     }
 
     // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung
@@ -120,6 +132,8 @@ export function zeitkostenLabel(action: SimulationAction): string {
       return `${groesseVon(action.flaechenTyp).bezeichnung} aufbauen`;
     case 'abschnittFuehrenBefehlAusfuehren':
       return 'Abschnitt führen';
+    case 'patientAbtransportieren':
+      return 'Transport organisieren';
     case 'rettungDurchfuehren':
       return 'Rettung';
     default:
@@ -204,4 +218,16 @@ export function istZeltPlatzierenAktion(
 
 export function istAbschnittFuehrenAktion(aktion: SimulationAction, befehlId: string): boolean {
   return aktion.typ === 'abschnittFuehrenBefehlAusfuehren' && aktion.id === befehlId;
+}
+
+export function istPatientAbtransportierenAktion(
+  aktion: SimulationAction,
+  patientId: string,
+  fahrzeugId: string,
+): boolean {
+  return (
+    aktion.typ === 'patientAbtransportieren' &&
+    aktion.patientId === patientId &&
+    aktion.fahrzeugId === fahrzeugId
+  );
 }

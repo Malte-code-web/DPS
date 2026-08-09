@@ -1,4 +1,4 @@
-import { istVerlegungMoeglich } from '../domain/abschnitte';
+import { istFahrzeugVerlegungMoeglich, istVerlegungMoeglich } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO, fahrzeugAusVorlage, verlegeFahrzeug } from '../domain/fahrzeuge';
 import { MASSNAHMEN } from '../domain/massnahmen';
 import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
@@ -368,6 +368,12 @@ export type SimulationAction =
     }
   | { typ: 'abschnittFuehrenBefehlAusfuehren'; id: string }
   | { typ: 'abschnittFuehrenBefehlAblehnen'; id: string }
+  | {
+      typ: 'patientAbtransportieren';
+      patientId: string;
+      fahrzeugId: string;
+      spielerId?: string;
+    }
   | {
       typ: 'meldebuchEintragen';
       id: string;
@@ -1335,7 +1341,7 @@ export function simulationReducer(
 
     case 'fahrzeugVerlegen': {
       const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
-      if (!fahrzeug || !istVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return state;
+      if (!fahrzeug || !istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, action.ziel)) return state;
       return mitFahrzeug(state, action.fahrzeugId, (eintrag) => verlegeFahrzeug(eintrag, action.ziel));
     }
 
@@ -1568,14 +1574,15 @@ export function simulationReducer(
         (fahrzeug) => fahrzeug.gruppenfuehrerId === befehl.gruppenfuehrerId,
       );
       // Jedes Fahrzeug der Gruppe zieht für sich um - eines, das schon am Ziel
-      // steht, bleibt unverändert; eines ohne direkten Weg (→ `istVerlegungMoeglich`)
-      // bleibt stehen, statt den ganzen Befehl scheitern zu lassen.
+      // steht, bleibt unverändert; eines ohne direkten Weg (→
+      // `istFahrzeugVerlegungMoeglich`) bleibt stehen, statt den ganzen
+      // Befehl scheitern zu lassen.
       const naechster = {
         ...state,
         fahrzeuge: state.fahrzeuge.map((fahrzeug) => {
           if (fahrzeug.gruppenfuehrerId !== befehl.gruppenfuehrerId) return fahrzeug;
           if (fahrzeug.abschnitt === befehl.ziel) return fahrzeug;
-          if (!istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel)) return fahrzeug;
+          if (!istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel)) return fahrzeug;
           return verlegeFahrzeug(fahrzeug, befehl.ziel);
         }),
         abschnittFuehrenBefehle: state.abschnittFuehrenBefehle.filter(
@@ -1584,7 +1591,8 @@ export function simulationReducer(
       };
       const bewegt = gruppe.filter(
         (fahrzeug) =>
-          fahrzeug.abschnitt !== befehl.ziel && istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
+          fahrzeug.abschnitt !== befehl.ziel &&
+          istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
       ).length;
       const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === befehl.gruppenfuehrerId);
       return protokolliereRegie(
@@ -1600,6 +1608,41 @@ export function simulationReducer(
           (eintrag) => eintrag.id !== action.id,
         ),
       };
+    }
+
+    // Fahrzeug-Zuweisung und Transport-Freigabe sind hier bewusst ein
+    // einziger Schritt (→ `modell.transport`) - kein separater
+    // Genehmigungsvorgang. Nur strukturelle Wächter (Datenintegrität): die
+    // Rechteprüfung (→ `darfFahrzeugeDisponieren`) bleibt UI-only, wie bei
+    // jeder anderen Fahrzeugdisposition auch.
+    case 'patientAbtransportieren': {
+      const patient = state.patienten.find((eintrag) => eintrag.id === action.patientId);
+      const fahrzeug = state.fahrzeuge.find((eintrag) => eintrag.id === action.fahrzeugId);
+      if (!patient || !fahrzeug) return state;
+      if (patient.abschnitt !== 'ausgangssichtung' || patient.status === 'verstorben') return state;
+      if (sichtungOffen(patient)) return state;
+      if (fahrzeug.abschnitt !== 'ausgangssichtung') return state;
+      if (fahrzeug.typ !== 'rtw' && fahrzeug.typ !== 'ktw') return state;
+      if (fahrzeug.transportierterPatientId) return state;
+
+      let naechster = mitPatient(state, action.patientId, (eintrag) => ({
+        ...verlegePatient(eintrag, 'transport', state.zeitSek),
+        transportFahrzeugId: action.fahrzeugId,
+      }));
+      naechster = mitFahrzeug(naechster, action.fahrzeugId, (eintrag) => ({
+        ...verlegeFahrzeug(eintrag, 'transport'),
+        transportierterPatientId: action.patientId,
+      }));
+      const protokolliert = uebernimmVerlaufInSpielerprotokoll(
+        state,
+        naechster,
+        [action.spielerId],
+        action.patientId,
+      );
+      return protokolliereRegie(
+        { ...protokolliert, ausgewaehlterPatientId: null },
+        `${FAHRZEUGTYP_INFO[fahrzeug.typ].label} übernimmt Patient zum Transport - Abtransport freigegeben.`,
+      );
     }
 
     case 'meldebuchEintragen': {

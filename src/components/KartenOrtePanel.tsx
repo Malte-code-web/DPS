@@ -1,11 +1,11 @@
 import { geoPunktName } from '../domain/geodaten';
 import { useSimulation } from '../state/useSimulation';
 
-/** Dieselbe Schwelle wie in der Kartenansicht (→ `ui.kartenansicht`) - nur die Wege, die eine echte Führungsentscheidung sind. */
+/** Dieselbe Schwelle wie in der Lagekarte (→ `ui.lagekarte`) - nur die Wege, die eine echte Führungsentscheidung sind. */
 const MINDESTABSTAND_M = 60;
 
 /**
- * @anker ui.kartenortepanel Entfernungen der Kartenansicht als Liste in der Seitenleiste
+ * @anker ui.kartenortepanel Entfernungen der Lagekarte als Liste in der Seitenleiste
  *
  * Dieselben Wege wie auf der Karte selbst, nur als Text - für schnelles
  * Überfliegen ohne auf einzelne Marker zu zielen.

@@ -829,14 +829,34 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   bleiben bei der reinen Fläche, da es dafür kein passendes Zeltprodukt
   gibt. Live verifiziert (Rotes Zelt zeigt jetzt alle vier Zeltgrößen plus
   drei Flächengrößen), keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 7):** Lagekarte, Teil 2 - die echte
-  Kartenkomponente (React-Leaflet + OpenStreetMap-Kacheln, taktische
-  Symbole aus der Bibliothek `taktische-zeichen`), die `Kartenansicht.tsx`
-  und `Baufeld.tsx` ersetzt.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Lagekarte, Teil 3 - echte
-  Geodaten für die fünf Szenarien, die aktuell noch keine haben
-  (`wohnungsbrand` und die vier Einzelfälle).
-- 💤 **Noch offen (Zugführer-Ebene, Teil 9):** Kräfte/Patienten weich
+- ✅ **Lagekarte, Teil 2 (`DPS-0.8.1.6`)** - Zugführer-Ebene, Teil 7: die echte
+  Kartenkomponente. `Lagekarte.tsx` (→ `ui.lagekarte`) ersetzt
+  `Kartenansicht.tsx` und `Baufeld.tsx` vollständig - React-Leaflet mit
+  echten OpenStreetMap-Kacheln (Maßstab ergibt sich automatisch aus echten
+  Koordinaten), taktische Zeichen nach DV 102 als `L.divIcon` je
+  Schlüsselpunkt (→ `domain.taktischezeichen`, Bibliothek
+  `taktische-zeichen-core`). Die Platzierung läuft wie im bisherigen
+  Baufeld über Größe wählen → Auftragstaktik-Entscheidung → Countdown, nur
+  ein echter Kartenklick statt einer Rasterzelle liefert die Koordinaten.
+  Damit die Umstellung keine Regression wird (ohne Geodaten ließe sich kein
+  Abschnitt mehr eröffnen, sobald ein Zugführer mitspielt), bekamen
+  `wohnungsbrand` und die vier `EINZELFAELLE` in derselben Erweiterung
+  echte, plausible Geodaten (reale Orte im Kreis Steinfurt, keine echten
+  Einsätze) - damit haben jetzt alle sechs Szenarien Geodaten, die
+  ursprünglich als Teil 8 geplante gesonderte Nacherfassung entfällt. Ein
+  `ResizeObserver` in einer eigenen `KartenGroessenBeobachter`-
+  Unterkomponente hält die Karte beim Ein-/Ausklappen der Regie-Seitenleiste
+  intakt, ohne dass die Elternseite dafür etwas tun muss. Live mit drei
+  echten Clients verifiziert (Übungsleitung, Zugführer, Beobachter):
+  Zelt-/Flächenwahl bei den Behandlungszelten weiterhin mit beiden
+  Katalogen, Baufeld-Grenzprüfung korrekt (Ablehnung außerhalb, Countdown
+  bei gültiger Platzierung), Regie-Ansicht schreibgeschützt und
+  sidebar-kollaps-fest, keine Konsolenfehler. Die OpenStreetMap-
+  Kachelbilder selbst ließen sich in der Entwicklungsumgebung dieser Sitzung
+  nicht laden (Netzwerk-Sandbox blockiert Bildanfragen an
+  `tile.openstreetmap.org` aus dem Headless-Browser heraus) - alle übrigen
+  Kartenbestandteile sind davon unberührt.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

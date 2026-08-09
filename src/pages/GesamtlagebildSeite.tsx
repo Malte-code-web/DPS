@@ -5,8 +5,8 @@ import { EreignissePanel } from '../components/EreignissePanel';
 import { FunkkanaelePanel } from '../components/FunkkanaelePanel';
 import { GebundeneKraeftePanel } from '../components/GebundeneKraeftePanel';
 import { KartenOrtePanel } from '../components/KartenOrtePanel';
-import { Kartenansicht } from '../components/Kartenansicht';
 import { Kennzahlenleiste } from '../components/Kennzahlenleiste';
+import { Lagekarte } from '../components/Lagekarte';
 import { OffeneAnfragenPanel } from '../components/OffeneAnfragenPanel';
 import { RegieMenueIcon } from '../components/RegieMenueIcons';
 import { useSimulation } from '../state/useSimulation';
@@ -53,7 +53,6 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   const { state } = useSimulation();
   const [aktiv, setAktiv] = useState<AnsichtId>('kacheln');
   const [eingeklappt, setEingeklappt] = useState(false);
-  const hatGeodaten = Boolean(state.szenario?.geodaten);
 
   const verdecktAnzahl = state.patienten.filter((patient) => patient.abschnitt === 'verdeckt').length;
   const gebundenAnzahl = state.sitzung.spieler.filter(
@@ -65,7 +64,7 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
 
   const eintraege: AnsichtEintrag[] = [
     { id: 'kacheln', label: 'Kacheln' },
-    ...(hatGeodaten ? [{ id: 'karte' as const, label: 'Karte' }] : []),
+    { id: 'karte', label: 'Karte' },
     {
       id: 'freigabe',
       label: 'Freigabe',
@@ -99,9 +98,9 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
       <div className="gesamtlagebild-flaeche">
         <div className="gesamtlagebild-haupt">
           {aktiv === 'kacheln' && <AbschnitteUebersicht onAbschnittWaehlen={onAbschnittWaehlen} />}
-          {aktiv === 'karte' && hatGeodaten && (
+          {aktiv === 'karte' && (
             <>
-              <Kartenansicht />
+              <Lagekarte interaktiv={false} />
               <KartenOrtePanel />
             </>
           )}

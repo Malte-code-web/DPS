@@ -13,9 +13,9 @@ interface Props {
  * @anker ui.abschnittekurzuebersicht Kacheln ohne Kräfte-/Fahrzeugdetails
  *
  * Der einzige Navigationsweg der Zugführer-Ansicht (→ `ui.zugfuehrerseite`)
- * in die Abschnitt-Detailsicht - auch wenn dort zusätzlich eine (rein
- * lesende) Kartenansicht steht, da `Kartenansicht` selbst keinen Klick zum
- * Wechseln entgegennimmt. Dieselben Kacheln wie `ui.abschnitteuebersicht`,
+ * in die Abschnitt-Detailsicht - auch wenn dort zusätzlich die Lagekarte
+ * (→ `ui.lagekarte`) steht, da diese selbst keinen Klick zum Wechseln
+ * entgegennimmt. Dieselben Kacheln wie `ui.abschnitteuebersicht`,
  * aber bewusst ohne die dort passiv sichtbare Kräfte- und Fahrzeugliste - der
  * Zugführer soll das aktiv abfragen (→ `FahrzeugStatusPanel`,
  * `KraefteStatusPanel`), nicht beiläufig beim bloßen Öffnen der Seite

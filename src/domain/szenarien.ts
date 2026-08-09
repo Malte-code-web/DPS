@@ -1,4 +1,14 @@
-import type { Szenario } from './types';
+import { lokalMZuGeo } from './geodaten';
+import type { GeoPosition, Szenario } from './types';
+
+/**
+ * Realer, öffentlich bekannter Stadtmittelpunkt Rheine (Kreis Steinfurt) -
+ * wie schon bei `busunfall-b31` ein plausibler Standard-Ort, keine reale
+ * Adresse und kein realer Einsatz. Die übrigen Schlüsselpunkte werden von
+ * hier aus über echte Meterversätze abgeleitet (→ `domain.geodaten.projektion`),
+ * damit die Distanzen zueinander automatisch stimmen.
+ */
+const WOHNUNGSBRAND_URSPRUNG: GeoPosition = { lat: 52.2833, lon: 7.4333 };
 
 /**
  * @anker szenarien.liste Die Übungsszenarien - hier neue Lagen und Patienten anlegen
@@ -396,7 +406,7 @@ const busunfall: Szenario = {
   ],
   // Schematische, plausible Koordinaten (Raum Kreis Steinfurt, wie die
   // Fahrzeug-Bestückung) - keine echte Vermessung dieses Unfallorts, ein
-  // "sinnvoller Standard" für Kartenansicht und Verlegungsdauer
+  // "sinnvoller Standard" für Lagekarte und Verlegungsdauer
   // (→ `domain.geodaten`), wie schon die feste Rufgruppenliste.
   geodaten: {
     schluesselpunkte: {
@@ -742,6 +752,34 @@ const wohnungsbrand: Szenario = {
       ekg: 'ST-Hebungen in II, III und aVF',
     },
   ],
+  geodaten: {
+    ursprung: WOHNUNGSBRAND_URSPRUNG,
+    schluesselpunkte: {
+      schadensstelle: WOHNUNGSBRAND_URSPRUNG,
+      ablage: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 10, -15),
+      bereitstellungsraum: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, -40, -30),
+      eingangssichtung: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 5, 20),
+      zelt_rot: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 0, 45),
+      zelt_gelb: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 15, 45),
+      zelt_gruen: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 30, 45),
+      ausgangssichtung: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 15, 70),
+      transport: lokalMZuGeo(WOHNUNGSBRAND_URSPRUNG, 15, 90),
+    },
+    // distanzMeter bewusst weggelassen - wird aus den obigen Koordinaten
+    // berechnet (→ `domain.geodaten.haversine`).
+    routen: [
+      { id: 'wb-schadensstelle-eingangssichtung', von: 'schadensstelle', nach: 'eingangssichtung', sperraufschlagSek: 90 },
+      { id: 'wb-ablage-eingangssichtung', von: 'ablage', nach: 'eingangssichtung', sperraufschlagSek: 90 },
+      { id: 'wb-bereitstellung-schadensstelle', von: 'bereitstellungsraum', nach: 'schadensstelle', sperraufschlagSek: 90 },
+      { id: 'wb-eingang-zeltrot', von: 'eingangssichtung', nach: 'zelt_rot', sperraufschlagSek: 60 },
+      { id: 'wb-eingang-zeltgelb', von: 'eingangssichtung', nach: 'zelt_gelb', sperraufschlagSek: 60 },
+      { id: 'wb-eingang-zeltgruen', von: 'eingangssichtung', nach: 'zelt_gruen', sperraufschlagSek: 60 },
+      { id: 'wb-zeltrot-ausgang', von: 'zelt_rot', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
+      { id: 'wb-zeltgelb-ausgang', von: 'zelt_gelb', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
+      { id: 'wb-zeltgruen-ausgang', von: 'zelt_gruen', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
+      { id: 'wb-ausgang-transport', von: 'ausgangssichtung', nach: 'transport', sperraufschlagSek: 45 },
+    ],
+  },
 };
 
 export const SZENARIEN: Szenario[] = [busunfall, wohnungsbrand];

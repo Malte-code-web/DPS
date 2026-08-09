@@ -818,14 +818,25 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
     Abschnitten), live verifiziert (alle acht Abschnitte platzierbar,
     Eingangssichtung zeigt beide Kataloge, Ablage nur Flächen, Aufbau-
     Countdown korrekt beschriftet, keine Konsolenfehler).
-- 💤 **Noch offen (Zugführer-Ebene, Teil 6):** Lagekarte, Teil 2 - die echte
+- ✅ **Zelt-/Flächenwahl auch bei den Behandlungszelten (`DPS-0.8.1.5`)** -
+  kleine Korrektur auf ausdrücklichen Wunsch: die drei Behandlungszelte
+  boten bislang nur echte Zeltprodukte an, die übrigen erweiterten
+  Abschnitte durften schon zwischen Zelt und reiner Fläche wählen. Jetzt
+  gilt für alle fünf Abschnitte mit sinnvollem Zeltbezug (die drei
+  Behandlungszelte, Ein-/Ausgangssichtung) dieselbe Wahlfreiheit -
+  `ZeltTypAuswahl.tsx`s `katalogeFuer()` bietet dort zusätzlich zum echten
+  Zelt immer auch die reine Fläche an. Ablage/Bereitstellungsraum/Transport
+  bleiben bei der reinen Fläche, da es dafür kein passendes Zeltprodukt
+  gibt. Live verifiziert (Rotes Zelt zeigt jetzt alle vier Zeltgrößen plus
+  drei Flächengrößen), keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 7):** Lagekarte, Teil 2 - die echte
   Kartenkomponente (React-Leaflet + OpenStreetMap-Kacheln, taktische
   Symbole aus der Bibliothek `taktische-zeichen`), die `Kartenansicht.tsx`
   und `Baufeld.tsx` ersetzt.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 7):** Lagekarte, Teil 3 - echte
+- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Lagekarte, Teil 3 - echte
   Geodaten für die fünf Szenarien, die aktuell noch keine haben
   (`wohnungsbrand` und die vier Einzelfälle).
-- 💤 **Noch offen (Zugführer-Ebene, Teil 8):** Kräfte/Patienten weich
+- 💤 **Noch offen (Zugführer-Ebene, Teil 9):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

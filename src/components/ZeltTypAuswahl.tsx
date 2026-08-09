@@ -11,15 +11,22 @@ interface Props {
 const ZELT_TYP_REIHENFOLGE: ZeltTypId[] = ['SG20', 'SG30', 'SG40', 'SG50'];
 const FLAECHEN_TYP_REIHENFOLGE: FlaechenTypId[] = ['FL_S', 'FL_M', 'FL_L'];
 
-/** Die drei Behandlungszelte bauen immer ein echtes Zelt; Ablage/Bereitstellungsraum/Transport nur eine markierte Fläche; Ein-/Ausgangssichtung dürfen zwischen beidem wählen. */
+/**
+ * Ein reales Zeltprodukt steht zusätzlich zur reinen Fläche zur Wahl, wo ein
+ * echtes Zelt fachlich Sinn ergibt (die drei Behandlungszelte, Ein-/
+ * Ausgangssichtung) - Ablage/Bereitstellungsraum/Transport bleiben bei der
+ * reinen markierten Fläche, dort gibt es kein reales Zeltprodukt dafür.
+ * Die Fläche steht überall zur Wahl - nicht jede Lage braucht ein echtes
+ * Zelt, auch bei den Behandlungszelten nicht.
+ */
 function katalogeFuer(abschnitt: FlaechenAbschnitt): { zelte: boolean; flaechen: boolean } {
-  if (abschnitt === 'zelt_rot' || abschnitt === 'zelt_gelb' || abschnitt === 'zelt_gruen') {
-    return { zelte: true, flaechen: false };
-  }
-  if (abschnitt === 'eingangssichtung' || abschnitt === 'ausgangssichtung') {
-    return { zelte: true, flaechen: true };
-  }
-  return { zelte: false, flaechen: true };
+  const zeltMoeglich =
+    abschnitt === 'zelt_rot' ||
+    abschnitt === 'zelt_gelb' ||
+    abschnitt === 'zelt_gruen' ||
+    abschnitt === 'eingangssichtung' ||
+    abschnitt === 'ausgangssichtung';
+  return { zelte: zeltMoeglich, flaechen: true };
 }
 
 /**
@@ -27,10 +34,12 @@ function katalogeFuer(abschnitt: FlaechenAbschnitt): { zelte: boolean; flaechen:
  *
  * Vier Zeltkacheln mit den realen DRK-Maßen (→ `domain.flaechen`) - der
  * Richtwert-Patientenwert ist reine Anzeige, in dieser Ausbaustufe keine
- * erzwungene Kapazitätsgrenze für die Patientenkette. Für Abschnitte ohne
- * reales Zeltprodukt (Ablage, Bereitstellungsraum, Transport) stehen
- * stattdessen drei reine Flächengrößen zur Wahl; Ein-/Ausgangssichtung
- * dürfen zwischen beiden Katalogen wählen.
+ * erzwungene Kapazitätsgrenze für die Patientenkette. Die drei
+ * Behandlungszelte und Ein-/Ausgangssichtung dürfen zusätzlich zum echten
+ * Zelt auch eine reine Fläche ohne Zeltprodukt wählen (→ `katalogeFuer`) -
+ * nicht jede Lage braucht ein echtes Zelt. Ablage/Bereitstellungsraum/
+ * Transport bieten von vornherein nur die reine Fläche an, dafür gibt es
+ * kein passendes Zeltprodukt.
  */
 export function ZeltTypAuswahl({ abschnitt, onWaehlen, onAbbrechen }: Props) {
   const { zelte, flaechen } = katalogeFuer(abschnitt);

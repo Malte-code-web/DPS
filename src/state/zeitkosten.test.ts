@@ -167,6 +167,41 @@ describe('zeitkostenSek', () => {
     expect(zeitkostenSek(state, { typ: 'abschnittWaehlen', abschnitt: 'zelt_rot' })).toBe(0);
   });
 
+  it('kostet für einen Führungsauftrag das Maximum aller Einzelverlegungen, nicht die Summe', () => {
+    const start = imEinsatz();
+    if (start.fahrzeuge.length < 2) return; // Szenario ohne genug Fahrzeuge - Bypass.
+    const [erstes, zweites] = start.fahrzeuge;
+    const mitGruppe = simulationReducer(
+      simulationReducer(start, {
+        typ: 'fahrzeugGruppeZuweisen',
+        fahrzeugId: erstes!.id,
+        gruppenfuehrerId: 'gruppe-1',
+      }),
+      { typ: 'fahrzeugGruppeZuweisen', fahrzeugId: zweites!.id, gruppenfuehrerId: 'gruppe-1' },
+    );
+    const befohlen = simulationReducer(mitGruppe, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const erwartet = Math.max(
+      verlegungsdauerSek(start.routen, erstes!.abschnitt, 'eingangssichtung'),
+      verlegungsdauerSek(start.routen, zweites!.abschnitt, 'eingangssichtung'),
+    );
+    expect(
+      zeitkostenSek(befohlen, { typ: 'abschnittFuehrenBefehlAusfuehren', id: 'auftrag-1' }),
+    ).toBe(erwartet);
+  });
+
+  it('kostet nichts, wenn kein Fahrzeug der Gruppe umziehen muss oder kann', () => {
+    const state = imEinsatz();
+    expect(
+      zeitkostenSek(state, { typ: 'abschnittFuehrenBefehlAusfuehren', id: 'unbekannt' }),
+    ).toBe(0);
+  });
+
   it('summiert die vollständige Diagnostik über fünf Minuten', () => {
     // Wer an einem Patienten alles erhebt, verliert diese Zeit bei allen
     // anderen (→ `state.zeitkosten`) - jede Untersuchung zählt genau einmal.

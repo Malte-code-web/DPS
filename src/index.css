@@ -4201,6 +4201,41 @@ button.vital-unbekannt:not(:disabled) {
   font: inherit;
 }
 
+.gruppen-auftraege {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gruppen-auftraege h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.gruppen-auftrag-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg-panel-hoch);
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.gruppen-auftrag-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gruppen-auftrag-status select {
+  font: inherit;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

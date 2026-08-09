@@ -929,10 +929,27 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   bestehende Fahrzeugverlegung. Live verifiziert: Tabelle zeigt alle
   Fahrzeuge, Zuweisung/Umweisung/Entfernen funktionieren und bleiben nach
   erneutem Öffnen des Tabs erhalten, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 12):** Einsatzaufträge an eine
-  Gruppe über ihren Gruppenführer - "Abschnitt führen" (die Gruppe verlegt
-  sich komplett an einen Zielabschnitt) als neue, zu `FlaechenBefehl`
-  parallele Auftragsart; Rettungsmittelhalteplatz + Transporte freigeben.
+- ✅ **Einsatzauftrag "Abschnitt führen" (`DPS-0.8.1.11`)** - Zugführer-Ebene,
+  Teil 12: sobald eine Gruppe (→ `DPS-0.8.1.10`) mindestens ein Fahrzeug hat,
+  kann der Zugführer ihrem Gruppenführer den Auftrag geben, einen Abschnitt
+  zu führen - dieselbe Auftragstaktik wie beim Zeltbefehl (Ziel vorgeben,
+  Ausführung liegt bei der Gruppe), als eigener, paralleler Auftragstyp
+  `AbschnittFuehrenBefehl` statt einer Erweiterung des bestehenden, bereits
+  ausgelieferten `FlaechenBefehl`. Ausführung verlegt jedes erreichbare
+  Gruppen-Fahrzeug einzeln (→ `istVerlegungMoeglich`) - ein Fahrzeug ohne
+  direkten Weg bleibt stehen, statt den ganzen Auftrag scheitern zu lassen,
+  das Regie-Protokoll meldet "N von M Fahrzeugen verlegt". Zeitkosten laufen
+  einmal für den ganzen Konvoi (langsamstes Fahrzeug entscheidet, nicht die
+  Summe). Eigene Toast-Komponente `AbschnittFuehrenBefehlBenachrichtigung.tsx`
+  neben der bestehenden Zeltbefehl-Benachrichtigung - beide Auftragsarten
+  können unabhängig voneinander gleichzeitig offen sein. `GruppenZuweisung.tsx`
+  bekommt einen neuen Abschnitt "Einsatzaufträge" mit Zielauswahl (nur schon
+  gebaute Abschnitte) und Status/Zurückziehen je Gruppenführer. Live mit drei
+  Clients verifiziert: Fläche bauen, zwei Fahrzeuge einer Gruppe zuweisen,
+  Auftrag erteilen - Gruppenführer bekommt eigenen Toast, führt aus, beide
+  Fahrzeuge erscheinen am Zielabschnitt, Auftrag verschwindet aus beiden
+  Ansichten, keine Konsolenfehler.
+- 💤 **Noch offen:** Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,

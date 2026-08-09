@@ -961,6 +961,24 @@ export interface FlaechenBefehl {
 }
 
 /**
+ * @anker modell.abschnittfuehrenbefehl Auftrag des Zugführers an einen Gruppenführer, einen Abschnitt zu führen
+ *
+ * Wie `modell.flaechenbefehl`, aber statt einer Fläche wird die ganze
+ * Gruppe (→ `modell.gruppe`, `domain.gruppevon`) des angesprochenen
+ * Gruppenführers an den Zielabschnitt verlegt - ein offener Befehl pro
+ * Gruppenführer, ein neuer ersetzt einen noch offenen (dieselbe
+ * Ersetzen-statt-Addieren-Regel wie bei `FlaechenBefehl`, nur nach
+ * `gruppenfuehrerId` statt `abschnitt` geschlüsselt, da eine Gruppe jeweils
+ * nur einen Auftrag gleichzeitig ausführen kann).
+ */
+export interface AbschnittFuehrenBefehl {
+  id: string;
+  ziel: Einsatzabschnitt;
+  zugfuehrerId: string;
+  gruppenfuehrerId: string;
+}
+
+/**
  * @anker modell.ereignis Von der Übungsleitung live ausgelöste Lageänderung
  *
  * Vordefinierte, im Szenario hinterlegte Nachzügler-Patienten (→ `ui.ereignissepanel`)

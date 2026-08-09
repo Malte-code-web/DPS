@@ -72,6 +72,22 @@ export function zeitkostenSek(state: SimulationState, action: SimulationAction):
       return groesseVon(action.flaechenTyp).aufbauSek;
     }
 
+    case 'abschnittFuehrenBefehlAusfuehren': {
+      const befehl = state.abschnittFuehrenBefehle.find((eintrag) => eintrag.id === action.id);
+      if (!befehl) return 0;
+      const dauern = state.fahrzeuge
+        .filter(
+          (fahrzeug) =>
+            fahrzeug.gruppenfuehrerId === befehl.gruppenfuehrerId &&
+            fahrzeug.abschnitt !== befehl.ziel &&
+            istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
+        )
+        .map((fahrzeug) => verlegungsdauerSek(state.routen, fahrzeug.abschnitt, befehl.ziel));
+      // Ein Konvoi kommt an, wenn das langsamste Fahrzeug ankommt - nicht die
+      // Summe aller Einzelverlegungen.
+      return dauern.length === 0 ? 0 : Math.max(...dauern);
+    }
+
     // Wiederverwendet dieselbe Dauer wie die bestehende Fahrzeugrettung
     // (→ `domain.massnahmen`, `fahrzeugrettung`) - beides ist im Kern derselbe
     // Vorgang, nur diesmal durch die Feuerwehr statt den RD durchgeführt.
@@ -102,6 +118,8 @@ export function zeitkostenLabel(action: SimulationAction): string {
       return 'Fahrzeug verlegen';
     case 'zeltPlatzieren':
       return `${groesseVon(action.flaechenTyp).bezeichnung} aufbauen`;
+    case 'abschnittFuehrenBefehlAusfuehren':
+      return 'Abschnitt führen';
     case 'rettungDurchfuehren':
       return 'Rettung';
     default:
@@ -182,4 +200,8 @@ export function istZeltPlatzierenAktion(
   flaechenTyp: ZeltTypId | FlaechenTypId,
 ): boolean {
   return aktion.typ === 'zeltPlatzieren' && aktion.flaechenTyp === flaechenTyp;
+}
+
+export function istAbschnittFuehrenAktion(aktion: SimulationAction, befehlId: string): boolean {
+  return aktion.typ === 'abschnittFuehrenBefehlAusfuehren' && aktion.id === befehlId;
 }

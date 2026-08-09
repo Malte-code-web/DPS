@@ -30,6 +30,7 @@ import {
 } from '../domain/sitzung';
 import type { Rolle, Sitzungszustand, Spieler } from '../domain/sitzung';
 import type {
+  AbschnittFuehrenBefehl,
   DelegationsAnfrage,
   DiagnostikId,
   Einsatzabschnitt,
@@ -197,6 +198,12 @@ export interface SimulationState {
    */
   flaechenBefehle: FlaechenBefehl[];
   /**
+   * Offene Befehle des Zugführers an einen Gruppenführer, mit der ganzen
+   * Gruppe einen Abschnitt zu führen (→ `modell.abschnittfuehrenbefehl`) -
+   * ein Befehl pro Gruppenführer.
+   */
+  abschnittFuehrenBefehle: AbschnittFuehrenBefehl[];
+  /**
    * Vom Zugführer per Funk erfragte und selbst eingetragene Meldungen (→
    * `modell.meldebucheintrag`, `Meldebuch`) - ersetzt die früher live
    * angezeigten Fahrzeug-/Kräfte-/Kennzahlen-Ansichten des Zugführers.
@@ -240,6 +247,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   spielerProtokoll: [],
   flaechen: [],
   flaechenBefehle: [],
+  abschnittFuehrenBefehle: [],
   meldebuch: [],
   schnappschussFolge: 0,
 };
@@ -352,6 +360,15 @@ export type SimulationAction =
     }
   | { typ: 'zeltBefehlAblehnen'; id: string }
   | {
+      typ: 'abschnittFuehrenBefehlErteilen';
+      id: string;
+      ziel: Einsatzabschnitt;
+      zugfuehrerId: string;
+      gruppenfuehrerId: string;
+    }
+  | { typ: 'abschnittFuehrenBefehlAusfuehren'; id: string }
+  | { typ: 'abschnittFuehrenBefehlAblehnen'; id: string }
+  | {
       typ: 'meldebuchEintragen';
       id: string;
       bereich: MeldebuchBereich;
@@ -404,6 +421,8 @@ export interface Schnappschuss {
   flaechen: PlatzierteFlaeche[];
   /** Offene Flächen-Befehle des Zugführers an einen Gruppenführer (→ `modell.flaechenbefehl`). */
   flaechenBefehle: FlaechenBefehl[];
+  /** Offene Führungsbefehle des Zugführers an einen Gruppenführer (→ `modell.abschnittfuehrenbefehl`). */
+  abschnittFuehrenBefehle: AbschnittFuehrenBefehl[];
   /** Per Funk erfragte, selbst eingetragene Meldungen des Zugführers (→ `modell.meldebucheintrag`). */
   meldebuch: MeldebuchEintrag[];
   /**
@@ -438,6 +457,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     spielerProtokoll: state.spielerProtokoll,
     flaechen: state.flaechen,
     flaechenBefehle: state.flaechenBefehle,
+    abschnittFuehrenBefehle: state.abschnittFuehrenBefehle,
     meldebuch: state.meldebuch,
   };
 }
@@ -1517,6 +1537,71 @@ export function simulationReducer(
       };
     }
 
+    case 'abschnittFuehrenBefehlErteilen': {
+      const befehl: AbschnittFuehrenBefehl = {
+        id: action.id,
+        ziel: action.ziel,
+        zugfuehrerId: action.zugfuehrerId,
+        gruppenfuehrerId: action.gruppenfuehrerId,
+      };
+      const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === action.gruppenfuehrerId);
+      return protokolliereRegie(
+        {
+          ...state,
+          // Ein Gruppenführer kann jeweils nur einen offenen Führungsauftrag
+          // haben - ein neuer ersetzt einen noch offenen.
+          abschnittFuehrenBefehle: [
+            ...state.abschnittFuehrenBefehle.filter(
+              (eintrag) => eintrag.gruppenfuehrerId !== action.gruppenfuehrerId,
+            ),
+            befehl,
+          ],
+        },
+        `Befehl an ${gruppenfuehrer?.name ?? 'Gruppenführer'}: ${geoPunktName(action.ziel)} führen.`,
+      );
+    }
+
+    case 'abschnittFuehrenBefehlAusfuehren': {
+      const befehl = state.abschnittFuehrenBefehle.find((eintrag) => eintrag.id === action.id);
+      if (!befehl) return state;
+      const gruppe = state.fahrzeuge.filter(
+        (fahrzeug) => fahrzeug.gruppenfuehrerId === befehl.gruppenfuehrerId,
+      );
+      // Jedes Fahrzeug der Gruppe zieht für sich um - eines, das schon am Ziel
+      // steht, bleibt unverändert; eines ohne direkten Weg (→ `istVerlegungMoeglich`)
+      // bleibt stehen, statt den ganzen Befehl scheitern zu lassen.
+      const naechster = {
+        ...state,
+        fahrzeuge: state.fahrzeuge.map((fahrzeug) => {
+          if (fahrzeug.gruppenfuehrerId !== befehl.gruppenfuehrerId) return fahrzeug;
+          if (fahrzeug.abschnitt === befehl.ziel) return fahrzeug;
+          if (!istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel)) return fahrzeug;
+          return verlegeFahrzeug(fahrzeug, befehl.ziel);
+        }),
+        abschnittFuehrenBefehle: state.abschnittFuehrenBefehle.filter(
+          (eintrag) => eintrag.id !== action.id,
+        ),
+      };
+      const bewegt = gruppe.filter(
+        (fahrzeug) =>
+          fahrzeug.abschnitt !== befehl.ziel && istVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
+      ).length;
+      const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === befehl.gruppenfuehrerId);
+      return protokolliereRegie(
+        naechster,
+        `${gruppenfuehrer?.name ?? 'Gruppenführer'} führt jetzt ${geoPunktName(befehl.ziel)} (${bewegt} von ${gruppe.length} Fahrzeugen verlegt).`,
+      );
+    }
+
+    case 'abschnittFuehrenBefehlAblehnen': {
+      return {
+        ...state,
+        abschnittFuehrenBefehle: state.abschnittFuehrenBefehle.filter(
+          (eintrag) => eintrag.id !== action.id,
+        ),
+      };
+    }
+
     case 'meldebuchEintragen': {
       const text = action.text.trim();
       if (!text) return state;
@@ -1592,6 +1677,7 @@ export function simulationReducer(
         spielerProtokoll: s.spielerProtokoll,
         flaechen: s.flaechen,
         flaechenBefehle: s.flaechenBefehle,
+        abschnittFuehrenBefehle: s.abschnittFuehrenBefehle,
         meldebuch: s.meldebuch,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,

@@ -2426,3 +2426,137 @@ describe('Zeltbefehl: Zugführer befiehlt, Gruppenführer führt aus (→ modell
     expect(schnappschuss.flaechenBefehle).toEqual(befohlen.flaechenBefehle);
   });
 });
+
+describe('Führungsbefehl: Zugführer befiehlt, Gruppenführer führt einen Abschnitt (→ modell.abschnittfuehrenbefehl)', () => {
+  function eroeffnetMitGruppe(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    const mitGruppenfuehrer = simulationReducer(basis, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-1',
+        name: 'Gruppenführer Gruber',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    // Erste beide Fahrzeuge der Gruppe zuweisen, ein drittes bleibt frei.
+    const [erstes, zweites] = mitGruppenfuehrer.fahrzeuge;
+    const mitErstem = simulationReducer(mitGruppenfuehrer, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId: erstes!.id,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    return simulationReducer(mitErstem, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId: zweites!.id,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+  }
+
+  it('erteilt einen Befehl und protokolliert ihn', () => {
+    const state = eroeffnetMitGruppe();
+    const befohlen = simulationReducer(state, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(befohlen.abschnittFuehrenBefehle).toEqual([
+      { id: 'auftrag-1', ziel: 'eingangssichtung', zugfuehrerId: 'leiter-1', gruppenfuehrerId: 'gruppe-1' },
+    ]);
+    expect(befohlen.regieProtokoll.at(-1)?.text).toContain('Gruppenführer Gruber');
+    // Noch keine Verlegung, nur der Auftrag.
+    expect(befohlen.fahrzeuge.every((f) => f.abschnitt === 'schadensstelle')).toBe(true);
+  });
+
+  it('ersetzt einen offenen Befehl desselben Gruppenführers statt ihn zu addieren', () => {
+    const einBefehl = simulationReducer(eroeffnetMitGruppe(), {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const zweiterBefehl = simulationReducer(einBefehl, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-2',
+      ziel: 'ablage',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(zweiterBefehl.abschnittFuehrenBefehle).toHaveLength(1);
+    expect(zweiterBefehl.abschnittFuehrenBefehle[0]?.id).toBe('auftrag-2');
+  });
+
+  it('lehnt einen Befehl ab, ohne ein Fahrzeug zu verlegen', () => {
+    const befohlen = simulationReducer(eroeffnetMitGruppe(), {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const abgelehnt = simulationReducer(befohlen, {
+      typ: 'abschnittFuehrenBefehlAblehnen',
+      id: 'auftrag-1',
+    });
+    expect(abgelehnt.abschnittFuehrenBefehle).toEqual([]);
+    expect(abgelehnt.fahrzeuge.every((f) => f.abschnitt === 'schadensstelle')).toBe(true);
+  });
+
+  it('führt einen Befehl aus: verlegt jedes erreichbare Gruppen-Fahrzeug, lässt Rest unberührt', () => {
+    const state = eroeffnetMitGruppe();
+    const [erstes, zweites, drittes] = state.fahrzeuge;
+    const befohlen = simulationReducer(state, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const ausgefuehrt = simulationReducer(befohlen, {
+      typ: 'abschnittFuehrenBefehlAusfuehren',
+      id: 'auftrag-1',
+    });
+    expect(ausgefuehrt.fahrzeuge.find((f) => f.id === erstes!.id)?.abschnitt).toBe('eingangssichtung');
+    expect(ausgefuehrt.fahrzeuge.find((f) => f.id === zweites!.id)?.abschnitt).toBe('eingangssichtung');
+    // Nicht der Gruppe zugewiesenes drittes Fahrzeug bleibt unberührt.
+    expect(ausgefuehrt.fahrzeuge.find((f) => f.id === drittes!.id)?.abschnitt).toBe('schadensstelle');
+    // Der Befehl ist damit erledigt.
+    expect(ausgefuehrt.abschnittFuehrenBefehle).toEqual([]);
+    expect(ausgefuehrt.regieProtokoll.at(-1)?.text).toContain('Gruppenführer Gruber');
+    expect(ausgefuehrt.regieProtokoll.at(-1)?.text).toContain('2 von 2');
+  });
+
+  it('führt bei unbekannter Befehl-id nichts aus', () => {
+    const state = eroeffnetMitGruppe();
+    const unveraendert = simulationReducer(state, {
+      typ: 'abschnittFuehrenBefehlAusfuehren',
+      id: 'unbekannt',
+    });
+    expect(unveraendert).toBe(state);
+  });
+
+  it('überträgt abschnittFuehrenBefehle in den Schnappschuss', () => {
+    const befohlen = simulationReducer(eroeffnetMitGruppe(), {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const schnappschuss = schnappschussAus(befohlen);
+    expect(schnappschuss.abschnittFuehrenBefehle).toEqual(befohlen.abschnittFuehrenBefehle);
+  });
+});

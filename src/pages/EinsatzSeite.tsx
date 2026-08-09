@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Abschnittsleiste } from '../components/Abschnittsleiste';
+import { AbschnittFuehrenBefehlBenachrichtigung } from '../components/AbschnittFuehrenBefehlBenachrichtigung';
 import { DelegationBenachrichtigung } from '../components/DelegationBenachrichtigung';
 import { Einsatzleiste } from '../components/Einsatzleiste';
 import { FahrzeugVerlegung } from '../components/FahrzeugVerlegung';
@@ -93,6 +94,7 @@ export function EinsatzSeite() {
       <DelegationBenachrichtigung />
       <KollegenanfrageBenachrichtigung />
       <ZeltBefehlBenachrichtigung />
+      <AbschnittFuehrenBefehlBenachrichtigung />
       <Sprechfunk />
 
       {!ausgewaehlt && regiefuehrend && uebersicht ? (

@@ -2772,18 +2772,19 @@ button.gefahr {
   padding: 0.2rem 0;
 }
 
-/* Hauptfläche (immer nur eine Ansicht sichtbar) neben der Regie-Seitenleiste,
-   die als Menü über alle Ansichten dient. Die Leiste liefert ihre eigene
-   Breite (`auto`-Spalte) - eingeklappt bleibt sie eine schmale, aber
-   vollständig bedienbare Leiste statt zu verschwinden (→ ui.gesamtlagebild). */
-.gesamtlagebild-flaeche {
+/* Hauptfläche (immer nur eine Ansicht sichtbar) neben der Ansichtsmenü-
+   Seitenleiste, die als Menü über alle Ansichten dient - geteiltes Layout
+   für Regie (→ ui.gesamtlagebild) und Zugführer (→ ui.zugfuehrerseite). Die
+   Leiste liefert ihre eigene Breite (`auto`-Spalte) - eingeklappt bleibt sie
+   eine schmale, aber vollständig bedienbare Leiste statt zu verschwinden. */
+.ansicht-flaeche {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.9rem;
   align-items: start;
 }
 
-.gesamtlagebild-haupt {
+.ansicht-haupt {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -2794,7 +2795,7 @@ button.gefahr {
    Scrollen der Hauptfläche stehen, statt mit dem Inhalt nach oben
    wegzuscrollen - der top-Wert liegt knapp über deren gemessener
    kombinierter Höhe (168-191px). */
-.regie-seitenleiste {
+.ansichtsmenue-seitenleiste {
   width: 250px;
   flex-shrink: 0;
   display: flex;
@@ -2807,17 +2808,17 @@ button.gefahr {
   overflow-y: auto;
 }
 
-.regie-seitenleiste-eingeklappt {
+.ansichtsmenue-seitenleiste-eingeklappt {
   width: 56px;
 }
 
-.regie-seitenleiste-kopf {
+.ansichtsmenue-seitenleiste-kopf {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.regie-seitenleiste-kopf h2 {
+.ansichtsmenue-seitenleiste-kopf h2 {
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -2826,7 +2827,7 @@ button.gefahr {
   color: var(--text-leise);
 }
 
-.regie-seitenleiste-knopf {
+.ansichtsmenue-seitenleiste-knopf {
   background: var(--bg-panel);
   border: 1px solid var(--rand);
   border-radius: var(--radius);
@@ -2836,13 +2837,13 @@ button.gefahr {
   padding: 0.35rem 0.55rem;
 }
 
-.regie-menue {
+.ansichtsmenue {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.regie-menue button {
+.ansichtsmenue button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2858,44 +2859,44 @@ button.gefahr {
   width: 100%;
 }
 
-.regie-menue-inhalt {
+.ansichtsmenue-inhalt {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   min-width: 0;
 }
 
-.regie-menue-inhalt svg {
+.ansichtsmenue-inhalt svg {
   flex-shrink: 0;
 }
 
-.regie-menue-label {
+.ansichtsmenue-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.regie-menue button.regie-menue-aktiv {
+.ansichtsmenue button.ansichtsmenue-aktiv {
   color: var(--akzent);
   border-color: var(--akzent);
   background: color-mix(in srgb, var(--akzent) 14%, transparent);
 }
 
-.regie-menue button.regie-menue-wartet .bereich-marke {
+.ansichtsmenue button.ansichtsmenue-wartet .bereich-marke {
   color: var(--warn);
 }
 
 /* Eingeklappt bleibt das Menü bedienbar (schmale Leiste, jeder Knopf
    weiterhin klickbar) statt komplett zu verschwinden - nur noch das Icon
-   bleibt sichtbar (→ ui.regiemenueicons), Beschriftung und Marke fallen
+   bleibt sichtbar (→ ui.ansichtsmenueicons), Beschriftung und Marke fallen
    aus Platzgründen weg; ein Klick wechselt weiterhin sofort die Ansicht. */
-.regie-seitenleiste-eingeklappt .regie-menue button {
+.ansichtsmenue-seitenleiste-eingeklappt .ansichtsmenue button {
   justify-content: center;
   padding: 0.6rem 0.3rem;
 }
 
-.regie-seitenleiste-eingeklappt .regie-menue-label,
-.regie-seitenleiste-eingeklappt .regie-menue button .bereich-marke {
+.ansichtsmenue-seitenleiste-eingeklappt .ansichtsmenue-label,
+.ansichtsmenue-seitenleiste-eingeklappt .ansichtsmenue button .bereich-marke {
   display: none;
 }
 
@@ -2905,34 +2906,6 @@ button.gefahr {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-}
-
-.zf-abfrage {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.zf-abfrage-leiste {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.zf-abfrage-knopf {
-  padding: 0.5rem 0.85rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-leise);
-  background: var(--bg-panel);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius);
-}
-
-.zf-abfrage-knopf.zf-abfrage-aktiv {
-  color: var(--akzent);
-  border-color: var(--akzent);
-  background: color-mix(in srgb, var(--akzent) 14%, transparent);
 }
 
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */
@@ -3159,8 +3132,9 @@ button.gefahr {
   margin: 0;
 }
 
-/* Eigenständige Box, z. B. die Orte-Liste unter der Kartenansicht (→ ui.kartenortepanel)
-   oder eines der gestapelten Panels in der Regie-Seitenleiste (→ ui.gesamtlagebild). */
+/* Eigenständige Box, z. B. die Orte-Liste unter der Lagekarte (→ ui.kartenortepanel)
+   oder eine der Ansichten im Seitenleisten-Ansichtsmenü (→ ui.gesamtlagebild,
+   ui.zugfuehrerseite). */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--rand);
@@ -3652,20 +3626,21 @@ button.gefahr {
     height: 320px;
   }
 
-  /* Die Regie-Seitenleiste bleibt auch auf schmalen Bildschirmen ein Rand-
-     Streifen links (→ ui.gesamtlagebild) statt unter den Hauptinhalt zu
-     rutschen - `order` stellt sie im Grid vor die Hauptfläche, ohne die
-     DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu ändern. */
-  .gesamtlagebild-flaeche {
+  /* Die Ansichtsmenü-Seitenleiste bleibt auch auf schmalen Bildschirmen ein
+     Randstreifen links (→ ui.gesamtlagebild, ui.zugfuehrerseite) statt unter
+     den Hauptinhalt zu rutschen - `order` stellt sie im Grid vor die
+     Hauptfläche, ohne die DOM-Reihenfolge (und damit die Tab-Reihenfolge) zu
+     ändern. */
+  .ansicht-flaeche {
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.6rem;
   }
 
-  .regie-seitenleiste:not(.regie-seitenleiste-eingeklappt) {
+  .ansichtsmenue-seitenleiste:not(.ansichtsmenue-seitenleiste-eingeklappt) {
     width: 170px;
   }
 
-  .regie-seitenleiste {
+  .ansichtsmenue-seitenleiste {
     order: -1;
   }
 }

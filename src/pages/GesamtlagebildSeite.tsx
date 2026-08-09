@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AblageFreigabePanel } from '../components/AblageFreigabePanel';
 import { AbschnitteUebersicht } from '../components/AbschnitteUebersicht';
+import { AnsichtsmenueIcon } from '../components/AnsichtsmenueIcons';
 import { EreignissePanel } from '../components/EreignissePanel';
 import { FunkkanaelePanel } from '../components/FunkkanaelePanel';
 import { GebundeneKraeftePanel } from '../components/GebundeneKraeftePanel';
@@ -8,7 +9,6 @@ import { KartenOrtePanel } from '../components/KartenOrtePanel';
 import { Kennzahlenleiste } from '../components/Kennzahlenleiste';
 import { Lagekarte } from '../components/Lagekarte';
 import { OffeneAnfragenPanel } from '../components/OffeneAnfragenPanel';
-import { RegieMenueIcon } from '../components/RegieMenueIcons';
 import { useSimulation } from '../state/useSimulation';
 import type { Einsatzabschnitt } from '../domain/types';
 
@@ -42,12 +42,13 @@ interface AnsichtEintrag {
  * (→ `ui.einsatzleiste`). Anders als ein reines Aufklapp-Panel bleibt das
  * Menü auch eingeklappt vollständig erreichbar (schmale Leiste mit
  * denselben Knöpfen, jetzt nur noch als Icon statt komplett
- * verschwundenem Inhalt, → `ui.regiemenueicons`) - ähnlich einer
+ * verschwundenem Inhalt, → `ui.ansichtsmenueicons`) - ähnlich einer
  * Activity-Bar, die immer zwischen Ansichten wechseln lässt. Auf schmalen
  * Bildschirmen bleibt die Leiste am linken Rand stehen (per `order` vor
  * die Hauptfläche gestellt) statt darunter angehängt zu werden. Kein neuer
  * Datenpfad - jede Ansicht liest dieselben Felder, die anderswo schon
- * existieren.
+ * existieren. Dasselbe Seitenleisten-Muster (Klassen, Icons) nutzt auch die
+ * Zugführer-Ansicht (→ `ui.zugfuehrerseite`) für ihre eigenen Ansichten.
  */
 export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
   const { state } = useSimulation();
@@ -95,8 +96,8 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
     <div className="gesamtlagebild">
       <Kennzahlenleiste />
 
-      <div className="gesamtlagebild-flaeche">
-        <div className="gesamtlagebild-haupt">
+      <div className="ansicht-flaeche">
+        <div className="ansicht-haupt">
           {aktiv === 'kacheln' && <AbschnitteUebersicht onAbschnittWaehlen={onAbschnittWaehlen} />}
           {aktiv === 'karte' && (
             <>
@@ -112,13 +113,13 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
         </div>
 
         <aside
-          className={`regie-seitenleiste${eingeklappt ? ' regie-seitenleiste-eingeklappt' : ''}`}
+          className={`ansichtsmenue-seitenleiste${eingeklappt ? ' ansichtsmenue-seitenleiste-eingeklappt' : ''}`}
         >
-          <div className="regie-seitenleiste-kopf">
+          <div className="ansichtsmenue-seitenleiste-kopf">
             {!eingeklappt && <h2>Ansicht</h2>}
             <button
               type="button"
-              className="regie-seitenleiste-knopf"
+              className="ansichtsmenue-seitenleiste-knopf"
               aria-expanded={!eingeklappt}
               aria-label={eingeklappt ? 'Menü ausklappen' : 'Menü einklappen'}
               title={eingeklappt ? 'Menü ausklappen' : 'Menü einklappen'}
@@ -128,7 +129,7 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
             </button>
           </div>
           <nav
-            className="regie-menue"
+            className="ansichtsmenue"
             role="tablist"
             aria-orientation="vertical"
             aria-label="Ansicht wählen"
@@ -140,14 +141,14 @@ export function GesamtlagebildSeite({ onAbschnittWaehlen }: Props) {
                 role="tab"
                 aria-selected={aktiv === eintrag.id}
                 title={eintrag.label}
-                className={`${aktiv === eintrag.id ? 'regie-menue-aktiv' : ''}${
-                  eintrag.wartet ? ' regie-menue-wartet' : ''
+                className={`${aktiv === eintrag.id ? 'ansichtsmenue-aktiv' : ''}${
+                  eintrag.wartet ? ' ansichtsmenue-wartet' : ''
                 }`}
                 onClick={() => setAktiv(eintrag.id)}
               >
-                <span className="regie-menue-inhalt">
-                  <RegieMenueIcon ansicht={eintrag.id} />
-                  <span className="regie-menue-label">{eintrag.label}</span>
+                <span className="ansichtsmenue-inhalt">
+                  <AnsichtsmenueIcon ansicht={eintrag.id} />
+                  <span className="ansichtsmenue-label">{eintrag.label}</span>
                 </span>
                 {eintrag.marke && <span className="bereich-marke">{eintrag.marke}</span>}
               </button>

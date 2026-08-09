@@ -876,7 +876,26 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   "Bauort bestätigen" bleibt bei ungültiger Stelle deaktiviert; nach Bau
   erscheinen sowohl die Fläche als auch die zuvor unsichtbare Route zur
   Schadensstelle korrekt, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 9):** Kräfte/Patienten weich
+- ✅ **Zugführer-Ansicht als Seitenleisten-Ansichtsmenü (`DPS-0.8.1.8`)** -
+  Zugführer-Ebene, Teil 9: optische Angleichung an das Gesamtlagebild der
+  Regie, auf ausdrücklichen Wunsch. `ZugfuehrerSeite.tsx` nutzt jetzt
+  dieselbe Ein-/Ausklapp-Seitenleiste (→ `ui.gesamtlagebild`) mit denselben
+  schon vorhandenen Menüpunkten - Kacheln, Karte, Fahrzeuge, Kräfte,
+  Kennzahlen - statt der bisherigen Kombination aus gestapelter Karte über
+  den Kacheln und einer separaten Abfrage-Tab-Leiste darunter.
+  `RegieMenueIcons.tsx` wird zu `AnsichtsmenueIcons.tsx` (→
+  `ui.ansichtsmenueicons`, vormals `ui.regiemenueicons`) mit drei neuen
+  Icons - jetzt von beiden Seitenleisten-Menüs geteilt statt Regie-exklusiv;
+  die zugrundeliegenden CSS-Klassen sind ebenfalls generisch umbenannt
+  (reiner Rename, keine Verhaltensänderung fürs Gesamtlagebild). Kacheln
+  bleiben wie zuvor der einzige Weg in die Abschnitt-Detailsicht, Fahrzeuge/
+  Kräfte/Kennzahlen bleiben bewusst nur nach aktivem Klick sichtbar. Live
+  verifiziert: Zugführer- und Regie-Seitenleiste optisch identisch (Layout,
+  Icons, Aktiv-/Eingeklappt-Zustand), alle fünf Ansichten erreichbar,
+  Kacheln-Klick öffnet weiterhin korrekt die Abschnitt-Detailsicht mit
+  funktionierendem Rücksprung, Regie-Ansicht nach dem Rename unverändert
+  funktionsfähig, keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 10):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

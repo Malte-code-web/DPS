@@ -1,5 +1,15 @@
 interface Props {
-  ansicht: 'kacheln' | 'karte' | 'freigabe' | 'gebunden' | 'anfragen' | 'funk' | 'ereignisse';
+  ansicht:
+    | 'kacheln'
+    | 'karte'
+    | 'freigabe'
+    | 'gebunden'
+    | 'anfragen'
+    | 'funk'
+    | 'ereignisse'
+    | 'fahrzeuge'
+    | 'kraefte'
+    | 'kennzahlen';
 }
 
 const GEMEINSAME_ATTRIBUTE = {
@@ -15,13 +25,14 @@ const GEMEINSAME_ATTRIBUTE = {
 };
 
 /**
- * @anker ui.regiemenueicons Icons für das Regie-Ansichts-Menü
+ * @anker ui.ansichtsmenueicons Icons für die Seitenleisten-Ansichtsmenüs
  *
  * Schlichte, einfarbige Strich-Icons (kein Icon-Set eingebunden) - bleiben
- * auch im eingeklappten Menü (→ `ui.gesamtlagebild`) sichtbar und
- * unterscheidbar, wenn die Beschriftung wegfällt.
+ * auch im eingeklappten Menü (→ `ui.gesamtlagebild`, `ui.zugfuehrerseite`)
+ * sichtbar und unterscheidbar, wenn die Beschriftung wegfällt. Von beiden
+ * Seitenleisten-Ansichtsmenüs geteilt statt je eigenem Icon-Satz.
  */
-export function RegieMenueIcon({ ansicht }: Props) {
+export function AnsichtsmenueIcon({ ansicht }: Props) {
   switch (ansicht) {
     case 'kacheln':
       return (
@@ -73,6 +84,30 @@ export function RegieMenueIcon({ ansicht }: Props) {
           <path d="M10 3.2 17.5 16.3H2.5L10 3.2z" />
           <line x1="10" y1="8" x2="10" y2="11.5" />
           <circle cx="10" cy="14" r="0.9" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'fahrzeuge':
+      return (
+        <svg {...GEMEINSAME_ATTRIBUTE}>
+          <path d="M2.5 14V10.5a1 1 0 011-1h9.4l2.3 2.1a1 1 0 01.3.7V14" />
+          <path d="M2.5 14h12.5" />
+          <circle cx="6" cy="15.3" r="1.6" />
+          <circle cx="13.2" cy="15.3" r="1.6" />
+        </svg>
+      );
+    case 'kraefte':
+      return (
+        <svg {...GEMEINSAME_ATTRIBUTE}>
+          <circle cx="10" cy="6.5" r="3.2" />
+          <path d="M4 17c0-3.6 2.7-6 6-6s6 2.4 6 6" />
+        </svg>
+      );
+    case 'kennzahlen':
+      return (
+        <svg {...GEMEINSAME_ATTRIBUTE}>
+          <rect x="3.3" y="11" width="3" height="6" rx="0.6" fill="currentColor" stroke="none" />
+          <rect x="8.5" y="6.5" width="3" height="10.5" rx="0.6" fill="currentColor" stroke="none" />
+          <rect x="13.7" y="3" width="3" height="14" rx="0.6" fill="currentColor" stroke="none" />
         </svg>
       );
     default:

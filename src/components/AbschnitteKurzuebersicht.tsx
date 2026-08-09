@@ -17,8 +17,8 @@ interface Props {
  * daneben als eigene Ansicht im selben Seitenleisten-Menü, nimmt selbst aber
  * keinen Klick zum Wechseln entgegen. Dieselben Kacheln wie `ui.abschnitteuebersicht`,
  * aber bewusst ohne die dort passiv sichtbare Kräfte- und Fahrzeugliste - der
- * Zugführer soll das aktiv abfragen (→ `FahrzeugStatusPanel`,
- * `KraefteStatusPanel`), nicht beiläufig beim bloßen Öffnen der Seite
+ * Zugführer soll das per Funk aktiv abfragen und selbst eintragen (→
+ * `ui.meldebuch`, `Meldebuch`), nicht beiläufig beim bloßen Öffnen der Seite
  * vorgesetzt bekommen.
  */
 export function AbschnitteKurzuebersicht({ onAbschnittWaehlen }: Props) {

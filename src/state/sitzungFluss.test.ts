@@ -1988,6 +1988,80 @@ describe('Private Statusansicht: spielerProtokoll (→ modell.spielerprotokoll)'
   });
 });
 
+describe('Meldebuch: per Funk erfragte Meldungen des Zugführers (→ ui.meldebuch)', () => {
+  it('trägt eine Meldung mit Bereich, Zeit und Spieler ein', () => {
+    const zustand = { ...ANFANGSZUSTAND, zeitSek: 120 };
+    const nachher = simulationReducer(zustand, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-1',
+      bereich: 'fahrzeuge',
+      text: 'RTW 1 an der Ablage.',
+      spielerId: 'zf-1',
+    });
+    expect(nachher.meldebuch).toEqual([
+      { id: 'meldung-1', bereich: 'fahrzeuge', text: 'RTW 1 an der Ablage.', zeitSek: 120, spielerId: 'zf-1' },
+    ]);
+  });
+
+  it('ignoriert eine leere oder nur aus Leerzeichen bestehende Meldung', () => {
+    const nachher = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-1',
+      bereich: 'kraefte',
+      text: '   ',
+      spielerId: 'zf-1',
+    });
+    expect(nachher.meldebuch).toEqual([]);
+  });
+
+  it('trimmt umgebende Leerzeichen im eingetragenen Text', () => {
+    const nachher = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-1',
+      bereich: 'kennzahlen',
+      text: '  12 Patienten gesichtet  ',
+      spielerId: 'zf-1',
+    });
+    expect(nachher.meldebuch[0]?.text).toBe('12 Patienten gesichtet');
+  });
+
+  it('hängt mehrere Meldungen nur an, ohne bestehende zu verändern', () => {
+    const erste = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-1',
+      bereich: 'fahrzeuge',
+      text: 'Erste Meldung.',
+      spielerId: 'zf-1',
+    });
+    const zweite = simulationReducer(erste, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-2',
+      bereich: 'kraefte',
+      text: 'Zweite Meldung.',
+      spielerId: 'zf-1',
+    });
+    expect(zweite.meldebuch).toHaveLength(2);
+    expect(zweite.meldebuch[0]).toEqual(erste.meldebuch[0]);
+  });
+
+  it('überträgt meldebuch unverändert in den Schnappschuss', () => {
+    const nachher = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'meldebuchEintragen',
+      id: 'meldung-1',
+      bereich: 'fahrzeuge',
+      text: 'RTW 1 an der Ablage.',
+      spielerId: 'zf-1',
+    });
+    expect(schnappschussAus(nachher).meldebuch).toEqual(nachher.meldebuch);
+
+    const spielerClient = simulationReducer(ANFANGSZUSTAND, {
+      typ: 'schnappschussAnwenden',
+      schnappschuss: schnappschussAus(nachher),
+    });
+    expect(spielerClient.meldebuch).toEqual(nachher.meldebuch);
+  });
+});
+
 describe('Baufeld: Zelt-/Flächenplatzierung (→ ui.baufeld)', () => {
   function eroeffnet(): SimulationState {
     return spiele(

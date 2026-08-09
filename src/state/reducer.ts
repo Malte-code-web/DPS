@@ -42,6 +42,8 @@ import type {
   Fuehrungsrolle,
   Kollegenanfrage,
   MassnahmeId,
+  MeldebuchBereich,
+  MeldebuchEintrag,
   Patient,
   PlatzierteFlaeche,
   Qualifikation,
@@ -195,6 +197,13 @@ export interface SimulationState {
    */
   flaechenBefehle: FlaechenBefehl[];
   /**
+   * Vom Zugführer per Funk erfragte und selbst eingetragene Meldungen (→
+   * `modell.meldebucheintrag`, `Meldebuch`) - ersetzt die früher live
+   * angezeigten Fahrzeug-/Kräfte-/Kennzahlen-Ansichten des Zugführers.
+   * Wächst nur an, wird nie bearbeitet oder gelöscht.
+   */
+  meldebuch: MeldebuchEintrag[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -231,6 +240,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   spielerProtokoll: [],
   flaechen: [],
   flaechenBefehle: [],
+  meldebuch: [],
   schnappschussFolge: 0,
 };
 
@@ -340,6 +350,13 @@ export type SimulationAction =
       gruppenfuehrerId: string;
     }
   | { typ: 'zeltBefehlAblehnen'; id: string }
+  | {
+      typ: 'meldebuchEintragen';
+      id: string;
+      bereich: MeldebuchBereich;
+      text: string;
+      spielerId: string;
+    }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -386,6 +403,8 @@ export interface Schnappschuss {
   flaechen: PlatzierteFlaeche[];
   /** Offene Flächen-Befehle des Zugführers an einen Gruppenführer (→ `modell.flaechenbefehl`). */
   flaechenBefehle: FlaechenBefehl[];
+  /** Per Funk erfragte, selbst eingetragene Meldungen des Zugführers (→ `modell.meldebucheintrag`). */
+  meldebuch: MeldebuchEintrag[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -418,6 +437,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     spielerProtokoll: state.spielerProtokoll,
     flaechen: state.flaechen,
     flaechenBefehle: state.flaechenBefehle,
+    meldebuch: state.meldebuch,
   };
 }
 
@@ -1476,6 +1496,24 @@ export function simulationReducer(
       };
     }
 
+    case 'meldebuchEintragen': {
+      const text = action.text.trim();
+      if (!text) return state;
+      return {
+        ...state,
+        meldebuch: [
+          ...state.meldebuch,
+          {
+            id: action.id,
+            bereich: action.bereich,
+            text,
+            zeitSek: state.zeitSek,
+            spielerId: action.spielerId,
+          },
+        ],
+      };
+    }
+
     case 'sitzungStarten': {
       if (!state.szenario) return state;
       // Sofort: wie bisher direkt an der Schadensstelle sichtbar. Gestaffelt:
@@ -1533,6 +1571,7 @@ export function simulationReducer(
         spielerProtokoll: s.spielerProtokoll,
         flaechen: s.flaechen,
         flaechenBefehle: s.flaechenBefehle,
+        meldebuch: s.meldebuch,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

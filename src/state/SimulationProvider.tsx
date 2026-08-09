@@ -288,6 +288,7 @@ export function SimulationProvider({
     spielerProtokoll,
     flaechen,
     flaechenBefehle,
+    meldebuch,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -315,6 +316,7 @@ export function SimulationProvider({
       spielerProtokoll,
       flaechen,
       flaechenBefehle,
+      meldebuch,
     }),
     [
       phase,
@@ -337,6 +339,7 @@ export function SimulationProvider({
       spielerProtokoll,
       flaechen,
       flaechenBefehle,
+      meldebuch,
     ],
   );
 

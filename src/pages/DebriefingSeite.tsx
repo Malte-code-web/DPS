@@ -4,6 +4,13 @@ import { berechneKennzahlen, berechneMaterialverbrauch, erstelleDebriefing } fro
 import { zeitFormat } from '../lib/format';
 import { useSimulation } from '../state/useSimulation';
 import type { Sichtungsbewertung } from '../domain/triage';
+import type { MeldebuchBereich } from '../domain/types';
+
+const MELDEBUCH_BEREICH_LABEL: Record<MeldebuchBereich, string> = {
+  fahrzeuge: 'Fahrzeuge',
+  kraefte: 'Kräfte',
+  kennzahlen: 'Kennzahlen',
+};
 
 /**
  * Spaltentitel der Auswertung. Auf schmalen Bildschirmen wird die Tabelle zu
@@ -45,6 +52,8 @@ export function DebriefingSeite() {
     : [];
   const patientName = (patientId: string) =>
     state.patienten.find((patient) => patient.id === patientId)?.name ?? '';
+  const spielerName = (spielerId: string) =>
+    state.sitzung.spieler.find((spieler) => spieler.id === spielerId)?.name ?? 'Unbekannt';
 
   return (
     <main className="debriefing">
@@ -225,6 +234,29 @@ export function DebriefingSeite() {
               <li key={index}>
                 <time>{zeitFormat(eintrag.zeitSek)}</time>
                 <span>{eintrag.text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {state.meldebuch.length > 0 && (
+        <section className="debriefing-meldebuch">
+          <h2>Meldebuch des Zugführers</h2>
+          <p className="hinweis">
+            Was der Zugführer per Funk erfragt und selbst eingetragen hat - zum Vergleich mit der
+            tatsächlichen Lage oben.
+          </p>
+          <ol className="protokoll protokoll-karte">
+            {state.meldebuch.map((eintrag) => (
+              <li key={eintrag.id}>
+                <time>{zeitFormat(eintrag.zeitSek)}</time>
+                <span>
+                  <span className="meldebuch-bereich-tag">
+                    {MELDEBUCH_BEREICH_LABEL[eintrag.bereich]}
+                  </span>{' '}
+                  <strong>{spielerName(eintrag.spielerId)}</strong>: {eintrag.text}
+                </span>
               </li>
             ))}
           </ol>

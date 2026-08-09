@@ -895,7 +895,25 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   Kacheln-Klick öffnet weiterhin korrekt die Abschnitt-Detailsicht mit
   funktionierendem Rücksprung, Regie-Ansicht nach dem Rename unverändert
   funktionsfähig, keine Konsolenfehler.
-- 💤 **Noch offen (Zugführer-Ebene, Teil 10):** Kräfte/Patienten weich
+- ✅ **Meldebuch: Funk-Rückfrage statt Live-Daten (`DPS-0.8.1.9`)** -
+  Zugführer-Ebene, Teil 10, auf ausdrücklichen Wunsch: der Zugführer sah in
+  den Tabs Fahrzeuge/Kräfte/Kennzahlen bislang sofort den echten Stand -
+  real muss er sich das per Funk bei seinen Gruppenführern erfragen (ein
+  echtes Funkgespräch, dessen Inhalt die App nicht kennen kann) und dann
+  selbst eintragen. Eine neue, wiederverwendbare `Meldebuch`-Komponente (→
+  `ui.meldebuch`) ersetzt die drei bisherigen Live-Panels durch ein
+  Freitext-Protokoll je Bereich; neues State-Feld `state.meldebuch` über
+  eine neue Reducer-Aktion `meldebuchEintragen`, an allen Schnappschuss-
+  Touchpoints ergänzt. `Kennzahlenleiste.tsx` bleibt für die Regie
+  unverändert live - nur die Zugführer-Ansicht nutzt sie nicht mehr,
+  `FahrzeugStatusPanel.tsx`/`KraefteStatusPanel.tsx` sind gelöscht. Die
+  Einträge bleiben bis zum Debriefing erhalten und erscheinen dort
+  chronologisch mit Bereich, Autor:in und Zeitstempel - zum Abgleich mit der
+  tatsächlichen Lage. Live verifiziert: alle drei Tabs starten leer, ein
+  Eintrag bleibt beim Tab-Wechsel sichtbar, die Regie-Kennzahlenleiste
+  bleibt währenddessen unverändert live, das Debriefing zeigt alle
+  Meldungen korrekt zugeordnet, keine Konsolenfehler.
+- 💤 **Noch offen (Zugführer-Ebene, Teil 11):** Kräfte/Patienten weich
   zuweisen (Benachrichtigung statt Hard-Lock),
   Rettungsmittelhalteplatz + Transporte freigeben.
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

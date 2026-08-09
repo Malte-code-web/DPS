@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { AbschnitteKurzuebersicht } from '../components/AbschnitteKurzuebersicht';
 import { AnsichtsmenueIcon } from '../components/AnsichtsmenueIcons';
-import { FahrzeugStatusPanel } from '../components/FahrzeugStatusPanel';
 import { KartenOrtePanel } from '../components/KartenOrtePanel';
-import { Kennzahlenleiste } from '../components/Kennzahlenleiste';
 import { Lagekarte } from '../components/Lagekarte';
-import { KraefteStatusPanel } from '../components/KraefteStatusPanel';
+import { Meldebuch } from '../components/Meldebuch';
 import type { Einsatzabschnitt } from '../domain/types';
 
 interface Props {
@@ -39,12 +37,13 @@ const ANSICHTEN: AnsichtEintrag[] = [
  * Fahrzeuge, Kräfte, Kennzahlen) statt der sieben dort, sonst dieselbe
  * Mechanik: immer nur eine Ansicht sichtbar, ein Klick im Menü wechselt sie,
  * eingeklappt bleibt die Leiste als schmaler Icon-Streifen bedienbar. Anders
- * als bei der Regie bleibt hier keine Kennzahlenleiste dauerhaft sichtbar -
- * sie ist wie Fahrzeuge und Kräfte nur eine von fünf Ansichten, die der
- * Zugführer bewusst aufruft (reine `useState`-Steuerung, keine Zeitkosten,
- * keine neue Reducer-Aktion), passend zur realen Meldepflicht, bei der eine
- * Führungskraft sich aktiv ein Lagebild verschafft, statt es automatisch
- * vorgesetzt zu bekommen. Die Kacheln (→ `ui.abschnittekurzuebersicht`)
+ * als bei der Regie bleibt hier keine Kennzahlenleiste dauerhaft sichtbar und
+ * live - Fahrzeuge, Kräfte und Kennzahlen sind je ein Freitext-Meldebuch (→
+ * `ui.meldebuch`, `Meldebuch`): der Zugführer muss seine Gruppenführer real
+ * per Funk fragen (außerhalb der App) und trägt das Ergebnis selbst ein,
+ * statt es automatisch vorgesetzt zu bekommen - passend zur realen
+ * Meldepflicht, bei der eine Führungskraft sich aktiv ein Lagebild
+ * verschafft. Die Kacheln (→ `ui.abschnittekurzuebersicht`)
  * bleiben immer der einzige Weg in die Abschnitt-Detailsicht - die Lagekarte
  * (→ `ui.lagekarte`) selbst nimmt keinen Klick zum Wechseln entgegen, sie
  * steht jetzt als eigene Ansicht neben statt zusätzlich über den Kacheln.
@@ -69,9 +68,27 @@ export function ZugfuehrerSeite({ onAbschnittWaehlen }: Props) {
               <KartenOrtePanel />
             </>
           )}
-          {aktiv === 'fahrzeuge' && <FahrzeugStatusPanel />}
-          {aktiv === 'kraefte' && <KraefteStatusPanel />}
-          {aktiv === 'kennzahlen' && <Kennzahlenleiste />}
+          {aktiv === 'fahrzeuge' && (
+            <Meldebuch
+              bereich="fahrzeuge"
+              titel="Fahrzeuge"
+              platzhalter="z. B. RTW 1 an der Ablage, RTW 2 unterwegs zur Schadensstelle …"
+            />
+          )}
+          {aktiv === 'kraefte' && (
+            <Meldebuch
+              bereich="kraefte"
+              titel="Kräfte"
+              platzhalter="z. B. Behandlungsplatz 20 mit vier Kräften besetzt …"
+            />
+          )}
+          {aktiv === 'kennzahlen' && (
+            <Meldebuch
+              bereich="kennzahlen"
+              titel="Kennzahlen"
+              platzhalter="z. B. 12 Patienten gesichtet, davon 3× SK1 …"
+            />
+          )}
         </div>
 
         <aside

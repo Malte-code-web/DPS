@@ -3132,6 +3132,34 @@ button.gefahr {
   margin: 0;
 }
 
+.meldebuch-eingabe {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.meldebuch-eingabe textarea {
+  flex: 1;
+  resize: vertical;
+  font: inherit;
+}
+
+.meldebuch-liste {
+  margin-top: 0.5rem;
+}
+
+.meldebuch-bereich-tag {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  color: var(--text-leise);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* Eigenständige Box, z. B. die Orte-Liste unter der Lagekarte (→ ui.kartenortepanel)
    oder eine der Ansichten im Seitenleisten-Ansichtsmenü (→ ui.gesamtlagebild,
    ui.zugfuehrerseite). */

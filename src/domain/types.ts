@@ -604,6 +604,28 @@ export interface SpielerProtokollEintrag {
   text: string;
 }
 
+export type MeldebuchBereich = 'fahrzeuge' | 'kraefte' | 'kennzahlen';
+
+/**
+ * @anker modell.meldebucheintrag Eine per Funk erfragte, selbst eingetragene Meldung des Zugführers
+ *
+ * Der Zugführer sieht Fahrzeuge, Kräfte und Kennzahlen nicht mehr live (→
+ * `ui.zugfuehrerseite`) - er muss seine Gruppenführer real per Funk fragen
+ * (außerhalb der App) und trägt das Ergebnis hier selbst ein (→
+ * `Meldebuch`). Bewusst Freitext statt strukturierter Felder, denn eine
+ * Funkmeldung ist genau das: eine Aussage, keine Datenbankzeile. Bleibt
+ * über das Sitzungsende hinaus sichtbar, damit sich das eingetragene
+ * Lagebild im Debriefing (→ `ui.debriefing`) mit der echten Lage
+ * vergleichen lässt.
+ */
+export interface MeldebuchEintrag {
+  id: string;
+  bereich: MeldebuchBereich;
+  text: string;
+  zeitSek: number;
+  spielerId: string;
+}
+
 /**
  * Statische Beschreibung eines Patienten in einem Szenario.
  * @anker modell.patientvorlage Felder, die ein neuer Szenario-Patient braucht

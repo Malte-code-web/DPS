@@ -982,6 +982,42 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   freies Fahrzeug; eine Sitzung ganz ohne Zugführer behält den alten
   Direktknopf unverändert, keine Konsolenfehler.
 
+- ✅ **Flächen ohne Aufbauzeit + echtes Routing statt automatischer
+  Verknüpfung (`DPS-0.8.1.13`)** - Nutzerfeedback zu zwei Punkten der gerade
+  abgeschlossenen Zugführer-Ebene. Erstens: eine reine markierte Fläche
+  (`FL_S`/`FL_M`/`FL_L`, kein echtes Zeltprodukt) hatte fachlich zu Unrecht
+  dieselbe Aufbauzeit-Mechanik wie ein echtes Zelt (SG20-50) - `aufbauSek`
+  jetzt `0`, der bestehende Zeitkosten-Mechanismus dispatcht bei Kosten `<= 0`
+  bereits sofort ohne Timer, keine weitere Änderung nötig. Zweitens, der
+  größere Teil: die Wegstrecken zwischen Einsatzabschnitten entstanden bisher
+  automatisch aus vom Szenario vorab-autorierten Luftlinien-Schätzwerten
+  (`routenAusSzenario`, seit `DPS-0.8.1.4`), sobald beide Endpunkte
+  existierten. Auf Rückfrage geklärt: der Zugführer soll die Verbindung
+  stattdessen selbst anlegen, mit einem echten Routing-Dienst (OSRM,
+  `driving`-Profil - der öffentliche Demo-Server bietet kein `foot`-Profil
+  ohne eigenen Server/API-Key, für die kurzen Strecken einer Einsatzstelle
+  eine Näherung, aber immer noch ein echter Kartenverlauf statt einer
+  Luftlinie) statt der automatischen Luftlinie. Zweite Rückfrage: die
+  automatische Verknüpfung wird komplett abgeschafft, auch im Alleinspiel und
+  bei den vier `EINZELFAELLE` (die ganz ohne Zugführer gespielt werden) -
+  dort gilt für jede Verlegung ohne angelegte Route jetzt einheitlich die
+  bereits bestehende Pauschale `VERLEGUNGSDAUER_SEK`, die bisher nur als
+  Ausnahme griff. `RouteVorlage` und die szenario-autorierten Routenlisten
+  entfallen ersatzlos, `Route` wird auf `id`/`von`/`nach`/`distanzMeter`/
+  optionale `geometrie` reduziert - die frühere `status: 'frei'|'gesperrt'`/
+  `sperraufschlagSek`-Mechanik war reines, nie zur Laufzeit umschaltbares
+  Szenario-Flavor und wird nicht nachgebildet. Neuer Dienst
+  `net/routingDienst.ts` (`holeStrassenroute`) mirrort den Stil von
+  `net/turnAnbieter.ts` - fester Timeout, nie werfen, `null` bei jedem
+  Fehlschlag statt Exception. Neue Reducer-Aktion `routeErstellen` folgt dem
+  etablierten "ersetzen statt addieren"-Muster (→ `FlaechenBefehl`,
+  `AbschnittFuehrenBefehl`) für dasselbe, ungerichtete Abschnittspaar. Neuer
+  UI-Abschnitt auf der Lagekarte (nur Zugführer): zwei Auswahlfelder plus
+  "Route berechnen" - bei nicht erreichbarem Routing-Dienst automatischer
+  Rückfall auf die Luftlinie (`haversineMeter`) mit sichtbarem Hinweis, nie
+  eine Blockade. Die Polylinie auf der Karte zeichnet die echte Wegpunktliste,
+  sofern vorhanden, sonst weiterhin die einfache Zwei-Punkt-Linie.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, Polyline, Popup, Rectangle, TileLayer, Tooltip, useMap, useMapEvent } from 'react-leaflet';
 import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
 import { erzeugeId } from '../domain/sitzung';
-import { geoPunktName, geoZuLokalM, lokalMZuGeo } from '../domain/geodaten';
+import { geoPunktName, geoZuLokalM, haversineMeter, lokalMZuGeo } from '../domain/geodaten';
 import { gruppenfuehrerListe as gruppenfuehrerListeVon } from '../domain/fuehrung';
 import {
   FAHRZEUG_FLAECHENBEDARF_QM,
@@ -13,6 +13,7 @@ import {
   platzierungGueltig,
   verfuegbareFlaecheQm,
 } from '../domain/flaechen';
+import { holeStrassenroute } from '../net/routingDienst';
 import { ZEICHEN_JE_ABSCHNITT } from '../domain/taktischeZeichen';
 import { useSimulation } from '../state/useSimulation';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -163,6 +164,13 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     yM: number;
   } | null>(null);
 
+  // Wegstrecke anlegen (→ ui.lagekarte.wegstrecke) - eigener, von der Baulogik
+  // unabhängiger Ablauf: zwei Abschnitte wählen, Route berechnen lassen.
+  const [wegstreckeVon, setWegstreckeVon] = useState<Einsatzabschnitt | ''>('');
+  const [wegstreckeNach, setWegstreckeNach] = useState<Einsatzabschnitt | ''>('');
+  const [wegstreckeLaedt, setWegstreckeLaedt] = useState(false);
+  const [wegstreckeHinweis, setWegstreckeHinweis] = useState<string | null>(null);
+
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
   const zkBeschaeftigt = zk.aktion !== null;
@@ -312,6 +320,32 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
   const baufeldEckeA = lokalMZuGeo(ursprung, 0, 0);
   const baufeldEckeB = lokalMZuGeo(ursprung, baufeld.breiteM, baufeld.tiefeM);
 
+  const wegstreckeOptionen = [
+    ...new Set<Einsatzabschnitt>([...punkte.map(([abschnitt]) => abschnitt), ...flaechen.map((f) => f.abschnitt)]),
+  ];
+
+  const wegstreckeAnlegen = async () => {
+    if (!wegstreckeVon || !wegstreckeNach || wegstreckeVon === wegstreckeNach) return;
+    const von = sichtbarePosition(wegstreckeVon);
+    const nach = sichtbarePosition(wegstreckeNach);
+    if (!von || !nach) return;
+    setWegstreckeLaedt(true);
+    setWegstreckeHinweis(null);
+    const ergebnis = await holeStrassenroute(von, nach);
+    setWegstreckeLaedt(false);
+    dispatch({
+      typ: 'routeErstellen',
+      id: erzeugeId(),
+      von: wegstreckeVon,
+      nach: wegstreckeNach,
+      distanzMeter: ergebnis?.distanzMeter ?? haversineMeter(von, nach),
+      geometrie: ergebnis?.geometrie,
+    });
+    if (!ergebnis) setWegstreckeHinweis('Luftlinie (Routing-Dienst nicht erreichbar)');
+    setWegstreckeVon('');
+    setWegstreckeNach('');
+  };
+
   return (
     <div className="baufeld-block">
       <div className={`karten-rahmen${kannBauMenuOeffnen ? ' karten-rahmen-platziermodus' : ''}`}>
@@ -340,22 +374,19 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
             const von = sichtbarePosition(route.von);
             const nach = sichtbarePosition(route.nach);
             if (!von || !nach) return null;
-            const gesperrt = route.status === 'gesperrt';
+            // Echter Kartenverlauf, wenn vorhanden (→ `net.routingdienst`) -
+            // sonst Luftlinie als Ersatz (Routing-Dienst nicht erreichbar).
+            const wegpunkte = route.geometrie && route.geometrie.length > 1 ? route.geometrie : [von, nach];
             return (
               <Polyline
                 key={route.id}
-                positions={[
-                  [von.lat, von.lon],
-                  [nach.lat, nach.lon],
-                ]}
-                pathOptions={
-                  gesperrt ? { color: 'var(--warn)', dashArray: '6 4', weight: 3 } : { color: 'var(--rand)', weight: 3 }
-                }
+                positions={wegpunkte.map((punkt) => [punkt.lat, punkt.lon])}
+                pathOptions={{ color: 'var(--rand)', weight: 3 }}
                 interactive={false}
               >
                 {route.distanzMeter >= SIDEBAR_MINDESTABSTAND_M && (
                   <Tooltip permanent direction="center" className="distanz-tooltip">
-                    {gesperrt ? 'gesperrt' : `≈ ${Math.round(route.distanzMeter)} m`}
+                    ≈ {Math.round(route.distanzMeter)} m
                   </Tooltip>
                 )}
               </Polyline>
@@ -506,6 +537,46 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
                 );
               })}
             </ul>
+          )}
+
+          {wegstreckeOptionen.length >= 2 && (
+            <div className="panel wegstrecke-anlegen">
+              <div className="panel-titel">
+                <h2>Wegstrecke anlegen</h2>
+              </div>
+              <div className="wegstrecke-auswahl">
+                <select
+                  value={wegstreckeVon}
+                  onChange={(ereignis) => setWegstreckeVon(ereignis.target.value as Einsatzabschnitt | '')}
+                >
+                  <option value="">Von…</option>
+                  {wegstreckeOptionen.map((abschnitt) => (
+                    <option key={abschnitt} value={abschnitt}>
+                      {geoPunktName(abschnitt)}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={wegstreckeNach}
+                  onChange={(ereignis) => setWegstreckeNach(ereignis.target.value as Einsatzabschnitt | '')}
+                >
+                  <option value="">Nach…</option>
+                  {wegstreckeOptionen.map((abschnitt) => (
+                    <option key={abschnitt} value={abschnitt}>
+                      {geoPunktName(abschnitt)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!wegstreckeVon || !wegstreckeNach || wegstreckeVon === wegstreckeNach || wegstreckeLaedt}
+                  onClick={wegstreckeAnlegen}
+                >
+                  {wegstreckeLaedt ? 'Route wird berechnet…' : 'Route berechnen'}
+                </button>
+              </div>
+              {wegstreckeHinweis && <p className="hinweis">{wegstreckeHinweis}</p>}
+            </div>
           )}
 
           {vorschau ? (

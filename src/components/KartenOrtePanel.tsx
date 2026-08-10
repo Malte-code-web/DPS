@@ -5,10 +5,10 @@ import { useSimulation } from '../state/useSimulation';
 const MINDESTABSTAND_M = 60;
 
 /**
- * @anker ui.kartenortepanel Entfernungen der Lagekarte als Liste in der Seitenleiste
+ * @anker ui.kartenortepanel Vom Zugführer angelegte Wegstrecken als Liste in der Seitenleiste
  *
- * Dieselben Wege wie auf der Karte selbst, nur als Text - für schnelles
- * Überfliegen ohne auf einzelne Marker zu zielen.
+ * Dieselben Wegstrecken wie auf der Karte selbst (→ `ui.lagekarte.wegstrecke`), nur als Text -
+ * für schnelles Überfliegen ohne auf einzelne Linien zu zielen.
  */
 export function KartenOrtePanel() {
   const { state } = useSimulation();
@@ -19,7 +19,7 @@ export function KartenOrtePanel() {
   return (
     <div className="panel">
       <div className="panel-titel">
-        <h2>Orte im Szenario</h2>
+        <h2>Angelegte Wegstrecken</h2>
       </div>
       <ul className="ort-liste">
         {routen.map((route) => (
@@ -27,9 +27,7 @@ export function KartenOrtePanel() {
             <span>
               {geoPunktName(route.von)} &harr; {geoPunktName(route.nach)}
             </span>
-            <span className={route.status === 'gesperrt' ? 'entfernung entfernung-gesperrt' : 'entfernung'}>
-              {route.status === 'gesperrt' ? 'gesperrt' : `≈ ${Math.round(route.distanzMeter)} m`}
-            </span>
+            <span className="entfernung">≈ {Math.round(route.distanzMeter)} m</span>
           </li>
         ))}
       </ul>

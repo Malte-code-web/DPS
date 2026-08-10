@@ -5,7 +5,7 @@ import { standardMassnahmenrechte } from '../domain/massnahmenrechte';
 import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../domain/material';
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
-import { geoPunktName, routenAusSzenario } from '../domain/geodaten';
+import { geoPunktName } from '../domain/geodaten';
 import { STANDARD_BAUFELD, platzierungGueltig } from '../domain/flaechen';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
@@ -41,6 +41,7 @@ import type {
   FlaechenBefehl,
   FlaechenTypId,
   Fuehrungsrolle,
+  GeoPosition,
   Kollegenanfrage,
   MassnahmeId,
   MeldebuchBereich,
@@ -381,6 +382,14 @@ export type SimulationAction =
       text: string;
       spielerId: string;
     }
+  | {
+      typ: 'routeErstellen';
+      id: string;
+      von: Einsatzabschnitt;
+      nach: Einsatzabschnitt;
+      distanzMeter: number;
+      geometrie?: GeoPosition[];
+    }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -638,7 +647,11 @@ export function simulationReducer(
         alleine,
         ausgewaehlterAbschnitt: 'schadensstelle',
         patienten: action.szenario.patienten.map((vorlage) => patientAusVorlage(vorlage, faktor)),
-        routen: routenAusSzenario(action.szenario),
+        // Wegstrecken entstehen nicht mehr automatisch aus dem Szenario -
+        // der Zugführer legt sie selbst an (→ `routeErstellen`,
+        // `ui.lagekarte.wegstrecke`). Ohne angelegte Route gilt weiterhin der
+        // pauschale Zeitwert (→ `domain.geodaten`, `verlegungsdauerSek`).
+        routen: [],
         // Ein einzelner Betroffener geht direkt in die Patientenansicht - kein
         // Behandlungsplatz, keine Übersicht dazwischen.
         ausgewaehlterPatientId:
@@ -1663,6 +1676,30 @@ export function simulationReducer(
       };
     }
 
+    // Ersetzt statt zu addieren - dasselbe Muster wie FlaechenBefehl/
+    // AbschnittFuehrenBefehl: eine neu berechnete Wegstrecke für ein Paar
+    // (in beide Richtungen erkannt) ersetzt eine bestehende.
+    case 'routeErstellen': {
+      const ohneAlte = state.routen.filter(
+        (route) =>
+          !(
+            (route.von === action.von && route.nach === action.nach) ||
+            (route.von === action.nach && route.nach === action.von)
+          ),
+      );
+      const route: Route = {
+        id: action.id,
+        von: action.von,
+        nach: action.nach,
+        distanzMeter: action.distanzMeter,
+        geometrie: action.geometrie,
+      };
+      return protokolliereRegie(
+        { ...state, routen: [...ohneAlte, route] },
+        `Wegstrecke ${geoPunktName(action.von)} ↔ ${geoPunktName(action.nach)} angelegt (${Math.round(action.distanzMeter)} m).`,
+      );
+    }
+
     case 'sitzungStarten': {
       if (!state.szenario) return state;
       // Sofort: wie bisher direkt an der Schadensstelle sichtbar. Gestaffelt:
@@ -1680,7 +1717,7 @@ export function simulationReducer(
         patienten: state.szenario.patienten.map((vorlage) =>
           patientAusVorlage(vorlage, 1, startAbschnitt),
         ),
-        routen: routenAusSzenario(state.szenario),
+        routen: [],
         sitzung: { ...state.sitzung, status: 'laeuft' as const },
       };
       return protokolliereRegie(naechster, 'Übung gestartet.');

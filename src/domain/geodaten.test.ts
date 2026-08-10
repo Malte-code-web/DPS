@@ -1,43 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { VERLEGUNGSDAUER_SEK } from './abschnitte';
-import {
-  geoPunktName,
-  geoZuLokalM,
-  haversineMeter,
-  lokalMZuGeo,
-  routenAusSzenario,
-  verlegungsdauerSek,
-} from './geodaten';
-import type { GeoPosition, Route, Szenario } from './types';
+import { geoPunktName, geoZuLokalM, haversineMeter, lokalMZuGeo, verlegungsdauerSek } from './geodaten';
+import type { GeoPosition, Route } from './types';
 
-const ROUTE_FREI: Route = {
+const ROUTE: Route = {
   id: 'r-1',
   von: 'schadensstelle',
   nach: 'eingangssichtung',
   distanzMeter: 150,
-  sperraufschlagSek: 90,
-  status: 'frei',
 };
 
 describe('verlegungsdauerSek', () => {
-  it('fällt ohne passende Route auf VERLEGUNGSDAUER_SEK zurück', () => {
+  it('fällt ohne angelegte Route auf VERLEGUNGSDAUER_SEK zurück', () => {
     expect(verlegungsdauerSek([], 'schadensstelle', 'eingangssichtung')).toBe(VERLEGUNGSDAUER_SEK);
-    expect(verlegungsdauerSek([ROUTE_FREI], 'ablage', 'eingangssichtung')).toBe(VERLEGUNGSDAUER_SEK);
+    expect(verlegungsdauerSek([ROUTE], 'ablage', 'eingangssichtung')).toBe(VERLEGUNGSDAUER_SEK);
   });
 
   it('berechnet die Dauer aus der Distanz, wenn eine Route passt', () => {
-    expect(verlegungsdauerSek([ROUTE_FREI], 'schadensstelle', 'eingangssichtung')).toBe(150);
+    expect(verlegungsdauerSek([ROUTE], 'schadensstelle', 'eingangssichtung')).toBe(150);
   });
 
   it('findet eine Route unabhängig von der Richtung', () => {
-    expect(verlegungsdauerSek([ROUTE_FREI], 'eingangssichtung', 'schadensstelle')).toBe(150);
-  });
-
-  it('addiert den Sperraufschlag nur bei gesperrter Route, als Zeitaufschlag statt Blockade', () => {
-    const gesperrt: Route = { ...ROUTE_FREI, status: 'gesperrt' };
-    expect(verlegungsdauerSek([gesperrt], 'schadensstelle', 'eingangssichtung')).toBe(150 + 90);
-    // Bleibt trotz Sperrung ein endlicher, passierbarer Wert - keine Blockade.
-    expect(verlegungsdauerSek([gesperrt], 'schadensstelle', 'eingangssichtung')).toBeLessThan(Infinity);
+    expect(verlegungsdauerSek([ROUTE], 'eingangssichtung', 'schadensstelle')).toBe(150);
   });
 });
 
@@ -88,76 +72,5 @@ describe('geoZuLokalM / lokalMZuGeo', () => {
     const oestlich: GeoPosition = { lat: 52.35, lon: 7.901 };
     expect(geoZuLokalM(ursprung, suedlich).yM).toBeGreaterThan(0);
     expect(geoZuLokalM(ursprung, oestlich).xM).toBeGreaterThan(0);
-  });
-});
-
-describe('routenAusSzenario', () => {
-  const basisSzenario: Szenario = {
-    id: 's-1',
-    titel: 'Test',
-    lagemeldung: '',
-    einsatzhinweis: '',
-    patienten: [],
-  };
-
-  it('liefert eine leere Liste ohne Geodaten - ein Szenario ohne Geodaten bleibt unverändert nutzbar', () => {
-    expect(routenAusSzenario(basisSzenario)).toEqual([]);
-  });
-
-  it('materialisiert Routen mit Status "frei", sofern nicht gesperrtBeimStart gesetzt ist', () => {
-    const szenario: Szenario = {
-      ...basisSzenario,
-      geodaten: {
-        schluesselpunkte: {},
-        routen: [
-          { id: 'r-1', von: 'schadensstelle', nach: 'eingangssichtung', distanzMeter: 150, sperraufschlagSek: 90 },
-          {
-            id: 'r-2',
-            von: 'bereitstellungsraum',
-            nach: 'schadensstelle',
-            distanzMeter: 350,
-            sperraufschlagSek: 90,
-            gesperrtBeimStart: true,
-          },
-        ],
-      },
-    };
-    const routen = routenAusSzenario(szenario);
-    expect(routen.find((r) => r.id === 'r-1')?.status).toBe('frei');
-    expect(routen.find((r) => r.id === 'r-2')?.status).toBe('gesperrt');
-  });
-
-  it('berechnet distanzMeter aus den Koordinaten, wenn kein Override angegeben ist', () => {
-    const szenario: Szenario = {
-      ...basisSzenario,
-      geodaten: {
-        schluesselpunkte: {
-          schadensstelle: { lat: 52.35, lon: 7.9 },
-          eingangssichtung: { lat: 52.349, lon: 7.9 },
-        },
-        routen: [
-          { id: 'r-1', von: 'schadensstelle', nach: 'eingangssichtung', sperraufschlagSek: 90 },
-        ],
-      },
-    };
-    const route = routenAusSzenario(szenario).find((r) => r.id === 'r-1');
-    expect(route?.distanzMeter).toBeCloseTo(haversineMeter({ lat: 52.35, lon: 7.9 }, { lat: 52.349, lon: 7.9 }));
-  });
-
-  it('bevorzugt einen manuellen distanzMeter-Override vor der Berechnung', () => {
-    const szenario: Szenario = {
-      ...basisSzenario,
-      geodaten: {
-        schluesselpunkte: {
-          schadensstelle: { lat: 52.35, lon: 7.9 },
-          eingangssichtung: { lat: 52.349, lon: 7.9 },
-        },
-        routen: [
-          { id: 'r-1', von: 'schadensstelle', nach: 'eingangssichtung', distanzMeter: 999, sperraufschlagSek: 90 },
-        ],
-      },
-    };
-    const route = routenAusSzenario(szenario).find((r) => r.id === 'r-1');
-    expect(route?.distanzMeter).toBe(999);
   });
 });

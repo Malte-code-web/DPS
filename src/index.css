@@ -3645,6 +3645,17 @@ button.gefahr {
   color: var(--text-leise);
 }
 
+.wegstrecke-auswahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.wegstrecke-auswahl select {
+  flex: 1 1 140px;
+}
+
 @media (max-width: 980px) {
   .kennzahlen {
     grid-template-columns: repeat(2, 1fr);

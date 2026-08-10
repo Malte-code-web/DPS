@@ -898,30 +898,25 @@ export interface GeoPosition {
 }
 
 /**
- * @anker modell.route Weg zwischen zwei Einsatzabschnitten mit echter Distanz
+ * @anker modell.route Vom Zugführer angelegte Wegstrecke zwischen zwei Einsatzabschnitten
  *
- * `distanzMeter` ist ein optionaler manueller Override - ohne Angabe wird die
- * echte Distanz aus den Koordinaten der beiden Schlüsselpunkte berechnet
- * (→ `domain.geodaten`, `haversineMeter`). Ein Override lohnt sich nur, wenn
- * der reale Weg spürbar vom direkten Luftlinienabstand abweicht (z. B. eine
- * Umleitung um eine gesperrte Straße). `sperraufschlagSek` wirkt nur als
- * fester Zeitaufschlag bei `status: 'gesperrt'`, nie als Blockade - dieselbe
- * "verzögert, nicht blockiert"-Linie wie überall sonst in der Simulation.
+ * Entsteht ausschließlich durch eine bewusste Führungsentscheidung
+ * (→ `ui.lagekarte.wegstrecke`, Aktion `routeErstellen`), nie automatisch aus
+ * Szenariodaten - `state.routen` startet bei jedem Sitzungsstart leer.
+ * `distanzMeter`/`geometrie` kommen von einem echten Routing-Dienst
+ * (→ `net.routingdienst`); ist der nicht erreichbar, bleibt `geometrie` leer
+ * und die Karte zeichnet ersatzweise die Luftlinie
+ * (→ `domain.geodaten.haversine`). Ohne angelegte Route für ein Abschnittspaar
+ * gilt weiterhin der pauschale Zeitwert (`VERLEGUNGSDAUER_SEK`,
+ * → `domain.geodaten`) - eine fehlende Route blockiert nie eine Verlegung.
  */
-export interface RouteVorlage {
+export interface Route {
   id: string;
   von: Einsatzabschnitt;
   nach: Einsatzabschnitt;
-  distanzMeter?: number;
-  sperraufschlagSek: number;
-  /** Startet die Route gesperrt, statt frei (→ `modell.freigabemodus`-ähnliches Muster). */
-  gesperrtBeimStart?: boolean;
-}
-
-export interface Route extends RouteVorlage {
-  /** Immer belegt - `routenAusSzenario` berechnet fehlende Werte per `haversineMeter`. */
   distanzMeter: number;
-  status: 'frei' | 'gesperrt';
+  /** Wegpunkte der echten Route - fehlt bei Luftlinie (Routing-Dienst nicht erreichbar). */
+  geometrie?: GeoPosition[];
 }
 
 /**
@@ -1031,14 +1026,13 @@ export interface Szenario {
    */
   fahrzeuge?: FahrzeugVorlage[];
   /**
-   * Koordinaten und Wege der Schlüsselpunkte, Grundlage der Lagekarte
-   * (→ `ui.lagekarte`) und der echten Verlegungsdauer (→ `domain.geodaten`).
+   * Koordinaten der Schlüsselpunkte, Grundlage der Lagekarte (→ `ui.lagekarte`).
    * Optional - ein Szenario ohne Geodaten funktioniert unverändert mit der
-   * pauschalen `VERLEGUNGSDAUER_SEK`.
+   * pauschalen `VERLEGUNGSDAUER_SEK`. Wegstrecken (→ `modell.route`) sind
+   * keine Szenariodaten mehr - der Zugführer legt sie zur Laufzeit selbst an.
    */
   geodaten?: {
     schluesselpunkte: Partial<Record<Einsatzabschnitt, GeoPosition>>;
-    routen: RouteVorlage[];
     /**
      * Referenzpunkt, von dem aus `PlatzierteFlaeche.xM/yM` gemessen werden
      * (→ `domain.geodaten`, `geoZuLokalM`/`lokalMZuGeo`) - ein einziges

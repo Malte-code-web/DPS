@@ -1,5 +1,5 @@
 import { VERLEGUNGSDAUER_SEK, abschnittInfo } from './abschnitte';
-import type { Einsatzabschnitt, GeoPosition, Route, Szenario } from './types';
+import type { Einsatzabschnitt, GeoPosition, Route } from './types';
 
 /**
  * `bereitstellungsraum` taucht bewusst nicht in der normalen Abschnittsliste
@@ -73,11 +73,11 @@ const GEHGESCHWINDIGKEIT_M_PRO_SEK = 1;
 
 /**
  * Ersetzt die pauschale `VERLEGUNGSDAUER_SEK` durch die echte Distanz
- * zwischen zwei Abschnitten, sobald eine passende Route vorliegt - eine
- * gesperrte Route bleibt passierbar, kostet aber einen festen Zeitaufschlag
- * (`sperraufschlagSek`), keine Blockade. Ohne Geodaten (kein Szenario-Eintrag
- * oder keine passende Route) bleibt der bisherige Pauschalwert als Fallback -
- * ein Szenario ohne Geodaten verhält sich unverändert.
+ * zwischen zwei Abschnitten, sobald der Zugführer dafür eine Wegstrecke
+ * angelegt hat (→ `modell.route`, `ui.lagekarte.wegstrecke`). Ohne angelegte
+ * Route (Alleinspiel, Einzelfälle, noch nicht verbundenes Abschnittspaar)
+ * bleibt der Pauschalwert als Fallback - eine fehlende Route blockiert nie
+ * eine Verlegung.
  */
 export function verlegungsdauerSek(
   routen: Route[],
@@ -88,28 +88,5 @@ export function verlegungsdauerSek(
     (eintrag) => (eintrag.von === von && eintrag.nach === nach) || (eintrag.von === nach && eintrag.nach === von),
   );
   if (!route) return VERLEGUNGSDAUER_SEK;
-  const basis = route.distanzMeter / GEHGESCHWINDIGKEIT_M_PRO_SEK;
-  return route.status === 'gesperrt' ? basis + route.sperraufschlagSek : basis;
-}
-
-/**
- * Materialisiert die Laufzeit-Routen eines Szenarios beim Sitzungsstart -
- * ein fehlender `distanzMeter`-Override wird aus den echten Koordinaten der
- * beiden Schlüsselpunkte berechnet (→ `domain.geodaten.haversine`); fehlt
- * einer der beiden Punkte, bleibt defensiv `0` (sollte bei gepflegten
- * Szenariodaten nicht vorkommen).
- */
-export function routenAusSzenario(szenario: Szenario): Route[] {
-  const punkte = szenario.geodaten?.schluesselpunkte ?? {};
-  return (szenario.geodaten?.routen ?? []).map((vorlage) => {
-    const von = punkte[vorlage.von];
-    const nach = punkte[vorlage.nach];
-    const distanzMeter =
-      vorlage.distanzMeter ?? (von && nach ? haversineMeter(von, nach) : 0);
-    return {
-      ...vorlage,
-      distanzMeter,
-      status: vorlage.gesperrtBeimStart ? 'gesperrt' : 'frei',
-    };
-  });
+  return route.distanzMeter / GEHGESCHWINDIGKEIT_M_PRO_SEK;
 }

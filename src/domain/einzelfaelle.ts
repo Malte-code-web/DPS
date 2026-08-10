@@ -1,22 +1,12 @@
 import { lokalMZuGeo } from './geodaten';
-import type { GeoPosition, RouteVorlage, Szenario } from './types';
+import type { GeoPosition, Szenario } from './types';
 
 /**
  * Kompakter Standard-Grundriss für einen Einzelfall (ein Patient, kurze
  * Wege) - dieselbe Ableitung über echte Meterversätze wie bei den
  * MANV-Szenarien (→ `domain.geodaten.projektion`), nur enger gefasst.
  */
-function einzelfallGeodaten(ursprung: GeoPosition, praefix: string): Szenario['geodaten'] {
-  const routen: RouteVorlage[] = [
-    { id: `${praefix}-schadensstelle-eingang`, von: 'schadensstelle', nach: 'eingangssichtung', sperraufschlagSek: 60 },
-    { id: `${praefix}-eingang-zeltrot`, von: 'eingangssichtung', nach: 'zelt_rot', sperraufschlagSek: 45 },
-    { id: `${praefix}-eingang-zeltgelb`, von: 'eingangssichtung', nach: 'zelt_gelb', sperraufschlagSek: 45 },
-    { id: `${praefix}-eingang-zeltgruen`, von: 'eingangssichtung', nach: 'zelt_gruen', sperraufschlagSek: 45 },
-    { id: `${praefix}-zeltrot-ausgang`, von: 'zelt_rot', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
-    { id: `${praefix}-zeltgelb-ausgang`, von: 'zelt_gelb', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
-    { id: `${praefix}-zeltgruen-ausgang`, von: 'zelt_gruen', nach: 'ausgangssichtung', sperraufschlagSek: 30 },
-    { id: `${praefix}-ausgang-transport`, von: 'ausgangssichtung', nach: 'transport', sperraufschlagSek: 30 },
-  ];
+function einzelfallGeodaten(ursprung: GeoPosition): Szenario['geodaten'] {
   return {
     ursprung,
     schluesselpunkte: {
@@ -30,7 +20,6 @@ function einzelfallGeodaten(ursprung: GeoPosition, praefix: string): Szenario['g
       ausgangssichtung: lokalMZuGeo(ursprung, 10, 40),
       transport: lokalMZuGeo(ursprung, 10, 55),
     },
-    routen,
   };
 }
 
@@ -86,7 +75,7 @@ export const EINZELFAELLE: Szenario[] = [
       },
     ],
     // Ochtrup (Kreis Steinfurt), realer Stadtmittelpunkt - kein realer Einsatz.
-    geodaten: einzelfallGeodaten({ lat: 52.2062, lon: 7.1866 }, 'ez-blutung'),
+    geodaten: einzelfallGeodaten({ lat: 52.2062, lon: 7.1866 }),
   },
   {
     id: 'ez-atemweg',
@@ -131,7 +120,7 @@ export const EINZELFAELLE: Szenario[] = [
       },
     ],
     // Ibbenbüren (Kreis Steinfurt), realer Stadtmittelpunkt - kein realer Einsatz.
-    geodaten: einzelfallGeodaten({ lat: 52.2779, lon: 7.7164 }, 'ez-atemweg'),
+    geodaten: einzelfallGeodaten({ lat: 52.2779, lon: 7.7164 }),
   },
   {
     id: 'ez-thorax',
@@ -176,7 +165,7 @@ export const EINZELFAELLE: Szenario[] = [
       },
     ],
     // Emsdetten (Kreis Steinfurt), realer Stadtmittelpunkt - kein realer Einsatz.
-    geodaten: einzelfallGeodaten({ lat: 52.1667, lon: 7.5333 }, 'ez-thorax'),
+    geodaten: einzelfallGeodaten({ lat: 52.1667, lon: 7.5333 }),
   },
   {
     id: 'ez-schock',
@@ -220,6 +209,6 @@ export const EINZELFAELLE: Szenario[] = [
       },
     ],
     // Greven (Kreis Steinfurt), realer Stadtmittelpunkt - kein realer Einsatz.
-    geodaten: einzelfallGeodaten({ lat: 52.0967, lon: 7.6122 }, 'ez-schock'),
+    geodaten: einzelfallGeodaten({ lat: 52.0967, lon: 7.6122 }),
   },
 ];

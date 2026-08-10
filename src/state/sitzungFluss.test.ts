@@ -551,23 +551,85 @@ describe('Geodaten und Verlegungsdauer (→ domain.geodaten)', () => {
     );
   }
 
-  it('materialisiert die Routen aus dem Szenario bei sitzungStarten, gesperrtBeimStart als Status "gesperrt"', () => {
+  it('startet ohne Routen - sie entstehen nicht mehr automatisch aus dem Szenario', () => {
     const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
-    expect(state.routen.length).toBe(busunfall.geodaten!.routen.length);
-    const zufahrt = state.routen.find(
-      (route) => route.von === 'bereitstellungsraum' && route.nach === 'schadensstelle',
+    expect(state.routen).toEqual([]);
+  });
+});
+
+describe('routeErstellen (→ modell.route, ui.lagekarte.wegstrecke)', () => {
+  function imEinsatz(): SimulationState {
+    const eroeffnet = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
     );
-    expect(zufahrt?.status).toBe('gesperrt');
-    const frei = state.routen.find(
-      (route) => route.von === 'schadensstelle' && route.nach === 'eingangssichtung',
-    );
-    expect(frei?.status).toBe('frei');
+    return simulationReducer(eroeffnet, { typ: 'sitzungStarten' });
+  }
+
+  it('legt eine Route mit Distanz und Geometrie an', () => {
+    const state = simulationReducer(imEinsatz(), {
+      typ: 'routeErstellen',
+      id: 'route-1',
+      von: 'schadensstelle',
+      nach: 'eingangssichtung',
+      distanzMeter: 180,
+      geometrie: [
+        { lat: 52.0, lon: 7.0 },
+        { lat: 52.001, lon: 7.001 },
+      ],
+    });
+
+    expect(state.routen).toEqual([
+      {
+        id: 'route-1',
+        von: 'schadensstelle',
+        nach: 'eingangssichtung',
+        distanzMeter: 180,
+        geometrie: [
+          { lat: 52.0, lon: 7.0 },
+          { lat: 52.001, lon: 7.001 },
+        ],
+      },
+    ]);
+    expect(state.regieProtokoll.at(-1)?.text).toContain('Wegstrecke');
+  });
+
+  it('ersetzt statt zu addieren, unabhängig von der Richtung des Paars', () => {
+    const ersteRoute = simulationReducer(imEinsatz(), {
+      typ: 'routeErstellen',
+      id: 'route-1',
+      von: 'schadensstelle',
+      nach: 'eingangssichtung',
+      distanzMeter: 180,
+    });
+
+    const ersetzt = simulationReducer(ersteRoute, {
+      typ: 'routeErstellen',
+      id: 'route-2',
+      von: 'eingangssichtung',
+      nach: 'schadensstelle',
+      distanzMeter: 210,
+    });
+
+    expect(ersetzt.routen).toEqual([
+      { id: 'route-2', von: 'eingangssichtung', nach: 'schadensstelle', distanzMeter: 210, geometrie: undefined },
+    ]);
   });
 
   it('nimmt die Routen in den Schnappschuss auf, damit Spieler dieselbe Verlegungsdauer sehen', () => {
-    const state = simulationReducer(eroeffnet(), { typ: 'sitzungStarten' });
-    const schnappschuss = schnappschussAus(state);
-    expect(schnappschuss.routen).toEqual(state.routen);
+    const state = simulationReducer(imEinsatz(), {
+      typ: 'routeErstellen',
+      id: 'route-1',
+      von: 'schadensstelle',
+      nach: 'eingangssichtung',
+      distanzMeter: 180,
+    });
+    expect(schnappschussAus(state).routen).toEqual(state.routen);
   });
 });
 

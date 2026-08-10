@@ -92,10 +92,14 @@ export interface FlaechenTypInfo {
   aufbauSek: number;
 }
 
+/**
+ * Eine reine Fläche ist nur eine Markierung ohne echtes Zeltprodukt - anders
+ * als ein Zelt (→ `ZELTTYPEN`) braucht sie keine Aufbauzeit, sie steht sofort.
+ */
 export const FLAECHENTYPEN: Record<FlaechenTypId, FlaechenTypInfo> = {
-  FL_S: { id: 'FL_S', bezeichnung: 'Fläche klein', breiteM: 5, tiefeM: 5, flaecheQm: 25, aufbauSek: 60 },
-  FL_M: { id: 'FL_M', bezeichnung: 'Fläche mittel', breiteM: 10, tiefeM: 10, flaecheQm: 100, aufbauSek: 120 },
-  FL_L: { id: 'FL_L', bezeichnung: 'Fläche groß', breiteM: 15, tiefeM: 15, flaecheQm: 225, aufbauSek: 180 },
+  FL_S: { id: 'FL_S', bezeichnung: 'Fläche klein', breiteM: 5, tiefeM: 5, flaecheQm: 25, aufbauSek: 0 },
+  FL_M: { id: 'FL_M', bezeichnung: 'Fläche mittel', breiteM: 10, tiefeM: 10, flaecheQm: 100, aufbauSek: 0 },
+  FL_L: { id: 'FL_L', bezeichnung: 'Fläche groß', breiteM: 15, tiefeM: 15, flaecheQm: 225, aufbauSek: 0 },
 };
 
 /** Gemeinsamer Lookup über beide Kataloge (→ `domain.flaechen`). */

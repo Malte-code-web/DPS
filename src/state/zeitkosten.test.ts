@@ -154,6 +154,28 @@ describe('zeitkostenSek', () => {
     expect(sg50).toBeGreaterThan(sg20);
   });
 
+  it('kostet eine reine Fläche (kein Zeltprodukt) keine Aufbauzeit - steht sofort', () => {
+    const state = imEinsatz();
+    const flS = zeitkostenSek(state, {
+      typ: 'zeltPlatzieren',
+      id: 'flaeche-1',
+      flaechenTyp: 'FL_S',
+      abschnitt: 'ablage',
+      xM: 0,
+      yM: 0,
+    });
+    const flL = zeitkostenSek(state, {
+      typ: 'zeltPlatzieren',
+      id: 'flaeche-2',
+      flaechenTyp: 'FL_L',
+      abschnitt: 'bereitstellungsraum',
+      xM: 20,
+      yM: 20,
+    });
+    expect(flS).toBe(0);
+    expect(flL).toBe(0);
+  });
+
   it('kostet nichts bei einer ungültigen Zeltplatzierung (Überlappung)', () => {
     const start = imEinsatz();
     const mitRot = simulationReducer(start, {

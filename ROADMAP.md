@@ -1046,6 +1046,29 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   Reducer-/Domain-Logik war von diesem rein UI-seitigen Fehler nicht
   betroffen.
 
+- ✅ **Baumenü: Scrollposition sprang nach dem ersten Tick sofort zurück
+  (`DPS-0.8.1.15`)** - Nachfolge-Korrektur zu `DPS-0.8.1.14`: die
+  Reload-Schleife war zwar behoben, aber "Nach Scroll springt Baumenü sofort
+  auf Anfang, keine Auswahl der unten stehenden Punkte möglich" zeigte, dass
+  dieselbe Instabilitäts-Falle noch an einer zweiten Stelle steckte. React-
+  leaflets `createDivOverlayComponent` (→ `@react-leaflet/core`) ruft in
+  einem eigenen `useEffect` `instance.update()` auf, sobald sich die
+  **Objekt-Referenz** von `props.children` ändert - und das Popup bekam
+  bisher bei jedem Render (jeder Simulations-Takt, alle 500ms) ein frisch aus
+  JSX gebautes `children`. `instance.update()` ruft intern Leaflets
+  `_updateLayout()` auf, die kurzzeitig `container.style.height = ''` setzt,
+  um die Inhaltshöhe neu zu messen - dabei passt der Inhalt kurz wieder
+  vollständig ins scrollbare Element, der Browser setzt `scrollTop` in diesem
+  Moment auf 0 zurück, und die Höhe wird danach zwar korrekt wiederhergestellt,
+  aber die Scrollposition bleibt verloren. Behoben, indem sowohl die Liste der
+  noch offenen Abschnitte (`nochOffeneAbschnitte`, jetzt `useMemo` über
+  `state.flaechen`/`state.flaechenBefehle` - beide Felder bleiben zwischen
+  Ticks referenzstabil, weil der `tick`-Fall im Reducer sie nie anfasst) als
+  auch der komplette Popup-Inhalt (`bauMenuInhalt`, `useMemo` über
+  `bauMenuPosition`/`nochOffeneAbschnitte`) referenzstabil gehalten werden -
+  beide Hooks stehen vor dem frühen Return der Komponente. `tsc`/Lint/volle
+  Testsuite weiterhin grün.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

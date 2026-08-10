@@ -186,6 +186,45 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
   const bauMenuSchliessen = useCallback(() => setBauMenuPosition(null), []);
   const bauMenuEventHandlers = useMemo(() => ({ remove: bauMenuSchliessen }), [bauMenuSchliessen]);
 
+  // Dieselbe Falle wie beim `position`-Prop betrifft react-leaflets Popup
+  // zusätzlich beim `children`-Prop: eine neue Referenz (hier: jedes Mal neu
+  // berechnete Filterlisten plus frisches JSX) löst bei jedem Simulations-
+  // Takt ein internes `instance.update()` aus. Dabei setzt Leaflet
+  // `container.style.height` kurz zurück, um die Inhaltshöhe neu zu messen -
+  // das lässt den Browser `scrollTop` auf 0 zurücksetzen, sobald der Inhalt
+  // dabei kurzzeitig wieder vollständig passt. `state.flaechen`/
+  // `state.flaechenBefehle` sind bereits zwischen Ticks stabile Referenzen
+  // (der `tick`-Fall im Reducer rührt sie nicht an) - `useMemo` darauf hält
+  // auch `nochOffeneAbschnitte` und den Popup-Inhalt zwischen Ticks stabil.
+  const nochOffeneAbschnitte = useMemo(() => {
+    const abschnitteInBearbeitung = new Set([
+      ...state.flaechen.map((flaeche) => flaeche.abschnitt),
+      ...state.flaechenBefehle.map((befehl) => befehl.abschnitt),
+    ]);
+    return FLAECHEN_ABSCHNITTE.filter((abschnitt) => !abschnitteInBearbeitung.has(abschnitt));
+  }, [state.flaechen, state.flaechenBefehle]);
+
+  const bauMenuInhalt = useMemo(() => {
+    if (!bauMenuPosition) return null;
+    return (
+      <div className="lagekarte-bau-menue">
+        <p className="lagekarte-bau-menue-titel">Was hier bauen?</p>
+        {nochOffeneAbschnitte.map((abschnitt) => (
+          <button
+            key={abschnitt}
+            type="button"
+            onClick={() => {
+              setTypAuswahl({ abschnitt, klickPunkt: bauMenuPosition });
+              setBauMenuPosition(null);
+            }}
+          >
+            {geoPunktName(abschnitt)}
+          </button>
+        ))}
+      </div>
+    );
+  }, [bauMenuPosition, nochOffeneAbschnitte]);
+
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
   const zkBeschaeftigt = zk.aktion !== null;
@@ -259,14 +298,6 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     setZielAuswahl(entscheidung);
     setEntscheidung(null);
   };
-
-  const abschnitteInBearbeitung = new Set([
-    ...flaechen.map((flaeche) => flaeche.abschnitt),
-    ...state.flaechenBefehle.map((befehl) => befehl.abschnitt),
-  ]);
-  const nochOffeneAbschnitte = FLAECHEN_ABSCHNITTE.filter(
-    (abschnitt) => !abschnitteInBearbeitung.has(abschnitt),
-  );
 
   const kannBauMenuOeffnen =
     !zkBeschaeftigt &&
@@ -463,21 +494,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
 
           {interaktiv && bauMenuPosition && bauMenuLatLng && (
             <Popup position={bauMenuLatLng} eventHandlers={bauMenuEventHandlers} maxHeight={240}>
-              <div className="lagekarte-bau-menue">
-                <p className="lagekarte-bau-menue-titel">Was hier bauen?</p>
-                {nochOffeneAbschnitte.map((abschnitt) => (
-                  <button
-                    key={abschnitt}
-                    type="button"
-                    onClick={() => {
-                      setTypAuswahl({ abschnitt, klickPunkt: bauMenuPosition });
-                      setBauMenuPosition(null);
-                    }}
-                  >
-                    {geoPunktName(abschnitt)}
-                  </button>
-                ))}
-              </div>
+              {bauMenuInhalt}
             </Popup>
           )}
 

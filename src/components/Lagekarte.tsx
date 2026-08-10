@@ -46,9 +46,6 @@ const FLAECHEN_FARBEN: Record<FlaechenAbschnitt, string> = {
   rettungsmittelhalteplatz: 'var(--akzent-stark)',
 };
 
-/** Nur die Wege, deren Distanz eine eigene Führungsentscheidung ist - nicht jeder Schritt zwischen zwei Nachbarzelten. */
-const SIDEBAR_MINDESTABSTAND_M = 60;
-
 const TAKTISCHES_ZEICHEN_CACHE = new Map<string, L.DivIcon>();
 
 /** Erzeugt (und memoisiert) ein `L.DivIcon` aus einem taktischen Zeichen (→ `domain.taktischezeichen`). */
@@ -440,11 +437,9 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
                 pathOptions={{ color: 'var(--rand)', weight: 3 }}
                 interactive={false}
               >
-                {route.distanzMeter >= SIDEBAR_MINDESTABSTAND_M && (
-                  <Tooltip permanent direction="center" className="distanz-tooltip">
-                    ≈ {Math.round(route.distanzMeter)} m
-                  </Tooltip>
-                )}
+                <Tooltip permanent direction="center" className="distanz-tooltip">
+                  ≈ {Math.round(route.distanzMeter)} m
+                </Tooltip>
               </Polyline>
             );
           })}

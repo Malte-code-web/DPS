@@ -1094,6 +1094,22 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   Bedingung stabil, die alte `maxHeight`-Variante setzt ihn weiterhin
   zuverlässig zurück. `tsc`/Lint/volle Testsuite weiterhin grün.
 
+- ✅ **Wegstrecken: 60m-Mindestabstand entfernt (`DPS-0.8.1.17`)** -
+  Nutzerfeedback: "Ich bekomme weiterhin nicht bei allen Verknüpfungen eine
+  Route weder angezeigt auf Karte noch in der Liste." Ursache gefunden:
+  `KartenOrtePanel.tsx` (Sidebar-Liste) und die Distanz-Tooltip-Anzeige in
+  `Lagekarte.tsx` filterten Wegstrecken unter 60m komplett heraus - ein
+  Überbleibsel aus der Zeit der automatischen Verknüpfung (→ `DPS-0.8.1.4`),
+  als jedes Nachbarpaar automatisch eine Route bekam und eine Schwelle nötig
+  war, um die Liste nicht mit trivialen Kurzverbindungen zu überladen. Seit
+  `DPS-0.8.1.13` entsteht aber *jede* Route ausschließlich durch eine
+  bewusste Führungsentscheidung des Zugführers - die Schwelle versteckte
+  seitdem genau die kurzen, aber absichtlich angelegten Verbindungen
+  vollständig aus der Liste (und ihre Distanzbeschriftung von der Karte).
+  Beide Filter ersatzlos entfernt: `KartenOrtePanel.tsx` zeigt jetzt
+  ausnahmslos alle `state.routen`, die Polylinie auf der Karte trägt immer
+  ihre Distanzbeschriftung. `tsc`/Lint/volle Testsuite weiterhin grün.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

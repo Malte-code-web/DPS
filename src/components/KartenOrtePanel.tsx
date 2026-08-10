@@ -1,18 +1,17 @@
 import { geoPunktName } from '../domain/geodaten';
 import { useSimulation } from '../state/useSimulation';
 
-/** Dieselbe Schwelle wie in der Lagekarte (→ `ui.lagekarte`) - nur die Wege, die eine echte Führungsentscheidung sind. */
-const MINDESTABSTAND_M = 60;
-
 /**
  * @anker ui.kartenortepanel Vom Zugführer angelegte Wegstrecken als Liste in der Seitenleiste
  *
  * Dieselben Wegstrecken wie auf der Karte selbst (→ `ui.lagekarte.wegstrecke`), nur als Text -
- * für schnelles Überfliegen ohne auf einzelne Linien zu zielen.
+ * für schnelles Überfliegen ohne auf einzelne Linien zu zielen. Keine Mindestdistanz mehr: jede
+ * Route entsteht durch eine bewusste Führungsentscheidung des Zugführers (nicht mehr automatisch
+ * aus Nachbarschaft), also gehört auch eine kurze Verbindung in die Liste.
  */
 export function KartenOrtePanel() {
   const { state } = useSimulation();
-  const routen = state.routen.filter((route) => route.distanzMeter >= MINDESTABSTAND_M);
+  const routen = state.routen;
 
   if (routen.length === 0) return null;
 

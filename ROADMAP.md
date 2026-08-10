@@ -1110,6 +1110,21 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   ausnahmslos alle `state.routen`, die Polylinie auf der Karte trägt immer
   ihre Distanzbeschriftung. `tsc`/Lint/volle Testsuite weiterhin grün.
 
+  > ⚠️ **Ungeprüfter Stand:** Diese Korrektur wurde vom Nutzer ausdrücklich
+  > *ohne* eigene Live-Prüfung übernommen ("Okay ich vertraue erstmal ohne
+  > Prüfung") - in dieser Sandbox war ein echter Mehrspieler-Testlauf mangels
+  > Supabase-Zugangsdaten nicht möglich (dieselbe Einschränkung wie bei den
+  > vorigen Baumenü-Korrekturen). Vor dem nächsten Zugriff auf `Lagekarte.tsx`
+  > oder `KartenOrtePanel.tsx` mit echten Clients gegenprüfen, ob Wegstrecken
+  > jetzt tatsächlich für jedes angelegte Paar sichtbar sind.
+  >
+  > **Offener Grundsatzpunkt:** der Nutzer möchte das manuelle
+  > Wegstrecken-Anlegen (→ `DPS-0.8.1.13`) noch einmal grundsätzlich
+  > angehen - Ziel ist eine automatisierte, "logische" Verknüpfung der
+  > Einsatzabschnitte (z. B. entlang plausibler Wege statt jedes Paar einzeln
+  > von Hand), statt dass der Zugführer jede Wegstrecke einzeln anlegen muss.
+  > Noch nicht geplant, nur vorgemerkt für eine spätere Iteration.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

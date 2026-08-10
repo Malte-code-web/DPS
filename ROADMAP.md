@@ -1018,6 +1018,34 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   eine Blockade. Die Polylinie auf der Karte zeichnet die echte Wegpunktliste,
   sofern vorhanden, sonst weiterhin die einfache Zwei-Punkt-Linie.
 
+- ✅ **Baumenü: Popup schloss und öffnete sich alle 500ms neu (`DPS-0.8.1.14`)** -
+  Nutzerfeedback: "Das Baumenü hat Probleme, es lädt immer neu, somit kann ich
+  hier nicht scrollen." Ursache gefunden: `Lagekarte.tsx` übergab dem
+  Leaflet-`Popup` die Position als `position={[bauMenuPosition.lat,
+  bauMenuPosition.lon]}` - ein bei jedem Render neu erzeugtes Array. Da
+  react-leaflets Popup-Lebenszyklus `position` per Objekt-Referenz (nicht per
+  Wert) in einer `useEffect`-Abhängigkeitsliste vergleicht, sah jede neue
+  Array-Instanz wie eine echte Positionsänderung aus - die Lebenszyklus-Logik
+  entfernte das Popup vollständig von der Karte und öffnete es sofort neu.
+  Weil die Simulationsuhr (→ `state.uhr`) alle 500ms tickt und jede
+  Komponente re-rendert, die `useSimulation()` liest, geschah das im
+  laufenden Betrieb ununterbrochen - jeder Scrollversuch im Popup-Inhalt
+  wurde durch das nächste Neuöffnen sofort wieder zunichtegemacht. Behoben
+  durch zwei mit `useMemo`/`useCallback` stabilisierte Referenzen
+  (`bauMenuLatLng`, `bauMenuEventHandlers`), die sich nur noch ändern, wenn
+  sich `bauMenuPosition` wirklich ändert - beide Hooks stehen vor dem frühen
+  Return der Komponente, da Hooks nie bedingt aufgerufen werden dürfen.
+  Zusätzlich bekam das Popup ein `maxHeight={240}`, damit eine lange
+  Abschnittsliste (bis zu neun Einträge) unabhängig vom Reload-Bug auch
+  wirklich per `overflow: auto` scrollbar ist statt einfach über den
+  Kartenrahmen hinauszulaufen (Leaflet setzt die dafür nötige
+  `leaflet-popup-scrolled`-Klasse nur, wenn `maxHeight` gesetzt ist). `tsc`/
+  Lint/volle Testsuite grün (Baseline: die 2 bekannten
+  `turnAnbieter.test.ts`-Umgebungsausfälle) - eine eigene
+  Komponenten-Testsuite existiert in diesem Projekt bisher nicht, die
+  Reducer-/Domain-Logik war von diesem rein UI-seitigen Fehler nicht
+  betroffen.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

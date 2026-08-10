@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, Polyline, Popup, Rectangle, TileLayer, Tooltip, useMap, useMapEvent } from 'react-leaflet';
@@ -170,6 +170,21 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
   const [wegstreckeNach, setWegstreckeNach] = useState<Einsatzabschnitt | ''>('');
   const [wegstreckeLaedt, setWegstreckeLaedt] = useState(false);
   const [wegstreckeHinweis, setWegstreckeHinweis] = useState<string | null>(null);
+
+  // Ein neues Array/Objekt bei jedem Render (z. B. `position={[lat, lon]}`
+  // inline in der JSX) lässt react-leaflet das Popup bei jedem Simulations-
+  // Takt (alle 500ms, → `state.uhr`) komplett schließen und neu öffnen, weil
+  // sein `position`-Prop per Referenz statt per Wert verglichen wird - dabei
+  // geht jeder Scrollfortschritt im Popup-Inhalt verloren. Stabile
+  // Referenzen, die sich nur bei einer echten Positionsänderung ändern,
+  // beheben das. Vor dem frühen Return unten, da Hooks nie bedingt
+  // aufgerufen werden dürfen.
+  const bauMenuLatLng = useMemo<[number, number] | null>(
+    () => (bauMenuPosition ? [bauMenuPosition.lat, bauMenuPosition.lon] : null),
+    [bauMenuPosition],
+  );
+  const bauMenuSchliessen = useCallback(() => setBauMenuPosition(null), []);
+  const bauMenuEventHandlers = useMemo(() => ({ remove: bauMenuSchliessen }), [bauMenuSchliessen]);
 
   const zk = useZeitkostenStatus();
   const zkZelt = zk.aktion?.typ === 'zeltPlatzieren' ? zk.aktion : null;
@@ -446,11 +461,8 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
             );
           })}
 
-          {interaktiv && bauMenuPosition && (
-            <Popup
-              position={[bauMenuPosition.lat, bauMenuPosition.lon]}
-              eventHandlers={{ remove: () => setBauMenuPosition(null) }}
-            >
+          {interaktiv && bauMenuPosition && bauMenuLatLng && (
+            <Popup position={bauMenuLatLng} eventHandlers={bauMenuEventHandlers} maxHeight={240}>
               <div className="lagekarte-bau-menue">
                 <p className="lagekarte-bau-menue-titel">Was hier bauen?</p>
                 {nochOffeneAbschnitte.map((abschnitt) => (

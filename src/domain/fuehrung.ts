@@ -75,6 +75,21 @@ export function istZugfuehrend(
 }
 
 /**
+ * @anker domain.gruppenfuehrend Der Gruppenführer sieht eine Übersicht seiner eigenen Gruppe
+ *
+ * Exakter Rollentreffer wie `istZugfuehrend`, kein `erfuelltFuehrung`-
+ * Rangvergleich: ein Zugführer erbt diese (viel schmalere) Ansicht nicht,
+ * er hat bereits seine eigene (→ `ui.zugfuehrerseite`). Erste Führungsstufe
+ * unterhalb des Zugführers mit eigener Ansicht (→ `ui.gruppenfuehrerseite`).
+ */
+export function istGruppenfuehrend(
+  rolle: Rolle | null,
+  fuehrungsrolle: Fuehrungsrolle | undefined,
+): boolean {
+  return rolle === 'spieler' && fuehrungsrolle === 'gruppenfuehrer';
+}
+
+/**
  * Ob Fahrzeuge/Besatzung disponiert werden dürfen: Übungsleitung und
  * Beobachter immer (Ersatz „bei Bedarf", → Nutzerwunsch), sonst ab
  * Zugführer-Rang. Wie jede Sperre außerhalb einer aktiven Mehrspieler-Sitzung

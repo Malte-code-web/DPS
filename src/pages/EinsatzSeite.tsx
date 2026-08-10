@@ -10,17 +10,24 @@ import { Sprechfunk } from '../components/Sprechfunk';
 import { ZeltBefehlBenachrichtigung } from '../components/ZeltBefehlBenachrichtigung';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
-import { formatStaerke, istRegiefuehrend, istZugfuehrend, staerkemeldung } from '../domain/fuehrung';
+import {
+  formatStaerke,
+  istGruppenfuehrend,
+  istRegiefuehrend,
+  istZugfuehrend,
+  staerkemeldung,
+} from '../domain/fuehrung';
 import { BESTUECKUNG, MATERIAL_LABEL } from '../domain/material';
 import { monitorPrioritaet } from '../domain/monitor';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { GesamtlagebildSeite } from './GesamtlagebildSeite';
+import { GruppenfuehrerSeite } from './GruppenfuehrerSeite';
 import { PatientSeite } from './PatientSeite';
 import { ZugfuehrerSeite } from './ZugfuehrerSeite';
 import type { Einsatzabschnitt, MaterialTyp } from '../domain/types';
 
-/** @anker ui.einsatzseite Gesamtlagebild (Regie), Zugführer-Übersicht, Abschnittsliste oder Patientenseite */
+/** @anker ui.einsatzseite Gesamtlagebild (Regie), Zugführer-/Gruppenführer-Übersicht, Abschnittsliste oder Patientenseite */
 export function EinsatzSeite() {
   const { state, dispatch } = useSimulation();
   const szenario = state.szenario;
@@ -32,10 +39,11 @@ export function EinsatzSeite() {
     (spieler) => spieler.id === state.sitzung.eigeneId,
   )?.fuehrungsrolle;
   const zugfuehrend = istZugfuehrend(state.sitzung.rolle, eigeneFuehrungsrolle);
-  // Für Regie und Zugführer: Startbildschirm ist eine Übersicht
-  // (→ `ui.gesamtlagebild`, `ui.zugfuehrerseite`), ein Abschnitt-Kärtchen
-  // wechselt in die gewohnte Detailsicht darunter. Andere Spieler kennen
-  // diese Umschaltung nicht.
+  const gruppenfuehrend = istGruppenfuehrend(state.sitzung.rolle, eigeneFuehrungsrolle);
+  // Für Regie, Zugführer und Gruppenführer: Startbildschirm ist eine Übersicht
+  // (→ `ui.gesamtlagebild`, `ui.zugfuehrerseite`, `ui.gruppenfuehrerseite`), ein
+  // Abschnitt-/Fahrzeug-Kärtchen wechselt in die gewohnte Detailsicht darunter.
+  // Andere Spieler kennen diese Umschaltung nicht.
   const [uebersicht, setUebersicht] = useState(true);
   const [materialOffen, setMaterialOffen] = useState<Set<string>>(() => new Set());
   const materialUmschalten = (fahrzeugId: string) =>
@@ -111,12 +119,19 @@ export function EinsatzSeite() {
             setUebersicht(false);
           }}
         />
+      ) : !ausgewaehlt && gruppenfuehrend && uebersicht ? (
+        <GruppenfuehrerSeite
+          onAbschnittWaehlen={(zielAbschnitt: Einsatzabschnitt) => {
+            dispatch({ typ: 'abschnittWaehlen', abschnitt: zielAbschnitt });
+            setUebersicht(false);
+          }}
+        />
       ) : ausgewaehlt ? (
         // key: beim Wechsel des Patienten wieder mit der Einstiegsansicht beginnen
         <PatientSeite key={ausgewaehlt.id} patient={ausgewaehlt} />
       ) : (
         <>
-          {(regiefuehrend || zugfuehrend) && (
+          {(regiefuehrend || zugfuehrend || gruppenfuehrend) && (
             <button type="button" className="zurueck-gesamtlagebild" onClick={() => setUebersicht(true)}>
               &larr; {regiefuehrend ? 'Gesamtlagebild' : 'Übersicht'}
             </button>

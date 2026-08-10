@@ -2908,6 +2908,58 @@ button.gefahr {
   gap: 0.9rem;
 }
 
+/* --- Gruppenführer-Ansicht (→ ui.gruppenfuehrerseite) ------------------ */
+
+.gruppenfuehrer-fahrzeuge {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.7rem;
+}
+
+.gruppenfuehrer-fahrzeug-karte {
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.85rem;
+}
+
+.gruppenfuehrer-fahrzeug-oeffnen {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gruppenfuehrer-fahrzeug-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.gruppenfuehrer-fahrzeug-typ {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.gruppenfuehrer-fahrzeug-abschnitt {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+  flex-shrink: 0;
+}
+
+.gruppenfuehrer-fahrzeug-besatzung {
+  font-size: 0.78rem;
+  color: var(--text-leise);
+  margin: 0;
+}
+
 /* Kennzahlen-Leiste: vier Kacheln als Ersteindruck. */
 .kennzahlen {
   display: grid;

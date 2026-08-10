@@ -7,6 +7,7 @@ import {
   formatStaerke,
   gruppeVon,
   gruppenfuehrerListe,
+  istGruppenfuehrend,
   istRegiefuehrend,
   istZugfuehrend,
   staerkemeldung,
@@ -41,6 +42,27 @@ describe('istZugfuehrend', () => {
     expect(istZugfuehrend('uebungsleiter', 'zugfuehrer')).toBe(false);
     expect(istZugfuehrend('beobachter', 'zugfuehrer')).toBe(false);
     expect(istZugfuehrend(null, 'zugfuehrer')).toBe(false);
+  });
+});
+
+describe('istGruppenfuehrend', () => {
+  it('gilt nur für Spieler mit der Führungsrolle gruppenfuehrer, exakt getroffen', () => {
+    expect(istGruppenfuehrend('spieler', 'gruppenfuehrer')).toBe(true);
+    expect(istGruppenfuehrend('spieler', 'truppfuehrer')).toBe(false);
+    expect(istGruppenfuehrend('spieler', 'keine')).toBe(false);
+    expect(istGruppenfuehrend('spieler', undefined)).toBe(false);
+  });
+
+  it('höhere Ränge (Zugführer und aufwärts) erben die Gruppenführer-Ansicht nicht', () => {
+    expect(istGruppenfuehrend('spieler', 'zugfuehrer')).toBe(false);
+    expect(istGruppenfuehrend('spieler', 'orgl_rd')).toBe(false);
+    expect(istGruppenfuehrend('spieler', 'lna')).toBe(false);
+  });
+
+  it('gilt nicht für Übungsleitung/Beobachter, auch nicht mit Führungsrolle', () => {
+    expect(istGruppenfuehrend('uebungsleiter', 'gruppenfuehrer')).toBe(false);
+    expect(istGruppenfuehrend('beobachter', 'gruppenfuehrer')).toBe(false);
+    expect(istGruppenfuehrend(null, 'gruppenfuehrer')).toBe(false);
   });
 });
 

@@ -1127,7 +1127,45 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
 
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
-- 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),
+- ✅ **Gruppenführer-Ansicht, Teil 1: Grundgerüst (`DPS-0.8.2.0`)** - erster
+  Baustein der dritten Führungsebene, auf Wunsch direkt im Anschluss an die
+  Zugführer-Ebene begonnen. Ein Gruppenführer führte bisher ohne jede eigene
+  Ansicht - dieselbe `Abschnittsleiste`/`PatientSeite`-Sicht wie ein
+  einfacher Spieler, nur mit den bereits bestehenden Toast-Benachrichtigungen
+  für Zelt-/Abschnitt-Führen-Befehle obendrauf (→ `ui.zeltbefehlbenachrichtigung`,
+  `ui.abschnittfuehrenbefehl`, beide unverändert, laufen unabhängig von der
+  aktuellen Seite weiter). Neue exakte Rollenprüfung `istGruppenfuehrend()`
+  (→ `domain.gruppenfuehrend`, spiegelt `istZugfuehrend()` - kein
+  `erfuelltFuehrung`-Rangvergleich, ein Zugführer erbt diese schmalere
+  Ansicht nicht). Neue Seite `GruppenfuehrerSeite.tsx`
+  (→ `ui.gruppenfuehrerseite`) als neuer Startbildschirm: zeigt "Meine
+  Gruppe" - alle per `gruppeVon()` zugewiesenen Fahrzeuge mit Typ, aktuellem
+  Abschnitt und Besatzungsnamen (dieselbe Namens-Auflösung wie in
+  `GruppenZuweisung.tsx`), ein Klick öffnet wie bei Regie/Zugführer die
+  gewohnte Abschnitt-Detailsicht. Bewusst deutlich schmaler als die
+  Zugführer-Ansicht - ein Gruppenführer führt real nur seine eigene Gruppe,
+  nicht die ganze Einsatzstelle. Ohne zugewiesene Fahrzeuge ein Leerzustand
+  ("Noch keine Fahrzeuge zugewiesen"). `EinsatzSeite.tsx` bekommt einen
+  dritten Übersicht-Zweig neben Regie/Zugführer, inklusive
+  "← Übersicht"-Rücksprungknopf. `tsc`/Lint/volle Testsuite grün (3 neue
+  Tests für `istGruppenfuehrend`, Baseline: die 2 bekannten
+  `turnAnbieter.test.ts`-Umgebungsausfälle).
+  >
+  > ⚠️ **Ungeprüfter Stand:** wie bei den letzten Wegstrecken-Korrekturen war
+  > in dieser Sandbox mangels Supabase-Zugangsdaten kein echter
+  > Mehrspieler-Testlauf möglich - nur ein reiner Boot-Smoke-Test (App lädt
+  > ohne Konsolenfehler). Vor dem nächsten Zugriff live mit einem echten
+  > Gruppenführer-Client prüfen: Seite erscheint nach Rollenzuweisung
+  > korrekt, zeigt zugewiesene Fahrzeuge mit Besatzung, Klick auf ein
+  > Fahrzeug springt in den richtigen Abschnitt, Toast-Befehle funktionieren
+  > weiterhin.
+
+- 💤 **Noch offen (Gruppenführer-Ansicht):** eigener Auftrag "Fläche
+  bauen"/"Abschnitt führen" ist bereits über die bestehenden Toasts nutzbar,
+  aber noch nicht in die neue Seite integriert (z. B. als dauerhafte Liste
+  statt nur als flüchtiger Toast); keine eigene Stärkemeldung/Meldebuch-
+  Entsprechung für die Gruppe; keine Möglichkeit, innerhalb der Gruppe an
+  einen Truppführer weiterzudelegieren. Danach: je eine eigene Ansicht für
   Truppführer (`DPS-0.8.3.x`), OrgL RD (`DPS-0.8.4.x`), LNA (`DPS-0.8.5.x`);
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,
   späteres Bauvorhaben mit eigener Versionsleiter.

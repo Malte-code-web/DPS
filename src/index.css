@@ -3507,6 +3507,16 @@ button.gefahr {
   font-size: 0.78rem;
 }
 
+/* Eigene Scrollbox statt Leaflets `maxHeight`-Popup-Option (→ ui.lagekarte.bauen) - */
+.lagekarte-bau-menue-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 200px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .lagekarte-bau-menue button {
   text-align: left;
 }

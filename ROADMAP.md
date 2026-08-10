@@ -1069,6 +1069,31 @@ jeder Patch bekommt einen eigenen Rückweg-Branch.
   beide Hooks stehen vor dem frühen Return der Komponente. `tsc`/Lint/volle
   Testsuite weiterhin grün.
 
+- ✅ **Baumenü: Scrollen komplett von Leaflet entkoppelt (`DPS-0.8.1.16`)** -
+  zweite Nachfolge-Korrektur: der Nutzer bestätigte nach vollständigem
+  Neuladen der neu deployten Version, dass das Problem weiterhin besteht.
+  Die stabilisierten Referenzen aus `DPS-0.8.1.15` verhindern zwar, dass
+  React-Renders `instance.update()` unnötig auslösen - das vorherige
+  `maxHeight={240}`-Prop auf dem Leaflet-`Popup` macht aber weiterhin
+  **Leaflets eigenen** internen Inhalts-Wrapper (`_contentNode`) zum
+  scrollbaren Element (über die von Leaflet selbst verwaltete Klasse
+  `leaflet-popup-scrolled`) - jeder verbleibende `update()`-Aufruf (z. B.
+  beim ersten Öffnen, oder durch einen auf einem echten Touch-Gerät nicht
+  auszuschließenden, hier nicht reproduzierbaren weiteren Auslöser) vermisst
+  diesen Wrapper neu und setzt dabei dessen `scrollTop` zurück. Behoben durch
+  vollständige Entkopplung: `maxHeight` wird nicht mehr an das Leaflet-Popup
+  übergeben, stattdessen bekommt eine neue, rein React-verwaltete innere
+  `<div className="lagekarte-bau-menue-liste">` ihr eigenes `max-height`/
+  `overflow-y: auto` per CSS - ein ganz gewöhnliches, von Leaflet nie
+  anfassbares Element, dessen Scrollzustand unabhängig davon bleibt, was
+  Leaflet mit seinem eigenen Wrapper anstellt. Mit einer isolierten
+  Nachstellung (echte `leaflet`/`react-leaflet`-Pakete aus dem Projekt, ein
+  Popup mit erzwungenem `instance.update()`-Aufruf alle 500ms als
+  Worst-Case-Simulation, unabhängig von der genauen React-Ursache) bestätigt:
+  die neue Variante hält `scrollTop` auch unter dieser aggressiveren
+  Bedingung stabil, die alte `maxHeight`-Variante setzt ihn weiterhin
+  zuverlässig zurück. `tsc`/Lint/volle Testsuite weiterhin grün.
+
 Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
 
 - 💤 **Noch offen:** je eine eigene Ansicht für Gruppenführer (`DPS-0.8.2.x`),

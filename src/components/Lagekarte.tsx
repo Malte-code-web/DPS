@@ -209,18 +209,28 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     return (
       <div className="lagekarte-bau-menue">
         <p className="lagekarte-bau-menue-titel">Was hier bauen?</p>
-        {nochOffeneAbschnitte.map((abschnitt) => (
-          <button
-            key={abschnitt}
-            type="button"
-            onClick={() => {
-              setTypAuswahl({ abschnitt, klickPunkt: bauMenuPosition });
-              setBauMenuPosition(null);
-            }}
-          >
-            {geoPunktName(abschnitt)}
-          </button>
-        ))}
+        {/*
+          Eigene, rein CSS-gesteuerte Scrollbox statt Leaflets `maxHeight`-Option
+          (→ Popup.options.maxHeight): die hätte Leaflets eigenen Inhalts-Wrapper
+          zum scrollbaren Element gemacht, dessen Höhe Leaflet bei jedem
+          `update()` neu misst - das setzt `scrollTop` zurück. Diese Liste ist
+          ein normales, von React verwaltetes Element, dessen Scrollzustand
+          Leaflet nie anfasst.
+        */}
+        <div className="lagekarte-bau-menue-liste">
+          {nochOffeneAbschnitte.map((abschnitt) => (
+            <button
+              key={abschnitt}
+              type="button"
+              onClick={() => {
+                setTypAuswahl({ abschnitt, klickPunkt: bauMenuPosition });
+                setBauMenuPosition(null);
+              }}
+            >
+              {geoPunktName(abschnitt)}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }, [bauMenuPosition, nochOffeneAbschnitte]);
@@ -493,7 +503,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
           })}
 
           {interaktiv && bauMenuPosition && bauMenuLatLng && (
-            <Popup position={bauMenuLatLng} eventHandlers={bauMenuEventHandlers} maxHeight={240}>
+            <Popup position={bauMenuLatLng} eventHandlers={bauMenuEventHandlers}>
               {bauMenuInhalt}
             </Popup>
           )}

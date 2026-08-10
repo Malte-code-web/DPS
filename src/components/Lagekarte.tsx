@@ -397,7 +397,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
       distanzMeter: ergebnis?.distanzMeter ?? haversineMeter(von, nach),
       geometrie: ergebnis?.geometrie,
     });
-    if (!ergebnis) setWegstreckeHinweis('Luftlinie (Routing-Dienst nicht erreichbar)');
+    if (!ergebnis) setWegstreckeHinweis('Luftlinie (keine Straßenroute ermittelbar)');
     setWegstreckeVon('');
     setWegstreckeNach('');
   };

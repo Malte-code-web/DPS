@@ -1316,6 +1316,60 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   > bereits funktioniert haben - dann bitte mit genauerer Fehlerbeschreibung
   > zurückmelden.
 
+- ✅ **Gruppen bestehen aus Personen und ziehen auf Befehl wirklich um
+  (`DPS-0.8.2.6`)** - Nutzerfeedback aus dem Test mit Zug- und Gruppenführer:
+  "die Gruppen werden nach Befehl nicht an den richtigen Ort versendet".
+  Ursache war ein Loch im Datenmodell: `abschnittFuehrenBefehlAusfuehren`
+  bewegte ausschließlich **Fahrzeuge**. Eine *Position* für Personen gab es
+  gar nicht - `Spieler.aktuellerAbschnitt` spiegelt nur, was ein Client
+  gerade *ansieht* (lokal → geteilt gepusht, → `state.provider`). Eine
+  befohlene Gruppe konnte damit prinzipiell nirgends ankommen. Umgesetzt
+  nach dem Vorschlag des Nutzers, in vier Teilen:
+  1. **Gruppe = Personen, definiert im Wartebereich** (→ `modell.gruppe.person`):
+     neues `Spieler.gruppenfuehrerId` + Aktion `spielerGruppeZuweisen` +
+     `gruppenMitglieder()` (→ `domain.gruppenmitglieder`). Der Wartebereich
+     ist jetzt die "Dienststelle": dort stellt der Zugführer (oder die
+     Übungsleitung, → `darfFahrzeugeDisponieren`) seine Gruppen zusammen,
+     bevor ausgerückt wird, samt Übersicht mit Stärkemeldung je Gruppe. Ein
+     einzelnes Feld statt einer Liste - dadurch kann jede Person strukturell
+     nur in **einer** Gruppe sein. Verliert jemand die Gruppenführer-Rolle,
+     löst sich seine Gruppe auf; wer selbst Gruppenführer wird, verlässt
+     seine bisherige.
+  2. **Der Befehl bewegt die Gruppe wirklich** (→ `modell.einsatzabschnitt`):
+     neues `Spieler.einsatzabschnitt` - bewusst getrennt von
+     `aktuellerAbschnitt`, weil das eine der *Auftrag* und das andere die
+     *Blickrichtung* ist. `abschnittFuehrenBefehlAusfuehren` setzt ihn für
+     Gruppenführer **und** alle Mitglieder; ein neuer Provider-Effekt zieht
+     die eigene Ansicht bei einer Änderung einmalig nach, danach kann jede
+     Person frei weiternavigieren, ohne den Auftrag zu verlieren. Fahrzeuge
+     der Gruppe ziehen wie bisher mit - eine Gruppe ganz ohne Fahrzeuge wird
+     jetzt aber genauso verlegt.
+  3. **Nur eröffnete Abschnitte in der Abschnittsleiste**
+     (→ `ui.abschnittsleiste`): zu Beginn steht nur die Schadensstelle, jeder
+     weitere Bereich erscheint erst, wenn dafür eine Fläche oder ein Zelt
+     gesetzt wurde. Dieselbe `zugfuehrungAktiv`-Blast-Radius-Begrenzung wie
+     bei der Verlegung - Alleinspiel und Einzelfälle bleiben ungefiltert.
+  4. **Zeltaufbau-Minispiel auf die Personen-Gruppe umgestellt**:
+     `teilnehmerVon()` liest jetzt direkt die Gruppe statt die Besatzung der
+     Gruppen-Fahrzeuge abzuflachen - ein Zeltaufbau braucht Hände, keine
+     Fahrzeuge. Damit greift das Minispiel auch für eine Gruppe ohne
+     zugewiesene Fahrzeuge.
+
+  **Fahrzeuge sind bewusst nicht zwangsläufig Teil einer Gruppe**
+  (Nutzervorgabe): `Fahrzeug.gruppenfuehrerId` bleibt als *optionale*
+  Zuordnung erhalten (dann zieht das Fahrzeug bei einem Auftrag mit), lässt
+  sich aber genauso gut weglassen und stattdessen einzeln einem Abschnitt
+  zuweisen, damit dort Material vorhanden ist (→ `ui.fahrzeugverlegung`).
+  10 neue Tests, `tsc`/Lint/volle Testsuite grün, Boot-Smoke-Test ohne
+  Konsolenfehler.
+  >
+  > ⚠️ **Ungeprüfter Stand:** Mehrspieler-Live-Test in dieser Sandbox
+  > weiterhin nicht möglich (keine Supabase-Zugangsdaten). Vor dem nächsten
+  > Zugriff mit echtem Zug- + Gruppenführer + mindestens einem Gruppenmitglied
+  > prüfen: Gruppenzuteilung im Wartebereich sichtbar/wirksam, Einsatzauftrag
+  > schaltet die Ansicht aller Gruppenmitglieder auf den Zielabschnitt,
+  > Abschnittsleiste wächst mit jedem gebauten Bereich mit.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

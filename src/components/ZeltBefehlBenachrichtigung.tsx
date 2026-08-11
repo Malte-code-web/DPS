@@ -41,8 +41,8 @@ export function ZeltBefehlBenachrichtigung() {
     // `domain.zeltminispiel`) - sonst unverändert der bisherige Direktbau.
     if (eigeneId && istZeltTyp(befehl.typ)) {
       const flaechenTyp = befehl.typ;
-      if (sollMinispielStarten(state.fahrzeuge, state.sitzung.spieler, flaechenTyp, eigeneId)) {
-        const teilnehmerIds = teilnehmerVon(state.fahrzeuge, eigeneId);
+      if (sollMinispielStarten(state.sitzung.spieler, flaechenTyp, eigeneId)) {
+        const teilnehmerIds = teilnehmerVon(state.sitzung.spieler, eigeneId);
         dispatch({
           typ: 'zeltMinispielStarten',
           id: befehl.id,

@@ -40,6 +40,21 @@ export interface Spieler {
    */
   fuehrungsrolle?: Fuehrungsrolle;
   /**
+   * @anker modell.gruppe.person Zu welcher Gruppe diese Person gehört
+   *
+   * Die Gruppe ist eine Menge von **Personen**, kein Fahrzeugverband: der
+   * Zugführer stellt sie schon im Wartebereich zusammen (→ `ui.wartebereich`,
+   * die "Dienststelle" vor dem Ausrücken), damit im Einsatz geplant geführt
+   * werden kann statt improvisiert. Ein einziges Feld statt einer Liste -
+   * dadurch kann jede Person strukturell nur in genau einer Gruppe sein.
+   * Fehlt es, gehört die Person keiner Gruppe an. Der Gruppenführer selbst
+   * trägt es nicht (er führt seine Gruppe, statt Mitglied zu sein, →
+   * `domain.gruppenmitglieder`). Fahrzeuge tragen dasselbe Feld separat
+   * (→ `modell.gruppe`) - sie können, müssen aber nicht zu einer Gruppe
+   * gehören.
+   */
+  gruppenfuehrerId?: string;
+  /**
    * Der Einsatzabschnitt, den dieser Spieler gerade selbst ansieht
    * (→ `ui.abschnittsleiste`) - im Unterschied zur rein lokalen Navigation
    * eines einzelnen Clients wird das hier für alle sichtbar mitgeführt, damit
@@ -48,6 +63,20 @@ export interface Spieler {
    * überhaupt navigiert hat), gilt niemand als "im selben Bereich".
    */
   aktuellerAbschnitt?: Einsatzabschnitt;
+  /**
+   * @anker modell.einsatzabschnitt Der Abschnitt, auf den diese Person befohlen ist
+   *
+   * Bewusst getrennt von `aktuellerAbschnitt`: jenes spiegelt nur, *was*
+   * jemand gerade ansieht (lokal → geteilt gepusht, → `state.provider`),
+   * dieses ist der *Auftrag* - vom Zugführer über einen Einsatzauftrag an
+   * die ganze Gruppe vergeben (→ `modell.abschnittfuehrenbefehl`). Erst
+   * diese Trennung macht "eine Gruppe an einen Ort schicken" überhaupt
+   * darstellbar: der Client folgt einer Änderung automatisch mit der eigenen
+   * Ansicht (→ `state.provider`), kann danach aber frei weiternavigieren,
+   * ohne den Auftrag zu verlieren. Fehlt es, ist die Person auf keinen
+   * Abschnitt befohlen und bewegt sich frei.
+   */
+  einsatzabschnitt?: Einsatzabschnitt;
   /**
    * @anker modell.gebunden Für andere sichtbar mit einer bindenden Maßnahme beschäftigt
    *

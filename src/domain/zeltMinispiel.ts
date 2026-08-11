@@ -1,7 +1,7 @@
 import { ZELTTYPEN } from './flaechen';
-import { gruppeVon } from './fuehrung';
+import { gruppenMitglieder } from './fuehrung';
 import type { Spieler } from './sitzung';
-import type { Fahrzeug, FlaechenTypId, ZeltMinispielRunde, ZeltTypId } from './types';
+import type { FlaechenTypId, ZeltMinispielRunde, ZeltTypId } from './types';
 
 /**
  * @anker domain.zeltminispiel Kooperatives "Kommando-Aufbau"-Minispiel beim Zeltaufbau
@@ -44,17 +44,15 @@ export function istZeltTyp(typ: ZeltTypId | FlaechenTypId): typ is ZeltTypId {
 }
 
 /**
- * Die Gruppe eines Gruppenführers als Spieler-IDs, ohne ihn selbst - flacht
- * `gruppeVon` (liefert Fahrzeuge, → `domain.gruppevon`) über deren
- * `besatzung` ab, filtert leere Plätze (`''`) und dedupliziert (dieselbe
- * Person kann auf mehreren Fahrzeugen der Gruppe stehen).
+ * Die Mitspielenden einer Gruppe als Spieler-IDs, ohne den Gruppenführer
+ * selbst - schlicht die Personen-Gruppe (→ `domain.gruppenmitglieder`,
+ * `modell.gruppe.person`), die der Zugführer schon im Wartebereich
+ * zusammengestellt hat. Bis `DPS-0.8.2.6` lief das über die Besatzung der
+ * Gruppen-Fahrzeuge; seit die Gruppe aus Personen besteht, ist der Umweg
+ * hinfällig - ein Zeltaufbau braucht Hände, keine Fahrzeuge.
  */
-export function teilnehmerVon(fahrzeuge: Fahrzeug[], gruppenfuehrerId: string): string[] {
-  const alle = gruppeVon(fahrzeuge, gruppenfuehrerId).flatMap((fahrzeug) => fahrzeug.besatzung);
-  const ohneLeereUndGruppenfuehrer = alle.filter(
-    (spielerId) => spielerId !== '' && spielerId !== gruppenfuehrerId,
-  );
-  return [...new Set(ohneLeereUndGruppenfuehrer)];
+export function teilnehmerVon(spieler: Spieler[], gruppenfuehrerId: string): string[] {
+  return gruppenMitglieder(spieler, gruppenfuehrerId).map((eintrag) => eintrag.id);
 }
 
 /**
@@ -65,7 +63,6 @@ export function teilnehmerVon(fahrzeuge: Fahrzeug[], gruppenfuehrerId: string): 
  * es gibt mindestens eine weitere Person in der Gruppe zum Mitspielen.
  */
 export function sollMinispielStarten(
-  fahrzeuge: Fahrzeug[],
   spieler: Spieler[],
   flaechenTyp: ZeltTypId | FlaechenTypId,
   builderId: string | undefined,
@@ -75,7 +72,7 @@ export function sollMinispielStarten(
   if (!builderId) return false;
   const builder = spieler.find((eintrag) => eintrag.id === builderId);
   if (builder?.fuehrungsrolle !== 'gruppenfuehrer') return false;
-  return teilnehmerVon(fahrzeuge, builderId).length > 0;
+  return teilnehmerVon(spieler, builderId).length > 0;
 }
 
 /** Rundenzahl für eine gegebene ungekürzte Bauzeit, fest ab Baustart getaktet. */

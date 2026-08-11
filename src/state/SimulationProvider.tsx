@@ -15,6 +15,7 @@ import type { FunkSignalNachricht, Zeitkostentimer } from './context';
 import { starteTaktgeber } from './taktgeber';
 import { ANFANGSZUSTAND, simulationReducer } from './reducer';
 import type { Schnappschuss, SimulationAction } from './reducer';
+import type { Einsatzabschnitt } from '../domain/types';
 import { zeitkostenLabel, zeitkostenSek } from './zeitkosten';
 
 /**
@@ -472,6 +473,23 @@ export function SimulationProvider({
       abschnitt: ausgewaehlterAbschnitt,
     });
   }, [ausgewaehlterAbschnitt, sitzung.aktiv, sitzung.eigeneId, dispatchRoutet]);
+
+  // Gegenrichtung: ein Einsatzauftrag an die Gruppe (→ `modell.einsatzabschnitt`)
+  // zieht die eigene Ansicht einmalig auf den befohlenen Abschnitt nach. Nur
+  // bei einer echten *Änderung* des Auftrags, nicht dauerhaft - sonst könnte
+  // niemand mehr woanders hinschauen. Ein eigenes Feld statt
+  // `aktuellerAbschnitt`, damit sich die beiden Richtungen nicht gegenseitig
+  // überschreiben.
+  const eigenerEinsatzabschnitt = sitzung.spieler.find(
+    (spieler) => spieler.id === sitzung.eigeneId,
+  )?.einsatzabschnitt;
+  const letzterEinsatzabschnittRef = useRef<Einsatzabschnitt | undefined>(undefined);
+  useEffect(() => {
+    if (!sitzung.aktiv || !eigenerEinsatzabschnitt) return;
+    if (letzterEinsatzabschnittRef.current === eigenerEinsatzabschnitt) return;
+    letzterEinsatzabschnittRef.current = eigenerEinsatzabschnitt;
+    dispatch({ typ: 'abschnittWaehlen', abschnitt: eigenerEinsatzabschnitt });
+  }, [eigenerEinsatzabschnitt, sitzung.aktiv]);
 
   const aufFunkSignal = useCallback((hoerer: (nachricht: FunkSignalNachricht) => void) => {
     signalHoererRef.current.add(hoerer);

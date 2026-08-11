@@ -288,8 +288,8 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
     // unverändert der bisherige Direktbau.
     if (eigeneId && istZeltTyp(entscheidung.typ)) {
       const flaechenTyp = entscheidung.typ;
-      if (sollMinispielStarten(state.fahrzeuge, state.sitzung.spieler, flaechenTyp, eigeneId)) {
-        const teilnehmerIds = teilnehmerVon(state.fahrzeuge, eigeneId);
+      if (sollMinispielStarten(state.sitzung.spieler, flaechenTyp, eigeneId)) {
+        const teilnehmerIds = teilnehmerVon(state.sitzung.spieler, eigeneId);
         dispatch({
           typ: 'zeltMinispielStarten',
           id: erzeugeId(),

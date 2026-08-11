@@ -6,6 +6,7 @@ import {
   erfuelltFuehrung,
   formatStaerke,
   gruppeVon,
+  gruppenMitglieder,
   gruppenfuehrerListe,
   istGruppenfuehrend,
   istRegiefuehrend,
@@ -228,5 +229,28 @@ describe('gruppeVon', () => {
 
   it('liefert eine leere Liste, wenn niemand zugewiesen ist', () => {
     expect(gruppeVon([fahrzeug('f1'), fahrzeug('f2')], 'anna')).toEqual([]);
+  });
+});
+
+describe('gruppenMitglieder', () => {
+  function mitglied(id: string, gruppenfuehrerId?: string): Spieler {
+    return { id, name: id, rolle: 'spieler', qualifikation: 'basis', gruppenfuehrerId };
+  }
+
+  it('liefert die einer Gruppe zugeteilten Personen', () => {
+    const alle = [mitglied('bert', 'anna'), mitglied('chris', 'egon'), mitglied('dana', 'anna')];
+    expect(gruppenMitglieder(alle, 'anna').map((s) => s.id)).toEqual(['bert', 'dana']);
+  });
+
+  it('lässt den Gruppenführer selbst außen vor, auch wenn das Feld auf ihn zeigt', () => {
+    const alle = [
+      { ...mitglied('anna', 'anna'), fuehrungsrolle: 'gruppenfuehrer' as const },
+      mitglied('bert', 'anna'),
+    ];
+    expect(gruppenMitglieder(alle, 'anna').map((s) => s.id)).toEqual(['bert']);
+  });
+
+  it('liefert eine leere Liste ohne zugeteilte Personen', () => {
+    expect(gruppenMitglieder([mitglied('bert'), mitglied('chris', 'egon')], 'anna')).toEqual([]);
   });
 });

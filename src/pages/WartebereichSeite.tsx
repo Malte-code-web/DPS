@@ -4,6 +4,8 @@ import {
   FUEHRUNGSROLLEN,
   darfFahrzeugeDisponieren,
   formatStaerke,
+  gruppenMitglieder,
+  gruppenfuehrerListe,
   staerkemeldung,
 } from '../domain/fuehrung';
 import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
@@ -33,6 +35,7 @@ export function WartebereichSeite() {
     (summe, fahrzeug) => summe + FAHRZEUGTYP_INFO[fahrzeug.typ].sollbesatzung,
     0,
   );
+  const gruppenfuehrer = gruppenfuehrerListe(sitzung.spieler);
 
   const platzSetzen = (fahrzeugId: string, platz: number, spielerId: string) => {
     const fahrzeug = fahrzeuge.find((f) => f.id === fahrzeugId);
@@ -191,10 +194,75 @@ export function WartebereichSeite() {
                       </span>
                     )
                   )}
+                  {gruppenfuehrer.length > 0 &&
+                    spieler.rolle === 'spieler' &&
+                    spieler.fuehrungsrolle !== 'gruppenfuehrer' &&
+                    (darfDisponieren ? (
+                      <select
+                        className="spieler-gruppe-wahl"
+                        aria-label={`Gruppe von ${spieler.name}`}
+                        value={spieler.gruppenfuehrerId ?? ''}
+                        onChange={(event) =>
+                          dispatch({
+                            typ: 'spielerGruppeZuweisen',
+                            spielerId: spieler.id,
+                            gruppenfuehrerId: event.target.value === '' ? null : event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">— ohne Gruppe —</option>
+                        {gruppenfuehrer.map((eintrag) => (
+                          <option key={eintrag.id} value={eintrag.id}>
+                            Gruppe {eintrag.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      spieler.gruppenfuehrerId && (
+                        <span className="spieler-gruppe">
+                          Gruppe{' '}
+                          {sitzung.spieler.find((s) => s.id === spieler.gruppenfuehrerId)?.name ?? '?'}
+                        </span>
+                      )
+                    ))}
                 </li>
               );
             })}
           </ul>
+        )}
+
+        {gruppenfuehrer.length > 0 && (
+          <>
+            <h2>Gruppen ({gruppenfuehrer.length})</h2>
+            <p className="hinweis">
+              Der Wartebereich ist die Dienststelle: hier stellt der Zugführer seine Gruppen
+              zusammen, bevor ausgerückt wird. Jede Person gehört zu höchstens einer Gruppe. Im
+              Einsatz zieht eine ganze Gruppe auf einen Auftrag hin gemeinsam um
+              (→ Einsatzauftrag „Abschnitt führen"). Fahrzeuge gehören nicht zwangsläufig zu einer
+              Gruppe - sie lassen sich im Einsatz auch einzeln einem Abschnitt zuweisen, damit dort
+              Material vorhanden ist.
+            </p>
+            <ul className="gruppenliste">
+              {gruppenfuehrer.map((gf) => {
+                const mitglieder = gruppenMitglieder(sitzung.spieler, gf.id);
+                const staerke = staerkemeldung(
+                  [gf.id, ...mitglieder.map((m) => m.id)],
+                  sitzung.spieler,
+                );
+                return (
+                  <li key={gf.id} className="gruppe-zeile">
+                    <span className="gruppe-name">Gruppe {gf.name}</span>
+                    <span className="gruppe-staerke">Stärke {formatStaerke(staerke)}</span>
+                    <span className="gruppe-mitglieder">
+                      {mitglieder.length === 0
+                        ? 'noch niemand zugeteilt'
+                        : mitglieder.map((m) => m.name).join(', ')}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
         {fahrzeuge.length > 0 && (

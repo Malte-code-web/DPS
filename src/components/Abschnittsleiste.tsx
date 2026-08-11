@@ -1,4 +1,6 @@
 import { ABSCHNITTE } from '../domain/abschnitte';
+import { istAbschnittEroeffnet } from '../domain/flaechen';
+import { zugfuehrungAktiv } from '../domain/fuehrung';
 import { useSimulation } from '../state/useSimulation';
 
 /**
@@ -8,13 +10,28 @@ import { useSimulation } from '../state/useSimulation';
  * Abschnitt - zugleich die Lageübersicht des Behandlungsplatzes. Die eigene
  * Position wird nebenbei synchron mitgeführt (→ `state.provider`,
  * `ui.delegationsanfrage`), ohne dass diese Ansicht davon etwas wissen muss.
+ *
+ * Zu Beginn steht nur die Schadensstelle - jeder weitere Bereich erscheint
+ * erst, wenn dafür eine Fläche oder ein Zelt gesetzt wurde
+ * (→ `domain.istAbschnittEroeffnet`). So wächst die Einsatzstelle sichtbar
+ * mit der Führungsleistung, statt von Anfang an fertig dazustehen. Dieselbe
+ * Blast-Radius-Begrenzung wie bei der Verlegung (→ `domain.zugfuehrungaktiv`):
+ * ohne Zugführer in der Sitzung (Alleinspiel, Einzelfälle) bleibt die Leiste
+ * ungefiltert, sonst gäbe es dort nie mehr als einen Reiter.
  */
 export function Abschnittsleiste() {
   const { state, dispatch } = useSimulation();
+  const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
+  const sichtbareAbschnitte = ABSCHNITTE.filter(
+    (abschnitt) =>
+      !gateAktiv ||
+      abschnitt.id === state.ausgewaehlterAbschnitt ||
+      istAbschnittEroeffnet(abschnitt.id, state.flaechen),
+  );
 
   return (
     <nav className="abschnittsleiste" aria-label="Einsatzabschnitte">
-      {ABSCHNITTE.map((abschnitt) => {
+      {sichtbareAbschnitte.map((abschnitt) => {
         const anzahl = state.patienten.filter(
           (patient) => patient.abschnitt === abschnitt.id,
         ).length;

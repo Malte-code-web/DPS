@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SZENARIEN } from '../domain/szenarien';
+import { gruppenMitglieder } from '../domain/fuehrung';
 import { RUNDEN_FENSTER_SEK, rundenanzahlFuer, rundenplanErzeugen } from '../domain/zeltMinispiel';
 import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
@@ -2526,6 +2527,75 @@ describe('Führungsbefehl: Zugführer befiehlt, Gruppenführer führt einen Absc
     });
   }
 
+  it('schickt bei der Ausführung die Personen der Gruppe an den Abschnitt, nicht nur die Fahrzeuge', () => {
+    // Der gemeldete Fehler: bis DPS-0.8.2.5 bewegte die Ausführung
+    // ausschließlich Fahrzeuge, die Mannschaft blieb stehen - eine befohlene
+    // Gruppe kam damit nirgends an (→ modell.einsatzabschnitt).
+    const mitMitglied = simulationReducer(eroeffnetMitGruppe(), {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 'bert', name: 'Bert', rolle: 'spieler', qualifikation: 'basis' },
+    });
+    const zugeteilt = simulationReducer(mitMitglied, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const befohlen = simulationReducer(zugeteilt, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const ausgefuehrt = simulationReducer(befohlen, {
+      typ: 'abschnittFuehrenBefehlAusfuehren',
+      id: 'auftrag-1',
+    });
+
+    for (const id of ['gruppe-1', 'bert']) {
+      expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === id)?.einsatzabschnitt).toBe(
+        'eingangssichtung',
+      );
+    }
+    // Eine Person außerhalb der Gruppe bekommt keinen Auftrag.
+    expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === 'leiter-1')?.einsatzabschnitt).toBeUndefined();
+    // Die Fahrzeuge ziehen weiterhin mit.
+    expect(
+      ausgefuehrt.fahrzeuge
+        .filter((f) => f.gruppenfuehrerId === 'gruppe-1')
+        .every((f) => f.abschnitt === 'eingangssichtung'),
+    ).toBe(true);
+    expect(ausgefuehrt.regieProtokoll.at(-1)?.text).toContain('2 Personen');
+  });
+
+  it('schickt die Gruppe auch ganz ohne zugewiesene Fahrzeuge an den Abschnitt', () => {
+    // Fahrzeuge sind nicht zwangsläufig Teil einer Gruppe (→ modell.gruppe.person).
+    const state = eroeffnetMitGruppe();
+    const ohneFahrzeuge = state.fahrzeuge.reduce(
+      (zwischenstand, fahrzeug) =>
+        simulationReducer(zwischenstand, {
+          typ: 'fahrzeugGruppeZuweisen',
+          fahrzeugId: fahrzeug.id,
+          gruppenfuehrerId: null,
+        }),
+      state,
+    );
+    const befohlen = simulationReducer(ohneFahrzeuge, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: 'auftrag-1',
+      ziel: 'eingangssichtung',
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const ausgefuehrt = simulationReducer(befohlen, {
+      typ: 'abschnittFuehrenBefehlAusfuehren',
+      id: 'auftrag-1',
+    });
+    expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === 'gruppe-1')?.einsatzabschnitt).toBe(
+      'eingangssichtung',
+    );
+  });
+
   it('erteilt einen Befehl und protokolliert ihn', () => {
     const state = eroeffnetMitGruppe();
     const befohlen = simulationReducer(state, {
@@ -2798,6 +2868,130 @@ describe('Transport-Freigabe: Rettungsmittelhalteplatz + Fahrzeug-Zuweisung (→
     const patient = direkt.patienten.find((p) => p.id === 'B-01');
     expect(patient?.abschnitt).toBe('transport');
     expect(patient?.transportFahrzeugId).toBeUndefined();
+  });
+});
+
+describe('Gruppen aus Personen im Wartebereich (→ modell.gruppe.person)', () => {
+  function mitGruppenfuehrerUndSpieler(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    const mitGf = simulationReducer(basis, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-1',
+        name: 'Gruber',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    return simulationReducer(mitGf, {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 'bert', name: 'Bert', rolle: 'spieler', qualifikation: 'basis' },
+    });
+  }
+
+  it('teilt eine Person einer Gruppe zu und protokolliert es', () => {
+    const zugeteilt = simulationReducer(mitGruppenfuehrerUndSpieler(), {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(zugeteilt.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBe('gruppe-1');
+    expect(zugeteilt.regieProtokoll.at(-1)?.text).toContain('Gruber');
+  });
+
+  it('lässt eine Person nur in genau einer Gruppe sein (Zuweisung ersetzt)', () => {
+    const mitZweiterGruppe = simulationReducer(mitGruppenfuehrerUndSpieler(), {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-2',
+        name: 'Schmidt',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    const erst = simulationReducer(mitZweiterGruppe, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const umgeteilt = simulationReducer(erst, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-2',
+    });
+    expect(umgeteilt.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBe('gruppe-2');
+    expect(gruppenMitglieder(umgeteilt.sitzung.spieler, 'gruppe-1')).toEqual([]);
+  });
+
+  it('nimmt die Zuteilung mit gruppenfuehrerId: null wieder zurück', () => {
+    const erst = simulationReducer(mitGruppenfuehrerUndSpieler(), {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const geloest = simulationReducer(erst, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: null,
+    });
+    expect(geloest.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBeUndefined();
+    expect(geloest.regieProtokoll.at(-1)?.text).toContain('keiner Gruppe mehr');
+  });
+
+  it('macht einen Gruppenführer nicht zum Mitglied einer fremden Gruppe', () => {
+    const state = mitGruppenfuehrerUndSpieler();
+    const versuch = simulationReducer(state, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'gruppe-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    expect(versuch).toBe(state);
+  });
+
+  it('löst die Gruppe auf, sobald jemand die Gruppenführer-Rolle verliert', () => {
+    const zugeteilt = simulationReducer(mitGruppenfuehrerUndSpieler(), {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const fahrzeugId = zugeteilt.fahrzeuge[0]!.id;
+    const mitFahrzeug = simulationReducer(zugeteilt, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const abgesetzt = simulationReducer(mitFahrzeug, {
+      typ: 'spielerFuehrungsrolleSetzen',
+      spielerId: 'gruppe-1',
+      rolle: 'keine',
+    });
+    expect(abgesetzt.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBeUndefined();
+    expect(abgesetzt.fahrzeuge.find((f) => f.id === fahrzeugId)?.gruppenfuehrerId).toBeUndefined();
+  });
+
+  it('löst eine bestehende Mitgliedschaft, sobald jemand selbst Gruppenführer wird', () => {
+    const zugeteilt = simulationReducer(mitGruppenfuehrerUndSpieler(), {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const befoerdert = simulationReducer(zugeteilt, {
+      typ: 'spielerFuehrungsrolleSetzen',
+      spielerId: 'bert',
+      rolle: 'gruppenfuehrer',
+    });
+    expect(befoerdert.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBeUndefined();
   });
 });
 

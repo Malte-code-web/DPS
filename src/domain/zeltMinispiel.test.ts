@@ -11,14 +11,12 @@ import {
   teilnehmerVon,
 } from './zeltMinispiel';
 import type { Spieler } from './sitzung';
-import type { Fahrzeug } from './types';
-
-function fahrzeug(id: string, besatzung: string[], gruppenfuehrerId?: string): Fahrzeug {
-  return { id, typ: 'rtw', abschnitt: 'bereitstellungsraum', besatzung, material: {}, gruppenfuehrerId };
-}
-
-function spieler(id: string, fuehrungsrolle: Spieler['fuehrungsrolle']): Spieler {
-  return { id, name: id, rolle: 'spieler', qualifikation: 'basis', fuehrungsrolle };
+function spieler(
+  id: string,
+  fuehrungsrolle: Spieler['fuehrungsrolle'],
+  gruppenfuehrerId?: string,
+): Spieler {
+  return { id, name: id, rolle: 'spieler', qualifikation: 'basis', fuehrungsrolle, gruppenfuehrerId };
 }
 
 describe('istZeltTyp', () => {
@@ -34,50 +32,45 @@ describe('istZeltTyp', () => {
 });
 
 describe('teilnehmerVon', () => {
-  it('flacht die Besatzung aller Fahrzeuge der Gruppe ab, ohne den Gruppenführer selbst', () => {
-    const fahrzeuge = [
-      fahrzeug('f1', ['anna', 'bert', ''], 'anna'),
-      fahrzeug('f2', ['chris'], 'anna'),
-      fahrzeug('f3', ['dana'], 'egon'),
+  it('liefert die Personen der Gruppe, ohne den Gruppenführer selbst', () => {
+    const alle = [
+      spieler('anna', 'gruppenfuehrer'),
+      spieler('bert', undefined, 'anna'),
+      spieler('chris', undefined, 'anna'),
+      spieler('dana', undefined, 'egon'),
     ];
-    expect(teilnehmerVon(fahrzeuge, 'anna').sort()).toEqual(['bert', 'chris']);
+    expect(teilnehmerVon(alle, 'anna').sort()).toEqual(['bert', 'chris']);
   });
 
-  it('dedupliziert dieselbe Person über mehrere Fahrzeuge hinweg', () => {
-    const fahrzeuge = [fahrzeug('f1', ['bert'], 'anna'), fahrzeug('f2', ['bert', 'chris'], 'anna')];
-    expect(teilnehmerVon(fahrzeuge, 'anna').sort()).toEqual(['bert', 'chris']);
-  });
-
-  it('liefert eine leere Liste ohne zugewiesene Gruppe', () => {
-    expect(teilnehmerVon([fahrzeug('f1', ['bert'], 'egon')], 'anna')).toEqual([]);
+  it('liefert eine leere Liste ohne zugeteilte Gruppe', () => {
+    expect(teilnehmerVon([spieler('bert', undefined, 'egon')], 'anna')).toEqual([]);
   });
 });
 
 describe('sollMinispielStarten', () => {
-  const gruppenfuehrerMitTeam = [spieler('anna', 'gruppenfuehrer'), spieler('bert', undefined)];
-  const fahrzeugeMitTeam = [fahrzeug('f1', ['bert'], 'anna')];
+  const gruppenfuehrerMitTeam = [spieler('anna', 'gruppenfuehrer'), spieler('bert', undefined, 'anna')];
 
   it('greift für ein echtes Zelt, Gruppenführer mit Team', () => {
-    expect(sollMinispielStarten(fahrzeugeMitTeam, gruppenfuehrerMitTeam, 'SG20', 'anna')).toBe(true);
+    expect(sollMinispielStarten(gruppenfuehrerMitTeam, 'SG20', 'anna')).toBe(true);
   });
 
   it('greift nicht für reine Flächen (kein echtes Zelt)', () => {
-    expect(sollMinispielStarten(fahrzeugeMitTeam, gruppenfuehrerMitTeam, 'FL_S', 'anna')).toBe(false);
+    expect(sollMinispielStarten(gruppenfuehrerMitTeam, 'FL_S', 'anna')).toBe(false);
   });
 
   it('greift nicht ohne Team (niemand zum Mitspielen)', () => {
-    const ohneTeam = [fahrzeug('f1', [], 'anna')];
-    expect(sollMinispielStarten(ohneTeam, gruppenfuehrerMitTeam, 'SG20', 'anna')).toBe(false);
+    const ohneTeam = [spieler('anna', 'gruppenfuehrer'), spieler('bert', undefined)];
+    expect(sollMinispielStarten(ohneTeam, 'SG20', 'anna')).toBe(false);
   });
 
   it('greift nicht, wenn die bauende Person kein Gruppenführer ist', () => {
-    const zugfuehrer = [spieler('anna', 'zugfuehrer'), spieler('bert', undefined)];
-    expect(sollMinispielStarten(fahrzeugeMitTeam, zugfuehrer, 'SG20', 'anna')).toBe(false);
+    const zugfuehrer = [spieler('anna', 'zugfuehrer'), spieler('bert', undefined, 'anna')];
+    expect(sollMinispielStarten(zugfuehrer, 'SG20', 'anna')).toBe(false);
   });
 
   it('greift nicht ohne bekannte bauende Person', () => {
-    expect(sollMinispielStarten(fahrzeugeMitTeam, gruppenfuehrerMitTeam, 'SG20', undefined)).toBe(false);
-    expect(sollMinispielStarten(fahrzeugeMitTeam, gruppenfuehrerMitTeam, 'SG20', 'unbekannt')).toBe(false);
+    expect(sollMinispielStarten(gruppenfuehrerMitTeam, 'SG20', undefined)).toBe(false);
+    expect(sollMinispielStarten(gruppenfuehrerMitTeam, 'SG20', 'unbekannt')).toBe(false);
   });
 });
 

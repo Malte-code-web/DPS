@@ -684,7 +684,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_251 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -731,6 +731,7 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.gewicht` | [`src/domain/dosierung.ts:337`](src/domain/dosierung.ts#L337) | Körpergewicht - hinterlegt oder geschätzt |
 | `domain.gruppenfuehrend` | [`src/domain/fuehrung.ts:78`](src/domain/fuehrung.ts#L78) | Der Gruppenführer sieht eine Übersicht seiner eigenen Gruppe |
 | `domain.gruppenfuehrerliste` | [`src/domain/fuehrung.ts:124`](src/domain/fuehrung.ts#L124) | Wer als Gruppenführer in der Sitzung mitspielt |
+| `domain.gruppenmitglieder` | [`src/domain/fuehrung.ts:150`](src/domain/fuehrung.ts#L150) | Die Personen einer Gruppe, ohne den Gruppenführer selbst |
 | `domain.gruppevon` | [`src/domain/fuehrung.ts:137`](src/domain/fuehrung.ts#L137) | Die einem Gruppenführer zugewiesenen Fahrzeuge (→ `modell.gruppe`) |
 | `domain.istAbschnittEroeffnet` | [`src/domain/flaechen.ts:221`](src/domain/flaechen.ts#L221) | Ob ein Abschnitt als Verlegungsziel gilt |
 | `domain.manvstufen` | [`src/domain/manvStufen.ts:4`](src/domain/manvStufen.ts#L4) | MANV-Stufen des Kreises Steinfurt -> kumulativer Fahrzeugbestand |
@@ -745,7 +746,7 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.regiefuehrend` | [`src/domain/fuehrung.ts:46`](src/domain/fuehrung.ts#L46) | Übungsleitung und Beobachter teilen sich Sicht und Rechte |
 | `domain.rettung` | [`src/domain/rettung.ts:4`](src/domain/rettung.ts#L4) | Rettung eingeklemmter Personen - live gewürfelter Bedarf |
 | `domain.rufgruppen` | [`src/domain/rufgruppen.ts:14`](src/domain/rufgruppen.ts#L14) | Feste Kanalliste für den Sprechfunk |
-| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:151`](src/domain/fuehrung.ts#L151) | Reale Stärkemeldung einer Fahrzeugbesatzung |
+| `domain.staerkemeldung` | [`src/domain/fuehrung.ts:174`](src/domain/fuehrung.ts#L174) | Reale Stärkemeldung einer Fahrzeugbesatzung |
 | `domain.taktischezeichen` | [`src/domain/taktischeZeichen.ts:18`](src/domain/taktischeZeichen.ts#L18) | DV-102-Symbole je Einsatzabschnitt |
 | `domain.verfuegbareFlaecheQm` | [`src/domain/flaechen.ts:201`](src/domain/flaechen.ts#L201) | Geteiltes Flächenbudget: Zelte/Flächen und Fahrzeuge teilen sich das Baufeld |
 | `domain.zeltminispiel` | [`src/domain/zeltMinispiel.ts:7`](src/domain/zeltMinispiel.ts#L7) | Kooperatives "Kommando-Aufbau"-Minispiel beim Zeltaufbau |
@@ -806,15 +807,17 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `modell.diagnostik` | [`src/domain/types.ts:736`](src/domain/types.ts#L736) | Einzelne Untersuchungen statt einer Rundumschau |
 | `modell.eingeklemmt` | [`src/domain/types.ts:693`](src/domain/types.ts#L693) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
 | `modell.eingeklemmtstatus` | [`src/domain/types.ts:707`](src/domain/types.ts#L707) | Laufzeitzustand der Rettung einer eingeklemmten Person |
+| `modell.einsatzabschnitt` | [`src/domain/sitzung.ts:67`](src/domain/sitzung.ts#L67) | Der Abschnitt, auf den diese Person befohlen ist |
 | `modell.ereignis` | [`src/domain/types.ts:1037`](src/domain/types.ts#L1037) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:427`](src/domain/types.ts#L427) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
 | `modell.finalsichtung` | [`src/domain/types.ts:850`](src/domain/types.ts#L850) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.flaechenbefehl` | [`src/domain/types.ts:962`](src/domain/types.ts#L962) | Auftrag des Zugführers an einen Gruppenführer, eine Fläche zu bauen |
 | `modell.freigabemodus` | [`src/domain/types.ts:683`](src/domain/types.ts#L683) | Geplante automatische Freigabe im gestaffelten Modus |
 | `modell.fuehrung` | [`src/domain/types.ts:245`](src/domain/types.ts#L245) | Führung ist eine zweite Ebene neben der Qualifikation |
-| `modell.gebunden` | [`src/domain/sitzung.ts:52`](src/domain/sitzung.ts#L52) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
+| `modell.gebunden` | [`src/domain/sitzung.ts:81`](src/domain/sitzung.ts#L81) | Für andere sichtbar mit einer bindenden Maßnahme beschäftigt |
 | `modell.geoposition` | [`src/domain/types.ts:894`](src/domain/types.ts#L894) | Schematische Koordinate eines Szenario-Schlüsselpunkts |
 | `modell.gruppe` | [`src/domain/types.ts:491`](src/domain/types.ts#L491) | Welchem Gruppenführer dieses Fahrzeug samt Besatzung zugewiesen ist |
+| `modell.gruppe.person` | [`src/domain/sitzung.ts:43`](src/domain/sitzung.ts#L43) | Zu welcher Gruppe diese Person gehört |
 | `modell.kernwerte` | [`src/domain/types.ts:85`](src/domain/types.ts#L85) | Pflichtwerte einer Vorlage - der Rest wird aufgefüllt |
 | `modell.koerperregion` | [`src/domain/types.ts:332`](src/domain/types.ts#L332) | Wo am Patienten das Problem sitzt - für das Körperschema |
 | `modell.kollegenanfrage` | [`src/domain/types.ts:797`](src/domain/types.ts#L797) | Offene Anfrage nach Unterstützung bei einer bindenden Maßnahme |
@@ -909,23 +912,23 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:273`](src/state/reducer.ts#L273) | Alles, was der Übende auslösen kann |
-| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
+| `state.aktionen` | [`src/state/reducer.ts:274`](src/state/reducer.ts#L274) | Alles, was der Übende auslösen kann |
+| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:39`](src/state/SimulationProvider.tsx#L39) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:152`](src/state/reducer.ts#L152) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:79`](src/state/reducer.ts#L79) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:91`](src/state/SimulationProvider.tsx#L91) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:699`](src/state/reducer.ts#L699) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.regieprotokoll` | [`src/state/reducer.ts:175`](src/state/reducer.ts#L175) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
-| `state.schnappschuss` | [`src/state/reducer.ts:430`](src/state/reducer.ts#L430) | Der geteilte, host-autoritative Ausschnitt des Zustands |
-| `state.spielerprotokoll` | [`src/state/reducer.ts:186`](src/state/reducer.ts#L186) | Private Statusansicht: was genau hat wer getan |
+| `state.freigabemodus` | [`src/state/reducer.ts:153`](src/state/reducer.ts#L153) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:80`](src/state/reducer.ts#L80) | Die Hauptzustände der Anwendung |
+| `state.provider` | [`src/state/SimulationProvider.tsx:92`](src/state/SimulationProvider.tsx#L92) | Rollen-bewusster Zustandsverteiler |
+| `state.reducer` | [`src/state/reducer.ts:701`](src/state/reducer.ts#L701) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.regieprotokoll` | [`src/state/reducer.ts:176`](src/state/reducer.ts#L176) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
+| `state.schnappschuss` | [`src/state/reducer.ts:432`](src/state/reducer.ts#L432) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.spielerprotokoll` | [`src/state/reducer.ts:187`](src/state/reducer.ts#L187) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
-| `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
+| `state.uhr` | [`src/state/SimulationProvider.tsx:23`](src/state/SimulationProvider.tsx#L23) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:11`](src/state/zeitkosten.ts#L11) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:145`](src/state/zeitkosten.ts#L145) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:94`](src/state/reducer.ts#L94) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:95`](src/state/reducer.ts#L95) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -935,7 +938,7 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1929`](src/index.css#L1929) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2462`](src/index.css#L2462) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:705`](src/index.css#L705) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4659`](src/index.css#L4659) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4732`](src/index.css#L4732) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:428`](src/index.css#L428) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1982`](src/index.css#L1982) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:154`](src/index.css#L154) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
@@ -945,9 +948,9 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.modi` | [`src/index.css:632`](src/index.css#L632) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1808`](src/index.css#L1808) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:220`](src/index.css#L220) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4731`](src/index.css#L4731) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4804`](src/index.css#L4804) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4862`](src/index.css#L4862) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4935`](src/index.css#L4935) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -985,7 +988,7 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.abschnittekurzuebersicht` | [`src/components/AbschnitteKurzuebersicht.tsx:13`](src/components/AbschnitteKurzuebersicht.tsx#L13) | Kacheln ohne Kräfte-/Fahrzeugdetails |
 | `ui.abschnitteuebersicht` | [`src/components/AbschnitteUebersicht.tsx:16`](src/components/AbschnitteUebersicht.tsx#L16) | Eine Kachel je Einsatzabschnitt - Kern des Gesamtlagebilds |
 | `ui.abschnittfuehrenbefehl` | [`src/components/AbschnittFuehrenBefehlBenachrichtigung.tsx:6`](src/components/AbschnittFuehrenBefehlBenachrichtigung.tsx#L6) | Benachrichtigung: der Zugführer befiehlt der Gruppe, einen Abschnitt zu führen |
-| `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:5`](src/components/Abschnittsleiste.tsx#L5) | Reiter mit der Belegung je Abschnitt |
+| `ui.abschnittsleiste` | [`src/components/Abschnittsleiste.tsx:7`](src/components/Abschnittsleiste.tsx#L7) | Reiter mit der Belegung je Abschnitt |
 | `ui.alarmmelodie` | [`src/state/useMonitorAlarm.ts:27`](src/state/useMonitorAlarm.ts#L27) | Zwei corpuls³-nahe Alarmmuster nach IEC 60601-1-8 |
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
@@ -1040,7 +1043,7 @@ _248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:13`](src/components/Verlegung.tsx#L13) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
-| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
+| `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:26`](src/pages/WartebereichSeite.tsx#L26) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 | `ui.zeltbefehlbenachrichtigung` | [`src/components/ZeltBefehlBenachrichtigung.tsx:14`](src/components/ZeltBefehlBenachrichtigung.tsx#L14) | Benachrichtigung: der Zugführer befiehlt ein Zelt oder eine Fläche |
 | `ui.zeltminispielbenachrichtigung` | [`src/components/ZeltMinispielBenachrichtigung.tsx:7`](src/components/ZeltMinispielBenachrichtigung.tsx#L7) | Toast fürs Zeltaufbau-Minispiel "Kommando-Aufbau" |
 | `ui.zeltminispielbenachrichtigung.gruppenfuehrer` | [`src/components/ZeltMinispielGruppenfuehrerAnsicht.tsx:11`](src/components/ZeltMinispielGruppenfuehrerAnsicht.tsx#L11) | Gruppenführer sieht den vollen Rundenplan |
@@ -1132,6 +1135,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.6` | Gruppen bestehen aus Personen und ziehen auf Befehl wirklich um: neues `Spieler.gruppenfuehrerId` (Gruppe wird im Wartebereich vom Zugführer zusammengestellt, jede Person in höchstens einer Gruppe) + `spielerGruppeZuweisen` + `gruppenMitglieder()`; neues `Spieler.einsatzabschnitt` (befohlene Position, getrennt von der reinen Blickrichtung `aktuellerAbschnitt`), gesetzt von `abschnittFuehrenBefehlAusfuehren` für Gruppenführer + Mitglieder, Provider-Effekt zieht die eigene Ansicht einmalig nach - vorher bewegte der Befehl ausschließlich Fahrzeuge, Personen kamen nie an; `Abschnittsleiste` zeigt nur eröffnete Abschnitte (Schadensstelle zu Beginn, Rest nach Bau); `teilnehmerVon()` des Zeltminispiels liest die Personen-Gruppe statt der Fahrzeugbesatzung; Fahrzeuge bleiben optional einer Gruppe zuordenbar |
 | `DPS-0.8.2.5` | Zeltaufbau-Minispiel: `zeltMinispielStarten` räumt den erfüllten `FlaechenBefehl` jetzt sofort beim Start statt erst bei Fertigstellung - sonst blieb `ZeltBefehlBenachrichtigung`s Toast/Knopf aktiv und ein erneuter Klick warf den laufenden Bau über die "ersetzt statt addiert"-Regel immer wieder zurück, sodass der Abschnitt nie fertig wurde |
 | `DPS-0.8.2.4` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 4 (UI, ungeprüft - siehe ROADMAP): neue `ZeltMinispielBenachrichtigung.tsx` (+ Einbindung in `EinsatzSeite.tsx`) verzweigt je Rolle auf `ZeltMinispielGruppenfuehrerAnsicht.tsx` (voller Rundenplan + Countdown, nur lesend) oder `ZeltMinispielTeilnehmerAnsicht.tsx` (still bis zur eigenen Runde, dann "Anpacken!"); CSS-Erweiterung `.zeltminispiel-*` auf der `.delegation-toast`-Familie |
 | `DPS-0.8.2.3` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 3 (Verzweigungsstellen, noch ohne Spieler-Prompt): `ZeltBefehlBenachrichtigung.tsx`s `ausfuehren()` und `Lagekarte.tsx`s `selbstBauen()` prüfen `sollMinispielStarten(...)` und dispatchen bei Zutreffen `zeltMinispielStarten` (mit `teilnehmerVon()`/`rundenplanErzeugen()`) statt `zeltPlatzieren`; `else`-Zweig unverändert, `bauortBestaetigen()` (kein Gruppenführer) unangetastet |

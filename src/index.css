@@ -4588,6 +4588,79 @@ tbody tr:last-child td {
   white-space: nowrap;
 }
 
+/* --- Gruppen im Wartebereich (→ modell.gruppe.person) ----------------- */
+
+.spieler-gruppe-wahl,
+.spieler-gruppe {
+  flex-basis: 100%;
+}
+
+@media (min-width: 480px) {
+  .spieler-gruppe-wahl,
+  .spieler-gruppe {
+    flex-basis: auto;
+  }
+}
+
+.spieler-gruppe-wahl {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-panel-hoch);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  color: var(--text);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.spieler-gruppe {
+  font-size: 0.82rem;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.gruppenliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.gruppe-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.9rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.gruppe-name {
+  font-weight: 600;
+}
+
+.gruppe-staerke {
+  font-size: 0.8rem;
+  color: var(--akzent);
+  white-space: nowrap;
+}
+
+.gruppe-mitglieder {
+  flex-basis: 100%;
+  font-size: 0.82rem;
+  color: var(--text-leise);
+}
+
+@media (min-width: 640px) {
+  .gruppe-mitglieder {
+    flex-basis: auto;
+  }
+}
+
 .fahrzeugliste-abschnitt {
   padding: 0 1.5rem 1.5rem;
 }

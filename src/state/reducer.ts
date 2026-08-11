@@ -6,6 +6,7 @@ import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../do
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
 import { geoPunktName } from '../domain/geodaten';
+import { gruppenMitglieder } from '../domain/fuehrung';
 import { STANDARD_BAUFELD, groesseVon, platzierungGueltig } from '../domain/flaechen';
 import {
   MINISPIEL_AKTIV,
@@ -348,6 +349,7 @@ export type SimulationAction =
   | { typ: 'fahrzeugBesatzungGesetzt'; fahrzeugId: string; besatzung: string[] }
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
   | { typ: 'fahrzeugGruppeZuweisen'; fahrzeugId: string; gruppenfuehrerId: string | null }
+  | { typ: 'spielerGruppeZuweisen'; spielerId: string; gruppenfuehrerId: string | null }
   | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
   | { typ: 'patientFreigeben'; patientId: string }
   | { typ: 'alleVerdecktenFreigeben' }
@@ -1438,22 +1440,49 @@ export function simulationReducer(
         },
       };
 
-    case 'spielerFuehrungsrolleSetzen':
+    case 'spielerFuehrungsrolleSetzen': {
       // Anders als die Qualifikation (jede Person wählt sich selbst) wird die
       // Führungsrolle zugeteilt - Aufruf ist deshalb nur der Übungsleitung
       // sinnvoll zugänglich (→ `ui.wartebereich`), im Reducer selbst wie
       // gewohnt nicht zusätzlich geprüft (kooperatives Übungstool).
+      //
+      // Verliert jemand die Gruppenführer-Rolle, löst sich seine Gruppe auf
+      // (→ `modell.gruppe.person`) - sonst blieben Personen und Fahrzeuge auf
+      // eine Führungskraft gebucht, die es nicht mehr gibt, und tauchten in
+      // keiner Gruppen-Zuweisung mehr auf, um sie zu befreien.
+      const verliertGruppenfuehrung =
+        action.rolle !== 'gruppenfuehrer' &&
+        state.sitzung.spieler.find((spieler) => spieler.id === action.spielerId)?.fuehrungsrolle ===
+          'gruppenfuehrer';
       return {
         ...state,
+        fahrzeuge: verliertGruppenfuehrung
+          ? state.fahrzeuge.map((fahrzeug) =>
+              fahrzeug.gruppenfuehrerId === action.spielerId
+                ? { ...fahrzeug, gruppenfuehrerId: undefined }
+                : fahrzeug,
+            )
+          : state.fahrzeuge,
         sitzung: {
           ...state.sitzung,
-          spieler: state.sitzung.spieler.map((spieler) =>
-            spieler.id === action.spielerId
-              ? { ...spieler, fuehrungsrolle: action.rolle }
-              : spieler,
-          ),
+          spieler: state.sitzung.spieler.map((spieler) => {
+            if (spieler.id === action.spielerId) {
+              // Wer selbst Gruppenführer wird, kann nicht gleichzeitig
+              // Mitglied einer fremden Gruppe bleiben.
+              return {
+                ...spieler,
+                fuehrungsrolle: action.rolle,
+                gruppenfuehrerId: action.rolle === 'gruppenfuehrer' ? undefined : spieler.gruppenfuehrerId,
+              };
+            }
+            if (verliertGruppenfuehrung && spieler.gruppenfuehrerId === action.spielerId) {
+              return { ...spieler, gruppenfuehrerId: undefined };
+            }
+            return spieler;
+          }),
         },
       };
+    }
 
     case 'fahrzeugBesatzungGesetzt':
       return mitFahrzeug(state, action.fahrzeugId, (fahrzeug) => ({
@@ -1484,6 +1513,33 @@ export function simulationReducer(
       return protokolliereRegie(
         naechster,
         `${FAHRZEUGTYP_INFO[fahrzeug.typ].label} der Gruppe von ${gruppenfuehrer?.name ?? 'Gruppenführer'} zugewiesen.`,
+      );
+    }
+
+    case 'spielerGruppeZuweisen': {
+      const person = state.sitzung.spieler.find((eintrag) => eintrag.id === action.spielerId);
+      if (!person) return state;
+      // Ein Gruppenführer führt seine eigene Gruppe, statt Mitglied zu sein -
+      // sonst entstünden Ketten (→ `modell.gruppe.person`).
+      if (action.gruppenfuehrerId && person.fuehrungsrolle === 'gruppenfuehrer') return state;
+      const naechster = {
+        ...state,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? { ...spieler, gruppenfuehrerId: action.gruppenfuehrerId ?? undefined }
+              : spieler,
+          ),
+        },
+      };
+      if (!action.gruppenfuehrerId) {
+        return protokolliereRegie(naechster, `${person.name} keiner Gruppe mehr zugeteilt.`);
+      }
+      const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === action.gruppenfuehrerId);
+      return protokolliereRegie(
+        naechster,
+        `${person.name} der Gruppe von ${gruppenfuehrer?.name ?? 'Gruppenführer'} zugeteilt.`,
       );
     }
 
@@ -1797,10 +1853,22 @@ export function simulationReducer(
       const gruppe = state.fahrzeuge.filter(
         (fahrzeug) => fahrzeug.gruppenfuehrerId === befehl.gruppenfuehrerId,
       );
+      // Die Gruppe *sind* die Personen (→ `modell.gruppe.person`) - sie
+      // bekommen den Abschnitt als Auftrag (→ `modell.einsatzabschnitt`),
+      // ihre Clients ziehen die Ansicht selbst nach (→ `state.provider`).
+      // Vorher bewegte dieser Fall ausschließlich Fahrzeuge, weshalb eine
+      // befohlene Gruppe nie irgendwo ankam.
+      const mannschaft = [
+        befehl.gruppenfuehrerId,
+        ...gruppenMitglieder(state.sitzung.spieler, befehl.gruppenfuehrerId).map(
+          (spieler) => spieler.id,
+        ),
+      ];
       // Jedes Fahrzeug der Gruppe zieht für sich um - eines, das schon am Ziel
       // steht, bleibt unverändert; eines ohne direkten Weg (→
       // `istFahrzeugVerlegungMoeglich`) bleibt stehen, statt den ganzen
-      // Befehl scheitern zu lassen.
+      // Befehl scheitern zu lassen. Fahrzeuge ohne Gruppe bleiben ohnehin
+      // unberührt - sie werden einzeln disponiert (→ `ui.fahrzeugverlegung`).
       const naechster = {
         ...state,
         fahrzeuge: state.fahrzeuge.map((fahrzeug) => {
@@ -1809,6 +1877,14 @@ export function simulationReducer(
           if (!istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel)) return fahrzeug;
           return verlegeFahrzeug(fahrzeug, befehl.ziel);
         }),
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            mannschaft.includes(spieler.id)
+              ? { ...spieler, einsatzabschnitt: befehl.ziel }
+              : spieler,
+          ),
+        },
         abschnittFuehrenBefehle: state.abschnittFuehrenBefehle.filter(
           (eintrag) => eintrag.id !== action.id,
         ),
@@ -1821,7 +1897,7 @@ export function simulationReducer(
       const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === befehl.gruppenfuehrerId);
       return protokolliereRegie(
         naechster,
-        `${gruppenfuehrer?.name ?? 'Gruppenführer'} führt jetzt ${geoPunktName(befehl.ziel)} (${bewegt} von ${gruppe.length} Fahrzeugen verlegt).`,
+        `${gruppenfuehrer?.name ?? 'Gruppenführer'} führt jetzt ${geoPunktName(befehl.ziel)} (${mannschaft.length} Personen, ${bewegt} von ${gruppe.length} Fahrzeugen verlegt).`,
       );
     }
 

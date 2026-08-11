@@ -135,9 +135,32 @@ export function gruppenfuehrerListe(spieler: Spieler[]): Spieler[] {
 
 /**
  * @anker domain.gruppevon Die einem Gruppenführer zugewiesenen Fahrzeuge (→ `modell.gruppe`)
+ *
+ * Nur die Fahrzeuge - die Gruppe *an sich* besteht aus Personen
+ * (→ `domain.gruppenmitglieder`). Ein Fahrzeug kann einer Gruppe zugeordnet
+ * sein (dann zieht es bei einem Einsatzauftrag mit), muss aber nicht: es
+ * lässt sich genauso gut einzeln einem Abschnitt zuweisen, damit dort
+ * Material verfügbar ist (→ `ui.fahrzeugverlegung`).
  */
 export function gruppeVon(fahrzeuge: Fahrzeug[], gruppenfuehrerId: string): Fahrzeug[] {
   return fahrzeuge.filter((fahrzeug) => fahrzeug.gruppenfuehrerId === gruppenfuehrerId);
+}
+
+/**
+ * @anker domain.gruppenmitglieder Die Personen einer Gruppe, ohne den Gruppenführer selbst
+ *
+ * Das eigentliche Rückgrat einer Gruppe (→ `modell.gruppe.person`): wer
+ * gehört dazu und zieht damit bei einem Einsatzauftrag mit
+ * (→ `modell.abschnittfuehrenbefehl`). Der Gruppenführer erscheint bewusst
+ * nicht in der eigenen Liste - Aufrufer, die die vollständige Mannschaft
+ * brauchen, setzen ihn selbst davor (`[gruppenfuehrerId, ...mitglieder]`),
+ * so wie es das Zeltaufbau-Minispiel (→ `domain.zeltminispiel`) und der
+ * Einsatzauftrag tun.
+ */
+export function gruppenMitglieder(spieler: Spieler[], gruppenfuehrerId: string): Spieler[] {
+  return spieler.filter(
+    (eintrag) => eintrag.id !== gruppenfuehrerId && eintrag.gruppenfuehrerId === gruppenfuehrerId,
+  );
 }
 
 export interface Staerke {

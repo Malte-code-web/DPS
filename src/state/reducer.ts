@@ -6,7 +6,13 @@ import { MATERIAL_LABEL, verbraucheMaterial, verbraucheMaterialTyp } from '../do
 import { fahrzeugeFuerStufe } from '../domain/manvStufen';
 import { rettungBereit, wuerfleEinklemmungsbedarf } from '../domain/rettung';
 import { geoPunktName } from '../domain/geodaten';
-import { STANDARD_BAUFELD, platzierungGueltig } from '../domain/flaechen';
+import { STANDARD_BAUFELD, groesseVon, platzierungGueltig } from '../domain/flaechen';
+import {
+  MINISPIEL_AKTIV,
+  RUNDEN_FENSTER_SEK,
+  RUNDEN_INTERVALL_SEK,
+  naechsteZielZeit,
+} from '../domain/zeltMinispiel';
 import type { ManvStufeId } from '../domain/manvStufen';
 import {
   SOLO_VERSCHLECHTERUNG_FAKTOR,
@@ -55,6 +61,8 @@ import type {
   SpielerProtokollEintrag,
   Szenario,
   Verlaufseintrag,
+  ZeltMinispielLauf,
+  ZeltMinispielRunde,
   ZeltTypId,
 } from '../domain/types';
 
@@ -212,6 +220,14 @@ export interface SimulationState {
    */
   meldebuch: MeldebuchEintrag[];
   /**
+   * Laufende Zeltaufbau-Minispiele (→ `modell.zeltminispiel`,
+   * `domain.zeltminispiel`) - eigenständiges, per `MINISPIEL_AKTIV`
+   * ein-/ausschaltbares Modul, ein Eintrag je Gruppenführer, der gerade mit
+   * seiner Gruppe ein echtes Zelt baut. Löst sich im Takt (→ `case 'tick'`)
+   * bei Erreichen von `zielZeitSek` von selbst wieder auf.
+   */
+  zeltMinispiele: ZeltMinispielLauf[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -250,6 +266,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   flaechenBefehle: [],
   abschnittFuehrenBefehle: [],
   meldebuch: [],
+  zeltMinispiele: [],
   schnappschussFolge: 0,
 };
 
@@ -390,6 +407,20 @@ export type SimulationAction =
       distanzMeter: number;
       geometrie?: GeoPosition[];
     }
+  | {
+      typ: 'zeltMinispielStarten';
+      id: string;
+      gruppenfuehrerId: string;
+      abschnitt: FlaechenAbschnitt;
+      flaechenTyp: ZeltTypId;
+      xM: number;
+      yM: number;
+      /** Gesetzt, wenn dieser Bau einen Befehl erfüllt (→ `modell.flaechenbefehl`). */
+      befehlId?: string;
+      teilnehmerIds: string[];
+      rundenplan: ZeltMinispielRunde[];
+    }
+  | { typ: 'zeltMinispielRundeGetroffen'; laufId: string; spielerId: string; rundenIndex: number }
   | { typ: 'sitzungStarten' }
   | { typ: 'sitzungVerlassen' }
   | { typ: 'schnappschussAnwenden'; schnappschuss: Schnappschuss }
@@ -440,6 +471,8 @@ export interface Schnappschuss {
   abschnittFuehrenBefehle: AbschnittFuehrenBefehl[];
   /** Per Funk erfragte, selbst eingetragene Meldungen des Zugführers (→ `modell.meldebucheintrag`). */
   meldebuch: MeldebuchEintrag[];
+  /** Laufende Zeltaufbau-Minispiele (→ `modell.zeltminispiel`). */
+  zeltMinispiele: ZeltMinispielLauf[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -474,6 +507,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     flaechenBefehle: state.flaechenBefehle,
     abschnittFuehrenBefehle: state.abschnittFuehrenBefehle,
     meldebuch: state.meldebuch,
+    zeltMinispiele: state.zeltMinispiele,
   };
 }
 
@@ -600,6 +634,68 @@ function uebernimmVerlaufInSpielerprotokoll(
   };
 }
 
+/**
+ * Rückt den Rundenzeiger eines laufenden Zeltaufbau-Minispiels auf den durch
+ * die feste `RUNDEN_INTERVALL_SEK`-Taktung ab Baustart fälligen Stand vor
+ * (→ `domain.zeltminispiel`) - eine verpasste Runde kostet nichts, rückt den
+ * Zeiger aber weiter, damit ein späterer Treffer wieder zur echten,
+ * aktuellen Runde passt statt eine längst verstrichene nachzuholen.
+ */
+function vorgerueckteMinispielRunde(lauf: ZeltMinispielLauf, neueZeitSek: number): ZeltMinispielLauf {
+  const faelligeRundenIndex = Math.min(
+    Math.floor((neueZeitSek - lauf.startZeitSek) / RUNDEN_INTERVALL_SEK),
+    lauf.rundenplan.length,
+  );
+  if (faelligeRundenIndex <= lauf.aktuelleRundeIndex) return lauf;
+  return {
+    ...lauf,
+    aktuelleRundeIndex: faelligeRundenIndex,
+    rundeBeginnZeitSek: lauf.startZeitSek + faelligeRundenIndex * RUNDEN_INTERVALL_SEK,
+  };
+}
+
+/**
+ * Schließt ein fertiges Zeltaufbau-Minispiel ab (→ `case 'tick'`): dieselbe
+ * Wirkung wie `zeltPlatzieren` (Fläche eintragen, ggf. offenen
+ * `FlaechenBefehl` räumen), löst die `gebunden`-Bindung der ganzen Crew und
+ * protokolliert. Ruft `zeltPlatzieren` selbst nicht auf - das würde erneut
+ * durch `dispatchMitZeitkosten` laufen, dessen Kosten-/Beschäftigt-Prüfung
+ * hier keine Bedeutung hat (→ `domain.zeltminispiel`).
+ */
+function vollendeZeltMinispiel(state: SimulationState, lauf: ZeltMinispielLauf): SimulationState {
+  const platziert: PlatzierteFlaeche = {
+    id: lauf.id,
+    typ: lauf.flaechenTyp,
+    abschnitt: lauf.abschnitt,
+    xM: lauf.xM,
+    yM: lauf.yM,
+    platziertVonSpielerId: lauf.gruppenfuehrerId,
+  };
+  const beteiligteIds = [lauf.gruppenfuehrerId, ...lauf.teilnehmerIds];
+  const naechster = {
+    ...state,
+    flaechen: [
+      ...state.flaechen.filter((flaeche) => flaeche.abschnitt !== lauf.abschnitt),
+      platziert,
+    ],
+    flaechenBefehle: lauf.befehlId
+      ? state.flaechenBefehle.filter((befehl) => befehl.id !== lauf.befehlId)
+      : state.flaechenBefehle,
+    sitzung: {
+      ...state.sitzung,
+      spieler: state.sitzung.spieler.map((spieler) =>
+        beteiligteIds.includes(spieler.id)
+          ? { ...spieler, gebundenBis: state.zeitSek, gebundenGrund: undefined }
+          : spieler,
+      ),
+    },
+  };
+  return protokolliereRegie(
+    naechster,
+    `${groesseVon(lauf.flaechenTyp).bezeichnung} für ${geoPunktName(lauf.abschnitt)} fertiggestellt (Kommando-Aufbau).`,
+  );
+}
+
 /** @anker state.reducer Wie Aktionen den Zustand verändern, inklusive Zeitkosten */
 export function simulationReducer(
   state: SimulationState,
@@ -672,7 +768,15 @@ export function simulationReducer(
       // Kern dieselbe Ableitung aus verstrichener Zeit wie `startetNachMin`.
       const zielAbschnitt: Einsatzabschnitt =
         state.freigabemodus === 'sofort' ? 'schadensstelle' : 'ablage';
-      return {
+      // Zeltaufbau-Minispiel (→ `domain.zeltminispiel`): dieselbe
+      // takt-getriebene Ableitung wie die Patienten-Freigabe oben, nur für
+      // laufende Läufe statt Patienten - fertige Läufe lösen sich auf,
+      // laufende rücken ihren Rundenzeiger auf den fälligen Stand vor.
+      const fertigeMinispiele = state.zeltMinispiele.filter((lauf) => neueZeitSek >= lauf.zielZeitSek);
+      const laufendeMinispiele = state.zeltMinispiele
+        .filter((lauf) => neueZeitSek < lauf.zielZeitSek)
+        .map((lauf) => vorgerueckteMinispielRunde(lauf, neueZeitSek));
+      let naechsterState: SimulationState = {
         ...state,
         zeitSek: neueZeitSek,
         patienten: state.patienten.map((patient) => {
@@ -686,7 +790,12 @@ export function simulationReducer(
           }
           return simuliert;
         }),
+        zeltMinispiele: laufendeMinispiele,
       };
+      for (const lauf of fertigeMinispiele) {
+        naechsterState = vollendeZeltMinispiel(naechsterState, lauf);
+      }
+      return naechsterState;
     }
 
     case 'pauseUmschalten':
@@ -1556,6 +1665,100 @@ export function simulationReducer(
       };
     }
 
+    case 'zeltMinispielStarten': {
+      if (!MINISPIEL_AKTIV) return state;
+      const baufeld = state.szenario?.baufeld ?? STANDARD_BAUFELD;
+      const pruefeGrenzen =
+        action.abschnitt === 'zelt_rot' ||
+        action.abschnitt === 'zelt_gelb' ||
+        action.abschnitt === 'zelt_gruen';
+      if (
+        !platzierungGueltig(
+          { typ: action.flaechenTyp, abschnitt: action.abschnitt, xM: action.xM, yM: action.yM },
+          state.flaechen,
+          baufeld,
+          pruefeGrenzen,
+        )
+      ) {
+        return state;
+      }
+      const aufbauSekVoll = groesseVon(action.flaechenTyp).aufbauSek;
+      const lauf: ZeltMinispielLauf = {
+        id: action.id,
+        gruppenfuehrerId: action.gruppenfuehrerId,
+        abschnitt: action.abschnitt,
+        flaechenTyp: action.flaechenTyp,
+        xM: action.xM,
+        yM: action.yM,
+        befehlId: action.befehlId,
+        teilnehmerIds: action.teilnehmerIds,
+        rundenplan: action.rundenplan,
+        aktuelleRundeIndex: 0,
+        rundeBeginnZeitSek: state.zeitSek,
+        startZeitSek: state.zeitSek,
+        aufbauSekVoll,
+        zielZeitSek: state.zeitSek + aufbauSekVoll,
+      };
+      const beteiligteIds = [action.gruppenfuehrerId, ...action.teilnehmerIds];
+      const gebundenGrund = `${groesseVon(action.flaechenTyp).bezeichnung} aufbauen`;
+      return protokolliereRegie(
+        {
+          ...state,
+          // Ersetzt einen etwaigen älteren Lauf desselben Gruppenführers -
+          // derselbe "ersetzt statt addiert"-Grundsatz wie bei `zeltPlatzieren`.
+          zeltMinispiele: [
+            ...state.zeltMinispiele.filter(
+              (eintrag) => eintrag.gruppenfuehrerId !== action.gruppenfuehrerId,
+            ),
+            lauf,
+          ],
+          sitzung: {
+            ...state.sitzung,
+            spieler: state.sitzung.spieler.map((spieler) =>
+              beteiligteIds.includes(spieler.id)
+                ? { ...spieler, gebundenBis: lauf.zielZeitSek, gebundenGrund }
+                : spieler,
+            ),
+          },
+        },
+        `Zeltaufbau-Minispiel gestartet: ${groesseVon(action.flaechenTyp).bezeichnung} für ${geoPunktName(action.abschnitt)} (${beteiligteIds.length} Personen).`,
+      );
+    }
+
+    case 'zeltMinispielRundeGetroffen': {
+      if (!MINISPIEL_AKTIV) return state;
+      const lauf = state.zeltMinispiele.find((eintrag) => eintrag.id === action.laufId);
+      if (!lauf) return state;
+      if (action.rundenIndex !== lauf.aktuelleRundeIndex) return state;
+      const runde = lauf.rundenplan[action.rundenIndex];
+      if (!runde || runde.spielerId !== action.spielerId) return state;
+      if (state.zeitSek > lauf.rundeBeginnZeitSek + RUNDEN_FENSTER_SEK) return state;
+      const zielZeitSek = naechsteZielZeit(lauf.startZeitSek, lauf.aufbauSekVoll, lauf.zielZeitSek);
+      const beteiligteIds = [lauf.gruppenfuehrerId, ...lauf.teilnehmerIds];
+      const naechsteRundeIndex = lauf.aktuelleRundeIndex + 1;
+      const aktualisierterLauf: ZeltMinispielLauf = {
+        ...lauf,
+        aktuelleRundeIndex: naechsteRundeIndex,
+        // Feste Taktung ab Baustart statt ab dem Trefferzeitpunkt (→
+        // `domain.zeltminispiel`) - sonst würde ein früher Treffer das
+        // nächste Fenster künstlich nach vorne verschieben.
+        rundeBeginnZeitSek: lauf.startZeitSek + naechsteRundeIndex * RUNDEN_INTERVALL_SEK,
+        zielZeitSek,
+      };
+      return {
+        ...state,
+        zeltMinispiele: state.zeltMinispiele.map((eintrag) =>
+          eintrag.id === lauf.id ? aktualisierterLauf : eintrag,
+        ),
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            beteiligteIds.includes(spieler.id) ? { ...spieler, gebundenBis: zielZeitSek } : spieler,
+          ),
+        },
+      };
+    }
+
     case 'abschnittFuehrenBefehlErteilen': {
       const befehl: AbschnittFuehrenBefehl = {
         id: action.id,
@@ -1759,6 +1962,7 @@ export function simulationReducer(
         flaechenBefehle: s.flaechenBefehle,
         abschnittFuehrenBefehle: s.abschnittFuehrenBefehle,
         meldebuch: s.meldebuch,
+        zeltMinispiele: s.zeltMinispiele,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

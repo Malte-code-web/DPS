@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SZENARIEN } from '../domain/szenarien';
+import { RUNDEN_FENSTER_SEK, rundenanzahlFuer, rundenplanErzeugen } from '../domain/zeltMinispiel';
 import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
-import type { EingeklemmtStatus } from '../domain/types';
+import type { EingeklemmtStatus, ZeltMinispielRunde } from '../domain/types';
 
 const busunfall = SZENARIEN.find((szenario) => szenario.id === 'busunfall-b31')!;
 
@@ -2797,5 +2798,265 @@ describe('Transport-Freigabe: Rettungsmittelhalteplatz + Fahrzeug-Zuweisung (→
     const patient = direkt.patienten.find((p) => p.id === 'B-01');
     expect(patient?.abschnitt).toBe('transport');
     expect(patient?.transportFahrzeugId).toBeUndefined();
+  });
+});
+
+describe('Zeltaufbau-Minispiel „Kommando-Aufbau“ (→ modell.zeltminispiel, domain.zeltminispiel)', () => {
+  function imEinsatzMitGruppe(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    const mitGruppenfuehrer = simulationReducer(basis, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gruppe-1',
+        name: 'Gruppenführer Gruber',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    const mitMitspieler = simulationReducer(mitGruppenfuehrer, {
+      typ: 'spielerHinzugefuegt',
+      spieler: { id: 'mitspieler-1', name: 'Bert', rolle: 'spieler', qualifikation: 'basis' },
+    });
+    const fahrzeugId = mitMitspieler.fahrzeuge[0]!.id;
+    const mitGruppe = simulationReducer(mitMitspieler, {
+      typ: 'fahrzeugGruppeZuweisen',
+      fahrzeugId,
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const mitBesatzung = simulationReducer(mitGruppe, {
+      typ: 'fahrzeugBesatzungGesetzt',
+      fahrzeugId,
+      besatzung: ['gruppe-1', 'mitspieler-1'],
+    });
+    return simulationReducer(mitBesatzung, { typ: 'sitzungStarten' });
+  }
+
+  const RUNDENPLAN_SG20: ZeltMinispielRunde[] = rundenplanErzeugen(['mitspieler-1'], rundenanzahlFuer(300));
+
+  function gestartet(state: SimulationState): SimulationState {
+    return simulationReducer(state, {
+      typ: 'zeltMinispielStarten',
+      id: 'lauf-1',
+      gruppenfuehrerId: 'gruppe-1',
+      abschnitt: 'zelt_rot',
+      flaechenTyp: 'SG20',
+      xM: 0,
+      yM: 0,
+      teilnehmerIds: ['mitspieler-1'],
+      rundenplan: RUNDENPLAN_SG20,
+    });
+  }
+
+  it('startet einen Lauf mit voller Referenzdauer als Ziel und bindet die ganze Crew', () => {
+    const state = gestartet(imEinsatzMitGruppe());
+    expect(state.zeltMinispiele).toHaveLength(1);
+    const lauf = state.zeltMinispiele[0]!;
+    expect(lauf.zielZeitSek).toBe(state.zeitSek + 300);
+    expect(lauf.aufbauSekVoll).toBe(300);
+    expect(lauf.aktuelleRundeIndex).toBe(0);
+    for (const id of ['gruppe-1', 'mitspieler-1']) {
+      const spieler = state.sitzung.spieler.find((eintrag) => eintrag.id === id);
+      expect(spieler?.gebundenBis).toBe(lauf.zielZeitSek);
+      expect(spieler?.gebundenGrund).toContain('SG 20');
+    }
+    expect(state.regieProtokoll.at(-1)?.text).toContain('Zeltaufbau-Minispiel gestartet');
+  });
+
+  it('lehnt den Start bei ungültiger Fläche ab, ohne den State zu ändern', () => {
+    const mitRot = simulationReducer(imEinsatzMitGruppe(), {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-rot',
+      flaechenTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+    });
+    // zelt_gelb (anderer Abschnitt) überlappt mit der bereits stehenden
+    // Rot-Fläche bei (0,0) - dieselbe Überlappung wie im entsprechenden
+    // `zeltPlatzieren`-Test oben.
+    const versuch = simulationReducer(mitRot, {
+      typ: 'zeltMinispielStarten',
+      id: 'lauf-1',
+      gruppenfuehrerId: 'gruppe-1',
+      abschnitt: 'zelt_gelb',
+      flaechenTyp: 'SG20',
+      xM: 1,
+      yM: 1,
+      teilnehmerIds: ['mitspieler-1'],
+      rundenplan: RUNDENPLAN_SG20,
+    });
+    expect(versuch).toBe(mitRot);
+  });
+
+  it('ersetzt einen laufenden Lauf desselben Gruppenführers statt ihn zu addieren', () => {
+    const einLauf = gestartet(imEinsatzMitGruppe());
+    const zweiterLauf = simulationReducer(einLauf, {
+      typ: 'zeltMinispielStarten',
+      id: 'lauf-2',
+      gruppenfuehrerId: 'gruppe-1',
+      abschnitt: 'zelt_gelb',
+      flaechenTyp: 'SG30',
+      xM: 10,
+      yM: 10,
+      teilnehmerIds: ['mitspieler-1'],
+      rundenplan: rundenplanErzeugen(['mitspieler-1'], rundenanzahlFuer(420)),
+    });
+    expect(zweiterLauf.zeltMinispiele).toHaveLength(1);
+    expect(zweiterLauf.zeltMinispiele[0]?.id).toBe('lauf-2');
+  });
+
+  it('verkürzt bei einem rechtzeitigen, korrekten Treffer die Zielzeit und zieht gebundenBis nach', () => {
+    const gestartetState = gestartet(imEinsatzMitGruppe());
+    const getroffen = simulationReducer(gestartetState, {
+      typ: 'zeltMinispielRundeGetroffen',
+      laufId: 'lauf-1',
+      spielerId: 'mitspieler-1',
+      rundenIndex: 0,
+    });
+    const lauf = getroffen.zeltMinispiele[0]!;
+    expect(lauf.zielZeitSek).toBe(gestartetState.zeltMinispiele[0]!.zielZeitSek - 20);
+    expect(lauf.aktuelleRundeIndex).toBe(1);
+    for (const id of ['gruppe-1', 'mitspieler-1']) {
+      const spieler = getroffen.sitzung.spieler.find((eintrag) => eintrag.id === id);
+      expect(spieler?.gebundenBis).toBe(lauf.zielZeitSek);
+    }
+  });
+
+  it('ignoriert einen Treffer der falschen Person (No-Op)', () => {
+    const gestartetState = gestartet(imEinsatzMitGruppe());
+    const versuch = simulationReducer(gestartetState, {
+      typ: 'zeltMinispielRundeGetroffen',
+      laufId: 'lauf-1',
+      spielerId: 'gruppe-1',
+      rundenIndex: 0,
+    });
+    expect(versuch).toBe(gestartetState);
+  });
+
+  it('ignoriert einen Treffer der falschen Runde (No-Op)', () => {
+    const gestartetState = gestartet(imEinsatzMitGruppe());
+    const versuch = simulationReducer(gestartetState, {
+      typ: 'zeltMinispielRundeGetroffen',
+      laufId: 'lauf-1',
+      spielerId: 'mitspieler-1',
+      rundenIndex: 1,
+    });
+    expect(versuch).toBe(gestartetState);
+  });
+
+  it('ignoriert einen zu späten Treffer nach Ablauf des Rundenfensters (No-Op)', () => {
+    const gestartetState = gestartet(imEinsatzMitGruppe());
+    const zuSpaet = simulationReducer(gestartetState, { typ: 'tick', dtSek: RUNDEN_FENSTER_SEK + 5 });
+    const versuch = simulationReducer(zuSpaet, {
+      typ: 'zeltMinispielRundeGetroffen',
+      laufId: 'lauf-1',
+      spielerId: 'mitspieler-1',
+      rundenIndex: 0,
+    });
+    expect(versuch).toBe(zuSpaet);
+  });
+
+  it('durchbricht den 50%-Deckel auch bei sehr vielen Treffern nie', () => {
+    // Ein bewusst überlanger Rundenplan (mehr Runden als die Kalibrierung
+    // für SG20 vorsähe) - reicht, um den Deckel wirklich zu erreichen, und
+    // prüft so am Reducer selbst, dass er auch bei viel mehr Treffern greift
+    // als in der Praxis (→ `rundenanzahlFuer`) je vorkommen würden.
+    let state = simulationReducer(imEinsatzMitGruppe(), {
+      typ: 'zeltMinispielStarten',
+      id: 'lauf-1',
+      gruppenfuehrerId: 'gruppe-1',
+      abschnitt: 'zelt_rot',
+      flaechenTyp: 'SG20',
+      xM: 0,
+      yM: 0,
+      teilnehmerIds: ['mitspieler-1'],
+      rundenplan: rundenplanErzeugen(['mitspieler-1'], 20),
+    });
+    for (let runde = 0; runde < 20; runde += 1) {
+      state = simulationReducer(state, {
+        typ: 'zeltMinispielRundeGetroffen',
+        laufId: 'lauf-1',
+        spielerId: 'mitspieler-1',
+        rundenIndex: runde,
+      });
+    }
+    expect(state.zeltMinispiele[0]?.zielZeitSek).toBe(state.zeltMinispiele[0]!.startZeitSek + 300 * 0.5);
+  });
+
+  it('platziert bei Erreichen der Zielzeit im Takt die Fläche, löst gebunden und protokolliert', () => {
+    const gestartetState = gestartet(imEinsatzMitGruppe());
+    const fertig = simulationReducer(gestartetState, { typ: 'tick', dtSek: 300 });
+    expect(fertig.zeltMinispiele).toEqual([]);
+    expect(fertig.flaechen).toEqual([
+      { id: 'lauf-1', typ: 'SG20', abschnitt: 'zelt_rot', xM: 0, yM: 0, platziertVonSpielerId: 'gruppe-1' },
+    ]);
+    for (const id of ['gruppe-1', 'mitspieler-1']) {
+      const spieler = fertig.sitzung.spieler.find((eintrag) => eintrag.id === id);
+      expect(spieler?.gebundenBis).toBe(fertig.zeitSek);
+      expect(spieler?.gebundenGrund).toBeUndefined();
+    }
+    expect(fertig.regieProtokoll.at(-1)?.text).toContain('Kommando-Aufbau');
+  });
+
+  it('räumt bei Fertigstellung einen erfüllten FlaechenBefehl auf (aus dem Zugführer-Befehl gestartet)', () => {
+    const mitBefehl = simulationReducer(imEinsatzMitGruppe(), {
+      typ: 'zeltBefehlErteilen',
+      id: 'befehl-1',
+      flaechenTyp: 'SG20',
+      abschnitt: 'zelt_rot',
+      xM: 0,
+      yM: 0,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gruppe-1',
+    });
+    const gestartetAusBefehl = simulationReducer(mitBefehl, {
+      typ: 'zeltMinispielStarten',
+      id: 'lauf-1',
+      gruppenfuehrerId: 'gruppe-1',
+      abschnitt: 'zelt_rot',
+      flaechenTyp: 'SG20',
+      xM: 0,
+      yM: 0,
+      befehlId: 'befehl-1',
+      teilnehmerIds: ['mitspieler-1'],
+      rundenplan: RUNDENPLAN_SG20,
+    });
+    const fertig = simulationReducer(gestartetAusBefehl, { typ: 'tick', dtSek: 300 });
+    expect(fertig.flaechenBefehle).toEqual([]);
+  });
+
+  it('lässt zeltPlatzieren/zeitkosten für einen Bau ohne Minispiel-Trigger unverändert (Regression)', () => {
+    // Kein Gruppenführer beteiligt (Solo-Zugführer-Bau) - fällt exakt auf
+    // den unveränderten zeltPlatzieren-Pfad zurück, nicht auf das Minispiel.
+    const state = imEinsatzMitGruppe();
+    const platziert = simulationReducer(state, {
+      typ: 'zeltPlatzieren',
+      id: 'zelt-solo',
+      flaechenTyp: 'SG20',
+      abschnitt: 'zelt_gruen',
+      xM: 0,
+      yM: 0,
+      spielerId: 'leiter-1',
+    });
+    expect(platziert.zeltMinispiele).toEqual([]);
+    expect(platziert.flaechen).toEqual([
+      { id: 'zelt-solo', typ: 'SG20', abschnitt: 'zelt_gruen', xM: 0, yM: 0, platziertVonSpielerId: 'leiter-1' },
+    ]);
+  });
+
+  it('überträgt zeltMinispiele in den Schnappschuss', () => {
+    const state = gestartet(imEinsatzMitGruppe());
+    const schnappschuss = schnappschussAus(state);
+    expect(schnappschuss.zeltMinispiele).toEqual(state.zeltMinispiele);
   });
 });

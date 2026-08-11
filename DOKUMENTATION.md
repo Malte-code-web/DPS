@@ -909,23 +909,23 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `state.aktionen` | [`src/state/reducer.ts:256`](src/state/reducer.ts#L256) | Alles, was der Übende auslösen kann |
+| `state.aktionen` | [`src/state/reducer.ts:273`](src/state/reducer.ts#L273) | Alles, was der Übende auslösen kann |
 | `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:38`](src/state/SimulationProvider.tsx#L38) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
-| `state.freigabemodus` | [`src/state/reducer.ts:144`](src/state/reducer.ts#L144) | Sofort sichtbar oder gestaffelt über die Ablage |
-| `state.phase` | [`src/state/reducer.ts:71`](src/state/reducer.ts#L71) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:82`](src/state/SimulationProvider.tsx#L82) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:603`](src/state/reducer.ts#L603) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
-| `state.regieprotokoll` | [`src/state/reducer.ts:167`](src/state/reducer.ts#L167) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
-| `state.schnappschuss` | [`src/state/reducer.ts:399`](src/state/reducer.ts#L399) | Der geteilte, host-autoritative Ausschnitt des Zustands |
-| `state.spielerprotokoll` | [`src/state/reducer.ts:178`](src/state/reducer.ts#L178) | Private Statusansicht: was genau hat wer getan |
+| `state.freigabemodus` | [`src/state/reducer.ts:152`](src/state/reducer.ts#L152) | Sofort sichtbar oder gestaffelt über die Ablage |
+| `state.phase` | [`src/state/reducer.ts:79`](src/state/reducer.ts#L79) | Die Hauptzustände der Anwendung |
+| `state.provider` | [`src/state/SimulationProvider.tsx:91`](src/state/SimulationProvider.tsx#L91) | Rollen-bewusster Zustandsverteiler |
+| `state.reducer` | [`src/state/reducer.ts:699`](src/state/reducer.ts#L699) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.regieprotokoll` | [`src/state/reducer.ts:175`](src/state/reducer.ts#L175) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
+| `state.schnappschuss` | [`src/state/reducer.ts:430`](src/state/reducer.ts#L430) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.spielerprotokoll` | [`src/state/reducer.ts:186`](src/state/reducer.ts#L186) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
 | `state.uhr` | [`src/state/SimulationProvider.tsx:22`](src/state/SimulationProvider.tsx#L22) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:11`](src/state/zeitkosten.ts#L11) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:145`](src/state/zeitkosten.ts#L145) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
-| `state.zustand` | [`src/state/reducer.ts:86`](src/state/reducer.ts#L86) | Der gesamte Zustand einer laufenden Übung |
+| `state.zustand` | [`src/state/reducer.ts:94`](src/state/reducer.ts#L94) | Der gesamte Zustand einer laufenden Übung |
 
 #### stil
 
@@ -1129,6 +1129,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.2` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 2 (Reducer + Sync, noch ohne UI/Aufrufstellen): `state.zeltMinispiele` mit vollem 3-Touchpoint-Schnappschuss-Spiegel; Aktionen `zeltMinispielStarten` (`platzierungGueltig`-Prüfung, bindet Crew via `gebundenBis`/`gebundenGrund`, ersetzt je Gruppenführer) und `zeltMinispielRundeGetroffen` (Runde/Person/Zeitfenster-Validierung, No-Op sonst); `case 'tick'` löst laufende Läufe selbst auf (`vorgerueckteMinispielRunde()`, `vollendeZeltMinispiel()`) statt über `zeltPlatzieren` zu gehen, das dabei komplett unangetastet bleibt |
 | `DPS-0.8.2.1` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 1 (Datenmodell, noch unverdrahtet): neue Typen `ZeltMinispielRunde`/`ZeltMinispielLauf` in `types.ts`; neue Datei `domain/zeltMinispiel.ts` mit dem alleinigen Ein-/Ausschalter `MINISPIEL_AKTIV`, Kalibrierungskonstanten, `teilnehmerVon()` (Gruppen-Besatzung flach als Spielerliste), `sollMinispielStarten()`, `rundenplanErzeugen()` (Round-Robin), `naechsteZielZeit()` (Verkürzungs-Deckel je Treffer durchgesetzt); nichts ruft es noch auf |
 | `DPS-0.8.2.0` | Gruppenführer-Ansicht, Teil 1 (Grundgerüst): neue exakte Rollenprüfung `istGruppenfuehrend()`, neue Seite `GruppenfuehrerSeite.tsx` zeigt "Meine Gruppe" (zugewiesene Fahrzeuge mit Typ/Abschnitt/Besatzung, Klick öffnet Abschnitt-Detailsicht), neuer Übersicht-Zweig in `EinsatzSeite.tsx`; deutlich schmaler als die Zugführer-Ansicht (nur die eigene Gruppe, nicht die ganze Einsatzstelle) |
 | `DPS-0.8.1.17` | Wegstrecken: 60m-Mindestabstand aus `KartenOrtePanel.tsx` und der Distanz-Tooltip-Anzeige in `Lagekarte.tsx` entfernt - Überbleibsel der automatischen Verknüpfung, versteckte seit `DPS-0.8.1.13` (Route nur noch durch bewusste Zugführer-Entscheidung) kurze, aber absichtlich angelegte Wegstrecken komplett aus Liste und Karte |

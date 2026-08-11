@@ -1198,6 +1198,33 @@ Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
   (Reducer/Sync, Verzweigungsstellen, UI, Verifikation) folgen unter
   `DPS-0.8.2.2` ff.
 
+- ✅ **Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 2: Reducer + Sync
+  (`DPS-0.8.2.2`)** - verdrahtet das in Baustein 1 angelegte Datenmodell in
+  den Reducer, noch ohne UI oder Aufrufstellen (die folgen in den nächsten
+  Bausteinen) - `state.zeltMinispiele: ZeltMinispielLauf[]` mit vollem
+  3-Touchpoint-Schnappschuss-Spiegel (`Schnappschuss`, `schnappschussAus`,
+  `schnappschussAnwenden`, `SimulationProvider.tsx`). Zwei neue Aktionen:
+  `zeltMinispielStarten` (prüft dieselbe `platzierungGueltig`-Grenze wie
+  `zeltPlatzieren`, bindet die ganze Crew via `gebundenBis`/`gebundenGrund`
+  wie beim Narkose-Team, ersetzt statt addiert je Gruppenführer) und
+  `zeltMinispielRundeGetroffen` (validiert Runde/Person/Zeitfenster, zieht
+  `zielZeitSek` und `gebundenBis` gemeinsam nach - falscher/zu später Tipp
+  bleibt ein stiller No-Op). **`case 'tick'` löst laufende Minispiele
+  eigenständig auf** statt über `zeltPlatzieren` zu gehen: eine neue
+  `vorgerueckteMinispielRunde()` rückt den Rundenzeiger takt-getrieben auf
+  den durch die feste Taktung fälligen Stand vor (verpasste Runden kosten
+  nichts, rücken aber weiter), eine neue `vollendeZeltMinispiel()` trägt bei
+  Erreichen von `zielZeitSek` die Fläche ein, räumt einen erfüllten
+  `FlaechenBefehl`, löst `gebunden` und protokolliert - dieselbe Wirkung wie
+  `zeltPlatzieren`, aber ohne erneut durch `dispatchMitZeitkosten` zu laufen.
+  `zeltPlatzieren`/`zeitkosten.ts` bleiben dabei komplett unangetastet
+  (eigener Regressionstest dafür). 13 neue Tests in `sitzungFluss.test.ts`
+  (Start/Treffer/No-Ops/50%-Deckel/Fertigstellung/Befehl-Aufräumen/
+  Schnappschuss-Roundtrip/Regression), `tsc`/Lint/volle Testsuite grün
+  (Baseline: die 2 bekannten `turnAnbieter.test.ts`-Umgebungsausfälle).
+  Weiterhin nichts, was `MINISPIEL_AKTIV` je auf `false` prüfen müsste, ruft
+  die neuen Aktionen auf - noch komplett folgenlos für die laufende App.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

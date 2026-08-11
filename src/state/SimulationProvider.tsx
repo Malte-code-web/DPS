@@ -75,7 +75,16 @@ function istLokaleAktion(action: SimulationAction): boolean {
  * berechnen dürfte.
  */
 function istOptimistischeAktion(action: SimulationAction): boolean {
-  return action.typ === 'spielerQualifikationSetzen' || action.typ === 'spielerAbschnittGesetzt';
+  return (
+    action.typ === 'spielerQualifikationSetzen' ||
+    action.typ === 'spielerAbschnittGesetzt' ||
+    // Sofortiges Feedback für den Rundenplan (→ `ui.zeltminispielbenachrichtigung`)
+    // bzw. einen Treffer, statt auf den nächsten Host-Schnappschuss zu warten
+    // - ein abweichender Rateversuch korrigiert sich mit dem nächsten
+    // Schnappschuss von selbst, wie bei den beiden Aktionen oben.
+    action.typ === 'zeltMinispielStarten' ||
+    action.typ === 'zeltMinispielRundeGetroffen'
+  );
 }
 
 /**
@@ -290,6 +299,7 @@ export function SimulationProvider({
     flaechenBefehle,
     abschnittFuehrenBefehle,
     meldebuch,
+    zeltMinispiele,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -319,6 +329,7 @@ export function SimulationProvider({
       flaechenBefehle,
       abschnittFuehrenBefehle,
       meldebuch,
+      zeltMinispiele,
     }),
     [
       phase,
@@ -343,6 +354,7 @@ export function SimulationProvider({
       flaechenBefehle,
       abschnittFuehrenBefehle,
       meldebuch,
+      zeltMinispiele,
     ],
   );
 

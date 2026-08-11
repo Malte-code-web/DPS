@@ -690,11 +690,11 @@ _251 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `abschnitte.dauer` | [`src/domain/abschnitte.ts:210`](src/domain/abschnitte.ts#L210) | Zeitkosten einer Verlegung |
-| `abschnitte.fahrzeugziele` | [`src/domain/abschnitte.ts:144`](src/domain/abschnitte.ts#L144) | Zusätzliche, nur für Fahrzeuge gültige Kanten |
+| `abschnitte.dauer` | [`src/domain/abschnitte.ts:237`](src/domain/abschnitte.ts#L237) | Zeitkosten einer Verlegung |
+| `abschnitte.fahrzeugziele` | [`src/domain/abschnitte.ts:149`](src/domain/abschnitte.ts#L149) | Fahrzeuge fahren frei zwischen allen Standorten |
 | `abschnitte.liste` | [`src/domain/abschnitte.ts:23`](src/domain/abschnitte.ts#L23) | Namen und Aufgaben der Einsatzabschnitte |
-| `abschnitte.wege` | [`src/domain/abschnitte.ts:114`](src/domain/abschnitte.ts#L114) | Erlaubte Verlegungen - hier ändert man den Ablauf |
-| `abschnitte.zeltzuordnung` | [`src/domain/abschnitte.ts:170`](src/domain/abschnitte.ts#L170) | Welche Kategorie in welches Zelt gehört |
+| `abschnitte.wege` | [`src/domain/abschnitte.ts:119`](src/domain/abschnitte.ts#L119) | Erlaubte Verlegungen - hier ändert man den Ablauf |
+| `abschnitte.zeltzuordnung` | [`src/domain/abschnitte.ts:197`](src/domain/abschnitte.ts#L197) | Welche Kategorie in welches Zelt gehört |
 
 #### auswertung
 
@@ -1135,6 +1135,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.7` | Fahrzeuge fahren frei zwischen allen Standorten: `FAHRZEUG_ZUSATZ_ZIELE` (additive Kanten auf dem Patienten-Graphen `ZIELE`) durch die Standortliste `FAHRZEUG_STANDORTE` ersetzt - jedes Fahrzeug erreicht jeden Standort außer dem eigenen, statt nur den Rettungsmittelhalteplatz; `verdeckt` bleibt ausgenommen (kein Ort), `transport` bleibt ohne Rückweg; `ZIELE`/`istVerlegungMoeglich` für Patienten unverändert; `bereitstellungsraum` bekommt einen `AbschnittInfo`-Eintrag |
 | `DPS-0.8.2.6` | Gruppen bestehen aus Personen und ziehen auf Befehl wirklich um: neues `Spieler.gruppenfuehrerId` (Gruppe wird im Wartebereich vom Zugführer zusammengestellt, jede Person in höchstens einer Gruppe) + `spielerGruppeZuweisen` + `gruppenMitglieder()`; neues `Spieler.einsatzabschnitt` (befohlene Position, getrennt von der reinen Blickrichtung `aktuellerAbschnitt`), gesetzt von `abschnittFuehrenBefehlAusfuehren` für Gruppenführer + Mitglieder, Provider-Effekt zieht die eigene Ansicht einmalig nach - vorher bewegte der Befehl ausschließlich Fahrzeuge, Personen kamen nie an; `Abschnittsleiste` zeigt nur eröffnete Abschnitte (Schadensstelle zu Beginn, Rest nach Bau); `teilnehmerVon()` des Zeltminispiels liest die Personen-Gruppe statt der Fahrzeugbesatzung; Fahrzeuge bleiben optional einer Gruppe zuordenbar |
 | `DPS-0.8.2.5` | Zeltaufbau-Minispiel: `zeltMinispielStarten` räumt den erfüllten `FlaechenBefehl` jetzt sofort beim Start statt erst bei Fertigstellung - sonst blieb `ZeltBefehlBenachrichtigung`s Toast/Knopf aktiv und ein erneuter Klick warf den laufenden Bau über die "ersetzt statt addiert"-Regel immer wieder zurück, sodass der Abschnitt nie fertig wurde |
 | `DPS-0.8.2.4` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 4 (UI, ungeprüft - siehe ROADMAP): neue `ZeltMinispielBenachrichtigung.tsx` (+ Einbindung in `EinsatzSeite.tsx`) verzweigt je Rolle auf `ZeltMinispielGruppenfuehrerAnsicht.tsx` (voller Rundenplan + Countdown, nur lesend) oder `ZeltMinispielTeilnehmerAnsicht.tsx` (still bis zur eigenen Runde, dann "Anpacken!"); CSS-Erweiterung `.zeltminispiel-*` auf der `.delegation-toast`-Familie |

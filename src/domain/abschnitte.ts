@@ -91,8 +91,7 @@ const NACH_ID = new Map(ABSCHNITTE.map((abschnitt) => [abschnitt.id, abschnitt])
 /**
  * Namen für Abschnitte außerhalb `ABSCHNITTE` (kein Patienten-Ziel), die
  * trotzdem einen Namen brauchen, sobald sie als Fahrzeugziel auftauchen (→
- * `abschnitte.fahrzeugziele`). `bereitstellungsraum` braucht das nicht -
- * keine Kante referenziert ihn als Ziel.
+ * `abschnitte.fahrzeugziele`).
  */
 const ZUSATZ_ABSCHNITTE: Partial<Record<Einsatzabschnitt, AbschnittInfo>> = {
   rettungsmittelhalteplatz: {
@@ -100,6 +99,12 @@ const ZUSATZ_ABSCHNITTE: Partial<Record<Einsatzabschnitt, AbschnittInfo>> = {
     name: 'Rettungsmittelhalteplatz',
     kurz: 'RMHP',
     aufgabe: 'Warteplatz einsatzbereiter Transportfahrzeuge, Abruf zur Ausgangssichtung',
+  },
+  bereitstellungsraum: {
+    id: 'bereitstellungsraum',
+    name: 'Bereitstellungsraum',
+    kurz: 'Bereitstellung',
+    aufgabe: 'Sammelraum eingetroffener und nachgeforderter Einsatzmittel',
   },
 };
 
@@ -141,28 +146,50 @@ export function istVerlegungMoeglich(von: Einsatzabschnitt, nach: Einsatzabschni
 }
 
 /**
- * @anker abschnitte.fahrzeugziele Zusätzliche, nur für Fahrzeuge gültige Kanten
+ * @anker abschnitte.fahrzeugziele Fahrzeuge fahren frei zwischen allen Standorten
  *
- * Additiv zu `ZIELE`, nie ersetzend - getrennt gehalten, weil `ZIELE` sonst
- * denselben Graphen auch für `patientVerlegen`/`ui.verlegung` öffnen würde:
- * eine Kante zum oder vom Rettungsmittelhalteplatz dürfen Patienten nie
- * sehen, das ist reine Fahrzeug-Infrastruktur (→ `modell.transport`).
+ * Bewusst *kein* Graph wie `ZIELE`: der Einbahn-Trichter dort bildet den Weg
+ * eines **Patienten** durch die Sichtung ab, für ein Fahrzeug hat er keine
+ * Bedeutung. Ein Fahrzeug ist ein rollendes Materiallager - es muss überall
+ * hinkönnen, wo Material gebraucht wird (→ Nutzerwunsch), nicht nur den
+ * Patientenweg entlang. Vorher erbten Fahrzeuge `ZIELE` plus zwei
+ * Sonderkanten, wodurch von den meisten Abschnitten aus nur noch der
+ * Rettungsmittelhalteplatz erreichbar war.
+ *
+ * Zwei Ausnahmen bleiben:
+ * - `verdeckt` ist kein Ort, sondern der Warteplatz noch nicht freigegebener
+ *   Patienten (→ `modell.freigabemodus`).
+ * - `transport` ist der Endzustand "hat den Behandlungsplatz mit einem
+ *   Patienten verlassen" (→ `modell.transport`, gesetzt von
+ *   `patientAbtransportieren`, nicht von Hand angefahren) - von dort geht es
+ *   nicht zurück, solange der Patient an Bord ist.
+ *
+ * Welche Standorte tatsächlich zur Wahl stehen, entscheidet zusätzlich der
+ * Baustand (→ `domain.istAbschnittEroeffnet`, gefiltert in
+ * `ui.fahrzeugverlegung`) - die Einsatzstelle wächst mit dem, was gebaut ist.
  */
-const FAHRZEUG_ZUSATZ_ZIELE: Partial<Record<Einsatzabschnitt, Einsatzabschnitt[]>> = {
-  // Standard-Spawnpunkt aller Fahrzeuge (→ `domain.fahrzeuge`, `fahrzeugAusVorlage`).
-  schadensstelle: ['rettungsmittelhalteplatz'],
-  // Nachgeforderte Transportfahrzeuge (→ `modell.ereignis`) können von dort weiter.
-  bereitstellungsraum: ['rettungsmittelhalteplatz'],
-  // Abruf nach vorn, sobald ein Patient an der Ausgangssichtung wartet.
-  rettungsmittelhalteplatz: ['ausgangssichtung'],
-};
+const FAHRZEUG_STANDORTE: Einsatzabschnitt[] = [
+  'schadensstelle',
+  'ablage',
+  'bereitstellungsraum',
+  'rettungsmittelhalteplatz',
+  'eingangssichtung',
+  'zelt_rot',
+  'zelt_gelb',
+  'zelt_gruen',
+  'ausgangssichtung',
+  // Abfahrt von der Einsatzstelle - erreichbar, aber ohne Rückweg (s. o.).
+  'transport',
+];
 
 export function fahrzeugZiele(abschnitt: Einsatzabschnitt): AbschnittInfo[] {
-  return [...ZIELE[abschnitt], ...(FAHRZEUG_ZUSATZ_ZIELE[abschnitt] ?? [])].map(abschnittInfo);
+  if (abschnitt === 'transport') return [];
+  return FAHRZEUG_STANDORTE.filter((ziel) => ziel !== abschnitt).map(abschnittInfo);
 }
 
 export function istFahrzeugVerlegungMoeglich(von: Einsatzabschnitt, nach: Einsatzabschnitt): boolean {
-  return ZIELE[von].includes(nach) || (FAHRZEUG_ZUSATZ_ZIELE[von]?.includes(nach) ?? false);
+  if (von === 'transport' || von === nach) return false;
+  return FAHRZEUG_STANDORTE.includes(nach);
 }
 
 /**

@@ -1370,6 +1370,31 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   > schaltet die Ansicht aller Gruppenmitglieder auf den Zielabschnitt,
   > Abschnittsleiste wächst mit jedem gebauten Bereich mit.
 
+- ✅ **Fahrzeuge fahren frei zwischen allen Standorten (`DPS-0.8.2.7`)** -
+  Nutzerfeedback: "Fahrzeuge können nur in den Rettungsmittelhalteplatz
+  gesendet werden, die sollten aber aufgrund der Materialien in jeden Bereich
+  gebracht werden können". Ursache: Fahrzeuge erbten den **Patienten**-Graphen
+  `ZIELE` (Einbahn-Trichter Schadensstelle → Eingangssichtung → Zelte →
+  Ausgangssichtung → Abtransport) plus zwei Sonderkanten zum
+  Rettungsmittelhalteplatz. Von den meisten Abschnitten aus blieb dadurch nur
+  der RMHP als Ziel übrig - fachlich falsch, denn der Trichter bildet den Weg
+  eines *Patienten* durch die Sichtung ab und hat für ein Fahrzeug keine
+  Bedeutung. Ein Fahrzeug ist ein rollendes Materiallager und muss überall
+  hinkönnen, wo Material gebraucht wird. `FAHRZEUG_ZUSATZ_ZIELE` (additiver
+  Kantensatz) ist deshalb durch eine schlichte Standortliste
+  `FAHRZEUG_STANDORTE` ersetzt: jedes Fahrzeug erreicht jeden Standort außer
+  dem eigenen. Zwei Ausnahmen bleiben - `verdeckt` ist kein Ort, sondern der
+  Warteplatz noch nicht freigegebener Patienten, und `transport`
+  ("hat die Einsatzstelle verlassen") bleibt ohne Rückweg. Der
+  Patienten-Graph `ZIELE` ist unverändert, `istVerlegungMoeglich` verhält
+  sich exakt wie bisher (eigener Regressionstest). `bereitstellungsraum`
+  bekommt einen `AbschnittInfo`-Eintrag, weil er jetzt als Ziel auftauchen
+  kann. Welche Standorte tatsächlich zur Wahl stehen, entscheidet weiterhin
+  der Baustand (→ `domain.istAbschnittEroeffnet`) - die Einsatzstelle wächst
+  mit dem, was gebaut ist. 4 neue Tests, ein bestehender Test auf die neue
+  Regel umgestellt; `tsc`/Lint/volle Testsuite grün, Boot-Smoke-Test ohne
+  Konsolenfehler.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

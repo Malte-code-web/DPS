@@ -63,3 +63,42 @@ describe('Rettungsmittelhalteplatz (→ modell.transport, abschnitte.fahrzeugzie
     expect(istVerlegungMoeglich('ausgangssichtung', 'transport')).toBe(true);
   });
 });
+
+describe('Fahrzeuge fahren frei zwischen allen Standorten (→ abschnitte.fahrzeugziele)', () => {
+  it('erlaubt jeden Standort als Ziel, unabhängig vom Patientenweg', () => {
+    // Ein Fahrzeug ist ein rollendes Materiallager - der Einbahn-Trichter aus
+    // `ZIELE` bildet den Weg eines Patienten ab und gilt für Fahrzeuge nicht.
+    expect(istFahrzeugVerlegungMoeglich('schadensstelle', 'zelt_rot')).toBe(true);
+    expect(istFahrzeugVerlegungMoeglich('zelt_gruen', 'schadensstelle')).toBe(true);
+    expect(istFahrzeugVerlegungMoeglich('ausgangssichtung', 'zelt_gelb')).toBe(true);
+    expect(istFahrzeugVerlegungMoeglich('rettungsmittelhalteplatz', 'zelt_rot')).toBe(true);
+    // Für Patienten bleibt derselbe Weg weiterhin gesperrt.
+    expect(istVerlegungMoeglich('schadensstelle', 'zelt_rot')).toBe(false);
+    expect(istVerlegungMoeglich('zelt_gruen', 'schadensstelle')).toBe(false);
+  });
+
+  it('bietet von jedem Standort alle übrigen Standorte an, sich selbst nie', () => {
+    const ziele = fahrzeugZiele('zelt_rot').map((z) => z.id);
+    expect(ziele).toContain('schadensstelle');
+    expect(ziele).toContain('bereitstellungsraum');
+    expect(ziele).toContain('rettungsmittelhalteplatz');
+    expect(ziele).toContain('ausgangssichtung');
+    expect(ziele).not.toContain('zelt_rot');
+    // `verdeckt` ist kein Ort, sondern der Warteplatz vor der Freigabe.
+    expect(ziele).not.toContain('verdeckt');
+    expect(istFahrzeugVerlegungMoeglich('zelt_rot', 'verdeckt')).toBe(false);
+    expect(istFahrzeugVerlegungMoeglich('zelt_rot', 'zelt_rot')).toBe(false);
+  });
+
+  it('lässt aus dem Abtransport keinen Rückweg zu', () => {
+    expect(fahrzeugZiele('transport')).toEqual([]);
+    expect(istFahrzeugVerlegungMoeglich('transport', 'schadensstelle')).toBe(false);
+  });
+
+  it('liefert für jeden Fahrzeugstandort einen Namen, statt zu werfen', () => {
+    for (const ziel of fahrzeugZiele('schadensstelle')) {
+      expect(() => abschnittInfo(ziel.id)).not.toThrow();
+    }
+    expect(abschnittInfo('bereitstellungsraum').name).toBe('Bereitstellungsraum');
+  });
+});

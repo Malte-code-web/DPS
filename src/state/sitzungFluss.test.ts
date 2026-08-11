@@ -243,13 +243,29 @@ describe('Fahrzeug-Verlegung im Einsatz', () => {
       { typ: 'sitzungStarten' },
     );
     const fahrzeugId = vorbereitet.fahrzeuge[0]!.id;
-    // Von der Schadensstelle geht es nur zur Eingangssichtung, nicht direkt ins Zelt.
-    const abgelehnt = simulationReducer(vorbereitet, {
+    // Seit DPS-0.8.2.7 fahren Fahrzeuge frei zwischen allen Standorten
+    // (→ abschnitte.fahrzeugziele) - der Direktweg ins Zelt ist erlaubt,
+    // denn ein Fahrzeug ist ein rollendes Materiallager, kein Patient.
+    const erlaubt = simulationReducer(vorbereitet, {
       typ: 'fahrzeugVerlegen',
       fahrzeugId,
       ziel: 'zelt_rot',
     });
-    expect(abgelehnt.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('schadensstelle');
+    expect(erlaubt.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('zelt_rot');
+
+    // Abgewiesen wird nur, was kein Standort ist: aus dem Abtransport heraus
+    // gibt es keinen Rückweg.
+    const abgefahren = simulationReducer(erlaubt, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'transport',
+    });
+    const zurueck = simulationReducer(abgefahren, {
+      typ: 'fahrzeugVerlegen',
+      fahrzeugId,
+      ziel: 'schadensstelle',
+    });
+    expect(zurueck.fahrzeuge.find((f) => f.id === fahrzeugId)?.abschnitt).toBe('transport');
   });
 });
 

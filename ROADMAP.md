@@ -1287,6 +1287,35 @@ Vermerk): `tsc`/Lint/volle Testsuite laufen wiederholt grün, ein echter
 Mehrspieler-Praxistest mit realer Kalibrierungs-Gegenprobe steht noch aus.
 Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
 
+- ✅ **Zeltaufbau-Minispiel: Befehl blieb nach Start offen und setzte den Lauf
+  immer wieder zurück (`DPS-0.8.2.5`)** - Nutzerfeedback nach einem Test mit
+  echtem Zug- und Gruppenführer: "der Zugführer kann keine Abschnitte
+  definieren [...] ein gebautes Segment auf der Karte soll zur gleichen Zeit
+  der passende Abschnitt werden". Der zweite Teil war schon immer so gebaut
+  (`istAbschnittEroeffnet` prüft direkt `state.flaechen`, →
+  `domain.istAbschnittEroeffnet`) - der Fehler lag davor: `case
+  'zeltMinispielStarten'` (→ `DPS-0.8.2.2`) räumte den erfüllten
+  `FlaechenBefehl` bisher erst bei Fertigstellung auf, nicht schon beim
+  Start. Da das Minispiel (anders als `zeltPlatzieren`) keinen
+  `zeitkostentimer` setzt, blieb `ZeltBefehlBenachrichtigung`s Toast
+  weiterhin sichtbar UND der Knopf aktiv bedienbar - ein erneuter Klick auf
+  "Befehl ausführen" (naheliegend, wenn sich sichtbar nichts tut) hat den
+  gerade gestarteten Lauf über die "ersetzt statt addiert"-Regel immer
+  wieder auf `aktuelleRundeIndex: 0` zurückgeworfen, sodass der Bau nie
+  fertig und der Abschnitt nie eröffnet wurde. Behoben: `flaechenBefehle`
+  wird jetzt schon im `zeltMinispielStarten`-Case geräumt - der Befehl gilt
+  mit dem Start als angenommen, der Toast verschwindet sofort zugunsten der
+  neuen Minispiel-Ansicht (→ `ui.zeltminispielbenachrichtigung`). Neuer
+  Regressionstest in `sitzungFluss.test.ts`, `tsc`/Lint/volle Testsuite
+  grün.
+  >
+  > ⚠️ Weiterhin ungeprüft mit echten Clients (siehe `DPS-0.8.2.4`) - falls
+  > der Zugführer-Test ohne zusätzliche Mannschaft in der Gruppe lief, hat
+  > `sollMinispielStarten` gar nicht gegriffen (`teilnehmerVon` liefert dann
+  > leer) und der klassische, unveränderte `zeltPlatzieren`-Pfad sollte
+  > bereits funktioniert haben - dann bitte mit genauerer Fehlerbeschreibung
+  > zurückmelden.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

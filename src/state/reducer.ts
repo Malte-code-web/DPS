@@ -1712,6 +1712,14 @@ export function simulationReducer(
             ),
             lauf,
           ],
+          // Der Befehl gilt mit dem Start als angenommen - sonst bliebe
+          // `ZeltBefehlBenachrichtigung`s Toast stehen (kein zugehöriger
+          // `zeitkostentimer`, der ihn wie bei `zeltPlatzieren` sperrt) und
+          // ein erneuter Klick würde den gerade gestarteten Lauf wegen der
+          // "ersetzt statt addiert"-Regel oben immer wieder zurücksetzen.
+          flaechenBefehle: action.befehlId
+            ? state.flaechenBefehle.filter((befehl) => befehl.id !== action.befehlId)
+            : state.flaechenBefehle,
           sitzung: {
             ...state.sitzung,
             spieler: state.sitzung.spieler.map((spieler) =>

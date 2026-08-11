@@ -3008,7 +3008,12 @@ describe('Zeltaufbau-Minispiel „Kommando-Aufbau“ (→ modell.zeltminispiel, 
     expect(fertig.regieProtokoll.at(-1)?.text).toContain('Kommando-Aufbau');
   });
 
-  it('räumt bei Fertigstellung einen erfüllten FlaechenBefehl auf (aus dem Zugführer-Befehl gestartet)', () => {
+  it('räumt den erfüllten FlaechenBefehl sofort beim Start auf, nicht erst bei Fertigstellung (Regression)', () => {
+    // Sonst bliebe ZeltBefehlBenachrichtigung's Toast stehen (kein
+    // zugehöriger zeitkostentimer, der ihn wie bei zeltPlatzieren sperrt) -
+    // ein erneuter Klick hätte den gerade gestarteten Lauf über die
+    // "ersetzt statt addiert"-Regel immer wieder zurückgesetzt, sodass der
+    // Abschnitt nie fertig und damit nie eröffnet wurde.
     const mitBefehl = simulationReducer(imEinsatzMitGruppe(), {
       typ: 'zeltBefehlErteilen',
       id: 'befehl-1',
@@ -3031,8 +3036,14 @@ describe('Zeltaufbau-Minispiel „Kommando-Aufbau“ (→ modell.zeltminispiel, 
       teilnehmerIds: ['mitspieler-1'],
       rundenplan: RUNDENPLAN_SG20,
     });
+    expect(gestartetAusBefehl.flaechenBefehle).toEqual([]);
+    expect(gestartetAusBefehl.zeltMinispiele).toHaveLength(1);
+
     const fertig = simulationReducer(gestartetAusBefehl, { typ: 'tick', dtSek: 300 });
     expect(fertig.flaechenBefehle).toEqual([]);
+    expect(fertig.flaechen).toEqual([
+      { id: 'lauf-1', typ: 'SG20', abschnitt: 'zelt_rot', xM: 0, yM: 0, platziertVonSpielerId: 'gruppe-1' },
+    ]);
   });
 
   it('lässt zeltPlatzieren/zeitkosten für einen Bau ohne Minispiel-Trigger unverändert (Regression)', () => {

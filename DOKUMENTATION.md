@@ -684,7 +684,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_243 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -748,6 +748,7 @@ _243 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `domain.staerkemeldung` | [`src/domain/fuehrung.ts:151`](src/domain/fuehrung.ts#L151) | Reale Stärkemeldung einer Fahrzeugbesatzung |
 | `domain.taktischezeichen` | [`src/domain/taktischeZeichen.ts:18`](src/domain/taktischeZeichen.ts#L18) | DV-102-Symbole je Einsatzabschnitt |
 | `domain.verfuegbareFlaecheQm` | [`src/domain/flaechen.ts:201`](src/domain/flaechen.ts#L201) | Geteiltes Flächenbudget: Zelte/Flächen und Fahrzeuge teilen sich das Baufeld |
+| `domain.zeltminispiel` | [`src/domain/zeltMinispiel.ts:7`](src/domain/zeltMinispiel.ts#L7) | Kooperatives "Kommando-Aufbau"-Minispiel beim Zeltaufbau |
 | `domain.zugfuehrend` | [`src/domain/fuehrung.ts:58`](src/domain/fuehrung.ts#L58) | Der Zugführer leitet den Abschnitt Medizinische Rettung |
 | `domain.zugfuehrungaktiv` | [`src/domain/fuehrung.ts:109`](src/domain/fuehrung.ts#L109) | Ob die Eröffnen-Sperre für Abschnitte überhaupt greift |
 
@@ -798,14 +799,14 @@ _243 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `modell.abschnitte` | [`src/domain/types.ts:396`](src/domain/types.ts#L396) | Die Stationen, die ein Patient durchläuft |
-| `modell.abschnittfuehrenbefehl` | [`src/domain/types.ts:982`](src/domain/types.ts#L982) | Auftrag des Zugführers an einen Gruppenführer, einen Abschnitt zu führen |
+| `modell.abschnittfuehrenbefehl` | [`src/domain/types.ts:1019`](src/domain/types.ts#L1019) | Auftrag des Zugführers an einen Gruppenführer, einen Abschnitt zu führen |
 | `modell.benoetigtTeam` | [`src/domain/types.ts:307`](src/domain/types.ts#L307) | Nur mit vollem Team durchführbar - löst eine Kollegenanfrage aus |
 | `modell.delegation` | [`src/domain/types.ts:770`](src/domain/types.ts#L770) | Gezielte Freigabe einer Maßnahme für eine bestimmte Person |
 | `modell.delegationsanfrage` | [`src/domain/types.ts:782`](src/domain/types.ts#L782) | Angefragte, noch nicht beantwortete Delegation |
 | `modell.diagnostik` | [`src/domain/types.ts:736`](src/domain/types.ts#L736) | Einzelne Untersuchungen statt einer Rundumschau |
 | `modell.eingeklemmt` | [`src/domain/types.ts:693`](src/domain/types.ts#L693) | Rettung eingeklemmter Personen - zweiteilige Freigabe |
 | `modell.eingeklemmtstatus` | [`src/domain/types.ts:707`](src/domain/types.ts#L707) | Laufzeitzustand der Rettung einer eingeklemmten Person |
-| `modell.ereignis` | [`src/domain/types.ts:1000`](src/domain/types.ts#L1000) | Von der Übungsleitung live ausgelöste Lageänderung |
+| `modell.ereignis` | [`src/domain/types.ts:1037`](src/domain/types.ts#L1037) | Von der Übungsleitung live ausgelöste Lageänderung |
 | `modell.fahrzeug` | [`src/domain/types.ts:427`](src/domain/types.ts#L427) | Fahrzeuge durchlaufen dieselben Stationen wie Patienten |
 | `modell.finalsichtung` | [`src/domain/types.ts:850`](src/domain/types.ts#L850) | Vorläufig oder endgültig - die Anhängekarte zeigt es |
 | `modell.flaechenbefehl` | [`src/domain/types.ts:962`](src/domain/types.ts#L962) | Auftrag des Zugführers an einen Gruppenführer, eine Fläche zu bauen |
@@ -830,6 +831,7 @@ _243 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `modell.spielerprotokoll` | [`src/domain/types.ts:610`](src/domain/types.ts#L610) | Eine Zeile in der privaten Statusansicht eines Spielers |
 | `modell.transport` | [`src/domain/types.ts:878`](src/domain/types.ts#L878) | Fahrzeug-Zuweisung ist zugleich die Transport-Freigabe |
 | `modell.vitalwerte` | [`src/domain/types.ts:58`](src/domain/types.ts#L58) | Welche sechs Messwerte die Simulation führt |
+| `modell.zeltminispiel` | [`src/domain/types.ts:987`](src/domain/types.ts#L987) | Kooperatives Minispiel während eines echten Zeltaufbaus |
 
 #### modi
 
@@ -1127,6 +1129,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.1` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 1 (Datenmodell, noch unverdrahtet): neue Typen `ZeltMinispielRunde`/`ZeltMinispielLauf` in `types.ts`; neue Datei `domain/zeltMinispiel.ts` mit dem alleinigen Ein-/Ausschalter `MINISPIEL_AKTIV`, Kalibrierungskonstanten, `teilnehmerVon()` (Gruppen-Besatzung flach als Spielerliste), `sollMinispielStarten()`, `rundenplanErzeugen()` (Round-Robin), `naechsteZielZeit()` (Verkürzungs-Deckel je Treffer durchgesetzt); nichts ruft es noch auf |
 | `DPS-0.8.2.0` | Gruppenführer-Ansicht, Teil 1 (Grundgerüst): neue exakte Rollenprüfung `istGruppenfuehrend()`, neue Seite `GruppenfuehrerSeite.tsx` zeigt "Meine Gruppe" (zugewiesene Fahrzeuge mit Typ/Abschnitt/Besatzung, Klick öffnet Abschnitt-Detailsicht), neuer Übersicht-Zweig in `EinsatzSeite.tsx`; deutlich schmaler als die Zugführer-Ansicht (nur die eigene Gruppe, nicht die ganze Einsatzstelle) |
 | `DPS-0.8.1.17` | Wegstrecken: 60m-Mindestabstand aus `KartenOrtePanel.tsx` und der Distanz-Tooltip-Anzeige in `Lagekarte.tsx` entfernt - Überbleibsel der automatischen Verknüpfung, versteckte seit `DPS-0.8.1.13` (Route nur noch durch bewusste Zugführer-Entscheidung) kurze, aber absichtlich angelegte Wegstrecken komplett aus Liste und Karte |
 | `DPS-0.8.1.16` | Baumenü: Scrollen komplett von Leaflet entkoppelt - `maxHeight` nicht mehr an das Leaflet-`Popup` übergeben (machte `_contentNode` zum scrollbaren, bei jedem `update()` neu vermessenen Element), stattdessen eigene `<div className="lagekarte-bau-menue-liste">` mit `max-height`/`overflow-y: auto` per CSS, unabhängig von Leaflets internem Layout; isoliert mit erzwungenem `instance.update()` alle 500ms als Worst-Case bestätigt |

@@ -1170,6 +1170,34 @@ Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
   die reine Führungsübung (taktisch-strategisch, Raumordnung) als eigenes,
   späteres Bauvorhaben mit eigener Versionsleiter.
 
+- ✅ **Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 1: Datenmodell
+  (`DPS-0.8.2.1`)** - Nutzerwunsch: gutes Teamspiel beim echten Zeltaufbau
+  (SG20-50) soll die Bauzeit verkürzen, per kooperativem Minispiel statt
+  automatisierter UI - eine Mischung aus getakteten "Kommando-Fenster"-Runden
+  (fester Zeitplan ab Baustart) und "Blinder Zusammenarbeit" (nur der
+  Gruppenführer kennt den vollen Rundenplan im Voraus, jedes Mitglied nur die
+  eigene Aufgabe - Weitergabe braucht echten Sprechfunk). Zwei zusätzliche
+  Vorgaben: das Minispiel muss schnell ein-/ausbaubar bleiben, teilnehmende
+  Spieler gelten während des Baus als `gebunden`
+  (→ `modell.gebunden`). Dieser erste Baustein legt nur das reine, noch
+  nirgends verdrahtete Datenmodell an - null Risiko für die laufende App.
+  Neue Typen `ZeltMinispielRunde`/`ZeltMinispielLauf` (→
+  `modell.zeltminispiel`); neue Datei `domain/zeltMinispiel.ts` mit dem
+  einzigen Ein-/Ausschalter `MINISPIEL_AKTIV` (→ `domain.zeltminispiel`,
+  einzige Stelle für einen kompletten Rückbau), den Kalibrierungskonstanten
+  (`RUNDEN_INTERVALL_SEK`, `RUNDEN_FENSTER_SEK`, `BONUS_SEK`,
+  `MAX_BONUS_ANTEIL`), `teilnehmerVon()` (flacht `gruppeVon()` über die
+  Fahrzeug-Besatzung zu einer Spielerliste ab), `sollMinispielStarten()`,
+  `rundenplanErzeugen()` (deterministisches Round-Robin) und
+  `naechsteZielZeit()` (Verkürzungs-Deckel, bei jedem Treffer als harte
+  Untergrenze durchgesetzt). Kalibrierung: bei perfektem Spiel ~33% kürzere
+  Bauzeit (SG20 300s→200s, SG50 900s→600s), der 50%-Deckel bleibt dabei ein
+  defensiver Backstop, nicht die praktisch bindende Grenze. 17 neue Tests in
+  `zeltMinispiel.test.ts`, `tsc`/Lint/volle Testsuite grün (Baseline: die 2
+  bekannten `turnAnbieter.test.ts`-Umgebungsausfälle). Weitere Bausteine
+  (Reducer/Sync, Verzweigungsstellen, UI, Verifikation) folgen unter
+  `DPS-0.8.2.2` ff.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

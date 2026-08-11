@@ -978,6 +978,43 @@ export interface FlaechenBefehl {
   gruppenfuehrerId: string;
 }
 
+/** Eine Runde des Zeltaufbau-Minispiels: welche Person dran ist (→ `domain.zeltminispiel`). */
+export interface ZeltMinispielRunde {
+  spielerId: string;
+}
+
+/**
+ * @anker modell.zeltminispiel Kooperatives Minispiel während eines echten Zeltaufbaus
+ *
+ * Zweite, vom regulären Bau-Zeitkosten-Mechanismus (→ `domain.flaechen`,
+ * `state.zeitkostentimer`) unabhängige Zeit-Engine: statt eines lokalen
+ * Countdowns beim Bauenden läuft der Fortschritt über die synchronisierte
+ * `zielZeitSek`-Marke, aufgelöst im gemeinsamen Simulationstakt
+ * (→ `domain.zeltminispiel`, `case 'tick'`). Nur für echte Zelte
+ * (`ZeltTypId`), nie für aufbauzeitlose Flächen - dafür gibt es kein
+ * Minispiel.
+ */
+export interface ZeltMinispielLauf {
+  id: string;
+  gruppenfuehrerId: string;
+  abschnitt: FlaechenAbschnitt;
+  flaechenTyp: ZeltTypId;
+  xM: number;
+  yM: number;
+  /** Falls aus einem `FlaechenBefehl` entstanden - der zu räumende Eintrag bei Fertigstellung. */
+  befehlId?: string;
+  /** Die Gruppe ohne den Gruppenführer selbst, dedupliziert. */
+  teilnehmerIds: string[];
+  rundenplan: ZeltMinispielRunde[];
+  aktuelleRundeIndex: number;
+  rundeBeginnZeitSek: number;
+  startZeitSek: number;
+  /** Ungekürzte Referenzdauer (`aufbauSek` bei 0 Treffern) - Grundlage für den Verkürzungs-Deckel. */
+  aufbauSekVoll: number;
+  /** Aktuelles (ggf. durch Treffer verkürztes) Fertigstellungsziel als `zeitSek`-Marke. */
+  zielZeitSek: number;
+}
+
 /**
  * @anker modell.abschnittfuehrenbefehl Auftrag des Zugführers an einen Gruppenführer, einen Abschnitt zu führen
  *

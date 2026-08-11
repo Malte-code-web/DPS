@@ -449,7 +449,7 @@ export type SimulationAction =
  * lokal. So arbeiten mehrere gleichzeitig an derselben Lage, ohne sich die
  * Ansicht gegenseitig umzuschalten.
  */
-export interface Schnappschuss {
+export interface SchnappschussFelder {
   phase: Phase;
   szenario: Szenario | null;
   zeitSek: number;
@@ -474,9 +474,17 @@ export interface Schnappschuss {
   routen: Route[];
   /** IDs bereits ausgelöster Lageänderungen (→ `modell.ereignis`). */
   ausgeloesteEreignisse: string[];
-  /** Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung (→ `state.regieprotokoll`). */
+  /**
+   * Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung
+   * (→ `state.regieprotokoll`). Während des Einsatzes bewusst leer
+   * (→ `state.schnappschuss.debriefingdaten`).
+   */
   regieProtokoll: Verlaufseintrag[];
-  /** Private Statusansicht je Spieler für "Mein Einsatz" (→ `state.spielerprotokoll`). */
+  /**
+   * Private Statusansicht je Spieler für "Mein Einsatz"
+   * (→ `state.spielerprotokoll`). Während des Einsatzes bewusst leer
+   * (→ `state.schnappschuss.debriefingdaten`).
+   */
   spielerProtokoll: SpielerProtokollEintrag[];
   /** Platzierte Zelte/Flächen auf der Einsatzstelle (→ `modell.platzierteflaeche`). */
   flaechen: PlatzierteFlaeche[];
@@ -490,23 +498,71 @@ export interface Schnappschuss {
   zeltMinispiele: ZeltMinispielLauf[];
   /** Offene Rückfragen zur Personalzuordnung (→ `modell.personalanfrage`). */
   personalanfragen: Personalanfrage[];
+}
+
+/**
+ * @anker state.schnappschuss.nachricht Was tatsächlich über die Leitung geht
+ *
+ * Nicht mehr der volle Zustand bei jeder Änderung, sondern nur die Felder, die
+ * sich seit dem letzten Versand wirklich geändert haben (→ `net.delta`).
+ *
+ * `basis` ist der Sicherheitsgurt: die `folge`, die der Empfänger bereits haben
+ * **muss**, damit `felder` auf seinen Zustand passt. Nur zwei Fälle sind
+ * anwendbar - `basis === 0` (Vollbild, aus jedem Zustand heraus gültig) und
+ * `basis === schnappschussFolge` (lückenlose Fortsetzung). Alles andere wird
+ * verworfen statt "so gut es geht" verschmolzen; so kann sich eine Abweichung
+ * nicht still aufsummieren, sondern führt zu einer Reparatur
+ * (→ `state.puls`).
+ */
+export interface Schnappschuss {
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
-   * (Provider) zählt sie separat je Sitzung; der Vorgabewert genügt für einen
-   * einzelnen, isoliert angewendeten Schnappschuss (z. B. in Tests).
+   * (Provider) zählt sie separat je Sitzung.
    */
   folge: number;
+  /** Vorausgesetzte `folge` beim Empfänger; `0` = Vollbild. */
+  basis: number;
+  /** Bei einem Vollbild vollständig, sonst nur die geänderten Felder. */
+  felder: Partial<SchnappschussFelder>;
+  /**
+   * Die Patientenliste stückweise statt am Stück (→ `net.delta.patienten`).
+   * Ist dieses Feld gesetzt, fehlt `felder.patienten` - der Empfänger baut die
+   * Liste aus `reihenfolge` zusammen und nimmt je Person entweder die
+   * mitgelieferte neue oder die, die er schon hat.
+   */
+  patientenTeil?: { reihenfolge: string[]; geaendert: Patient[] };
 }
 
-export function schnappschussAus(state: SimulationState, folge = 1): Schnappschuss {
+/**
+ * @anker state.schnappschuss.debriefingdaten Auswertungsdaten erst zur Auswertung
+ *
+ * `regieProtokoll` und `spielerProtokoll` werden in der gesamten Oberfläche
+ * ausschließlich in der Debriefing-Ansicht (→ `ui.debriefing`) gelesen -
+ * während des Einsatzes zeigt sie niemand an. Gleichzeitig waren sie der
+ * einzige Posten des Schnappschusses, der **unbegrenzt** wächst: Nach einer
+ * halben Stunde Übung machten sie einen zweistelligen Kilobyte-Betrag aus, der
+ * zweihundertmal pro Minute über die Leitung ging - und ein Broadcast hat bei
+ * Supabase Realtime eine harte Obergrenze (256 kB im Free-Tarif), in die eine
+ * lange Übung sonst irgendwann hineinläuft. Ab da schlüge nicht ein einzelner
+ * Schnappschuss fehl, sondern jeder.
+ *
+ * Deshalb gehen beide erst mit dem Phasenwechsel zur Auswertung raus. Die
+ * **gemeinsame, eingefrorene** Leerliste ist dabei kein Detail: Ein frisches
+ * `[]` wäre bei jedem Aufruf eine neue Referenz und stünde damit in jedem
+ * Delta - so bleibt die Referenz gleich und beide Felder fallen im laufenden
+ * Einsatz vollständig aus der Übertragung heraus.
+ */
+const OHNE_AUSWERTUNGSDATEN: never[] = Object.freeze([]) as never[];
+
+export function schnappschussAus(state: SimulationState): SchnappschussFelder {
+  const auswertung = state.phase === 'debriefing';
   return {
     phase: state.phase,
     szenario: state.szenario,
     zeitSek: state.zeitSek,
     laufend: state.laufend,
     geschwindigkeit: state.geschwindigkeit,
-    folge,
     patienten: state.patienten,
     fahrzeuge: state.fahrzeuge,
     spieler: state.sitzung.spieler,
@@ -518,8 +574,8 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     freigabemodus: state.freigabemodus,
     routen: state.routen,
     ausgeloesteEreignisse: state.ausgeloesteEreignisse,
-    regieProtokoll: state.regieProtokoll,
-    spielerProtokoll: state.spielerProtokoll,
+    regieProtokoll: auswertung ? state.regieProtokoll : OHNE_AUSWERTUNGSDATEN,
+    spielerProtokoll: auswertung ? state.spielerProtokoll : OHNE_AUSWERTUNGSDATEN,
     flaechen: state.flaechen,
     flaechenBefehle: state.flaechenBefehle,
     abschnittFuehrenBefehle: state.abschnittFuehrenBefehle,
@@ -527,6 +583,25 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     zeltMinispiele: state.zeltMinispiele,
     personalanfragen: state.personalanfragen,
   };
+}
+
+/** Ein vollständiger, aus jedem Zustand heraus anwendbarer Schnappschuss. */
+export function vollbildAus(state: SimulationState, folge = 1): Schnappschuss {
+  return { folge, basis: 0, felder: schnappschussAus(state) };
+}
+
+/**
+ * Behält die alte Liste, wenn eine Abbildung darüber inhaltlich nichts
+ * verändert hat (→ `net.delta`).
+ *
+ * `map`/`filter` erzeugen immer eine neue Liste, auch wenn jedes Element
+ * dasselbe geblieben ist. Für den Zustand ist das gleichgültig, für den
+ * Versand nicht: Die neue Referenz gilt als Änderung und das Feld landet im
+ * Delta - bei einem leeren `zeltMinispiele` war das jeden halben Takt eine
+ * Änderung um nichts.
+ */
+function mitStabilerReferenz<T>(alt: T[], neu: T[]): T[] {
+  return alt.length === neu.length && neu.every((wert, index) => wert === alt[index]) ? alt : neu;
 }
 
 /** Wendet eine Aenderung auf genau einen Patienten an. */
@@ -797,18 +872,21 @@ export function simulationReducer(
       let naechsterState: SimulationState = {
         ...state,
         zeitSek: neueZeitSek,
-        patienten: state.patienten.map((patient) => {
-          const simuliert = simuliereZeitraum(patient, state.zeitSek, action.dtSek);
-          if (
-            simuliert.abschnitt === 'verdeckt' &&
-            simuliert.freigabeMinuten !== undefined &&
-            neueZeitSek / 60 >= simuliert.freigabeMinuten
-          ) {
-            return { ...simuliert, abschnitt: zielAbschnitt };
-          }
-          return simuliert;
-        }),
-        zeltMinispiele: laufendeMinispiele,
+        patienten: mitStabilerReferenz(
+          state.patienten,
+          state.patienten.map((patient) => {
+            const simuliert = simuliereZeitraum(patient, state.zeitSek, action.dtSek);
+            if (
+              simuliert.abschnitt === 'verdeckt' &&
+              simuliert.freigabeMinuten !== undefined &&
+              neueZeitSek / 60 >= simuliert.freigabeMinuten
+            ) {
+              return { ...simuliert, abschnitt: zielAbschnitt };
+            }
+            return simuliert;
+          }),
+        ),
+        zeltMinispiele: mitStabilerReferenz(state.zeltMinispiele, laufendeMinispiele),
       };
       for (const lauf of fertigeMinispiele) {
         naechsterState = vollendeZeltMinispiel(naechsterState, lauf);
@@ -2211,11 +2289,75 @@ export function simulationReducer(
       };
 
     case 'schnappschussAnwenden': {
-      const s = action.schnappschuss;
+      const nachricht = action.schnappschuss;
       // Netzwerk garantiert keine Zustellreihenfolge: Ein verspätet
       // eintreffender älterer Schnappschuss darf einen bereits angewendeten
-      // neueren nicht zurückdrehen (→ `state.schnappschuss`).
-      if (s.folge <= state.schnappschussFolge) return state;
+      // neueren nicht zurückdrehen (→ `state.schnappschuss`). Deckt zugleich
+      // die doppelt zugestellte Kopie ab.
+      if (nachricht.folge <= state.schnappschussFolge) return state;
+      // Ein Delta setzt genau den Stand voraus, gegen den es gebildet wurde.
+      // Passt der nicht, fehlt dazwischen etwas: verwerfen statt raten - der
+      // Provider fordert daraufhin ein Vollbild an (→ `state.puls`).
+      if (nachricht.basis !== 0 && nachricht.basis !== state.schnappschussFolge) return state;
+
+      let teil = nachricht.felder;
+      if (nachricht.patientenTeil) {
+        // Stückweise Patientenliste (→ `net.delta.patienten`): aus der
+        // mitgelieferten Reihenfolge zusammensetzen, je Person die neue
+        // Fassung oder die bereits vorhandene.
+        const { reihenfolge, geaendert } = nachricht.patientenTeil;
+        const neueNachId = new Map(geaendert.map((patient) => [patient.id, patient]));
+        const vorhandeneNachId = new Map(state.patienten.map((patient) => [patient.id, patient]));
+        const zusammengesetzt: Patient[] = [];
+        for (const id of reihenfolge) {
+          const patient = neueNachId.get(id) ?? vorhandeneNachId.get(id);
+          // Fehlt jemand, den der Absender als unverändert vorausgesetzt hat,
+          // stimmt der Bezugsstand nicht - dann lieber gar nichts anwenden und
+          // ein Vollbild abwarten, als eine halbe Liste zu bauen.
+          if (!patient) return state;
+          zusammengesetzt.push(patient);
+        }
+        teil = { ...teil, patienten: zusammengesetzt };
+      }
+      // `k in teil` statt `??`: Ein Delta darf ein Feld ausdrücklich auf `null`
+      // oder `false` setzen (z. B. `szenario`, `laufend`) - mit `??` bliebe
+      // dabei der alte Wert stehen.
+      const nimm = <K extends keyof SchnappschussFelder>(
+        schluessel: K,
+        bisher: SchnappschussFelder[K],
+      ): SchnappschussFelder[K] =>
+        schluessel in teil ? (teil[schluessel] as SchnappschussFelder[K]) : bisher;
+
+      // Der Umweg über ein vollständiges `SchnappschussFelder` ist Absicht:
+      // Ein neu hinzugekommenes Feld lässt sich hier nicht vergessen, `tsc`
+      // fordert es ein.
+      const s: SchnappschussFelder = {
+        phase: nimm('phase', state.phase),
+        szenario: nimm('szenario', state.szenario),
+        zeitSek: nimm('zeitSek', state.zeitSek),
+        laufend: nimm('laufend', state.laufend),
+        geschwindigkeit: nimm('geschwindigkeit', state.geschwindigkeit),
+        patienten: nimm('patienten', state.patienten),
+        fahrzeuge: nimm('fahrzeuge', state.fahrzeuge),
+        spieler: nimm('spieler', state.sitzung.spieler),
+        status: nimm('status', state.sitzung.status),
+        massnahmenrechte: nimm('massnahmenrechte', state.massnahmenrechte),
+        delegationsanfragen: nimm('delegationsanfragen', state.delegationsanfragen),
+        rufgruppen: nimm('rufgruppen', state.rufgruppen),
+        kollegenanfragen: nimm('kollegenanfragen', state.kollegenanfragen),
+        freigabemodus: nimm('freigabemodus', state.freigabemodus),
+        routen: nimm('routen', state.routen),
+        ausgeloesteEreignisse: nimm('ausgeloesteEreignisse', state.ausgeloesteEreignisse),
+        regieProtokoll: nimm('regieProtokoll', state.regieProtokoll),
+        spielerProtokoll: nimm('spielerProtokoll', state.spielerProtokoll),
+        flaechen: nimm('flaechen', state.flaechen),
+        flaechenBefehle: nimm('flaechenBefehle', state.flaechenBefehle),
+        abschnittFuehrenBefehle: nimm('abschnittFuehrenBefehle', state.abschnittFuehrenBefehle),
+        meldebuch: nimm('meldebuch', state.meldebuch),
+        zeltMinispiele: nimm('zeltMinispiele', state.zeltMinispiele),
+        personalanfragen: nimm('personalanfragen', state.personalanfragen),
+      };
+
       return {
         ...state,
         phase: s.phase,
@@ -2240,7 +2382,7 @@ export function simulationReducer(
         meldebuch: s.meldebuch,
         zeltMinispiele: s.zeltMinispiele,
         personalanfragen: s.personalanfragen,
-        schnappschussFolge: s.folge,
+        schnappschussFolge: nachricht.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.
         sitzung: { ...state.sitzung, spieler: s.spieler, status: s.status },

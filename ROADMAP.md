@@ -1499,6 +1499,74 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   Sitzung konstant, Protokolle wachsen unbegrenzt) und die Re-Render-Struktur
   (47 Komponenten am `useSimulation()`-Kontext, kein einziges `React.memo`).
 
+- ✅ **Schnappschuss-Synchronisation entlastet und abgesichert (`DPS-0.8.2.10`)**
+  - Nutzerauftrag nach dem Audit: *"Synchronisationsprotokoll sicher beheben."*
+  Der Host verteilte bei **jeder** Änderung den kompletten geteilten Zustand -
+  gemessen 95,7 kB/s im Mittel über eine halbe Stunde, alle 500 ms, dazu alle
+  4 Sekunden dieselbe Nachricht noch einmal als Herzschlag.
+
+  **Das war nicht nur teuer, sondern ein latenter Totalausfall.** Supabase
+  Realtime kappt eine Broadcast-Nachricht im Free-Tarif bei **256 kB**. Der
+  Schnappschuss wuchs mit `regieProtokoll`, `spielerProtokoll` und `meldebuch`
+  unbegrenzt mit - eine lange Übung wäre irgendwann hineingelaufen, und ab da
+  hätte nicht eine Nachricht versagt, sondern jede: Die Sitzung hätte
+  aufgehört zu synchronisieren.
+
+  Vier Teile:
+  1. **Nur noch die geänderten Felder** (→ `net.delta`). Der Vergleich läuft
+     über Referenzgleichheit - das ist hier nicht die billige Näherung,
+     sondern exakt, weil der Reducer durchgängig unveränderlich arbeitet.
+     `Schnappschuss` ist in Nutzlast (`SchnappschussFelder`) und Transporthülle
+     (`folge`/`basis`/`felder`) getrennt; die Feldliste steht **einmal** und
+     typgeprüft da, wo vorher dasselbe an drei Stellen stand.
+  2. **`basis` als Sicherheitsgurt** (→ `state.schnappschuss.nachricht`): Ein
+     Teilstück nennt den Stand, den der Empfänger haben muss. Passt der nicht,
+     wird **nichts** angewendet. Ohne diese Regel hielte sich ein Client für
+     aktuell, obwohl ihm ein Stück fehlt - der Folgezähler stimmte ja - und
+     bliebe dauerhaft und unbemerkt falsch.
+  3. **Puls statt Voll-Herzschlag** (→ `state.puls`): 40 Byte mit der aktuellen
+     Laufnummer; wer zurückliegt, fordert ein Vollbild nach. Die Selbstheilung
+     bleibt unbegrenzt oft wiederholt, weil der Puls nie aufhört. Als Zugabe
+     wird ein Zustand sichtbar, der vorher unsichtbar war: Wer empfangen, aber
+     nicht senden kann, sah bisher eine still eingefrorene Lage.
+  4. **Auswertungsdaten erst zur Auswertung**
+     (→ `state.schnappschuss.debriefingdaten`): `regieProtokoll` und
+     `spielerProtokoll` werden in der ganzen Oberfläche nur im Debriefing
+     gelesen. Sie gehen jetzt erst mit dem Phasenwechsel raus - damit ist das
+     unbegrenzte Wachstum aus dem Dauerbetrieb heraus.
+
+  Dazu zwei kleinere Griffe mit großer Wirkung: Die Patientenliste fährt
+  **stückweise** (→ `net.delta.patienten`, im gemessenen Lauf ändern sich je
+  Takt 4 von 10 Patienten), und `map`/`filter` im Takt behalten ihre alte
+  Listenreferenz, wenn sich inhaltlich nichts geändert hat - sonst stünde ein
+  leeres `zeltMinispiele` bei jedem halben Takt als "Änderung" im Delta.
+
+  | | vorher | nachher |
+  | --- | --- | --- |
+  | Dauerlast | 95,7 kB/s | **16,9 kB/s** |
+  | Mittlere Nachricht | 47,9 kB | **8,4 kB** |
+  | Größte Nachricht | 58,6 kB, **wachsend** | 42,3 kB (das erste Vollbild) |
+  | 30 Minuten Übung | ~172 MB | **29,7 MB** |
+
+  **Der Sicherheitsnachweis** ist der eigentliche Kern: ein neuer Transport,
+  der Nachrichten absichtlich verliert, verdoppelt und vertauscht
+  (→ `net.stoertransport`), und 120 Zufallsläufe (40 Keime × 3 Störprofile)
+  mit Host und zwei Mitspielenden, in denen ausschließlich die Funktionen aus
+  dem Betrieb entscheiden. Am Ende muss jeder Client feldweise identisch zum
+  Host sein. Gegengeprobt: Werden die beiden Lückenprüfungen versuchsweise
+  ausgehängt, scheitert der Lauf bei allen drei Profilen - der Test prüft also
+  wirklich etwas und zieht nicht nur die Reparatur am Ende glatt. 25 neue
+  Tests, `tsc`/Lint/volle Testsuite grün (584), Boot-Smoke-Test ohne
+  Konsolenfehler.
+  >
+  > ⚠️ **Noch offen:** Der Mehrspieler-Lauf durch die echte Oberfläche ist in
+  > dieser Sandbox weiter nicht möglich - die Übungsleitungs-Rolle verlangt ein
+  > Supabase-Konto, ohne das der Einsatz gar nicht erst erreichbar ist. Vor dem
+  > nächsten Zugriff live zu prüfen: Beitritt mitten im laufenden Einsatz
+  > (bekommt sofort ein Vollbild), Uhr und Patientenwerte laufen bei allen
+  > gleich, Debriefing-Protokolle sind nach dem Einsatzende bei allen
+  > vollständig da.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 
@@ -1515,17 +1583,13 @@ Weiter denkbar, sobald die Bausteine 1–5 stehen:
   `DPS-0.8.0.14` fertig - denkbar bliebe z. B. eine Aufschlüsselung nach
   Einsatzabschnitt oder nach handelnder Person statt nur Sitzungs-weit.
 - 💤 **Persistenz/Export** der Ergebnisse (PDF/CSV).
-- 💤 **Schnappschuss verschlanken** (Befund aus `DPS-0.8.2.9`). Gemessen:
-  **35,8 kB je Schnappschuss**, gesendet alle 500 ms plus 4-Sekunden-Herzschlag.
-  Davon sind rund **47 % über die gesamte Sitzung konstant** (`szenario`
-  11,2 kB, `massnahmenrechte` 5,9 kB) - sie werden zweihundertmal pro Minute
-  neu übertragen, obwohl sie sich nie ändern. Dazu wachsen `regieProtokoll`,
-  `spielerProtokoll` und `meldebuch` unbegrenzt mit (nach 30 Minuten
-  Übung 41,9 kB allein dafür). Sauber wäre eine Trennung in einen einmaligen
-  Sitzungskopf und ein wachsendes Delta - das ist aber eine Änderung am
-  **Synchronisationsprotokoll**, und die lässt sich in dieser Sandbox mangels
-  Supabase-Zugangsdaten nicht live absichern. Deshalb bewusst nicht im Audit
-  miterledigt.
+- 💤 **Taktdrossel** (offen gebliebene Entscheidung aus `DPS-0.8.2.10`). Nach dem
+  Umbau bleibt der Simulationstakt der größte laufende Posten: 16,9 kB/s, davon
+  fast alles die Patientenwerte, die sich alle 500 ms bewegen. Ein Versand pro
+  Sekunde statt zwei würde das noch einmal halbieren; echte Handlungen gingen
+  weiterhin sofort raus, nur der reine Takt wartete. Preis: Vitalwerte und
+  Einsatzuhr können bei Mitspielenden bis zu eine Sekunde nachhinken. Der
+  Nutzer wollte das erst nach der Messung entscheiden - die Zahl steht jetzt.
 - 💤 **Re-Render-Struktur entzerren** (Befund aus `DPS-0.8.2.9`).
   **47 Komponenten** hängen am `useSimulation()`-Kontext, **keine einzige** ist
   mit `React.memo` abgeschirmt: jeder Takt (alle 500 ms) rendert alle 47 neu,

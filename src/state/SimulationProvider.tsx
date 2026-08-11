@@ -13,8 +13,9 @@ import {
 import { SimulationContext } from './context';
 import type { FunkSignalNachricht, Zeitkostentimer } from './context';
 import { starteTaktgeber } from './taktgeber';
-import { ANFANGSZUSTAND, simulationReducer } from './reducer';
-import type { Schnappschuss, SimulationAction } from './reducer';
+import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
+import type { SchnappschussFelder, SimulationAction } from './reducer';
+import { fehltZwischenstueck, naechsteNachricht } from './schnappschussDelta';
 import type { Einsatzabschnitt } from '../domain/types';
 import { zeitkostenLabel, zeitkostenSek } from './zeitkosten';
 
@@ -42,12 +43,44 @@ const AKTION_BESTAETIGUNG_TIMEOUT_MS = 2500;
 const AKTION_BESTAETIGUNG_MAX_VERSUCHE = 5;
 
 /**
- * Intervall für den erneuten Versand desselben Schnappschusses
- * (→ oben bei `folgeRef`) - schnell genug, dass eine verlorene Nachricht
- * sich in wenigen Sekunden von selbst heilt, ohne den Kanal unnötig zu
- * belasten.
+ * @anker state.puls Rückstand erkennen und ein Vollbild nachfordern
+ *
+ * Der Host schlägt regelmäßig mit seiner aktuellen Laufnummer an
+ * (`schnappschussPuls`, rund 40 Byte). Wer dahinter zurückliegt - weil eine
+ * Nachricht verloren ging oder das Gerät im Hintergrund war -, fordert ein
+ * Vollbild an und ist danach wieder exakt auf Stand.
+ *
+ * Vorher wiederholte der Host im selben Takt den **kompletten** Zustand.
+ * Dieselbe Reparatur, nur um ein Vielfaches teurer: gemessen 58,6 kB je
+ * Wiederholung nach einer halben Stunde Übung, auch in einer pausierten
+ * Sitzung, in der sich nichts bewegt (→ `net.delta`).
+ *
+ * Die Selbstheilung bleibt unbegrenzt oft wiederholt: Geht eine Anfrage
+ * verloren, stellt der nächste Puls denselben Rückstand erneut fest. Beide
+ * Sperren darunter verhindern nur, dass sich mehrere Beteiligte gegenseitig
+ * hochschaukeln - keine von beiden kann die Reparatur dauerhaft blockieren,
+ * weil der Puls unbeirrt weiterläuft.
  */
-const SCHNAPPSCHUSS_HEARTBEAT_MS = 4000;
+const PULS_MS = 4000;
+
+/** Frühestens so oft fragt ein Client nach - deckt mehrere Pulse in Folge ab. */
+const ANFRAGE_SPERRE_MS = 2000;
+
+/**
+ * Frühestens so oft beantwortet der Host eine Anfrage. Der Kanal ist ein
+ * Rundruf: Ein Vollbild erreicht alle, die gerade zurückliegen, nicht nur den
+ * Fragesteller - fünf gleichzeitige Anfragen brauchen also keine fünf
+ * Antworten.
+ */
+const VOLLBILD_SPERRE_MS = 1000;
+
+/**
+ * So oft darf ein Client vergeblich nachfragen, bevor der Rückstand als
+ * Verbindungsproblem angezeigt wird. Der Fall dahinter ist real und war
+ * bisher unsichtbar: Wer empfangen, aber nicht senden kann, sah eine still
+ * eingefrorene Lage ohne jeden Hinweis.
+ */
+const ANFRAGEN_BIS_WARNUNG = 3;
 
 /** Aktionen, die jeder Client für sich behält - Navigation und das Verlassen. */
 function istLokaleAktion(action: SimulationAction): boolean {
@@ -129,6 +162,56 @@ export function SimulationProvider({
   // flüchtige Verbindungsaushandlung, kein Spielzustand. Ein `useSprechfunk`-
   // Hook meldet sich hier direkt an, statt über `dispatch` zu gehen.
   const signalHoererRef = useRef<Set<(nachricht: FunkSignalNachricht) => void>>(new Set());
+
+  // Synchronisationsstand (→ `net.delta`, `state.puls`). Host: `folgeRef` ist
+  // die Laufnummer der zuletzt gesendeten Nachricht, `letzteFelderRef` ihr
+  // Inhalt - die Bezugsgröße für das nächste Delta. Client: `folgeStandRef`
+  // spiegelt `state.schnappschussFolge`, weil der Nachrichten-Rückruf weiter
+  // unten sonst auf einem eingefrorenen `state` säße.
+  const folgeRef = useRef(0);
+  const letzteFelderRef = useRef<SchnappschussFelder | null>(null);
+  const aktuelleFelderRef = useRef<SchnappschussFelder | null>(null);
+  const letztesVollbildMsRef = useRef(0);
+  const folgeStandRef = useRef(0);
+  const letzteAnfrageMsRef = useRef(0);
+  const vergebllicheAnfragenRef = useRef(0);
+  useEffect(() => {
+    folgeStandRef.current = state.schnappschussFolge;
+  }, [state.schnappschussFolge]);
+
+  /**
+   * Host: den kompletten Zustand verschicken, aus jedem Empfängerzustand
+   * heraus anwendbar (`basis: 0`). Zwei Anlässe - ein Beitritt und eine
+   * Nachforderung.
+   */
+  const sendeVollbild = useCallback(() => {
+    const felder = aktuelleFelderRef.current;
+    if (!felder) return;
+    const jetzt = Date.now();
+    if (jetzt - letztesVollbildMsRef.current < VOLLBILD_SPERRE_MS) return;
+    letztesVollbildMsRef.current = jetzt;
+    folgeRef.current += 1;
+    letzteFelderRef.current = felder;
+    transportRef.current?.senden({
+      typ: 'schnappschuss',
+      schnappschuss: { folge: folgeRef.current, basis: 0, felder },
+    });
+  }, []);
+
+  /** Client: ein Vollbild nachfordern, weil der eigene Stand zurückliegt. */
+  const fordereVollbildAn = useCallback((eigeneId: string) => {
+    const jetzt = Date.now();
+    if (jetzt - letzteAnfrageMsRef.current < ANFRAGE_SPERRE_MS) return;
+    letzteAnfrageMsRef.current = jetzt;
+    vergebllicheAnfragenRef.current += 1;
+    transportRef.current?.senden({ typ: 'vollbildAnfordern', spielerId: eigeneId });
+    if (vergebllicheAnfragenRef.current === ANFRAGEN_BIS_WARNUNG) {
+      dispatch({
+        typ: 'verbindungsfehlerSetzen',
+        meldung: 'Die Lage hängt zurück - die Übungsleitung erreicht dich gerade nicht.',
+      });
+    }
+  }, []);
 
   const sendeMitBestaetigung = useCallback(
     (erzeugeNachricht: (nachrichtId: string) => SitzungsNachricht, nachrichtId = erzeugeId()) => {
@@ -217,6 +300,12 @@ export function SimulationProvider({
               verarbeiteteNachrichtenRef.current.add(nachricht.nachrichtId);
               if (nachricht.typ === 'beitritt') {
                 dispatch({ typ: 'spielerHinzugefuegt', spieler: nachricht.spieler });
+                // Wer neu dazukommt, steht bei Folge 0 und kann mit keinem
+                // Delta etwas anfangen. Statt ihn den Rückstand erst selbst
+                // bemerken zu lassen (→ `state.puls`), bekommt er sofort ein
+                // Vollbild; die Aufnahme in die Spielerliste folgt gleich
+                // darauf als Delta darauf auf.
+                sendeVollbild();
               } else {
                 dispatch(nachricht.aktion);
               }
@@ -227,9 +316,29 @@ export function SimulationProvider({
             });
           } else if (nachricht.typ === 'verlassen') {
             dispatch({ typ: 'spielerEntfernt', spielerId: nachricht.spielerId });
+          } else if (nachricht.typ === 'vollbildAnfordern') {
+            sendeVollbild();
           }
         } else if (nachricht.typ === 'schnappschuss') {
-          dispatch({ typ: 'schnappschussAnwenden', schnappschuss: nachricht.schnappschuss });
+          const teil = nachricht.schnappschuss;
+          // Eine Lücke erkennt der Reducer zwar auch (und verwirft dann still),
+          // nur kann er von dort aus nichts nachfordern. Deshalb hier vorab
+          // dieselbe Prüfung - sie ist die einzige Stelle, an der ein
+          // fehlendes Zwischenstück überhaupt auffällt.
+          if (fehltZwischenstueck(teil, folgeStandRef.current) && sitzung.eigeneId) {
+            fordereVollbildAn(sitzung.eigeneId);
+            return;
+          }
+          if (teil.folge > folgeStandRef.current) {
+            vergebllicheAnfragenRef.current = 0;
+          }
+          dispatch({ typ: 'schnappschussAnwenden', schnappschuss: teil });
+        } else if (nachricht.typ === 'schnappschussPuls') {
+          if (nachricht.folge > folgeStandRef.current && sitzung.eigeneId) {
+            fordereVollbildAn(sitzung.eigeneId);
+          } else {
+            vergebllicheAnfragenRef.current = 0;
+          }
         } else if (nachricht.typ === 'nachrichtBestaetigt') {
           const eintrag = ausstehendeBestaetigungenRef.current.get(nachricht.nachrichtId);
           if (eintrag) {
@@ -269,6 +378,15 @@ export function SimulationProvider({
       ausstehendeBestaetigungen.clear();
       transport.schliessen();
       transportRef.current = null;
+      // Laufnummern und Bezugsstand gehören zu genau dieser Verbindung. Wer
+      // eine Sitzung verlässt und eine neue betritt, fängt sonst mit einer
+      // fremden Bezugsgröße an - das erste Delta wäre gegen einen Zustand
+      // gebildet, den niemand mehr hat.
+      folgeRef.current = 0;
+      letzteFelderRef.current = null;
+      letztesVollbildMsRef.current = 0;
+      letzteAnfrageMsRef.current = 0;
+      vergebllicheAnfragenRef.current = 0;
     };
   }, [
     sitzung.aktiv,
@@ -278,119 +396,50 @@ export function SimulationProvider({
     sitzung.eigenerName,
     transportFabrik,
     sendeMitBestaetigung,
+    sendeVollbild,
+    fordereVollbildAn,
   ]);
-
-  // Nur die geteilten Scheiben bilden den Schnappschuss - lokale Navigation
-  // (Patientenwahl, Abschnitt) fließt bewusst nicht ein und löst kein Senden aus.
-  const {
-    patienten,
-    fahrzeuge,
-    zeitSek,
-    szenario,
-    massnahmenrechte,
-    delegationsanfragen,
-    rufgruppen,
-    kollegenanfragen,
-    freigabemodus,
-    routen,
-    ausgeloesteEreignisse,
-    regieProtokoll,
-    spielerProtokoll,
-    flaechen,
-    flaechenBefehle,
-    abschnittFuehrenBefehle,
-    meldebuch,
-    zeltMinispiele,
-    personalanfragen,
-  } = state;
-  const spielerliste = sitzung.spieler;
-  const status = sitzung.status;
-  // `folge` gehört nicht zum reinen Zustand (→ `state.schnappschuss`) - sie
-  // entsteht erst beim Versand, siehe den Effekt weiter unten.
-  const schnappschuss = useMemo<Omit<Schnappschuss, 'folge'>>(
-    () => ({
-      phase,
-      szenario,
-      zeitSek,
-      laufend,
-      geschwindigkeit,
-      patienten,
-      fahrzeuge,
-      spieler: spielerliste,
-      status,
-      massnahmenrechte,
-      delegationsanfragen,
-      rufgruppen,
-      kollegenanfragen,
-      freigabemodus,
-      routen,
-      ausgeloesteEreignisse,
-      regieProtokoll,
-      spielerProtokoll,
-      flaechen,
-      flaechenBefehle,
-      abschnittFuehrenBefehle,
-      meldebuch,
-      zeltMinispiele,
-      personalanfragen,
-    }),
-    [
-      phase,
-      szenario,
-      zeitSek,
-      laufend,
-      geschwindigkeit,
-      patienten,
-      fahrzeuge,
-      spielerliste,
-      status,
-      massnahmenrechte,
-      delegationsanfragen,
-      rufgruppen,
-      kollegenanfragen,
-      freigabemodus,
-      routen,
-      ausgeloesteEreignisse,
-      regieProtokoll,
-      spielerProtokoll,
-      flaechen,
-      flaechenBefehle,
-      abschnittFuehrenBefehle,
-      meldebuch,
-      zeltMinispiele,
-      personalanfragen,
-    ],
-  );
 
   // Der Host verteilt den geteilten Zustand bei jeder Änderung, mit einer
   // fortlaufenden Laufnummer - damit ein Spieler eine verspätet über das Netz
   // eintreffende ältere Nachricht erkennen und verwerfen kann
   // (→ `state.schnappschuss`, `schnappschussAnwenden`).
   //
-  // Ein verlorener Broadcast heilt sich sonst nur, wenn sich der Zustand
-  // danach nochmal ändert - der tickende Simulationstakt sorgt dafür im
-  // laufenden Einsatz von selbst, aber im Wartebereich (oder bei einer
-  // pausierten Übung) ändert sich unter Umständen lange nichts mehr, z. B.
-  // wenn die Übungsleitung nach einer einzigen Besatzungszuweisung wartet.
-  // Ein Spieler, dem genau diese eine Nachricht entgangen ist, sah dann
-  // dauerhaft nicht, wie die Fahrzeuge besetzt werden. Deshalb sendet der
-  // Host dieselbe zuletzt gebildete Nachricht (gleiche Folgenummer) im
-  // Hintergrund erneut - für jeden, der sie schon hat, ein wirkungsloses
-  // No-op (→ `schnappschussAnwenden`), für jeden anderen die Reparatur.
-  const folgeRef = useRef(0);
+  // Übertragen wird nur, was sich seit dem letzten Versand tatsächlich
+  // geändert hat (→ `net.delta`). `schnappschussAus` ist dabei die **einzige**
+  // Stelle, die weiß, welche Felder geteilt werden - vorher stand dieselbe
+  // Liste hier nochmal als Memo samt Abhängigkeitsliste, also dreimal im
+  // Projekt. Ein hier vergessenes Feld war damit ein stiller Fehler; jetzt
+  // fordert `tsc` es an einer Stelle ein.
+  //
+  // Der Effekt hängt an `state` statt an einzelnen Scheiben, weil eine reine
+  // Navigationsänderung (Patientenwahl, Abschnitt) zwar den Zustand ändert,
+  // aber kein geteiltes Feld - das Delta ist dann leer und es geht nichts
+  // raus.
   useEffect(() => {
     if (!istHost) return;
-    folgeRef.current += 1;
-    const nachricht = {
-      typ: 'schnappschuss' as const,
-      schnappschuss: { ...schnappschuss, folge: folgeRef.current },
-    };
-    transportRef.current?.senden(nachricht);
+    const felder = schnappschussAus(state);
+    aktuelleFelderRef.current = felder;
+    const nachricht = naechsteNachricht(letzteFelderRef.current, felder, folgeRef.current);
+    if (!nachricht) return;
+    folgeRef.current = nachricht.folge;
+    letzteFelderRef.current = felder;
+    if (nachricht.basis === 0) letztesVollbildMsRef.current = Date.now();
+    transportRef.current?.senden({ typ: 'schnappschuss', schnappschuss: nachricht });
+  }, [istHost, state]);
+
+  // Der Puls (→ `state.puls`) läuft unabhängig vom Zustand - anders als der
+  // frühere Herzschlag, der bei jedem Takt neu aufgesetzt wurde und deshalb
+  // in einer laufenden Übung praktisch nie zum Zug kam.
+  useEffect(() => {
+    if (!istHost) return;
     const intervall = setInterval(() => {
-      transportRef.current?.senden(nachricht);
-    }, SCHNAPPSCHUSS_HEARTBEAT_MS);
+      if (folgeRef.current > 0) {
+        transportRef.current?.senden({ typ: 'schnappschussPuls', folge: folgeRef.current });
+      }
+    }, PULS_MS);
     return () => clearInterval(intervall);
-  }, [istHost, schnappschuss]);
+  }, [istHost]);
 
   // Ein Spieler schickt Sim-Aktionen an den Host, statt sie selbst anzuwenden.
   const dispatchRoutet = useCallback(

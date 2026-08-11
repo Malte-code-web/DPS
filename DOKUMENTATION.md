@@ -201,6 +201,60 @@ dazu tickt die Uhr (`state.uhr`) unabhängig davon alle 500 ms und schickt
 `tick`-Aktionen - sie lässt während der Wartezeit alle Patienten altern, ganz
 gleich, ob gerade jemand beschäftigt ist oder nicht.
 
+### Was zwischen den Geräten fließt
+
+Die Übungsleitung rechnet, alle anderen zeigen an (→ `state.provider`). Was
+dabei über die Leitung geht, ist **nicht** der ganze Zustand, sondern nur, was
+sich seit dem letzten Versand geändert hat (→ `net.delta`).
+
+```
+Host                                                        Mitspieler
+  │ schnappschussAus(state)      alle geteilten Felder
+  │ deltaBilden(vorher, jetzt)   nur die geänderten
+  ├─────────── { folge: 42, basis: 41, felder: {…} } ──────────►  passt basis?
+  │                                                               ja  → anwenden
+  │                                                               nein→ Lücke
+  │ ◄────────── { vollbildAnfordern } ───────────────────────────┘
+  ├─────────── { folge: 43, basis: 0, felder: alles } ─────────►  immer anwendbar
+  │
+  └─ alle 4 s: { schnappschussPuls, folge } ───────────────────►  liege ich zurück?
+```
+
+Drei Regeln tragen das:
+
+1. **`basis` ist der Sicherheitsgurt.** Ein Teilstück nennt die Laufnummer, die
+   der Empfänger schon haben muss. Passt sie nicht, wird **nichts** angewendet -
+   kein "so gut es geht" verschmelzen. Sonst hielte sich ein Client für aktuell,
+   obwohl ihm ein Stück fehlt, und bliebe dauerhaft und unbemerkt falsch.
+2. **Das Vollbild (`basis: 0`) ist die Garantie.** Es ist aus jedem Zustand
+   heraus anwendbar. Das Delta ist nur eine Abkürzung: Wäre es vollständig
+   kaputt, liefe die Sitzung weiter, nur langsamer.
+3. **Der Puls hört nie auf** (→ `state.puls`). Geht eine Nachforderung verloren,
+   stellt der nächste Puls denselben Rückstand wieder fest.
+
+Was den Ausschlag gab, war weniger die Bandbreite als eine harte Grenze:
+Supabase Realtime kappt eine Broadcast-Nachricht im Free-Tarif bei **256 kB**.
+Der frühere Schnappschuss wuchs mit den Auswertungsprotokollen unbegrenzt mit -
+eine lange Übung wäre irgendwann hineingelaufen, und ab da hätte nicht eine
+Nachricht versagt, sondern jede. Deshalb gehen `regieProtokoll` und
+`spielerProtokoll` erst mit dem Phasenwechsel zur Auswertung raus
+(→ `state.schnappschuss.debriefingdaten`); im Einsatz liest sie ohnehin niemand.
+
+Gemessen an einer halben Stunde Übung (MANV-50plus, sechs Mitspielende):
+
+| | vorher | nachher |
+| --- | --- | --- |
+| Dauerlast | 95,7 kB/s | **16,9 kB/s** |
+| Mittlere Nachricht | 47,9 kB | **8,4 kB** |
+| Größte Nachricht | 58,6 kB, **wachsend** | 42,3 kB (das erste Vollbild) |
+| Herzschlag alle 4 s | voller Zustand | 40 Byte Puls |
+
+Der größte verbliebene Posten ist die Patientenliste: Sie ändert sich bei jedem
+Takt, aber nie vollständig - wer versorgt, verstorben oder abtransportiert ist,
+bleibt unangetastet. Deshalb fährt sie stückweise (→ `net.delta.patienten`):
+die Id-Reihenfolge vollständig, die Personendaten nur von denen, die sich
+wirklich bewegt haben.
+
 ---
 
 ## 4. Die vier Mechaniken
@@ -716,7 +770,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_254 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_260 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -887,10 +941,13 @@ _254 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `net.auswahl` | [`src/net/transportAuswahl.ts:7`](src/net/transportAuswahl.ts#L7) | Supabase, wenn konfiguriert - sonst der lokale Kanal |
+| `net.delta` | [`src/state/schnappschussDelta.ts:4`](src/state/schnappschussDelta.ts#L4) | Nur senden, was sich wirklich geändert hat |
+| `net.delta.patienten` | [`src/state/schnappschussDelta.ts:103`](src/state/schnappschussDelta.ts#L103) | Die Patientenliste stückweise |
 | `net.funksignal` | [`src/net/protokoll.ts:5`](src/net/protokoll.ts#L5) | Aushandlungsdaten einer WebRTC-Verbindung |
 | `net.lokal` | [`src/net/lokalerTransport.ts:5`](src/net/lokalerTransport.ts#L5) | Sitzungstransport über BroadcastChannel (ein Gerät) |
 | `net.protokoll` | [`src/net/protokoll.ts:16`](src/net/protokoll.ts#L16) | Nachrichten zwischen Übungsleiter (Host) und Spielern |
 | `net.routingdienst` | [`src/net/routingDienst.ts:4`](src/net/routingDienst.ts#L4) | Echter Straßenverlauf statt Luftlinie für eine angelegte Wegstrecke |
+| `net.stoertransport` | [`src/net/stoerTransport.ts:5`](src/net/stoerTransport.ts#L5) | Ein Kanal, der absichtlich kaputt geht |
 | `net.supabase` | [`src/net/supabaseTransport.ts:6`](src/net/supabaseTransport.ts#L6) | Sitzungstransport über Supabase Realtime (Cross-Device) |
 | `net.supabaseAuth` | [`src/net/supabaseAuth.ts:4`](src/net/supabaseAuth.ts#L4) | Anmeldung der Übungsleitung über Supabase Auth |
 | `net.supabaseClient` | [`src/net/supabaseClient.ts:5`](src/net/supabaseClient.ts#L5) | Zugriff auf das Supabase-Projekt der Übungsleitung |
@@ -946,18 +1003,21 @@ _254 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
 | `state.aktionen` | [`src/state/reducer.ts:281`](src/state/reducer.ts#L281) | Alles, was der Übende auslösen kann |
-| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:39`](src/state/SimulationProvider.tsx#L39) | Bestätigte Nachrichten mit Wiederholung |
+| `state.aktionsbestaetigung` | [`src/state/SimulationProvider.tsx:40`](src/state/SimulationProvider.tsx#L40) | Bestätigte Nachrichten mit Wiederholung |
 | `state.delegationsanfrage` | [`src/state/useDelegationsAnfrage.ts:12`](src/state/useDelegationsAnfrage.ts#L12) | Gemeinsame Logik hinter jedem "Anfragen"-Knopf |
 | `state.freigabemodus` | [`src/state/reducer.ts:154`](src/state/reducer.ts#L154) | Sofort sichtbar oder gestaffelt über die Ablage |
 | `state.phase` | [`src/state/reducer.ts:81`](src/state/reducer.ts#L81) | Die Hauptzustände der Anwendung |
-| `state.provider` | [`src/state/SimulationProvider.tsx:92`](src/state/SimulationProvider.tsx#L92) | Rollen-bewusster Zustandsverteiler |
-| `state.reducer` | [`src/state/reducer.ts:717`](src/state/reducer.ts#L717) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
+| `state.provider` | [`src/state/SimulationProvider.tsx:125`](src/state/SimulationProvider.tsx#L125) | Rollen-bewusster Zustandsverteiler |
+| `state.puls` | [`src/state/SimulationProvider.tsx:46`](src/state/SimulationProvider.tsx#L46) | Rückstand erkennen und ein Vollbild nachfordern |
+| `state.reducer` | [`src/state/reducer.ts:792`](src/state/reducer.ts#L792) | Wie Aktionen den Zustand verändern, inklusive Zeitkosten |
 | `state.regieprotokoll` | [`src/state/reducer.ts:177`](src/state/reducer.ts#L177) | Chronik der Regie-Entscheidungen für die Debriefing-Erweiterung |
 | `state.schnappschuss` | [`src/state/reducer.ts:445`](src/state/reducer.ts#L445) | Der geteilte, host-autoritative Ausschnitt des Zustands |
+| `state.schnappschuss.debriefingdaten` | [`src/state/reducer.ts:538`](src/state/reducer.ts#L538) | Auswertungsdaten erst zur Auswertung |
+| `state.schnappschuss.nachricht` | [`src/state/reducer.ts:504`](src/state/reducer.ts#L504) | Was tatsächlich über die Leitung geht |
 | `state.spielerprotokoll` | [`src/state/reducer.ts:188`](src/state/reducer.ts#L188) | Private Statusansicht: was genau hat wer getan |
 | `state.sprechfunk` | [`src/state/useSprechfunk.ts:96`](src/state/useSprechfunk.ts#L96) | WebRTC-Mesh für einen gewählten Rufgruppen-Kanal |
 | `state.taktgeber` | [`src/state/taktgeber.ts:2`](src/state/taktgeber.ts#L2) | Hintergrundfester Taktgeber für die Simulationsuhr |
-| `state.uhr` | [`src/state/SimulationProvider.tsx:23`](src/state/SimulationProvider.tsx#L23) | Der Taktgeber der laufenden Simulation |
+| `state.uhr` | [`src/state/SimulationProvider.tsx:24`](src/state/SimulationProvider.tsx#L24) | Der Taktgeber der laufenden Simulation |
 | `state.zeitkosten` | [`src/state/zeitkosten.ts:11`](src/state/zeitkosten.ts#L11) | Wie lange eine Handlung den Handelnden bindet |
 | `state.zeitkostenabgleich` | [`src/state/zeitkosten.ts:145`](src/state/zeitkosten.ts#L145) | Erkennt den eigenen Knopf im laufenden Timer |
 | `state.zeitkostenstatus` | [`src/state/useZeitkostenStatus.ts:16`](src/state/useZeitkostenStatus.ts#L16) | Live-Countdown des laufenden Zeitkosten-Timers |
@@ -1170,6 +1230,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.10` | Schnappschuss-Synchronisation entlastet und abgesichert: Der Host verteilt nur noch die **geänderten** Felder statt bei jeder Änderung den kompletten Zustand (→ `net.delta`, neues `schnappschussDelta.ts`); `Schnappschuss` in Nutzlast (`SchnappschussFelder`) und Transporthülle (`folge`/`basis`/`felder`) getrennt, `basis` verhindert das Verschmelzen auf einen falschen Stand (→ `state.schnappschuss.nachricht`); der 4-Sekunden-Herzschlag mit vollem Zustand ist einem 40-Byte-Puls samt Nachforderung gewichen (→ `state.puls`, neue Nachrichten `schnappschussPuls`/`vollbildAnfordern`); `regieProtokoll`/`spielerProtokoll` gehen erst zur Auswertung raus (→ `state.schnappschuss.debriefingdaten`) - damit wächst der Schnappschuss nicht mehr unbegrenzt in die 256-kB-Grenze eines Supabase-Broadcasts hinein; Patientenliste stückweise (→ `net.delta.patienten`); neuer Stör-Transport für Verlust/Verdopplung/Vertauschung (→ `net.stoertransport`) mit 120 Zufallsläufen als Konvergenznachweis. Gemessen 95,7 → 16,9 kB/s |
 | `DPS-0.8.2.9` | Audit Bedienkomfort/Zoom/Ladegröße: neuer Hook `useNachObenBeiWechsel` (→ `ui.nachoben`) - jede neue Ansicht beginnt oben statt die Scrollposition der vorigen zu erben (Phasenwechsel in `App.tsx`, Patientenwahl/Übersicht/Abschnitt in `EinsatzSeite.tsx`); iOS-Auto-Zoom beim Fokussieren von Eingabefeldern behoben (`font-size: 16px` für `input`/`select`/`textarea` im bestehenden `@media (pointer: coarse)`-Block, `text-size-adjust: 100%` auf `html`) - auf der Maus bleibt es bei 13,5 px; `KiGenerator` über `lazy()` + `Suspense` in einen eigenen Chunk (Hauptbundle 1.120,71 → 942,68 kB, gzip 329,42 → 279,17 kB), Einzeldatei-Bau läuft über `vite build --mode einzeldatei` weiter ohne Splitting |
 | `DPS-0.8.2.8` | Gruppe im Einsatz sichtbar + einzelnes Personal verschiebbar, mit echter Rückfrage: neue Aktion `spielerEinsatzabschnittSetzen` (einzelne Person abweichend von der Gruppe einteilen); neues `state.personalanfragen` + `Personalanfrage` + `personalanfrageBeantworten` - ein Gruppen-Auftrag reißt einzeln Eingeteilte nicht mehr mit, sondern fragt zweistufig (Gruppenführer vor Ort, dann die Person), ein Gruppenwechsel im Einsatz braucht die Zustimmung der Person (im Wartebereich weiterhin direkt); neuer Toast `PersonalanfrageBenachrichtigung.tsx`; `GruppenZuweisung.tsx` mit Personal-Block und ohne Fahrzeug-Gate beim Einsatzauftrag; `GruppenfuehrerSeite.tsx` zeigt die Personen der Gruppe statt nur Fahrzeuge |
 | `DPS-0.8.2.7` | Fahrzeuge fahren frei zwischen allen Standorten: `FAHRZEUG_ZUSATZ_ZIELE` (additive Kanten auf dem Patienten-Graphen `ZIELE`) durch die Standortliste `FAHRZEUG_STANDORTE` ersetzt - jedes Fahrzeug erreicht jeden Standort außer dem eigenen, statt nur den Rettungsmittelhalteplatz; `verdeckt` bleibt ausgenommen (kein Ort), `transport` bleibt ohne Rückweg; `ZIELE`/`istVerlegungMoeglich` für Patienten unverändert; `bereitstellungsraum` bekommt einen `AbschnittInfo`-Eintrag |

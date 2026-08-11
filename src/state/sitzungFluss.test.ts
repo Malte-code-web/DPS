@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SZENARIEN } from '../domain/szenarien';
 import { gruppenMitglieder } from '../domain/fuehrung';
 import { RUNDEN_FENSTER_SEK, rundenanzahlFuer, rundenplanErzeugen } from '../domain/zeltMinispiel';
-import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
+import { ANFANGSZUSTAND, schnappschussAus, simulationReducer, vollbildAus } from './reducer';
 import type { SimulationState } from './reducer';
 import type { EingeklemmtStatus, Einsatzabschnitt, ZeltMinispielRunde } from '../domain/types';
 
@@ -684,7 +684,7 @@ describe('Host-autoritative Synchronisation', () => {
 
   it('wendet einen Schnappschuss an, behält aber lokale Navigation und Identität', () => {
     const host = imEinsatz();
-    const schnappschuss = schnappschussAus(host);
+    const schnappschuss = vollbildAus(host);
 
     // Ein Spieler-Client: eigene Auswahl, eigene Identität - und eine eigene,
     // lokal geladene Vorbelegung der Maßnahmenrechte, die vom Host abweicht.
@@ -700,7 +700,7 @@ describe('Host-autoritative Synchronisation', () => {
       sitzung: {
         aktiv: true,
         rolle: 'spieler',
-        code: schnappschuss.szenario ? 'K7QP2' : null,
+        code: schnappschuss.felder.szenario ? 'K7QP2' : null,
         eigeneId: 's-9',
         eigenerName: 'Anna',
         spieler: [],
@@ -731,8 +731,8 @@ describe('Host-autoritative Synchronisation', () => {
 
   it('verwirft einen verspätet eintreffenden, älteren Schnappschuss', () => {
     const host = imEinsatz();
-    const frueh = schnappschussAus(host, 5);
-    const spaet = schnappschussAus(simulationReducer(host, { typ: 'tick', dtSek: 30 }), 6);
+    const frueh = vollbildAus(host, 5);
+    const spaet = vollbildAus(simulationReducer(host, { typ: 'tick', dtSek: 30 }), 6);
 
     const spielerClient: SimulationState = {
       ...ANFANGSZUSTAND,
@@ -750,17 +750,17 @@ describe('Host-autoritative Synchronisation', () => {
 
     // Der neuere Schnappschuss (Netzwerk hat ihn zuerst zugestellt) wird angewendet ...
     const nachSpaet = simulationReducer(spielerClient, { typ: 'schnappschussAnwenden', schnappschuss: spaet });
-    expect(nachSpaet.zeitSek).toBe(spaet.zeitSek);
+    expect(nachSpaet.zeitSek).toBe(spaet.felder.zeitSek);
 
     // ... ein danach eintreffender, aber inhaltlich älterer Schnappschuss darf die Uhr nicht zurückdrehen.
     const nachFrueh = simulationReducer(nachSpaet, { typ: 'schnappschussAnwenden', schnappschuss: frueh });
     expect(nachFrueh).toBe(nachSpaet);
-    expect(nachFrueh.zeitSek).toBe(spaet.zeitSek);
+    expect(nachFrueh.zeitSek).toBe(spaet.felder.zeitSek);
   });
 
   it('verwirft eine doppelt zugestellte Kopie desselben Schnappschusses', () => {
     const host = imEinsatz();
-    const schnappschuss = schnappschussAus(host, 3);
+    const schnappschuss = vollbildAus(host, 3);
     const spielerClient: SimulationState = {
       ...ANFANGSZUSTAND,
       sitzung: {
@@ -1820,12 +1820,31 @@ describe('Führungsentscheidungs-Protokoll (→ state.regieprotokoll)', () => {
     expect(texte[2]).toContain(ereignis.titel);
   });
 
-  it('ist Teil des Schnappschusses und wächst nur an', () => {
+  it('wächst nur an und geht erst zur Auswertung über die Leitung', () => {
     const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
     const pausiert = simulationReducer(imEinsatz, { typ: 'pauseUmschalten' });
-
-    expect(schnappschussAus(pausiert).regieProtokoll).toEqual(pausiert.regieProtokoll);
     expect(pausiert.regieProtokoll.length).toBe(imEinsatz.regieProtokoll.length + 1);
+
+    // Im laufenden Einsatz liest das Protokoll niemand - es bleibt beim Host,
+    // statt bei jedem Takt mitzuwachsen und mitzufahren
+    // (→ `state.schnappschuss.debriefingdaten`).
+    expect(schnappschussAus(pausiert).regieProtokoll).toEqual([]);
+
+    const ausgewertet = simulationReducer(pausiert, { typ: 'einsatzBeenden' });
+    expect(ausgewertet.phase).toBe('debriefing');
+    expect(schnappschussAus(ausgewertet).regieProtokoll).toEqual(ausgewertet.regieProtokoll);
+    expect(ausgewertet.regieProtokoll.length).toBeGreaterThan(0);
+  });
+
+  it('liefert im Einsatz für beide Auswertungsprotokolle dieselbe Referenz', () => {
+    // Sonst stünde eine frische Leerliste bei jedem Takt im Delta und der
+    // Verzicht wäre wirkungslos (→ `net.delta`).
+    const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
+    const spaeter = simulationReducer(imEinsatz, { typ: 'tick', dtSek: 5 });
+    const a = schnappschussAus(imEinsatz);
+    const b = schnappschussAus(spaeter);
+    expect(a.regieProtokoll).toBe(b.regieProtokoll);
+    expect(a.spielerProtokoll).toBe(b.spielerProtokoll);
   });
 });
 
@@ -1917,7 +1936,7 @@ describe('Private Statusansicht: spielerProtokoll (→ modell.spielerprotokoll)'
     ).toBe(true);
   });
 
-  it('ist Teil des Schnappschusses', () => {
+  it('geht erst zur Auswertung über die Leitung', () => {
     const imEinsatz = simulationReducer(eroeffnetMitFahrzeug(), { typ: 'sitzungStarten' });
     const patientId = imEinsatz.patienten[0]!.id;
     const nachher = simulationReducer(imEinsatz, {
@@ -1926,7 +1945,14 @@ describe('Private Statusansicht: spielerProtokoll (→ modell.spielerprotokoll)'
       diagnostikId: 'bodycheck',
       spielerId: 'leiter-1',
     });
-    expect(schnappschussAus(nachher).spielerProtokoll).toEqual(nachher.spielerProtokoll);
+    expect(nachher.spielerProtokoll.length).toBeGreaterThan(0);
+    // "Mein Einsatz" steht ausschließlich im Debriefing (→ `ui.debriefing`);
+    // im laufenden Einsatz bleibt das Protokoll beim Host
+    // (→ `state.schnappschuss.debriefingdaten`).
+    expect(schnappschussAus(nachher).spielerProtokoll).toEqual([]);
+
+    const ausgewertet = simulationReducer(nachher, { typ: 'einsatzBeenden' });
+    expect(schnappschussAus(ausgewertet).spielerProtokoll).toEqual(ausgewertet.spielerProtokoll);
   });
 
   it('kreditiert bei einer abgeschlossenen Team-Maßnahme (Narkose) alle Beteiligten mit derselben Zeile', () => {
@@ -2136,7 +2162,7 @@ describe('Meldebuch: per Funk erfragte Meldungen des Zugführers (→ ui.meldebu
 
     const spielerClient = simulationReducer(ANFANGSZUSTAND, {
       typ: 'schnappschussAnwenden',
-      schnappschuss: schnappschussAus(nachher),
+      schnappschuss: vollbildAus(nachher),
     });
     expect(spielerClient.meldebuch).toEqual(nachher.meldebuch);
   });

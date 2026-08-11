@@ -2555,6 +2555,35 @@ button.gefahr {
   gap: 0.6rem;
 }
 
+/* --- Zeltaufbau-Minispiel "Kommando-Aufbau" (→ ui.zeltminispielbenachrichtigung) --- */
+
+.zeltminispiel-rundenplan {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.zeltminispiel-runde-aktuell {
+  font-weight: 700;
+  color: var(--akzent);
+}
+
+.zeltminispiel-dran {
+  border-left-color: var(--akzent);
+  animation: delegation-toast-ein 200ms ease-out, zeltminispiel-puls 1.4s ease-in-out infinite;
+}
+
+@keyframes zeltminispiel-puls {
+  0%,
+  100% {
+    box-shadow: var(--schatten);
+  }
+  50% {
+    box-shadow: var(--schatten), 0 0 0 3px var(--akzent);
+  }
+}
+
 /* --- Sprechfunk (→ ui.sprechfunk) ------------------------------------ */
 
 .sprechfunk-knopf {

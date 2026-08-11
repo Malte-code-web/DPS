@@ -8,6 +8,7 @@ import { KollegenanfrageBenachrichtigung } from '../components/KollegenanfrageBe
 import { PatientKarte } from '../components/PatientKarte';
 import { Sprechfunk } from '../components/Sprechfunk';
 import { ZeltBefehlBenachrichtigung } from '../components/ZeltBefehlBenachrichtigung';
+import { ZeltMinispielBenachrichtigung } from '../components/ZeltMinispielBenachrichtigung';
 import { abschnittInfo } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
 import {
@@ -103,6 +104,7 @@ export function EinsatzSeite() {
       <KollegenanfrageBenachrichtigung />
       <ZeltBefehlBenachrichtigung />
       <AbschnittFuehrenBefehlBenachrichtigung />
+      <ZeltMinispielBenachrichtigung />
       <Sprechfunk />
 
       {!ausgewaehlt && regiefuehrend && uebersicht ? (

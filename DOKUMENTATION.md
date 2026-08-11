@@ -684,7 +684,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_248 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -935,19 +935,19 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `stil.bereichsseite` | [`src/index.css:1929`](src/index.css#L1929) | Vollbildseite mit stehendem Kopf |
 | `stil.delegationsanfrage` | [`src/index.css:2462`](src/index.css#L2462) | Kandidatenwahl und Benachrichtigung der Delegation |
 | `stil.editor` | [`src/index.css:705`](src/index.css#L705) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4630`](src/index.css#L4630) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einsatzleiste` | [`src/index.css:4659`](src/index.css#L4659) | Die angeheftete Leiste so flach wie möglich |
 | `stil.einstieg` | [`src/index.css:428`](src/index.css#L428) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
 | `stil.ersteindruck` | [`src/index.css:1982`](src/index.css#L1982) | Kompakte Befundchips statt gestapelter Zeilen |
 | `stil.fehlergrenze` | [`src/index.css:154`](src/index.css#L154) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4374`](src/index.css#L4374) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.hover` | [`src/index.css:4403`](src/index.css#L4403) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
 | `stil.massnahmenrechte` | [`src/index.css:338`](src/index.css#L338) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
 | `stil.mehrspieler` | [`src/index.css:425`](src/index.css#L425) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
 | `stil.modi` | [`src/index.css:632`](src/index.css#L632) | Karten der Trainingsmodus-Auswahl |
 | `stil.patientnav` | [`src/index.css:1808`](src/index.css#L1808) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
 | `stil.sk-farbe` | [`src/index.css:220`](src/index.css#L220) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4702`](src/index.css#L4702) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.telefon` | [`src/index.css:4731`](src/index.css#L4731) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4833`](src/index.css#L4833) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4862`](src/index.css#L4862) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -1000,7 +1000,7 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:11`](src/components/Einsatzleiste.tsx#L11) | Kopfzeile: Sichtungszähler, Uhr, Status, Ablaufsteuerung |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:30`](src/pages/EinsatzSeite.tsx#L30) | Gesamtlagebild (Regie), Zugführer-/Gruppenführer-Übersicht, Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:31`](src/pages/EinsatzSeite.tsx#L31) | Gesamtlagebild (Regie), Zugführer-/Gruppenführer-Übersicht, Abschnittsliste oder Patientenseite |
 | `ui.ereignissepanel` | [`src/components/EreignissePanel.tsx:5`](src/components/EreignissePanel.tsx#L5) | Ereignis-Injektion: Fahrzeugausfall, Nachforderung, Lageänderung |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
@@ -1042,6 +1042,9 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.verlegung` | [`src/components/Verlegung.tsx:13`](src/components/Verlegung.tsx#L13) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
 | `ui.zeltbefehlbenachrichtigung` | [`src/components/ZeltBefehlBenachrichtigung.tsx:14`](src/components/ZeltBefehlBenachrichtigung.tsx#L14) | Benachrichtigung: der Zugführer befiehlt ein Zelt oder eine Fläche |
+| `ui.zeltminispielbenachrichtigung` | [`src/components/ZeltMinispielBenachrichtigung.tsx:7`](src/components/ZeltMinispielBenachrichtigung.tsx#L7) | Toast fürs Zeltaufbau-Minispiel "Kommando-Aufbau" |
+| `ui.zeltminispielbenachrichtigung.gruppenfuehrer` | [`src/components/ZeltMinispielGruppenfuehrerAnsicht.tsx:11`](src/components/ZeltMinispielGruppenfuehrerAnsicht.tsx#L11) | Gruppenführer sieht den vollen Rundenplan |
+| `ui.zeltminispielbenachrichtigung.teilnehmer` | [`src/components/ZeltMinispielTeilnehmerAnsicht.tsx:6`](src/components/ZeltMinispielTeilnehmerAnsicht.tsx#L6) | Teilnehmende erfahren nur die eigene Runde |
 | `ui.zelttypauswahl` | [`src/components/ZeltTypAuswahl.tsx:34`](src/components/ZeltTypAuswahl.tsx#L34) | Größenauswahl für ein neues Zelt oder eine Fläche |
 | `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:31`](src/pages/ZugfuehrerSeite.tsx#L31) | Startbildschirm des Zugführers: dieselbe Seitenleiste wie im Gesamtlagebild |
 
@@ -1129,6 +1132,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.4` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 4 (UI, ungeprüft - siehe ROADMAP): neue `ZeltMinispielBenachrichtigung.tsx` (+ Einbindung in `EinsatzSeite.tsx`) verzweigt je Rolle auf `ZeltMinispielGruppenfuehrerAnsicht.tsx` (voller Rundenplan + Countdown, nur lesend) oder `ZeltMinispielTeilnehmerAnsicht.tsx` (still bis zur eigenen Runde, dann "Anpacken!"); CSS-Erweiterung `.zeltminispiel-*` auf der `.delegation-toast`-Familie |
 | `DPS-0.8.2.3` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 3 (Verzweigungsstellen, noch ohne Spieler-Prompt): `ZeltBefehlBenachrichtigung.tsx`s `ausfuehren()` und `Lagekarte.tsx`s `selbstBauen()` prüfen `sollMinispielStarten(...)` und dispatchen bei Zutreffen `zeltMinispielStarten` (mit `teilnehmerVon()`/`rundenplanErzeugen()`) statt `zeltPlatzieren`; `else`-Zweig unverändert, `bauortBestaetigen()` (kein Gruppenführer) unangetastet |
 | `DPS-0.8.2.2` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 2 (Reducer + Sync, noch ohne UI/Aufrufstellen): `state.zeltMinispiele` mit vollem 3-Touchpoint-Schnappschuss-Spiegel; Aktionen `zeltMinispielStarten` (`platzierungGueltig`-Prüfung, bindet Crew via `gebundenBis`/`gebundenGrund`, ersetzt je Gruppenführer) und `zeltMinispielRundeGetroffen` (Runde/Person/Zeitfenster-Validierung, No-Op sonst); `case 'tick'` löst laufende Läufe selbst auf (`vorgerueckteMinispielRunde()`, `vollendeZeltMinispiel()`) statt über `zeltPlatzieren` zu gehen, das dabei komplett unangetastet bleibt |
 | `DPS-0.8.2.1` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 1 (Datenmodell, noch unverdrahtet): neue Typen `ZeltMinispielRunde`/`ZeltMinispielLauf` in `types.ts`; neue Datei `domain/zeltMinispiel.ts` mit dem alleinigen Ein-/Ausschalter `MINISPIEL_AKTIV`, Kalibrierungskonstanten, `teilnehmerVon()` (Gruppen-Besatzung flach als Spielerliste), `sollMinispielStarten()`, `rundenplanErzeugen()` (Round-Robin), `naechsteZielZeit()` (Verkürzungs-Deckel je Treffer durchgesetzt); nichts ruft es noch auf |

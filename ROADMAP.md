@@ -1243,6 +1243,42 @@ Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
   Verzweigung auf bereits getestete Bausteine 1+2), Boot-Smoke-Test ohne
   Konsolenfehler.
 
+- ✅ **Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 4: UI (`DPS-0.8.2.4`)**
+  - macht den seit Baustein 3 still mitlaufenden Minispiel-Pfad sichtbar.
+  Neue `ZeltMinispielBenachrichtigung.tsx` (→ `ui.zeltminispielbenachrichtigung`)
+  in `EinsatzSeite.tsx` neben `ZeltBefehlBenachrichtigung`/
+  `AbschnittFuehrenBefehlBenachrichtigung` eingebunden (abschnittunabhängig
+  sichtbar), rendert `null` sobald `MINISPIEL_AKTIV` aus ist - der einzige
+  UI-seitige Prüfpunkt des Schalters. Zwei Unteransichten:
+  `ZeltMinispielGruppenfuehrerAnsicht.tsx` zeigt nur dem Gruppenführer den
+  vollen Rundenplan (nummerierte Namen, aktuelle Runde hervorgehoben) + einen
+  live aus `state.zeitSek`/`zielZeitSek` berechneten Countdown - Weitergabe
+  der Zeitpunkte bewusst per echtem Sprechfunk statt automatisierter UI (→
+  Nutzerwunsch); `ZeltMinispielTeilnehmerAnsicht.tsx` bleibt für alle
+  anderen still, bis die synchronisierte `aktuelleRundeIndex` auf die eigene
+  Runde zeigt und `RUNDEN_FENSTER_SEK` noch nicht verstrichen ist, dann ein
+  einzelner "Anpacken!"-Knopf, der `zeltMinispielRundeGetroffen` dispatcht -
+  dank `istOptimistischeAktion` (→ Baustein 2) verschwindet der Knopf lokal
+  sofort. CSS erweitert die bestehende `.delegation-toast`-Familie um
+  `.zeltminispiel-rundenplan`/`.zeltminispiel-runde-aktuell`/
+  `.zeltminispiel-dran` (dezenter Puls-Rahmen fürs eigene Tipp-Fenster).
+  `tsc`/Lint/volle Testsuite grün, Boot-Smoke-Test ohne Konsolenfehler.
+  >
+  > ⚠️ **Ungeprüfter Stand:** wie bei `DPS-0.8.2.0` war in dieser Sandbox
+  > mangels Supabase-Zugangsdaten kein echter Mehrspieler-Testlauf möglich -
+  > hier zusätzlich erschwert durch die echtzeitgebundene Rundentaktung
+  > (`RUNDEN_INTERVALL_SEK = 60s`, `RUNDEN_FENSTER_SEK = 6s`): ein sinnvoller
+  > Live-Test bräuchte mehrere reale Minuten Wartezeit je Durchlauf, ein
+  > hochgesetztes `state.geschwindigkeit` würde das Tipp-Fenster künstlich
+  > verzerren (→ dokumentierte Einschränkung oben, "Bewusst nicht in v1").
+  > Vor dem nächsten Zugriff live mit mindestens drei echten Clients prüfen:
+  > Gruppenführer sieht nach dem Bau-Start den vollen Rundenplan mit
+  > schrumpfendem Countdown, ein Teilnehmer sieht "Anpacken!" exakt dann,
+  > wenn er laut Plan dran ist (und sonst nichts), ein Treffer verkürzt den
+  > Countdown sichtbar bei allen Clients, `GebundeneKraeftePanel` zeigt die
+  > ganze Crew während des Baus und leert sich bei Fertigstellung, das Zelt
+  > erscheint auf der Karte.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

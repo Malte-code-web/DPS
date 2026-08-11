@@ -21,6 +21,7 @@ import {
 } from '../domain/fuehrung';
 import { BESTUECKUNG, MATERIAL_LABEL } from '../domain/material';
 import { monitorPrioritaet } from '../domain/monitor';
+import { useNachObenBeiWechsel } from '../lib/useNachObenBeiWechsel';
 import { useSimulation } from '../state/useSimulation';
 import { useMonitorAlarm } from '../state/useMonitorAlarm';
 import { GesamtlagebildSeite } from './GesamtlagebildSeite';
@@ -73,6 +74,13 @@ export function EinsatzSeite() {
       ? 'mittel'
       : null;
   useMonitorAlarm(alarmStufe);
+
+  // Auch innerhalb des Einsatzes ist jeder Ansichtswechsel ein Seitenwechsel
+  // (→ `ui.nachoben`): Übersicht ↔ Detailsicht, ein anderer Abschnitt, ein
+  // geöffneter Patient. Alle drei zusammen bilden den Schlüssel.
+  useNachObenBeiWechsel(
+    `${state.ausgewaehlterPatientId ?? ''}|${uebersicht}|${state.ausgewaehlterAbschnitt}`,
+  );
 
   if (!szenario) {
     return (

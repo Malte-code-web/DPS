@@ -52,6 +52,14 @@
  */
 html {
   background: var(--bg);
+  /*
+   * Verhindert, dass iOS und Android die Schrift beim Drehen ins Querformat
+   * eigenmächtig aufblasen ("Text Autosizing") - die Größenverhältnisse der
+   * Oberfläche sind hier bewusst gesetzt und sollen auf jedem Gerät gleich
+   * wirken.
+   */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -5004,6 +5012,24 @@ tbody tr:last-child td {
   input,
   textarea {
     min-height: 44px;
+  }
+
+  /*
+   * iOS Safari zoomt die ganze Seite hinein, sobald ein Eingabefeld mit
+   * weniger als 16px Schriftgröße den Fokus bekommt - und zoomt danach nicht
+   * von selbst zurück. Auf dem Telefon blieb die App deshalb nach jedem Tippen
+   * in Sitzungscode oder Name vergrößert stehen. 16px ist die Schwelle, ab der
+   * iOS es sein lässt; auf Zeigegeräten bleibt die kompaktere Größe erhalten.
+   *
+   * `!important`, weil die Regel sonst gegen jede Komponentenregel mit
+   * Klassenselektor verliert (`.einstieg-form input`, `.dosis-eingabe input`,
+   * `.einsatzleiste-mitte select` …). Hier ist das kein Notnagel, sondern die
+   * Absicht: keine Detailgestaltung darf die Zoom-Schwelle unterlaufen.
+   */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 
   button {

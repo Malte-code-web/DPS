@@ -1447,6 +1447,58 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   > der Gruppenführer vor Ort, dann sie selbst); ein Gruppenwechsel im Einsatz
   > kommt erst nach Zustimmung der Person zustande.
 
+- ✅ **Audit: Bedienkomfort, Zoom, Ladegröße (`DPS-0.8.2.9`)** - Nutzerauftrag:
+  *"Achte auch auf Punkte der Quality of Life - neue Seiten immer oben starten,
+  passende Zoomstufen auf allen Endgeräten und die richtigen
+  Größeneinstellungen zur Leistungsoptimierung."* Drei gemessene Befunde, drei
+  Korrekturen:
+  1. **Neue Ansichten begannen mitten im Text** (→ `ui.nachoben`). Die App
+     wechselt ihre Seiten über den Zustand, nicht über echte Navigation - der
+     Browser hat also nichts, was er zurücksetzen könnte, und behielt die
+     Scrollposition. Wer weit unten in einer langen Patientenliste stand und
+     einen Patienten öffnete, landete mitten im Befund. Neuer Hook
+     `useNachObenBeiWechsel`, eingehängt am Phasenwechsel (`App.tsx`) und an
+     Patientenwahl/Übersicht/Abschnitt (`EinsatzSeite.tsx`). `behavior: 'auto'`
+     statt `'smooth'`, damit ein Ansichtswechsel sofort oben ist und nicht bei
+     jedem Klick eine Scrollfahrt auslöst (auch mit Blick auf
+     `prefers-reduced-motion`).
+  2. **iOS zoomte beim Tippen in ein Eingabefeld hinein und nicht wieder
+     heraus.** Safari vergrößert die Seite, sobald ein fokussiertes
+     `input`/`select`/`textarea` unter 16px Schriftgröße liegt - die kompakten
+     Formulare der App lagen bei 13,5px. Im bestehenden
+     `@media (pointer: coarse)`-Block (dort, wo schon die 44px-Tippziele
+     stehen) jetzt 16px für alle drei Elementarten; zusätzlich
+     `text-size-adjust: 100%` auf `html`, damit iOS im Querformat nicht
+     eigenmächtig nachskaliert. Nachgemessen auf iPhone SE, iPhone 14 Pro Max,
+     Pixel 7, iPad Mini quer und 320px Notbreite: überall 16px, nirgends
+     Querscrollen. Auf dem mausbedienten Desktop bleibt es bewusst bei 13,5px -
+     dort gibt es kein Auto-Zoom und die kompakte Darstellung ist gewollt.
+  3. **Das Anthropic-SDK lag im Bundle jedes Spielers.** Der KI-Generator ist
+     ein reines Übungsleitungs-Werkzeug, wurde aber mitgeladen, egal wer die
+     Seite öffnet. `KiGenerator` jetzt über `lazy()` + `Suspense` nachgeladen:
+     **1.120,71 kB → 942,68 kB** (gzip 329,42 → 279,17 kB), der Generator liegt
+     in einem eigenen Chunk (175,37 kB / 49,67 kB gzip), der erst beim Aufruf
+     geholt wird. Das Code-Splitting gilt nur für den gehosteten Bau; die
+     Einzeldatei-Ausgabe (`npm run build:single`) läuft jetzt über
+     `--mode einzeldatei` weiter ohne Splitting, weil `build-single-file.mjs`
+     genau eine JS- und eine CSS-Datei einbettet und ein nachzuladender Chunk
+     dort ins Leere liefe.
+
+  Ein vierter Befund entpuppte sich beim Nachmessen als Messfehler: Die erste
+  Prüfung meldete 36-38px große Tippziele, hatte aber ohne Touch-Profil
+  gemessen - mit `hasTouch` greift die vorhandene
+  `@media (pointer: coarse)`-Regel und alle Ziele liegen bei ≥44px. Kein
+  Mangel, keine Änderung.
+
+  `tsc`/Lint/volle Testsuite grün (559 Tests, unverändert die zwei bekannten
+  Umgebungsausfälle in `turnAnbieter.test.ts`), Bau in beiden Ausgabeformen
+  erfolgreich, Gerätemessung ohne Konsolenfehler.
+
+  **Nicht behoben, weil Entscheidung offen** (siehe *Horizont*): die
+  Schnappschuss-Bandbreite (35,8 kB alle 500 ms, davon ~47 % über die ganze
+  Sitzung konstant, Protokolle wachsen unbegrenzt) und die Re-Render-Struktur
+  (47 Komponenten am `useSimulation()`-Kontext, kein einziges `React.memo`).
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 
@@ -1463,6 +1515,25 @@ Weiter denkbar, sobald die Bausteine 1–5 stehen:
   `DPS-0.8.0.14` fertig - denkbar bliebe z. B. eine Aufschlüsselung nach
   Einsatzabschnitt oder nach handelnder Person statt nur Sitzungs-weit.
 - 💤 **Persistenz/Export** der Ergebnisse (PDF/CSV).
+- 💤 **Schnappschuss verschlanken** (Befund aus `DPS-0.8.2.9`). Gemessen:
+  **35,8 kB je Schnappschuss**, gesendet alle 500 ms plus 4-Sekunden-Herzschlag.
+  Davon sind rund **47 % über die gesamte Sitzung konstant** (`szenario`
+  11,2 kB, `massnahmenrechte` 5,9 kB) - sie werden zweihundertmal pro Minute
+  neu übertragen, obwohl sie sich nie ändern. Dazu wachsen `regieProtokoll`,
+  `spielerProtokoll` und `meldebuch` unbegrenzt mit (nach 30 Minuten
+  Übung 41,9 kB allein dafür). Sauber wäre eine Trennung in einen einmaligen
+  Sitzungskopf und ein wachsendes Delta - das ist aber eine Änderung am
+  **Synchronisationsprotokoll**, und die lässt sich in dieser Sandbox mangels
+  Supabase-Zugangsdaten nicht live absichern. Deshalb bewusst nicht im Audit
+  miterledigt.
+- 💤 **Re-Render-Struktur entzerren** (Befund aus `DPS-0.8.2.9`).
+  **47 Komponenten** hängen am `useSimulation()`-Kontext, **keine einzige** ist
+  mit `React.memo` abgeschirmt: jeder Takt (alle 500 ms) rendert alle 47 neu,
+  auch die, deren Daten sich nicht bewegt haben. Auf Desktop unauffällig, auf
+  älteren Tablets die wahrscheinlichste Ruckelquelle. Eine Korrektur greift
+  breit in die Komponentenstruktur ein (Kontext aufteilen oder Selektoren
+  einziehen) und sollte gegen echte Geräte gemessen werden, nicht blind
+  eingebaut.
 - 💤 **Serverseitiger Takt.** Löst die Bindung „Übungsleitungs-Tab muss offen
   bleiben" auf – entweder ein dauerhaft laufender Rechendienst (braucht echtes
   Server-Hosting, nicht nur Supabase) oder ein zeitstempel-basiertes Nachrechnen

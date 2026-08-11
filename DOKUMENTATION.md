@@ -649,6 +649,38 @@ Der didaktische Kern bleibt: Die Karte zeigt nur den Ersteindruck, also das,
 was ohne Gerät zu sehen ist. Wer Messwerte will, öffnet die Diagnostik und
 bezahlt sie mit Einsatzzeit.
 
+### Auf jedem Gerät bedienbar
+
+Drei Regeln, die auf dem Telefon den Unterschied machen und auf dem Desktop
+nicht auffallen:
+
+**Jede neue Ansicht beginnt oben** (→ `ui.nachoben`). Die App wechselt ihre
+Seiten über den Zustand, nicht über echte Navigation - der Browser hat also
+nichts, was er beim Wechsel zurücksetzen könnte, und behält die
+Scrollposition. Wer weit unten in einer langen Patientenliste stand und einen
+Patienten öffnete, landete mitten im Befund statt am Kopf der Seite.
+`useNachObenBeiWechsel` hängt an Phasenwechsel, Patientenwahl, Übersicht und
+Abschnitt und springt hart nach oben (`behavior: 'auto'`), statt bei jedem
+Klick eine Scrollfahrt auszulösen.
+
+**Tippziele mindestens 44 px, Eingabefelder mindestens 16 px** - beides im
+selben `@media (pointer: coarse)`-Block, also nur dort, wo mit dem Finger
+bedient wird. Die 16 px sind keine Geschmacksfrage: Safari auf iOS zoomt die
+Seite hinein, sobald ein fokussiertes `input`/`select`/`textarea` darunter
+liegt, und zoomt **nicht wieder heraus**. Die kompakten Formulare lagen bei
+13,5 px. Auf der Maus bleibt es bewusst bei 13,5 px - dort gibt es kein
+Auto-Zoom, und mehr Zeilen aufs Bild sind gewollt. Dazu
+`text-size-adjust: 100%` auf `html`, damit iOS im Querformat nicht eigenmächtig
+nachskaliert.
+
+**Der KI-Generator wird erst geladen, wenn ihn jemand aufruft.** Er ist ein
+Werkzeug der Übungsleitung, lag aber samt Anthropic-SDK im Bundle jedes
+Spielers. Über `lazy()` + `Suspense` liegt er in einem eigenen Chunk; das
+Hauptbundle schrumpfte damit von 1.120,71 kB auf 942,68 kB (gzip 329,42 →
+279,17 kB). Nur der gehostete Bau splittet - die Einzeldatei-Ausgabe läuft
+über `--mode einzeldatei` weiter ohne Splitting, weil dort genau eine JS- und
+eine CSS-Datei eingebettet werden und ein nachzuladender Chunk ins Leere liefe.
+
 ---
 
 ## 5. Ablauf der Einsatzabschnitte
@@ -684,7 +716,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_254 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -935,23 +967,23 @@ _253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 | Anker | Datei | Bedeutung |
 | --- | --- | --- |
-| `stil.anhaengekarte` | [`src/index.css:1545`](src/index.css#L1545) | Die Karte, ihre Farbreiter und die Einfärbung |
-| `stil.bereichsseite` | [`src/index.css:1929`](src/index.css#L1929) | Vollbildseite mit stehendem Kopf |
-| `stil.delegationsanfrage` | [`src/index.css:2462`](src/index.css#L2462) | Kandidatenwahl und Benachrichtigung der Delegation |
-| `stil.editor` | [`src/index.css:705`](src/index.css#L705) | Formularfelder und Prueflisten des Szenario-Editors |
-| `stil.einsatzleiste` | [`src/index.css:4787`](src/index.css#L4787) | Die angeheftete Leiste so flach wie möglich |
-| `stil.einstieg` | [`src/index.css:428`](src/index.css#L428) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
-| `stil.ersteindruck` | [`src/index.css:1982`](src/index.css#L1982) | Kompakte Befundchips statt gestapelter Zeilen |
-| `stil.fehlergrenze` | [`src/index.css:154`](src/index.css#L154) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
-| `stil.hover` | [`src/index.css:4458`](src/index.css#L4458) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
-| `stil.massnahmenrechte` | [`src/index.css:338`](src/index.css#L338) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
-| `stil.mehrspieler` | [`src/index.css:425`](src/index.css#L425) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
-| `stil.modi` | [`src/index.css:632`](src/index.css#L632) | Karten der Trainingsmodus-Auswahl |
-| `stil.patientnav` | [`src/index.css:1808`](src/index.css#L1808) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
-| `stil.sk-farbe` | [`src/index.css:220`](src/index.css#L220) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
-| `stil.telefon` | [`src/index.css:4859`](src/index.css#L4859) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
+| `stil.anhaengekarte` | [`src/index.css:1553`](src/index.css#L1553) | Die Karte, ihre Farbreiter und die Einfärbung |
+| `stil.bereichsseite` | [`src/index.css:1937`](src/index.css#L1937) | Vollbildseite mit stehendem Kopf |
+| `stil.delegationsanfrage` | [`src/index.css:2470`](src/index.css#L2470) | Kandidatenwahl und Benachrichtigung der Delegation |
+| `stil.editor` | [`src/index.css:713`](src/index.css#L713) | Formularfelder und Prueflisten des Szenario-Editors |
+| `stil.einsatzleiste` | [`src/index.css:4795`](src/index.css#L4795) | Die angeheftete Leiste so flach wie möglich |
+| `stil.einstieg` | [`src/index.css:436`](src/index.css#L436) | Direkter Spieler-/Übungsleitungs-Einstieg auf der Startseite |
+| `stil.ersteindruck` | [`src/index.css:1990`](src/index.css#L1990) | Kompakte Befundchips statt gestapelter Zeilen |
+| `stil.fehlergrenze` | [`src/index.css:162`](src/index.css#L162) | Ganzseitige Ausweichdarstellung nach einem Renderfehler |
+| `stil.hover` | [`src/index.css:4466`](src/index.css#L4466) | Hover nur mit echtem Zeiger - sonst klebt der Zustand |
+| `stil.massnahmenrechte` | [`src/index.css:346`](src/index.css#L346) | Übungsleitung stellt vor der Sitzung ein, wer was darf |
+| `stil.mehrspieler` | [`src/index.css:433`](src/index.css#L433) | Einstieg (Startseite), Maßnahmenrechte und Wartebereich |
+| `stil.modi` | [`src/index.css:640`](src/index.css#L640) | Karten der Trainingsmodus-Auswahl |
+| `stil.patientnav` | [`src/index.css:1816`](src/index.css#L1816) | Navigation einzeilig - sie darf keine Bildhöhe fressen |
+| `stil.sk-farbe` | [`src/index.css:228`](src/index.css#L228) | Kategoriefarbe als Variable - loest eine Spezifitaetsfalle |
+| `stil.telefon` | [`src/index.css:4867`](src/index.css#L4867) | Anpassungen unter 760 px, inklusive Tabellenumbruch |
 | `stil.tokens` | [`src/index.css:6`](src/index.css#L6) | Farben, Radien und Schatten der gesamten Oberfläche |
-| `stil.touch` | [`src/index.css:4990`](src/index.css#L4990) | Mindestgroesse der Tippziele auf Touch-Geraeten |
+| `stil.touch` | [`src/index.css:4998`](src/index.css#L4998) | Mindestgroesse der Tippziele auf Touch-Geraeten |
 
 #### szenarien
 
@@ -994,7 +1026,7 @@ _253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.analgesieauswahl` | [`src/components/Analgesieauswahl.tsx:26`](src/components/Analgesieauswahl.tsx#L26) | Ein Sammel-Button statt sechs Einzelknöpfe |
 | `ui.anhaengekarte` | [`src/components/Anhaengekarte.tsx:21`](src/components/Anhaengekarte.tsx#L21) | Die Übersicht als Verletztenanhängekarte |
 | `ui.ansichtsmenueicons` | [`src/components/AnsichtsmenueIcons.tsx:29`](src/components/AnsichtsmenueIcons.tsx#L29) | Icons für die Seitenleisten-Ansichtsmenüs |
-| `ui.app` | [`src/App.tsx:13`](src/App.tsx#L13) | Weiche zwischen den Hauptzustaenden der Anwendung |
+| `ui.app` | [`src/App.tsx:14`](src/App.tsx#L14) | Weiche zwischen den Hauptzustaenden der Anwendung |
 | `ui.baukasten` | [`src/pages/uebungsleitung/BaukastenGenerator.tsx:7`](src/pages/uebungsleitung/BaukastenGenerator.tsx#L7) | Kostenfrei erzeugen - ohne Schlüssel, ohne Netz |
 | `ui.befundtafel` | [`src/components/Befundtafel.tsx:15`](src/components/Befundtafel.tsx#L15) | Nur was erhoben wurde, ist zu sehen - und ein Tipp erhebt es |
 | `ui.bereichsseite` | [`src/pages/patient/Bereichsseite.tsx:15`](src/pages/patient/Bereichsseite.tsx#L15) | Diagnostik, Maßnahmen und Verlegung als eigene Seite |
@@ -1004,7 +1036,7 @@ _253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.dosiseingabe` | [`src/components/Dosiseingabe.tsx:12`](src/components/Dosiseingabe.tsx#L12) | Dosis in mg eingeben, live gegen das Körpergewicht gegengelesen |
 | `ui.einfaerbung` | [`src/components/Anhaengekarte.tsx:34`](src/components/Anhaengekarte.tsx#L34) | Halb eingefärbt heißt vorläufig, ganz heißt endgültig |
 | `ui.einsatzleiste` | [`src/components/Einsatzleiste.tsx:11`](src/components/Einsatzleiste.tsx#L11) | Kopfzeile: Sichtungszähler, Uhr, Status, Ablaufsteuerung |
-| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:32`](src/pages/EinsatzSeite.tsx#L32) | Gesamtlagebild (Regie), Zugführer-/Gruppenführer-Übersicht, Abschnittsliste oder Patientenseite |
+| `ui.einsatzseite` | [`src/pages/EinsatzSeite.tsx:33`](src/pages/EinsatzSeite.tsx#L33) | Gesamtlagebild (Regie), Zugführer-/Gruppenführer-Übersicht, Abschnittsliste oder Patientenseite |
 | `ui.ereignissepanel` | [`src/components/EreignissePanel.tsx:5`](src/components/EreignissePanel.tsx#L5) | Ereignis-Injektion: Fahrzeugausfall, Nachforderung, Lageänderung |
 | `ui.ersteindruck` | [`src/components/Ersteindruck.tsx:11`](src/components/Ersteindruck.tsx#L11) | Die fünf Befunde der Vorsichtung, ohne Messwerte |
 | `ui.fahrzeugkonfiguration` | [`src/pages/FahrzeugkonfigurationSeite.tsx:8`](src/pages/FahrzeugkonfigurationSeite.tsx#L8) | Fahrzeuge vor Sitzungsbeginn: MANV-Stufe oder einzeln |
@@ -1028,6 +1060,7 @@ _253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.modus` | [`src/pages/ModusSeite.tsx:5`](src/pages/ModusSeite.tsx#L5) | Modus wählen - entscheidet, auf welche Art gespielt wird |
 | `ui.monitor` | [`src/components/Monitor.tsx:20`](src/components/Monitor.tsx#L20) | Der Monitor in der Übersicht - Knopf zum Anschließen, dann live |
 | `ui.monitoralarm` | [`src/state/useMonitorAlarm.ts:69`](src/state/useMonitorAlarm.ts#L69) | Der Alarmton - gestaffelt und nur im selben Abschnitt |
+| `ui.nachoben` | [`src/lib/useNachObenBeiWechsel.ts:4`](src/lib/useNachObenBeiWechsel.ts#L4) | Jede neue Ansicht beginnt oben |
 | `ui.notfallnarkoseauswahl` | [`src/components/Notfallnarkoseauswahl.tsx:29`](src/components/Notfallnarkoseauswahl.tsx#L29) | Induktionsmittel wählen, dann relaxieren - erst mit vollem Team |
 | `ui.offeneanfragenpanel` | [`src/components/OffeneAnfragenPanel.tsx:5`](src/components/OffeneAnfragenPanel.tsx#L5) | Regie-weite Übersicht aller offenen Anfragen |
 | `ui.patienteditor` | [`src/pages/uebungsleitung/PatientEditor.tsx:34`](src/pages/uebungsleitung/PatientEditor.tsx#L34) | Formular für einen Szenario-Patienten samt Problemen |
@@ -1042,7 +1075,7 @@ _253 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.sprechfunk` | [`src/components/Sprechfunk.tsx:15`](src/components/Sprechfunk.tsx#L15) | Sprechfunk: echte Live-Sprachverbindung in freien Rufgruppen |
 | `ui.start` | [`src/pages/StartSeite.tsx:10`](src/pages/StartSeite.tsx#L10) | Startseite: nur der Einstieg als Spieler oder Übungsleitung |
 | `ui.szenarioeditor` | [`src/pages/uebungsleitung/SzenarioEditor.tsx:16`](src/pages/uebungsleitung/SzenarioEditor.tsx#L16) | Formular für ein ganzes Szenario mit laufender Prüfung |
-| `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:6`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L6) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
+| `ui.szenarioquelle` | [`src/pages/uebungsleitung/SzenarioQuelle.tsx:16`](src/pages/uebungsleitung/SzenarioQuelle.tsx#L16) | Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell |
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:13`](src/components/Verlegung.tsx#L13) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:26`](src/pages/WartebereichSeite.tsx#L26) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
@@ -1137,6 +1170,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.9` | Audit Bedienkomfort/Zoom/Ladegröße: neuer Hook `useNachObenBeiWechsel` (→ `ui.nachoben`) - jede neue Ansicht beginnt oben statt die Scrollposition der vorigen zu erben (Phasenwechsel in `App.tsx`, Patientenwahl/Übersicht/Abschnitt in `EinsatzSeite.tsx`); iOS-Auto-Zoom beim Fokussieren von Eingabefeldern behoben (`font-size: 16px` für `input`/`select`/`textarea` im bestehenden `@media (pointer: coarse)`-Block, `text-size-adjust: 100%` auf `html`) - auf der Maus bleibt es bei 13,5 px; `KiGenerator` über `lazy()` + `Suspense` in einen eigenen Chunk (Hauptbundle 1.120,71 → 942,68 kB, gzip 329,42 → 279,17 kB), Einzeldatei-Bau läuft über `vite build --mode einzeldatei` weiter ohne Splitting |
 | `DPS-0.8.2.8` | Gruppe im Einsatz sichtbar + einzelnes Personal verschiebbar, mit echter Rückfrage: neue Aktion `spielerEinsatzabschnittSetzen` (einzelne Person abweichend von der Gruppe einteilen); neues `state.personalanfragen` + `Personalanfrage` + `personalanfrageBeantworten` - ein Gruppen-Auftrag reißt einzeln Eingeteilte nicht mehr mit, sondern fragt zweistufig (Gruppenführer vor Ort, dann die Person), ein Gruppenwechsel im Einsatz braucht die Zustimmung der Person (im Wartebereich weiterhin direkt); neuer Toast `PersonalanfrageBenachrichtigung.tsx`; `GruppenZuweisung.tsx` mit Personal-Block und ohne Fahrzeug-Gate beim Einsatzauftrag; `GruppenfuehrerSeite.tsx` zeigt die Personen der Gruppe statt nur Fahrzeuge |
 | `DPS-0.8.2.7` | Fahrzeuge fahren frei zwischen allen Standorten: `FAHRZEUG_ZUSATZ_ZIELE` (additive Kanten auf dem Patienten-Graphen `ZIELE`) durch die Standortliste `FAHRZEUG_STANDORTE` ersetzt - jedes Fahrzeug erreicht jeden Standort außer dem eigenen, statt nur den Rettungsmittelhalteplatz; `verdeckt` bleibt ausgenommen (kein Ort), `transport` bleibt ohne Rückweg; `ZIELE`/`istVerlegungMoeglich` für Patienten unverändert; `bereitstellungsraum` bekommt einen `AbschnittInfo`-Eintrag |
 | `DPS-0.8.2.6` | Gruppen bestehen aus Personen und ziehen auf Befehl wirklich um: neues `Spieler.gruppenfuehrerId` (Gruppe wird im Wartebereich vom Zugführer zusammengestellt, jede Person in höchstens einer Gruppe) + `spielerGruppeZuweisen` + `gruppenMitglieder()`; neues `Spieler.einsatzabschnitt` (befohlene Position, getrennt von der reinen Blickrichtung `aktuellerAbschnitt`), gesetzt von `abschnittFuehrenBefehlAusfuehren` für Gruppenführer + Mitglieder, Provider-Effekt zieht die eigene Ansicht einmalig nach - vorher bewegte der Befehl ausschließlich Fahrzeuge, Personen kamen nie an; `Abschnittsleiste` zeigt nur eröffnete Abschnitte (Schadensstelle zu Beginn, Rest nach Bau); `teilnehmerVon()` des Zeltminispiels liest die Personen-Gruppe statt der Fahrzeugbesatzung; Fahrzeuge bleiben optional einer Gruppe zuordenbar |
@@ -1222,12 +1256,13 @@ So ist jede Versionsnummer ein Stand, der nachweislich lief.
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           332 Tests
+npm run test           559 Tests
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript
-npm run build          Produktionsbuild
+npm run build          Produktionsbuild (mit Code-Splitting)
 npm run build:single   dist/dps.html – eine Datei, ohne Server lauffähig
+                       (läuft über --mode einzeldatei, ohne Splitting)
 npm run anker          Ankertabelle in dieser Datei neu erzeugen
 npm run anker:pruefen  prüft, ob die Tabelle aktuell ist
 ```

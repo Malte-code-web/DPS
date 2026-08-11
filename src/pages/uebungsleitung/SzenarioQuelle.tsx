@@ -1,6 +1,16 @@
+import { lazy, Suspense } from 'react';
 import { BaukastenGenerator } from './BaukastenGenerator';
-import { KiGenerator } from './KiGenerator';
 import type { Szenario } from '../../domain/types';
+
+/**
+ * Erst beim Umschalten auf "Sprachmodell" geladen: `KiGenerator` zieht das
+ * Anthropic-SDK nach sich (→ `ki.client`), das sonst im Bundle **jedes**
+ * Spielers landet - obwohl es nur die Übungsleitung beim Szenario-Bauen je
+ * braucht. Das sind rund 300 kB, die niemand im Einsatz herunterlädt.
+ */
+const KiGenerator = lazy(() =>
+  import('./KiGenerator').then((modul) => ({ default: modul.KiGenerator })),
+);
 
 /**
  * @anker ui.szenarioquelle Zwei Wege zu einer neuen Lage - kostenfrei oder per Modell
@@ -54,7 +64,9 @@ export function SzenarioQuelle({ onEntwurf, onMeldung, quelle, onQuelle }: Props
       {quelle === 'baukasten' ? (
         <BaukastenGenerator onEntwurf={onEntwurf} onMeldung={onMeldung} />
       ) : (
-        <KiGenerator onEntwurf={onEntwurf} onMeldung={onMeldung} />
+        <Suspense fallback={<p className="hinweis">Modell-Anbindung wird geladen …</p>}>
+          <KiGenerator onEntwurf={onEntwurf} onMeldung={onMeldung} />
+        </Suspense>
       )}
     </section>
   );

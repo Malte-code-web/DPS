@@ -14,6 +14,13 @@ import {
   verfuegbareFlaecheQm,
 } from '../domain/flaechen';
 import { holeStrassenroute } from '../net/routingDienst';
+import {
+  istZeltTyp,
+  rundenanzahlFuer,
+  rundenplanErzeugen,
+  sollMinispielStarten,
+  teilnehmerVon,
+} from '../domain/zeltMinispiel';
 import { ZEICHEN_JE_ABSCHNITT } from '../domain/taktischeZeichen';
 import { useSimulation } from '../state/useSimulation';
 import { useZeitkostenStatus, zeitkostenHintergrund } from '../state/useZeitkostenStatus';
@@ -274,6 +281,30 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
 
   const selbstBauen = () => {
     if (!entscheidung) return;
+    const eigeneId = state.sitzung.eigeneId;
+    // Minispiel statt Direktbau, wenn eingeschaltet, ein echtes Zelt (kein
+    // reines Fläche), die bauende Person tatsächlich Gruppenführer ist und
+    // eine Gruppe zum Mitspielen da ist (→ `domain.zeltminispiel`) - sonst
+    // unverändert der bisherige Direktbau.
+    if (eigeneId && istZeltTyp(entscheidung.typ)) {
+      const flaechenTyp = entscheidung.typ;
+      if (sollMinispielStarten(state.fahrzeuge, state.sitzung.spieler, flaechenTyp, eigeneId)) {
+        const teilnehmerIds = teilnehmerVon(state.fahrzeuge, eigeneId);
+        dispatch({
+          typ: 'zeltMinispielStarten',
+          id: erzeugeId(),
+          gruppenfuehrerId: eigeneId,
+          abschnitt: entscheidung.abschnitt,
+          flaechenTyp,
+          xM: entscheidung.xM,
+          yM: entscheidung.yM,
+          teilnehmerIds,
+          rundenplan: rundenplanErzeugen(teilnehmerIds, rundenanzahlFuer(groesseVon(flaechenTyp).aufbauSek)),
+        });
+        setEntscheidung(null);
+        return;
+      }
+    }
     dispatch({
       typ: 'zeltPlatzieren',
       id: erzeugeId(),
@@ -281,7 +312,7 @@ export function Lagekarte({ interaktiv = true }: { interaktiv?: boolean }) {
       abschnitt: entscheidung.abschnitt,
       xM: entscheidung.xM,
       yM: entscheidung.yM,
-      spielerId: state.sitzung.eigeneId ?? undefined,
+      spielerId: eigeneId ?? undefined,
     });
     setEntscheidung(null);
   };

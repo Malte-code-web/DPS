@@ -1,5 +1,12 @@
 import { geoPunktName } from '../domain/geodaten';
 import { groesseVon } from '../domain/flaechen';
+import {
+  istZeltTyp,
+  rundenanzahlFuer,
+  rundenplanErzeugen,
+  sollMinispielStarten,
+  teilnehmerVon,
+} from '../domain/zeltMinispiel';
 import { useSimulation } from '../state/useSimulation';
 import { useZeitkostenStatus } from '../state/useZeitkostenStatus';
 
@@ -28,7 +35,29 @@ export function ZeltBefehlBenachrichtigung() {
   const info = groesseVon(befehl.typ);
   const zkBeschaeftigt = zk.aktion !== null;
 
-  const ausfuehren = () =>
+  const ausfuehren = () => {
+    // Minispiel statt Direktbau, wenn eingeschaltet, ein echtes Zelt (kein
+    // reines Fläche) und eine Gruppe zum Mitspielen da ist (→
+    // `domain.zeltminispiel`) - sonst unverändert der bisherige Direktbau.
+    if (eigeneId && istZeltTyp(befehl.typ)) {
+      const flaechenTyp = befehl.typ;
+      if (sollMinispielStarten(state.fahrzeuge, state.sitzung.spieler, flaechenTyp, eigeneId)) {
+        const teilnehmerIds = teilnehmerVon(state.fahrzeuge, eigeneId);
+        dispatch({
+          typ: 'zeltMinispielStarten',
+          id: befehl.id,
+          gruppenfuehrerId: eigeneId,
+          abschnitt: befehl.abschnitt,
+          flaechenTyp,
+          xM: befehl.xM,
+          yM: befehl.yM,
+          befehlId: befehl.id,
+          teilnehmerIds,
+          rundenplan: rundenplanErzeugen(teilnehmerIds, rundenanzahlFuer(groesseVon(flaechenTyp).aufbauSek)),
+        });
+        return;
+      }
+    }
     dispatch({
       typ: 'zeltPlatzieren',
       id: befehl.id,
@@ -39,6 +68,7 @@ export function ZeltBefehlBenachrichtigung() {
       spielerId: eigeneId ?? undefined,
       befehlId: befehl.id,
     });
+  };
 
   const ablehnen = () => dispatch({ typ: 'zeltBefehlAblehnen', id: befehl.id });
 

@@ -1225,6 +1225,24 @@ Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
   Weiterhin nichts, was `MINISPIEL_AKTIV` je auf `false` prüfen müsste, ruft
   die neuen Aktionen auf - noch komplett folgenlos für die laufende App.
 
+- ✅ **Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 3: Verzweigungsstellen
+  (`DPS-0.8.2.3`)** - verdrahtet die beiden Stellen, an denen bisher immer
+  direkt `zeltPlatzieren` dispatcht wurde, mit dem in Baustein 2 gebauten
+  Minispiel-Pfad, noch ohne sichtbaren Spieler-Prompt (folgt in Baustein 4) -
+  ein still durchlaufendes Zwischenstadium, das den Bau schon jetzt komplett
+  über die neue Zeit-Engine laufen lässt. `ZeltBefehlBenachrichtigung.tsx`s
+  `ausfuehren()` und `Lagekarte.tsx`s `selbstBauen()` prüfen jetzt zuerst
+  `sollMinispielStarten(...)` (Schalter an, echtes Zelt, bauende Person ist
+  Gruppenführer, Gruppe zum Mitspielen da) und dispatchen bei Zutreffen
+  `zeltMinispielStarten` mit clientseitig erzeugtem `teilnehmerIds`
+  (`teilnehmerVon()`) und `rundenplan` (`rundenplanErzeugen()`) statt
+  `zeltPlatzieren` - der `else`-Zweig ist unverändert der bisherige
+  Direktbau, `Lagekarte.tsx`s Gruppenführer-lose `bauortBestaetigen()`-Zweig
+  bleibt komplett unangetastet (dort gibt es keine Gruppe für ein Minispiel).
+  `tsc`/Lint/volle Testsuite weiterhin grün (keine neuen Tests nötig - reine
+  Verzweigung auf bereits getestete Bausteine 1+2), Boot-Smoke-Test ohne
+  Konsolenfehler.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

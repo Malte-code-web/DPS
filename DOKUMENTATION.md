@@ -1016,8 +1016,8 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.kigenerator` | [`src/pages/uebungsleitung/KiGenerator.tsx:16`](src/pages/uebungsleitung/KiGenerator.tsx#L16) | Vom Modell erzeugen lassen - Zugang, Lauf, Befunde |
 | `ui.koerperschema` | [`src/components/Koerperschema.tsx:6`](src/components/Koerperschema.tsx#L6) | Wo am Patienten etwas ist - Vorder- und Rückansicht |
 | `ui.kollegenanfragebenachrichtigung` | [`src/components/KollegenanfrageBenachrichtigung.tsx:7`](src/components/KollegenanfrageBenachrichtigung.tsx#L7) | Benachrichtigung: ein Team braucht Unterstützung |
-| `ui.lagekarte` | [`src/components/Lagekarte.tsx:106`](src/components/Lagekarte.tsx#L106) | Echte, maßstabsgetreue Lagekarte statt Kartenansicht/Baufeld |
-| `ui.lagekarte.bauen` | [`src/components/Lagekarte.tsx:120`](src/components/Lagekarte.tsx#L120) | Bauen per Kartenklick statt Knopfliste |
+| `ui.lagekarte` | [`src/components/Lagekarte.tsx:113`](src/components/Lagekarte.tsx#L113) | Echte, maßstabsgetreue Lagekarte statt Kartenansicht/Baufeld |
+| `ui.lagekarte.bauen` | [`src/components/Lagekarte.tsx:127`](src/components/Lagekarte.tsx#L127) | Bauen per Kartenklick statt Knopfliste |
 | `ui.massnahmenliste` | [`src/components/Massnahmenliste.tsx:44`](src/components/Massnahmenliste.tsx#L44) | Das einklappbare xABCDE-Akkordeon |
 | `ui.massnahmenrechte` | [`src/pages/MassnahmenrechteSeite.tsx:23`](src/pages/MassnahmenrechteSeite.tsx#L23) | Grundeinstellung: gleich zu Beginn, wer was darf |
 | `ui.meldebuch` | [`src/components/Meldebuch.tsx:14`](src/components/Meldebuch.tsx#L14) | Freitext-Meldebuch: was der Zugführer per Funk erfragt hat |
@@ -1041,7 +1041,7 @@ _245 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `ui.uebungsleitung` | [`src/pages/UebungsleitungSeite.tsx:14`](src/pages/UebungsleitungSeite.tsx#L14) | Szenarien anlegen, prüfen, ein- und ausgeben |
 | `ui.verlegung` | [`src/components/Verlegung.tsx:13`](src/components/Verlegung.tsx#L13) | Schaltflächen zum Verlegen, passendes Zelt hervorgehoben |
 | `ui.wartebereich` | [`src/pages/WartebereichSeite.tsx:24`](src/pages/WartebereichSeite.tsx#L24) | Lobby vor dem Start - Code, Teilnehmende, Startknopf |
-| `ui.zeltbefehlbenachrichtigung` | [`src/components/ZeltBefehlBenachrichtigung.tsx:7`](src/components/ZeltBefehlBenachrichtigung.tsx#L7) | Benachrichtigung: der Zugführer befiehlt ein Zelt oder eine Fläche |
+| `ui.zeltbefehlbenachrichtigung` | [`src/components/ZeltBefehlBenachrichtigung.tsx:14`](src/components/ZeltBefehlBenachrichtigung.tsx#L14) | Benachrichtigung: der Zugführer befiehlt ein Zelt oder eine Fläche |
 | `ui.zelttypauswahl` | [`src/components/ZeltTypAuswahl.tsx:34`](src/components/ZeltTypAuswahl.tsx#L34) | Größenauswahl für ein neues Zelt oder eine Fläche |
 | `ui.zugfuehrerseite` | [`src/pages/ZugfuehrerSeite.tsx:31`](src/pages/ZugfuehrerSeite.tsx#L31) | Startbildschirm des Zugführers: dieselbe Seitenleiste wie im Gesamtlagebild |
 
@@ -1129,6 +1129,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.3` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 3 (Verzweigungsstellen, noch ohne Spieler-Prompt): `ZeltBefehlBenachrichtigung.tsx`s `ausfuehren()` und `Lagekarte.tsx`s `selbstBauen()` prüfen `sollMinispielStarten(...)` und dispatchen bei Zutreffen `zeltMinispielStarten` (mit `teilnehmerVon()`/`rundenplanErzeugen()`) statt `zeltPlatzieren`; `else`-Zweig unverändert, `bauortBestaetigen()` (kein Gruppenführer) unangetastet |
 | `DPS-0.8.2.2` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 2 (Reducer + Sync, noch ohne UI/Aufrufstellen): `state.zeltMinispiele` mit vollem 3-Touchpoint-Schnappschuss-Spiegel; Aktionen `zeltMinispielStarten` (`platzierungGueltig`-Prüfung, bindet Crew via `gebundenBis`/`gebundenGrund`, ersetzt je Gruppenführer) und `zeltMinispielRundeGetroffen` (Runde/Person/Zeitfenster-Validierung, No-Op sonst); `case 'tick'` löst laufende Läufe selbst auf (`vorgerueckteMinispielRunde()`, `vollendeZeltMinispiel()`) statt über `zeltPlatzieren` zu gehen, das dabei komplett unangetastet bleibt |
 | `DPS-0.8.2.1` | Zeltaufbau-Minispiel "Kommando-Aufbau", Baustein 1 (Datenmodell, noch unverdrahtet): neue Typen `ZeltMinispielRunde`/`ZeltMinispielLauf` in `types.ts`; neue Datei `domain/zeltMinispiel.ts` mit dem alleinigen Ein-/Ausschalter `MINISPIEL_AKTIV`, Kalibrierungskonstanten, `teilnehmerVon()` (Gruppen-Besatzung flach als Spielerliste), `sollMinispielStarten()`, `rundenplanErzeugen()` (Round-Robin), `naechsteZielZeit()` (Verkürzungs-Deckel je Treffer durchgesetzt); nichts ruft es noch auf |
 | `DPS-0.8.2.0` | Gruppenführer-Ansicht, Teil 1 (Grundgerüst): neue exakte Rollenprüfung `istGruppenfuehrend()`, neue Seite `GruppenfuehrerSeite.tsx` zeigt "Meine Gruppe" (zugewiesene Fahrzeuge mit Typ/Abschnitt/Besatzung, Klick öffnet Abschnitt-Detailsicht), neuer Übersicht-Zweig in `EinsatzSeite.tsx`; deutlich schmaler als die Zugführer-Ansicht (nur die eigene Gruppe, nicht die ganze Einsatzstelle) |

@@ -1279,6 +1279,14 @@ Damit ist die Zugführer-Ebene (`DPS-0.8.1.x`) vollständig.
   > ganze Crew während des Baus und leert sich bei Fertigstellung, das Zelt
   > erscheint auf der Karte.
 
+Damit ist das Zeltaufbau-Minispiel "Kommando-Aufbau" (`DPS-0.8.2.1`-`.4`) in
+seinem ersten vollständigen Umfang fertig - Bausteine 5 ("Verifikation +
+Politur") fällt mit Baustein 4 zusammen, da dieselbe echtzeitgebundene
+Rundentaktung dieselbe Live-Test-Einschränkung auferlegt (siehe dortiger
+Vermerk): `tsc`/Lint/volle Testsuite laufen wiederholt grün, ein echter
+Mehrspieler-Praxistest mit realer Kalibrierungs-Gegenprobe steht noch aus.
+Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

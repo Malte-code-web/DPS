@@ -301,6 +301,7 @@ export function SimulationProvider({
     abschnittFuehrenBefehle,
     meldebuch,
     zeltMinispiele,
+    personalanfragen,
   } = state;
   const spielerliste = sitzung.spieler;
   const status = sitzung.status;
@@ -331,6 +332,7 @@ export function SimulationProvider({
       abschnittFuehrenBefehle,
       meldebuch,
       zeltMinispiele,
+      personalanfragen,
     }),
     [
       phase,
@@ -356,6 +358,7 @@ export function SimulationProvider({
       abschnittFuehrenBefehle,
       meldebuch,
       zeltMinispiele,
+      personalanfragen,
     ],
   );
 

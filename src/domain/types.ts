@@ -817,6 +817,47 @@ export interface Kollegenanfrage {
   dosisMg?: number;
 }
 
+/** Worum es bei einer `Personalanfrage` geht (→ `modell.personalanfrage`). */
+export type PersonalanfrageGrund = 'gruppenwechsel' | 'abschnittswechsel';
+
+/**
+ * @anker modell.personalanfrage Rückfrage, bevor jemand umgeteilt oder mitgezogen wird
+ *
+ * Personal wird nicht über die Köpfe hinweg verschoben: wo eine Entscheidung
+ * jemanden aus einer bestehenden Bindung lösen würde, entsteht statt einer
+ * stillen Änderung eine echte Anfrage, die angenommen oder abgelehnt werden
+ * kann - dasselbe Muster wie `modell.delegationsanfrage` und
+ * `modell.kollegenanfrage`, nur für die Zugehörigkeit statt für eine Maßnahme.
+ *
+ * Zwei Anlässe:
+ * - `'gruppenwechsel'`: jemand soll im laufenden Einsatz in eine andere Gruppe
+ *   (→ `modell.gruppe.person`). Die betroffene Person entscheidet selbst. Im
+ *   Wartebereich - der Planungsphase - teilt der Zugführer dagegen weiterhin
+ *   direkt zu, dort gibt es noch nichts zu unterbrechen.
+ * - `'abschnittswechsel'`: ein Gruppen-Auftrag (→ `modell.abschnittfuehrenbefehl`)
+ *   würde jemanden mitziehen, der einzeln woanders eingeteilt ist
+ *   (→ `modell.einsatzabschnitt`). Zweistufig: erst gibt der Gruppenführer vor
+ *   Ort die Person frei (`stufe: 'freigabe'`), dann entscheidet sie selbst
+ *   (`stufe: 'person'`). Sitzt an ihrem Standort kein Gruppenführer, entfällt
+ *   die erste Stufe.
+ */
+export interface Personalanfrage {
+  id: string;
+  grund: PersonalanfrageGrund;
+  /** Um wen es geht. */
+  spielerId: string;
+  /** Wer gerade antworten muss - wandert bei `'abschnittswechsel'` von der Freigabe zur Person. */
+  anEmpfaengerId: string;
+  /** Nur `'abschnittswechsel'`: welche der beiden Stufen gerade offen ist. */
+  stufe: 'freigabe' | 'person';
+  /** Nur `'gruppenwechsel'`: in welche Gruppe die Person wechseln soll. */
+  neuerGruppenfuehrerId?: string;
+  /** Nur `'abschnittswechsel'`: wohin die Gruppe befohlen wurde. */
+  ziel?: Einsatzabschnitt;
+  /** Wer den Vorgang ausgelöst hat - nur für den Anzeigetext. */
+  ausgeloestVonId: string;
+}
+
 /**
  * @anker modell.rufgruppe Mitgliedschaft in einer Sprechfunk-Rufgruppe
  *

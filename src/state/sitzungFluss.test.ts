@@ -4,7 +4,7 @@ import { gruppenMitglieder } from '../domain/fuehrung';
 import { RUNDEN_FENSTER_SEK, rundenanzahlFuer, rundenplanErzeugen } from '../domain/zeltMinispiel';
 import { ANFANGSZUSTAND, schnappschussAus, simulationReducer } from './reducer';
 import type { SimulationState } from './reducer';
-import type { EingeklemmtStatus, ZeltMinispielRunde } from '../domain/types';
+import type { EingeklemmtStatus, Einsatzabschnitt, ZeltMinispielRunde } from '../domain/types';
 
 const busunfall = SZENARIEN.find((szenario) => szenario.id === 'busunfall-b31')!;
 
@@ -3008,6 +3008,256 @@ describe('Gruppen aus Personen im Wartebereich (→ modell.gruppe.person)', () =
       rolle: 'gruppenfuehrer',
     });
     expect(befoerdert.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBeUndefined();
+  });
+});
+
+describe('Einzelne Einteilung und Personalanfragen (→ modell.einsatzabschnitt, modell.personalanfrage)', () => {
+  /** Zugführer, ein Gruppenführer mit zwei Mitgliedern, im Einsatz. */
+  function imEinsatz(): SimulationState {
+    const basis = spiele(
+      { typ: 'gemeinsamOeffnen' },
+      { typ: 'rolleWaehlen', rolle: 'uebungsleiter' },
+      { typ: 'anmeldungAbschliessen', name: 'OrgL', eigeneId: 'leiter-1' },
+      { typ: 'modusWaehlen', modus: 'digital' },
+      { typ: 'massnahmenrechteAbgeschlossen' },
+      { typ: 'szenarioFuerSitzungWaehlen', szenario: busunfall },
+      { typ: 'manvStufeGewaehlt', stufe: 'manv10' },
+      { typ: 'fahrzeugkonfigurationAbgeschlossen' },
+    );
+    const mitLeuten = [
+      {
+        id: 'gf-1',
+        name: 'Gruber',
+        rolle: 'spieler' as const,
+        qualifikation: 'notsan' as const,
+        fuehrungsrolle: 'gruppenfuehrer' as const,
+      },
+      { id: 'bert', name: 'Bert', rolle: 'spieler' as const, qualifikation: 'basis' as const },
+      { id: 'clara', name: 'Clara', rolle: 'spieler' as const, qualifikation: 'basis' as const },
+    ].reduce(
+      (zwischenstand, spieler) =>
+        simulationReducer(zwischenstand, { typ: 'spielerHinzugefuegt', spieler }),
+      basis,
+    );
+    // Gruppe noch im Wartebereich zusammenstellen - dort wirkt es direkt.
+    const mitGruppe = ['bert', 'clara'].reduce(
+      (zwischenstand, spielerId) =>
+        simulationReducer(zwischenstand, {
+          typ: 'spielerGruppeZuweisen',
+          spielerId,
+          gruppenfuehrerId: 'gf-1',
+        }),
+      mitLeuten,
+    );
+    return simulationReducer(mitGruppe, { typ: 'sitzungStarten' });
+  }
+
+  function befehlAusfuehren(state: SimulationState, ziel: Einsatzabschnitt): SimulationState {
+    const befohlen = simulationReducer(state, {
+      typ: 'abschnittFuehrenBefehlErteilen',
+      id: `auftrag-${ziel}`,
+      ziel,
+      zugfuehrerId: 'leiter-1',
+      gruppenfuehrerId: 'gf-1',
+    });
+    return simulationReducer(befohlen, {
+      typ: 'abschnittFuehrenBefehlAusfuehren',
+      id: `auftrag-${ziel}`,
+    });
+  }
+
+  it('teilt eine einzelne Person ein und hebt die Einteilung wieder auf', () => {
+    const eingeteilt = simulationReducer(imEinsatz(), {
+      typ: 'spielerEinsatzabschnittSetzen',
+      spielerId: 'bert',
+      abschnitt: 'ablage',
+    });
+    expect(eingeteilt.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBe('ablage');
+    expect(eingeteilt.regieProtokoll.at(-1)?.text).toContain('Bert');
+
+    const aufgehoben = simulationReducer(eingeteilt, {
+      typ: 'spielerEinsatzabschnittSetzen',
+      spielerId: 'bert',
+      abschnitt: null,
+    });
+    expect(aufgehoben.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBeUndefined();
+  });
+
+  it('bleibt bei unbekannter spielerId unverändert', () => {
+    const state = imEinsatz();
+    expect(
+      simulationReducer(state, {
+        typ: 'spielerEinsatzabschnittSetzen',
+        spielerId: 'gibtsnicht',
+        abschnitt: 'ablage',
+      }),
+    ).toBe(state);
+  });
+
+  it('reißt eine einzeln eingeteilte Person nicht mit, sondern fragt sie', () => {
+    const eingeteilt = simulationReducer(imEinsatz(), {
+      typ: 'spielerEinsatzabschnittSetzen',
+      spielerId: 'bert',
+      abschnitt: 'ablage',
+    });
+    const ausgefuehrt = befehlAusfuehren(eingeteilt, 'eingangssichtung');
+
+    // Clara zieht mit, Bert bleibt vorerst stehen.
+    expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === 'clara')?.einsatzabschnitt).toBe(
+      'eingangssichtung',
+    );
+    expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBe('ablage');
+    expect(ausgefuehrt.personalanfragen).toHaveLength(1);
+    expect(ausgefuehrt.personalanfragen[0]).toMatchObject({
+      grund: 'abschnittswechsel',
+      spielerId: 'bert',
+      // Kein Gruppenführer an der Ablage → direkt die Person selbst.
+      anEmpfaengerId: 'bert',
+      stufe: 'person',
+      ziel: 'eingangssichtung',
+    });
+  });
+
+  it('fragt beim zweiten Auftrag hintereinander niemanden (alle stehen bei der Gruppe)', () => {
+    const erst = befehlAusfuehren(imEinsatz(), 'eingangssichtung');
+    expect(erst.personalanfragen).toEqual([]);
+    const zweit = befehlAusfuehren(erst, 'ablage');
+    expect(zweit.personalanfragen).toEqual([]);
+    for (const id of ['gf-1', 'bert', 'clara']) {
+      expect(zweit.sitzung.spieler.find((s) => s.id === id)?.einsatzabschnitt).toBe('ablage');
+    }
+  });
+
+  it('fragt zweistufig, wenn am Standort ein anderer Gruppenführer sitzt', () => {
+    const mitZweitemGf = simulationReducer(imEinsatz(), {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gf-2',
+        name: 'Schmidt',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    // Der zweite Gruppenführer steht an der Ablage, Bert ist dorthin abgeordnet.
+    const aufgestellt = simulationReducer(
+      simulationReducer(mitZweitemGf, {
+        typ: 'spielerEinsatzabschnittSetzen',
+        spielerId: 'gf-2',
+        abschnitt: 'ablage',
+      }),
+      { typ: 'spielerEinsatzabschnittSetzen', spielerId: 'bert', abschnitt: 'ablage' },
+    );
+    const ausgefuehrt = befehlAusfuehren(aufgestellt, 'eingangssichtung');
+
+    const anfrage = ausgefuehrt.personalanfragen[0]!;
+    expect(anfrage).toMatchObject({ stufe: 'freigabe', anEmpfaengerId: 'gf-2', spielerId: 'bert' });
+
+    // Freigabe erteilt → dieselbe Anfrage wandert weiter zur Person.
+    const freigegeben = simulationReducer(ausgefuehrt, {
+      typ: 'personalanfrageBeantworten',
+      id: anfrage.id,
+      angenommen: true,
+    });
+    expect(freigegeben.personalanfragen[0]).toMatchObject({
+      stufe: 'person',
+      anEmpfaengerId: 'bert',
+    });
+    expect(freigegeben.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBe('ablage');
+
+    // Person sagt zu → jetzt erst wirkt der Wechsel.
+    const gewechselt = simulationReducer(freigegeben, {
+      typ: 'personalanfrageBeantworten',
+      id: anfrage.id,
+      angenommen: true,
+    });
+    expect(gewechselt.personalanfragen).toEqual([]);
+    expect(gewechselt.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBe(
+      'eingangssichtung',
+    );
+  });
+
+  it('beendet den Vorgang wirkungslos, wenn die Freigabe verweigert wird', () => {
+    const eingeteilt = simulationReducer(imEinsatz(), {
+      typ: 'spielerEinsatzabschnittSetzen',
+      spielerId: 'bert',
+      abschnitt: 'ablage',
+    });
+    const ausgefuehrt = befehlAusfuehren(eingeteilt, 'eingangssichtung');
+    const abgelehnt = simulationReducer(ausgefuehrt, {
+      typ: 'personalanfrageBeantworten',
+      id: ausgefuehrt.personalanfragen[0]!.id,
+      angenommen: false,
+    });
+    expect(abgelehnt.personalanfragen).toEqual([]);
+    expect(abgelehnt.sitzung.spieler.find((s) => s.id === 'bert')?.einsatzabschnitt).toBe('ablage');
+  });
+
+  it('teilt im Wartebereich direkt zu, im Einsatz nur über eine Anfrage', () => {
+    // Der Wartebereich-Fall steckt schon in `imEinsatz()`: dort wurde direkt zugeteilt.
+    const state = imEinsatz();
+    expect(state.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBe('gf-1');
+
+    const mitZweitemGf = simulationReducer(state, {
+      typ: 'spielerHinzugefuegt',
+      spieler: {
+        id: 'gf-2',
+        name: 'Schmidt',
+        rolle: 'spieler',
+        qualifikation: 'notsan',
+        fuehrungsrolle: 'gruppenfuehrer',
+      },
+    });
+    const angefragt = simulationReducer(mitZweitemGf, {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: 'gf-2',
+    });
+    // Noch nicht gewechselt - erst die Anfrage.
+    expect(angefragt.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBe('gf-1');
+    expect(angefragt.personalanfragen[0]).toMatchObject({
+      grund: 'gruppenwechsel',
+      spielerId: 'bert',
+      anEmpfaengerId: 'bert',
+      neuerGruppenfuehrerId: 'gf-2',
+    });
+
+    const zugestimmt = simulationReducer(angefragt, {
+      typ: 'personalanfrageBeantworten',
+      id: angefragt.personalanfragen[0]!.id,
+      angenommen: true,
+    });
+    expect(zugestimmt.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBe('gf-2');
+    expect(zugestimmt.personalanfragen).toEqual([]);
+  });
+
+  it('entlässt eine Person auch im Einsatz ohne Rückfrage aus der Gruppe', () => {
+    const entlassen = simulationReducer(imEinsatz(), {
+      typ: 'spielerGruppeZuweisen',
+      spielerId: 'bert',
+      gruppenfuehrerId: null,
+    });
+    expect(entlassen.sitzung.spieler.find((s) => s.id === 'bert')?.gruppenfuehrerId).toBeUndefined();
+    expect(entlassen.personalanfragen).toEqual([]);
+  });
+
+  it('führt eine Gruppe ganz ohne Fahrzeuge trotzdem an ihren Abschnitt', () => {
+    const ausgefuehrt = befehlAusfuehren(imEinsatz(), 'eingangssichtung');
+    for (const id of ['gf-1', 'bert', 'clara']) {
+      expect(ausgefuehrt.sitzung.spieler.find((s) => s.id === id)?.einsatzabschnitt).toBe(
+        'eingangssichtung',
+      );
+    }
+  });
+
+  it('überträgt personalanfragen in den Schnappschuss', () => {
+    const eingeteilt = simulationReducer(imEinsatz(), {
+      typ: 'spielerEinsatzabschnittSetzen',
+      spielerId: 'bert',
+      abschnitt: 'ablage',
+    });
+    const ausgefuehrt = befehlAusfuehren(eingeteilt, 'eingangssichtung');
+    expect(schnappschussAus(ausgefuehrt).personalanfragen).toEqual(ausgefuehrt.personalanfragen);
   });
 });
 

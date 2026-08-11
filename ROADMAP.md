@@ -1395,6 +1395,58 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   Regel umgestellt; `tsc`/Lint/volle Testsuite grün, Boot-Smoke-Test ohne
   Konsolenfehler.
 
+- ✅ **Gruppe im Einsatz sichtbar, einzelnes Personal verschiebbar, mit echter
+  Rückfrage (`DPS-0.8.2.8`)** - Nutzerfeedback: *"Wenn Gruppe im Wartebereich
+  definiert ist sollte diese auch im Einsatz dem Gruppenführer zugeordnet
+  sein. Einzelnes Personal soll auch innerhalb einer Gruppe bei Bedarf
+  verschoben werden können."* Der Umbau auf Personen-Gruppen
+  (→ `DPS-0.8.2.6`) war nur halb fertig: **im Einsatz kam die Personen-Gruppe
+  in der gesamten UI nicht vor.** Alle drei Gruppen-Anzeigen fuhren weiter
+  über Fahrzeuge - der Einsatzauftrag "Abschnitt führen" hing sogar an
+  `gruppeVon(fahrzeuge).length > 0`, sodass eine sauber zusammengestellte
+  Gruppe **ohne Fahrzeug überhaupt keinen Auftrag bekommen konnte**.
+  Umgesetzt in fünf Teilen:
+  1. **Neue Aktion `spielerEinsatzabschnittSetzen`**: teilt eine **einzelne**
+     Person abweichend von ihrer Gruppe ein (→ `modell.einsatzabschnitt`),
+     bewusst ohne Zeitkosten (die würden den Absender binden, nicht die
+     laufende Person).
+  2. **Kein stilles Überschreiben mehr** (→ `modell.personalanfrage`): Trifft
+     ein Gruppen-Auftrag jemanden, der einzeln woanders eingeteilt ist, wird
+     die Person **nicht mitgerissen**, sondern **zweistufig gefragt** - erst
+     gibt der Gruppenführer vor Ort sie frei, dann entscheidet sie selbst.
+     Sitzt an ihrem Standort kein Gruppenführer, entfällt die erste Stufe.
+     Maßstab für "einzeln abgeordnet" ist der `einsatzabschnitt` des
+     *Gruppenführers* - ohne diesen Vergleich würde ab dem zweiten Auftrag die
+     ganze Gruppe gefragt, weil dann alle einen `einsatzabschnitt` tragen.
+  3. **Gruppenwechsel im Einsatz braucht Zustimmung**: `spielerGruppeZuweisen`
+     legt im laufenden Einsatz eine Anfrage an die betroffene Person an statt
+     direkt umzuteilen. Im Wartebereich - der Planungsphase - bleibt es direkt,
+     dort gibt es noch nichts zu unterbrechen; das Entlassen aus einer Gruppe
+     ebenfalls (dafür braucht es keine Zusage).
+  4. **`GruppenZuweisung.tsx`** bekommt einen Personal-Block (Gruppen- und
+     Einzelzuweisung je Person, offene Anfragen als Status) und zeigt bei den
+     Einsatzaufträgen jetzt Personen **und** Fahrzeuge; das Fahrzeug-Gate ist
+     weg.
+  5. **`GruppenfuehrerSeite.tsx`**: "Meine Gruppe" sind jetzt die **Personen**
+     - mit Qualifikation, aktuellem Standort und einem Auswahlfeld, um
+     einzelne Leute abweichend einzuteilen. Fahrzeuge stehen als zweiter Block
+     darunter, der Leerzustand trennt "niemand zugeteilt" von "keine
+     Fahrzeuge".
+
+  Neuer Toast `PersonalanfrageBenachrichtigung.tsx` (→ `ui.personalanfrage`)
+  mit drei Texten je Anlass und Stufe, eingebunden neben den bestehenden
+  Benachrichtigungen. Neues synchronisiertes `state.personalanfragen` mit dem
+  üblichen 3-Touchpoint-Schnappschuss-Muster. 10 neue Tests,
+  `tsc`/Lint/volle Testsuite grün, Boot-Smoke-Test ohne Konsolenfehler.
+  >
+  > ⚠️ **Ungeprüfter Stand:** Mehrspieler-Live-Test in dieser Sandbox
+  > weiterhin nicht möglich (keine Supabase-Zugangsdaten). Vor dem nächsten
+  > Zugriff prüfen: Gruppe aus dem Wartebereich erscheint beim Gruppenführer;
+  > Auftrag an eine Gruppe ohne Fahrzeuge möglich; eine einzeln abgeordnete
+  > Person wird beim nächsten Gruppen-Auftrag gefragt statt mitgerissen (erst
+  > der Gruppenführer vor Ort, dann sie selbst); ein Gruppenwechsel im Einsatz
+  > kommt erst nach Zustimmung der Person zustande.
+
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).
 

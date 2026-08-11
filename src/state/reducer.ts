@@ -54,6 +54,7 @@ import type {
   MeldebuchBereich,
   MeldebuchEintrag,
   Patient,
+  Personalanfrage,
   PlatzierteFlaeche,
   Qualifikation,
   Route,
@@ -229,6 +230,11 @@ export interface SimulationState {
    */
   zeltMinispiele: ZeltMinispielLauf[];
   /**
+   * Offene Rückfragen zur Personalzuordnung (→ `modell.personalanfrage`) -
+   * jeder Client filtert selbst auf die an ihn gerichteten heraus.
+   */
+  personalanfragen: Personalanfrage[];
+  /**
    * Laufnummer des zuletzt angewendeten Schnappschusses (→ `state.schnappschuss`).
    * Nur für Spieler relevant - verhindert, dass ein verspätet eintreffender
    * älterer Schnappschuss einen bereits angewendeten neueren überschreibt.
@@ -268,6 +274,7 @@ export const ANFANGSZUSTAND: SimulationState = {
   abschnittFuehrenBefehle: [],
   meldebuch: [],
   zeltMinispiele: [],
+  personalanfragen: [],
   schnappschussFolge: 0,
 };
 
@@ -350,6 +357,12 @@ export type SimulationAction =
   | { typ: 'fahrzeugVerlegen'; fahrzeugId: string; ziel: Einsatzabschnitt }
   | { typ: 'fahrzeugGruppeZuweisen'; fahrzeugId: string; gruppenfuehrerId: string | null }
   | { typ: 'spielerGruppeZuweisen'; spielerId: string; gruppenfuehrerId: string | null }
+  | {
+      typ: 'spielerEinsatzabschnittSetzen';
+      spielerId: string;
+      abschnitt: Einsatzabschnitt | null;
+    }
+  | { typ: 'personalanfrageBeantworten'; id: string; angenommen: boolean }
   | { typ: 'freigabemodusSetzen'; modus: 'sofort' | 'gestaffelt' }
   | { typ: 'patientFreigeben'; patientId: string }
   | { typ: 'alleVerdecktenFreigeben' }
@@ -475,6 +488,8 @@ export interface Schnappschuss {
   meldebuch: MeldebuchEintrag[];
   /** Laufende Zeltaufbau-Minispiele (→ `modell.zeltminispiel`). */
   zeltMinispiele: ZeltMinispielLauf[];
+  /** Offene Rückfragen zur Personalzuordnung (→ `modell.personalanfrage`). */
+  personalanfragen: Personalanfrage[];
   /**
    * Fortlaufende Laufnummer, vom Host bei jedem Versand hochgezählt
    * (→ `state.provider`). Kein Feld des reinen Zustands - der Aufrufer
@@ -510,6 +525,7 @@ export function schnappschussAus(state: SimulationState, folge = 1): Schnappschu
     abschnittFuehrenBefehle: state.abschnittFuehrenBefehle,
     meldebuch: state.meldebuch,
     zeltMinispiele: state.zeltMinispiele,
+    personalanfragen: state.personalanfragen,
   };
 }
 
@@ -1522,6 +1538,39 @@ export function simulationReducer(
       // Ein Gruppenführer führt seine eigene Gruppe, statt Mitglied zu sein -
       // sonst entstünden Ketten (→ `modell.gruppe.person`).
       if (action.gruppenfuehrerId && person.fuehrungsrolle === 'gruppenfuehrer') return state;
+      // Im laufenden Einsatz wird niemand über den Kopf hinweg umgeteilt: die
+      // betroffene Person entscheidet selbst (→ `modell.personalanfrage`). Im
+      // Wartebereich - der Planungsphase, in der die Gruppen überhaupt erst
+      // entstehen - teilt der Zugführer dagegen weiterhin direkt zu; dort gibt
+      // es noch nichts zu unterbrechen. Das Entlassen aus einer Gruppe
+      // (`null`) bleibt ebenfalls direkt, dafür braucht es keine Zusage.
+      if (state.phase === 'einsatz' && action.gruppenfuehrerId) {
+        if (person.gruppenfuehrerId === action.gruppenfuehrerId) return state;
+        const zielFuehrer = state.sitzung.spieler.find((s) => s.id === action.gruppenfuehrerId);
+        const anfrage: Personalanfrage = {
+          id: erzeugeId(),
+          grund: 'gruppenwechsel',
+          spielerId: action.spielerId,
+          anEmpfaengerId: action.spielerId,
+          stufe: 'person',
+          neuerGruppenfuehrerId: action.gruppenfuehrerId,
+          ausgeloestVonId: state.sitzung.eigeneId ?? '',
+        };
+        return protokolliereRegie(
+          {
+            ...state,
+            // Eine neue Anfrage für dieselbe Person ersetzt eine noch offene.
+            personalanfragen: [
+              ...state.personalanfragen.filter(
+                (eintrag) =>
+                  !(eintrag.grund === 'gruppenwechsel' && eintrag.spielerId === action.spielerId),
+              ),
+              anfrage,
+            ],
+          },
+          `${person.name} für die Gruppe von ${zielFuehrer?.name ?? 'Gruppenführer'} angefragt.`,
+        );
+      }
       const naechster = {
         ...state,
         sitzung: {
@@ -1540,6 +1589,103 @@ export function simulationReducer(
       return protokolliereRegie(
         naechster,
         `${person.name} der Gruppe von ${gruppenfuehrer?.name ?? 'Gruppenführer'} zugeteilt.`,
+      );
+    }
+
+    case 'spielerEinsatzabschnittSetzen': {
+      const person = state.sitzung.spieler.find((eintrag) => eintrag.id === action.spielerId);
+      if (!person) return state;
+      // Einzelbefehl an genau eine Person (→ `modell.einsatzabschnitt`) - der
+      // Gegenpart zum Gruppen-Auftrag, mit dem der Zugführer oder der eigene
+      // Gruppenführer jemanden abweichend von seiner Gruppe einteilt. Bewusst
+      // ohne Zeitkosten: `dispatchMitZeitkosten` würde den Absender binden,
+      // nicht die laufende Person.
+      const naechster = {
+        ...state,
+        sitzung: {
+          ...state.sitzung,
+          spieler: state.sitzung.spieler.map((spieler) =>
+            spieler.id === action.spielerId
+              ? { ...spieler, einsatzabschnitt: action.abschnitt ?? undefined }
+              : spieler,
+          ),
+        },
+      };
+      return protokolliereRegie(
+        naechster,
+        action.abschnitt
+          ? `${person.name} einzeln nach ${geoPunktName(action.abschnitt)} eingeteilt.`
+          : `${person.name} nicht mehr einzeln eingeteilt.`,
+      );
+    }
+
+    case 'personalanfrageBeantworten': {
+      const anfrage = state.personalanfragen.find((eintrag) => eintrag.id === action.id);
+      if (!anfrage) return state;
+      const ohneAnfrage = state.personalanfragen.filter((eintrag) => eintrag.id !== action.id);
+      const person = state.sitzung.spieler.find((s) => s.id === anfrage.spielerId);
+      const name = person?.name ?? 'Die Person';
+
+      if (!action.angenommen) {
+        return protokolliereRegie(
+          { ...state, personalanfragen: ohneAnfrage },
+          anfrage.grund === 'gruppenwechsel'
+            ? `${name} lehnt den Gruppenwechsel ab.`
+            : `${name} bleibt an Ort und Stelle - Wechsel abgelehnt.`,
+        );
+      }
+
+      if (anfrage.grund === 'gruppenwechsel') {
+        const neuerFuehrer = state.sitzung.spieler.find(
+          (s) => s.id === anfrage.neuerGruppenfuehrerId,
+        );
+        return protokolliereRegie(
+          {
+            ...state,
+            personalanfragen: ohneAnfrage,
+            sitzung: {
+              ...state.sitzung,
+              spieler: state.sitzung.spieler.map((spieler) =>
+                spieler.id === anfrage.spielerId
+                  ? { ...spieler, gruppenfuehrerId: anfrage.neuerGruppenfuehrerId }
+                  : spieler,
+              ),
+            },
+          },
+          `${name} wechselt in die Gruppe von ${neuerFuehrer?.name ?? 'Gruppenführer'}.`,
+        );
+      }
+
+      // Abschnittswechsel, erste Stufe: der Gruppenführer vor Ort gibt frei -
+      // dieselbe Anfrage wandert weiter zur betroffenen Person, statt sofort
+      // zu wirken (→ `modell.personalanfrage`).
+      if (anfrage.stufe === 'freigabe') {
+        return protokolliereRegie(
+          {
+            ...state,
+            personalanfragen: [
+              ...ohneAnfrage,
+              { ...anfrage, stufe: 'person' as const, anEmpfaengerId: anfrage.spielerId },
+            ],
+          },
+          `${name} für den Wechsel freigegeben - wartet auf die eigene Zusage.`,
+        );
+      }
+
+      return protokolliereRegie(
+        {
+          ...state,
+          personalanfragen: ohneAnfrage,
+          sitzung: {
+            ...state.sitzung,
+            spieler: state.sitzung.spieler.map((spieler) =>
+              spieler.id === anfrage.spielerId
+                ? { ...spieler, einsatzabschnitt: anfrage.ziel }
+                : spieler,
+            ),
+          },
+        },
+        `${name} folgt der Gruppe nach ${anfrage.ziel ? geoPunktName(anfrage.ziel) : 'ihrem Auftrag'}.`,
       );
     }
 
@@ -1858,12 +2004,46 @@ export function simulationReducer(
       // ihre Clients ziehen die Ansicht selbst nach (→ `state.provider`).
       // Vorher bewegte dieser Fall ausschließlich Fahrzeuge, weshalb eine
       // befohlene Gruppe nie irgendwo ankam.
+      // Wer einzeln woanders eingeteilt ist, wird nicht stillschweigend
+      // mitgerissen (→ `modell.personalanfrage`): Maßstab ist der
+      // `einsatzabschnitt` des *Gruppenführers* - er sagt, wo die Gruppe
+      // steht. Nur wer davon abweicht, ist wirklich einzeln abgeordnet; ohne
+      // diesen Vergleich würde ab dem zweiten Auftrag die ganze Gruppe
+      // gefragt, weil dann alle einen `einsatzabschnitt` tragen.
+      const gruppenStandort = state.sitzung.spieler.find(
+        (spieler) => spieler.id === befehl.gruppenfuehrerId,
+      )?.einsatzabschnitt;
+      const mitglieder = gruppenMitglieder(state.sitzung.spieler, befehl.gruppenfuehrerId);
+      const abgeordnet = mitglieder.filter(
+        (spieler) =>
+          spieler.einsatzabschnitt !== undefined &&
+          spieler.einsatzabschnitt !== gruppenStandort &&
+          spieler.einsatzabschnitt !== befehl.ziel,
+      );
+      const abgeordneteIds = new Set(abgeordnet.map((spieler) => spieler.id));
       const mannschaft = [
         befehl.gruppenfuehrerId,
-        ...gruppenMitglieder(state.sitzung.spieler, befehl.gruppenfuehrerId).map(
-          (spieler) => spieler.id,
-        ),
+        ...mitglieder.filter((spieler) => !abgeordneteIds.has(spieler.id)).map((s) => s.id),
       ];
+      // Je abgeordneter Person eine Anfrage: zuerst an den Gruppenführer vor
+      // Ort (Freigabe), und nur falls dort keiner sitzt, direkt an sie selbst.
+      const neueAnfragen: Personalanfrage[] = abgeordnet.map((spieler) => {
+        const fuehrerVorOrt = state.sitzung.spieler.find(
+          (kandidat) =>
+            kandidat.id !== befehl.gruppenfuehrerId &&
+            kandidat.fuehrungsrolle === 'gruppenfuehrer' &&
+            kandidat.einsatzabschnitt === spieler.einsatzabschnitt,
+        );
+        return {
+          id: erzeugeId(),
+          grund: 'abschnittswechsel' as const,
+          spielerId: spieler.id,
+          anEmpfaengerId: fuehrerVorOrt?.id ?? spieler.id,
+          stufe: fuehrerVorOrt ? ('freigabe' as const) : ('person' as const),
+          ziel: befehl.ziel,
+          ausgeloestVonId: befehl.gruppenfuehrerId,
+        };
+      });
       // Jedes Fahrzeug der Gruppe zieht für sich um - eines, das schon am Ziel
       // steht, bleibt unverändert; eines ohne direkten Weg (→
       // `istFahrzeugVerlegungMoeglich`) bleibt stehen, statt den ganzen
@@ -1888,6 +2068,15 @@ export function simulationReducer(
         abschnittFuehrenBefehle: state.abschnittFuehrenBefehle.filter(
           (eintrag) => eintrag.id !== action.id,
         ),
+        // Offene Anfragen zu denselben Personen ersetzen, statt sie zu
+        // stapeln - ein neuer Auftrag überholt einen alten.
+        personalanfragen: [
+          ...state.personalanfragen.filter(
+            (eintrag) =>
+              !(eintrag.grund === 'abschnittswechsel' && abgeordneteIds.has(eintrag.spielerId)),
+          ),
+          ...neueAnfragen,
+        ],
       };
       const bewegt = gruppe.filter(
         (fahrzeug) =>
@@ -1895,9 +2084,12 @@ export function simulationReducer(
           istFahrzeugVerlegungMoeglich(fahrzeug.abschnitt, befehl.ziel),
       ).length;
       const gruppenfuehrer = state.sitzung.spieler.find((s) => s.id === befehl.gruppenfuehrerId);
+      const nachgefragt = neueAnfragen.length
+        ? `, ${neueAnfragen.length} einzeln eingeteilte angefragt`
+        : '';
       return protokolliereRegie(
         naechster,
-        `${gruppenfuehrer?.name ?? 'Gruppenführer'} führt jetzt ${geoPunktName(befehl.ziel)} (${mannschaft.length} Personen, ${bewegt} von ${gruppe.length} Fahrzeugen verlegt).`,
+        `${gruppenfuehrer?.name ?? 'Gruppenführer'} führt jetzt ${geoPunktName(befehl.ziel)} (${mannschaft.length} Personen, ${bewegt} von ${gruppe.length} Fahrzeugen verlegt${nachgefragt}).`,
       );
     }
 
@@ -2047,6 +2239,7 @@ export function simulationReducer(
         abschnittFuehrenBefehle: s.abschnittFuehrenBefehle,
         meldebuch: s.meldebuch,
         zeltMinispiele: s.zeltMinispiele,
+        personalanfragen: s.personalanfragen,
         schnappschussFolge: s.folge,
         // Ist der eigene ausgewählte Patient nicht mehr im gezeigten Abschnitt,
         // bleibt die Auswahl trotzdem lokal - die Ansicht prüft das selbst.

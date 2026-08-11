@@ -1,6 +1,9 @@
+import { ABSCHNITTE } from '../domain/abschnitte';
 import { FAHRZEUGTYP_INFO } from '../domain/fahrzeuge';
-import { gruppeVon } from '../domain/fuehrung';
+import { istAbschnittEroeffnet } from '../domain/flaechen';
+import { gruppenMitglieder, gruppeVon, zugfuehrungAktiv } from '../domain/fuehrung';
 import { geoPunktName } from '../domain/geodaten';
+import { QUALIFIKATION_VOLLNAME } from '../domain/massnahmen';
 import { useSimulation } from '../state/useSimulation';
 import type { Einsatzabschnitt } from '../domain/types';
 
@@ -11,36 +14,99 @@ interface Props {
 /**
  * @anker ui.gruppenfuehrerseite Startbildschirm des Gruppenführers: Übersicht der eigenen Gruppe
  *
- * Erster Baustein der dritten Führungsebenen-Epoche (→ ROADMAP.md, Baustein 6,
- * Ebene 2) - deutlich schmaler als `ui.zugfuehrerseite`: ein Gruppenführer
- * führt real nur die ihm zugewiesenen Fahrzeuge samt Besatzung (→
- * `modell.gruppe`), nicht die gesamte Einsatzstelle. Die Zuweisung selbst
- * bleibt Sache des Zugführers (→ `ui.gruppenzuweisung`) - diese Seite zeigt
- * nur, was der Gruppenführer davon zu sehen bekommt: seine Fahrzeuge, wo sie
- * gerade stehen, wer drauf sitzt. Ein Klick auf ein Fahrzeug springt in die
- * gewohnte Abschnitt-Detailsicht, genau wie eine Kachel bei Regie/Zugführer.
- * Einsatzaufträge selbst (Fläche bauen, Abschnitt führen) laufen weiterhin
- * über die bereits bestehenden Toast-Benachrichtigungen
- * (→ `ui.zeltbefehlbenachrichtigung`, `ui.abschnittfuehrenbefehl`) - die
- * erscheinen unabhängig von der aktuellen Seite, eine Verdopplung hier wäre
- * überflüssig.
+ * Deutlich schmaler als `ui.zugfuehrerseite`: ein Gruppenführer führt real nur
+ * seine eigene Gruppe, nicht die gesamte Einsatzstelle. Die Gruppe *sind* die
+ * Personen (→ `modell.gruppe.person`), zusammengestellt vom Zugführer im
+ * Wartebereich (→ `ui.wartebereich`) - sie stehen hier deshalb an erster
+ * Stelle, mit ihrem aktuellen Standort und der Möglichkeit, einzelne Leute
+ * abweichend von der Gruppe einzuteilen (→ `modell.einsatzabschnitt`). Genau
+ * das ist die Führungsarbeit vor Ort: wissen, wer wo ist, und jemanden gezielt
+ * woandershin schicken.
+ *
+ * Fahrzeuge folgen als zweiter Block - sie gehören nicht zwangsläufig zu einer
+ * Gruppe und sind eher rollendes Material als Mannschaft. Ein Klick auf ein
+ * Fahrzeug springt in die gewohnte Abschnitt-Detailsicht.
+ *
+ * Einsatzaufträge (Fläche bauen, Abschnitt führen) laufen weiterhin über die
+ * bestehenden Toasts (→ `ui.zeltbefehlbenachrichtigung`,
+ * `ui.abschnittfuehrenbefehl`) - die erscheinen unabhängig von der aktuellen
+ * Seite, eine Verdopplung hier wäre überflüssig.
  */
 export function GruppenfuehrerSeite({ onAbschnittWaehlen }: Props) {
-  const { state } = useSimulation();
+  const { state, dispatch } = useSimulation();
   const eigeneId = state.sitzung.eigeneId;
-  const gruppe = eigeneId ? gruppeVon(state.fahrzeuge, eigeneId) : [];
+  const mitglieder = eigeneId ? gruppenMitglieder(state.sitzung.spieler, eigeneId) : [];
+  const fahrzeuge = eigeneId ? gruppeVon(state.fahrzeuge, eigeneId) : [];
+
+  // Dieselbe Eröffnet-Begrenzung wie überall sonst (→ `domain.zugfuehrungaktiv`).
+  const gateAktiv = zugfuehrungAktiv(state.sitzung.aktiv, state.sitzung.spieler);
+  const ziele = ABSCHNITTE.filter(
+    (abschnitt) => !gateAktiv || istAbschnittEroeffnet(abschnitt.id, state.flaechen),
+  );
 
   return (
     <div className="gruppenfuehrerseite">
       <p className="abschnitt-eyebrow">Meine Gruppe</p>
 
-      {gruppe.length === 0 ? (
+      {mitglieder.length === 0 ? (
         <p className="hinweis">
-          Noch keine Fahrzeuge zugewiesen - der Zugführer weist sie über "Gruppen" zu.
+          Noch niemand zugeteilt - der Zugführer stellt die Gruppe im Wartebereich zusammen.
+        </p>
+      ) : (
+        <ul className="gruppen-personal-liste">
+          {mitglieder.map((mitglied) => {
+            const offeneAnfrage = state.personalanfragen.find(
+              (eintrag) => eintrag.spielerId === mitglied.id,
+            );
+            const standort = mitglied.einsatzabschnitt ?? mitglied.aktuellerAbschnitt;
+            return (
+              <li key={mitglied.id} className="gruppen-personal-zeile">
+                <span className="gruppen-personal-name">{mitglied.name}</span>
+                <span className="gruppen-personal-qualifikation">
+                  {QUALIFIKATION_VOLLNAME[mitglied.qualifikation]}
+                </span>
+                <span className="gruppen-personal-standort">
+                  {standort ? geoPunktName(standort) : 'noch nicht eingeteilt'}
+                </span>
+                <select
+                  className="gruppen-personal-wahl"
+                  aria-label={`Einteilung von ${mitglied.name}`}
+                  value={mitglied.einsatzabschnitt ?? ''}
+                  onChange={(event) =>
+                    dispatch({
+                      typ: 'spielerEinsatzabschnittSetzen',
+                      spielerId: mitglied.id,
+                      abschnitt:
+                        event.target.value === ''
+                          ? null
+                          : (event.target.value as Einsatzabschnitt),
+                    })
+                  }
+                >
+                  <option value="">— mit der Gruppe —</option>
+                  {ziele.map((abschnitt) => (
+                    <option key={abschnitt.id} value={abschnitt.id}>
+                      {abschnitt.name}
+                    </option>
+                  ))}
+                </select>
+                {offeneAnfrage && <span className="hinweis">wartet auf Rückmeldung</span>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <p className="abschnitt-eyebrow">Fahrzeuge der Gruppe</p>
+
+      {fahrzeuge.length === 0 ? (
+        <p className="hinweis">
+          Keine Fahrzeuge zugewiesen - eine Gruppe braucht keine. Der Zugführer weist sie bei Bedarf
+          über "Gruppen" zu.
         </p>
       ) : (
         <div className="gruppenfuehrer-fahrzeuge">
-          {gruppe.map((fahrzeug) => {
+          {fahrzeuge.map((fahrzeug) => {
             const besatzungNamen = fahrzeug.besatzung
               .map((id) => state.sitzung.spieler.find((spieler) => spieler.id === id)?.name)
               .filter(Boolean)

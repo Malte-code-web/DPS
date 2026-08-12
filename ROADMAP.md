@@ -1584,12 +1584,23 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   was am jeweiligen Arbeitsplatz eingerichtet ist: 582 grün, 6 übersprungen,
   **keine roten**.
   >
-  > ⚠️ **Weiterhin offen:** der Durchlauf durch die echte **Oberfläche**. Die
-  > Übungsleitungs-Rolle verlangt zusätzlich ein Benutzerkonto
-  > (→ `net.supabaseAuth`, im Supabase-Dashboard unter "Authentication" ->
-  > "Add user" anzulegen). Ohne das lässt sich der Einsatz nicht per Klick
-  > starten. Geprüft ist damit das Protokoll über das echte Netz, nicht die
-  > Bedienung.
+  > ⚠️ **Weiterhin offen: der Durchlauf durch die Oberfläche - und zwar
+  > dauerhaft in dieser Umgebung.** Das Übungsleitungs-Konto liegt inzwischen
+  > vor und funktioniert (die Auth-API liefert damit ein Token). Der Klickweg
+  > scheitert an etwas anderem: **Der Browser in dieser Sandbox kommt nicht ins
+  > Netz.** Ausgehendes HTTPS läuft über einen Relay, der ausschließlich
+  > CONNECT-Tunnel annimmt; Chromium bekommt darüber für *jedes* Ziel ein
+  > `ERR_CONNECTION_RESET` - nachgemessen auch mit `example.com`, es liegt also
+  > nicht an Supabase und nicht an Zertifikaten. Node und `curl` haben den
+  > Weg, der Browser nicht.
+  >
+  > Damit ist die Grenze klar gezogen: **Das Protokoll ist über das echte Netz
+  > geprüft** (→ `net.livetest`, aus Node), **die Bedienung nicht**. Was ein
+  > Mensch am eigenen Rechner nachholen sollte: Anmeldung als Übungsleitung,
+  > Sitzung eröffnen, zwei Geräte beitreten lassen, Übung starten - laufen Uhr
+  > und Patientenwerte überall gleich? Ein drittes Gerät mitten im Einsatz
+  > dazuholen - holt es sofort auf? Einsatz beenden - stehen die
+  > Auswertungsprotokolle bei allen?
 
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).

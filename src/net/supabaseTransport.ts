@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import type { SitzungsNachricht } from './protokoll';
 import type { TransportFabrik } from './sitzungstransport';
@@ -37,14 +38,22 @@ const MAX_WARTEZEIT_MS = 15_000;
 /** Eigenes Zeitlimit für den Verbindungsaufbau, falls Supabase selbst nie antwortet. */
 const SUBSCRIBE_TIMEOUT_MS = 10_000;
 
-export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onStatus) => {
-  const client = supabase;
-  if (!client) {
-    throw new Error(
-      'Supabase ist nicht konfiguriert (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY fehlen).',
-    );
-  }
+/**
+ * Dieselbe Fabrik, aber mit einem ausdrücklich übergebenen Client statt dem
+ * Projekt-Singleton.
+ *
+ * Im Betrieb gibt es genau einen Client je Browser, und der Kanalname trägt den
+ * Sitzungscode - Host und Mitspielende sitzen ohnehin in verschiedenen
+ * Browsern. Ein Realtime-Broadcast kommt aber **nie** am eigenen Socket zurück:
+ * Wer Host und Mitspielende in einem einzigen Prozess nachstellen will (→
+ * `net.livetest`), braucht deshalb je Teilnehmer einen eigenen Client. Ohne
+ * diese Naht ließe sich der echte Transport nur über mehrere Prozesse prüfen -
+ * oder gar nicht.
+ */
+export type RealtimeFaehig = Pick<SupabaseClient, 'channel' | 'removeChannel'>;
 
+export function erzeugeSupabaseTransportMit(client: RealtimeFaehig): TransportFabrik {
+  return (code, onNachricht, onStatus) => {
   let kanal: ReturnType<typeof client.channel> | null = null;
   // Der Kanal braucht einen Websocket-Handshake, bevor er zustellt - eine
   // Nachricht direkt nach der Erzeugung (z. B. der Beitritt) wartet in dieser
@@ -164,4 +173,14 @@ export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onS
       if (kanal) void client.removeChannel(kanal);
     },
   };
+  };
+}
+
+export const erzeugeSupabaseTransport: TransportFabrik = (code, onNachricht, onStatus) => {
+  if (!supabase) {
+    throw new Error(
+      'Supabase ist nicht konfiguriert (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY fehlen).',
+    );
+  }
+  return erzeugeSupabaseTransportMit(supabase)(code, onNachricht, onStatus);
 };

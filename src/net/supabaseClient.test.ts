@@ -14,7 +14,15 @@ describe('istSupabaseKonfiguriert', () => {
   });
 });
 
-describe('Modul-Export ohne hinterlegte Zugangsdaten (Testumgebung)', () => {
+/**
+ * Diese Prüfungen gelten dem Verhalten **ohne** hinterlegte Zugangsdaten - dem
+ * Normalfall in der Entwicklung und in der Testumgebung. Liegt eine `.env` vor
+ * (→ `net.livetest`), sind sie gegenstandslos und würden zwangsläufig
+ * scheitern: Dann ist Supabase eben konfiguriert. `skipIf` macht diese
+ * Abhängigkeit sichtbar, statt die Suite je nach Arbeitsplatz rot werden zu
+ * lassen.
+ */
+describe.skipIf(supabaseKonfiguriert)('Modul-Export ohne hinterlegte Zugangsdaten', () => {
   it('bleibt ohne .env sicher auf null - kein Absturz beim Import', () => {
     expect(supabaseKonfiguriert).toBe(false);
     expect(supabase).toBeNull();

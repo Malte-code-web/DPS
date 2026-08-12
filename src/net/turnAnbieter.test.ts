@@ -14,7 +14,13 @@ describe('istTurnKonfiguriert', () => {
   });
 });
 
-describe('Modul-Export ohne hinterlegte Zugangsdaten (Testumgebung)', () => {
+/**
+ * Wie bei Supabase (→ `net.livetest`) gelten diese beiden Prüfungen dem
+ * Verhalten **ohne** hinterlegte Zugangsdaten. Liegen welche vor, sind sie
+ * gegenstandslos - und `holeTurnServer` würde sogar wirklich ins Netz greifen,
+ * was in einer Testsuite nichts zu suchen hat.
+ */
+describe.skipIf(turnKonfiguriert)('Modul-Export ohne hinterlegte Zugangsdaten', () => {
   it('bleibt ohne .env sicher unkonfiguriert', () => {
     expect(turnKonfiguriert).toBe(false);
   });

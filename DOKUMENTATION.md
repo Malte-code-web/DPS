@@ -775,7 +775,7 @@ auch wenn sich Zeilennummern verschieben.
 
 <!-- ANKER:START -->
 
-_260 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
+_261 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 
 #### abschnitte
 
@@ -949,11 +949,12 @@ _260 Anker, erzeugt von `npm run anker` – nicht von Hand ändern._
 | `net.delta` | [`src/state/schnappschussDelta.ts:4`](src/state/schnappschussDelta.ts#L4) | Nur senden, was sich wirklich geändert hat |
 | `net.delta.patienten` | [`src/state/schnappschussDelta.ts:103`](src/state/schnappschussDelta.ts#L103) | Die Patientenliste stückweise |
 | `net.funksignal` | [`src/net/protokoll.ts:5`](src/net/protokoll.ts#L5) | Aushandlungsdaten einer WebRTC-Verbindung |
+| `net.livetest` | [`src/net/supabaseSync.live.test.ts:12`](src/net/supabaseSync.live.test.ts#L12) | Echter Durchlauf über Supabase Realtime - nur mit Zugang |
 | `net.lokal` | [`src/net/lokalerTransport.ts:5`](src/net/lokalerTransport.ts#L5) | Sitzungstransport über BroadcastChannel (ein Gerät) |
 | `net.protokoll` | [`src/net/protokoll.ts:16`](src/net/protokoll.ts#L16) | Nachrichten zwischen Übungsleiter (Host) und Spielern |
 | `net.routingdienst` | [`src/net/routingDienst.ts:4`](src/net/routingDienst.ts#L4) | Echter Straßenverlauf statt Luftlinie für eine angelegte Wegstrecke |
 | `net.stoertransport` | [`src/net/stoerTransport.ts:5`](src/net/stoerTransport.ts#L5) | Ein Kanal, der absichtlich kaputt geht |
-| `net.supabase` | [`src/net/supabaseTransport.ts:6`](src/net/supabaseTransport.ts#L6) | Sitzungstransport über Supabase Realtime (Cross-Device) |
+| `net.supabase` | [`src/net/supabaseTransport.ts:7`](src/net/supabaseTransport.ts#L7) | Sitzungstransport über Supabase Realtime (Cross-Device) |
 | `net.supabaseAuth` | [`src/net/supabaseAuth.ts:4`](src/net/supabaseAuth.ts#L4) | Anmeldung der Übungsleitung über Supabase Auth |
 | `net.supabaseClient` | [`src/net/supabaseClient.ts:5`](src/net/supabaseClient.ts#L5) | Zugriff auf das Supabase-Projekt der Übungsleitung |
 | `net.transport` | [`src/net/sitzungstransport.ts:4`](src/net/sitzungstransport.ts#L4) | Austauschbarer Kanal für eine Sitzung |
@@ -1235,6 +1236,7 @@ existiert nur in Branch-/Dokumentationsnamen.
 
 | Branch | Stand |
 | --- | --- |
+| `DPS-0.8.2.11` | Synchronisation über echtes Supabase Realtime geprüft: neuer `supabaseSync.live.test.ts` (→ `net.livetest`) fährt Host, zwei Mitspielende, einen Nachzügler und einen künstlich zurückgefallenen Client über die echte Leitung - alle landen feldweise auf dem Stand des Hosts, größte Nachricht 42,6 kB; dafür `erzeugeSupabaseTransportMit(client)` als Testnaht neben der Vorgabe-Fabrik (Verhalten unverändert, ein Broadcast kommt nie am eigenen Socket zurück). Fünf Tests, die das Verhalten **ohne** Zugangsdaten prüfen (2× TURN, 3× Supabase) und deshalb rot wurden, sobald welche vorlagen, tragen jetzt `describe.skipIf(...)` wie der KI-Livetest |
 | `DPS-0.8.2.10` | Schnappschuss-Synchronisation entlastet und abgesichert: Der Host verteilt nur noch die **geänderten** Felder statt bei jeder Änderung den kompletten Zustand (→ `net.delta`, neues `schnappschussDelta.ts`); `Schnappschuss` in Nutzlast (`SchnappschussFelder`) und Transporthülle (`folge`/`basis`/`felder`) getrennt, `basis` verhindert das Verschmelzen auf einen falschen Stand (→ `state.schnappschuss.nachricht`); der 4-Sekunden-Herzschlag mit vollem Zustand ist einem 40-Byte-Puls samt Nachforderung gewichen (→ `state.puls`, neue Nachrichten `schnappschussPuls`/`vollbildAnfordern`); `regieProtokoll`/`spielerProtokoll` gehen erst zur Auswertung raus (→ `state.schnappschuss.debriefingdaten`) - damit wächst der Schnappschuss nicht mehr unbegrenzt in die 256-kB-Grenze eines Supabase-Broadcasts hinein; Patientenliste stückweise (→ `net.delta.patienten`); neuer Stör-Transport für Verlust/Verdopplung/Vertauschung (→ `net.stoertransport`) mit 120 Zufallsläufen als Konvergenznachweis. Gemessen 95,7 → 16,9 kB/s |
 | `DPS-0.8.2.9` | Audit Bedienkomfort/Zoom/Ladegröße: neuer Hook `useNachObenBeiWechsel` (→ `ui.nachoben`) - jede neue Ansicht beginnt oben statt die Scrollposition der vorigen zu erben (Phasenwechsel in `App.tsx`, Patientenwahl/Übersicht/Abschnitt in `EinsatzSeite.tsx`); iOS-Auto-Zoom beim Fokussieren von Eingabefeldern behoben (`font-size: 16px` für `input`/`select`/`textarea` im bestehenden `@media (pointer: coarse)`-Block, `text-size-adjust: 100%` auf `html`) - auf der Maus bleibt es bei 13,5 px; `KiGenerator` über `lazy()` + `Suspense` in einen eigenen Chunk (Hauptbundle 1.120,71 → 942,68 kB, gzip 329,42 → 279,17 kB), Einzeldatei-Bau läuft über `vite build --mode einzeldatei` weiter ohne Splitting |
 | `DPS-0.8.2.8` | Gruppe im Einsatz sichtbar + einzelnes Personal verschiebbar, mit echter Rückfrage: neue Aktion `spielerEinsatzabschnittSetzen` (einzelne Person abweichend von der Gruppe einteilen); neues `state.personalanfragen` + `Personalanfrage` + `personalanfrageBeantworten` - ein Gruppen-Auftrag reißt einzeln Eingeteilte nicht mehr mit, sondern fragt zweistufig (Gruppenführer vor Ort, dann die Person), ein Gruppenwechsel im Einsatz braucht die Zustimmung der Person (im Wartebereich weiterhin direkt); neuer Toast `PersonalanfrageBenachrichtigung.tsx`; `GruppenZuweisung.tsx` mit Personal-Block und ohne Fahrzeug-Gate beim Einsatzauftrag; `GruppenfuehrerSeite.tsx` zeigt die Personen der Gruppe statt nur Fahrzeuge |
@@ -1322,7 +1324,7 @@ So ist jede Versionsnummer ein Stand, der nachweislich lief.
 
 ```bash
 npm run dev            Entwicklungsserver
-npm run test           559 Tests
+npm run test           582 Tests (6 übersprungen ohne .env-Zugänge)
 npm run ki:test        echter Durchlauf gegen die API (braucht ANTHROPIC_API_KEY)
 npm run lint           oxlint
 npm run typecheck      TypeScript

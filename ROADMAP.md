@@ -1559,13 +1559,37 @@ Kein neuer Code in diesem Schritt, nur der Abschluss-Vermerk hier.
   Tests, `tsc`/Lint/volle Testsuite grün (584), Boot-Smoke-Test ohne
   Konsolenfehler.
   >
-  > ⚠️ **Noch offen:** Der Mehrspieler-Lauf durch die echte Oberfläche ist in
-  > dieser Sandbox weiter nicht möglich - die Übungsleitungs-Rolle verlangt ein
-  > Supabase-Konto, ohne das der Einsatz gar nicht erst erreichbar ist. Vor dem
-  > nächsten Zugriff live zu prüfen: Beitritt mitten im laufenden Einsatz
-  > (bekommt sofort ein Vollbild), Uhr und Patientenwerte laufen bei allen
-  > gleich, Debriefing-Protokolle sind nach dem Einsatzende bei allen
-  > vollständig da.
+- ✅ **Nachtrag: über das echte Netz geprüft** - Der Nutzer hat
+  Supabase-Zugangsdaten bereitgestellt, damit war der offene Punkt aus
+  `DPS-0.8.2.10` einlösbar. Neuer Test `supabaseSync.live.test.ts`
+  (→ `net.livetest`): Host und zwei Mitspielende über **echtes** Supabase
+  Realtime, dazu ein Nachzügler mitten im Einsatz und ein künstlich
+  zurückgefallener Client. Alle drei landen feldweise auf dem Stand des Hosts,
+  der Nachzügler holt über ein Vollbild auf, der Puls repariert den
+  Zurückgefallenen, und die Auswertungsprotokolle treffen erst mit dem
+  Einsatzende ein. Gemessen über die Leitung: 45 Nachrichten, im Mittel
+  14,8 kB, größte 42,6 kB - **weit unter der 256-kB-Grenze**.
+
+  Dafür brauchte der Transport eine Naht: `erzeugeSupabaseTransportMit(client)`
+  neben der bisherigen Fabrik. Ein Realtime-Broadcast kommt nie am eigenen
+  Socket zurück, deshalb braucht jeder Teilnehmer im selben Prozess einen
+  eigenen Client - im Browser ist das ohnehin so. Verhalten unverändert; die
+  Vorgabe-Fabrik reicht weiterhin den Projekt-Singleton durch.
+
+  Nebenbefund, der lange als Rauschen durchging: **fünf Tests prüften das
+  Verhalten ohne Zugangsdaten und wurden rot, sobald welche vorlagen** - zwei
+  zum TURN-Anbieter (die liefen sogar wirklich ins Netz), drei zu Supabase. Sie
+  tragen jetzt `describe.skipIf(...konfiguriert)`, wie es der KI-Livetest
+  (→ `ki.livetest`) seit jeher vormacht. Damit ist die Suite unabhängig davon,
+  was am jeweiligen Arbeitsplatz eingerichtet ist: 582 grün, 6 übersprungen,
+  **keine roten**.
+  >
+  > ⚠️ **Weiterhin offen:** der Durchlauf durch die echte **Oberfläche**. Die
+  > Übungsleitungs-Rolle verlangt zusätzlich ein Benutzerkonto
+  > (→ `net.supabaseAuth`, im Supabase-Dashboard unter "Authentication" ->
+  > "Add user" anzulegen). Ohne das lässt sich der Einsatz nicht per Klick
+  > starten. Geprüft ist damit das Protokoll über das echte Netz, nicht die
+  > Bedienung.
 
 **Abhängigkeit:** Baustein 1-5 (Mehrspieler-Fundament, Qualifikation, Führung,
 Material, Sprechfunk).

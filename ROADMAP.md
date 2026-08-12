@@ -1583,13 +1583,21 @@ Weiter denkbar, sobald die Bausteine 1–5 stehen:
   `DPS-0.8.0.14` fertig - denkbar bliebe z. B. eine Aufschlüsselung nach
   Einsatzabschnitt oder nach handelnder Person statt nur Sitzungs-weit.
 - 💤 **Persistenz/Export** der Ergebnisse (PDF/CSV).
-- 💤 **Taktdrossel** (offen gebliebene Entscheidung aus `DPS-0.8.2.10`). Nach dem
-  Umbau bleibt der Simulationstakt der größte laufende Posten: 16,9 kB/s, davon
-  fast alles die Patientenwerte, die sich alle 500 ms bewegen. Ein Versand pro
-  Sekunde statt zwei würde das noch einmal halbieren; echte Handlungen gingen
-  weiterhin sofort raus, nur der reine Takt wartete. Preis: Vitalwerte und
-  Einsatzuhr können bei Mitspielenden bis zu eine Sekunde nachhinken. Der
-  Nutzer wollte das erst nach der Messung entscheiden - die Zahl steht jetzt.
+- ❌ **Taktdrossel - entschieden dagegen** (nach der Messung zu `DPS-0.8.2.10`).
+  Zur Wahl stand, den reinen Simulationstakt nur noch einmal statt zweimal pro
+  Sekunde zu verschicken; das hätte die verbliebenen 16,9 kB/s noch einmal
+  halbiert, um den Preis von bis zu einer Sekunde Nachhinken bei Vitalwerten
+  und Einsatzuhr. Nutzerentscheidung: **kein Nachhinken.** Der Takt bleibt bei
+  500 ms.
+
+  Damit ist die Frage erledigt, nicht vertagt. Sollte der Dauerverkehr später
+  doch einmal drücken (schmale Mobilfunkverbindung, sehr großes Szenario),
+  bliebe ein Weg **ohne** jede Verzögerung: Ein Patientenobjekt wiegt rund
+  1,4 kB, verändert wird pro Takt aber nur eine Handvoll Vitalwerte - der Rest
+  (Verlauf, Befunde, durchgeführte Maßnahmen) fährt unverändert mit. Ein Delta
+  **innerhalb** eines Patienten würde also nochmals deutlich sparen. Das ist
+  spürbar mehr Maschinerie als das Feld-Delta und lohnt erst, wenn es eine
+  gemessene Not gibt - heute gibt es die nicht.
 - 💤 **Re-Render-Struktur entzerren** (Befund aus `DPS-0.8.2.9`).
   **47 Komponenten** hängen am `useSimulation()`-Kontext, **keine einzige** ist
   mit `React.memo` abgeschirmt: jeder Takt (alle 500 ms) rendert alle 47 neu,

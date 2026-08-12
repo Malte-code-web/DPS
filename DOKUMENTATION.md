@@ -255,6 +255,11 @@ bleibt unangetastet. Deshalb fährt sie stückweise (→ `net.delta.patienten`):
 die Id-Reihenfolge vollständig, die Personendaten nur von denen, die sich
 wirklich bewegt haben.
 
+**Der Takt bleibt bei 500 ms.** Seltener zu senden wäre die einfachste weitere
+Ersparnis, ließe aber Vitalwerte und Einsatzuhr bei Mitspielenden hinter dem
+Host zurückbleiben - bewusst verworfen. Was die Anzeige zeigt, soll stimmen,
+nicht fast stimmen.
+
 ---
 
 ## 4. Die vier Mechaniken
